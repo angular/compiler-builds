@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.4+sha-9f3b549
+ * @license Angular v17.0.0-next.4+sha-8438e3e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8765,18 +8765,25 @@ var OpKind;
      */
     OpKind[OpKind["Namespace"] = 28] = "Namespace";
     /**
+     * Configure a content projeciton definition for the view.
+     */
+    OpKind[OpKind["ProjectionDef"] = 29] = "ProjectionDef";
+    /**
+     * Create a content projection slot.
+     */
+    OpKind[OpKind["Projection"] = 30] = "Projection";
+    /**
      * The start of an i18n block.
      */
-    OpKind[OpKind["I18nStart"] = 29] = "I18nStart";
+    OpKind[OpKind["I18nStart"] = 31] = "I18nStart";
     /**
      * A self-closing i18n on a single element.
      */
-    OpKind[OpKind["I18n"] = 30] = "I18n";
+    OpKind[OpKind["I18n"] = 32] = "I18n";
     /**
      * The end of an i18n block.
      */
-    OpKind[OpKind["I18nEnd"] = 31] = "I18nEnd";
-    // TODO: Add Host Listeners, and possibly other host ops also.
+    OpKind[OpKind["I18nEnd"] = 33] = "I18nEnd";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -8888,8 +8895,8 @@ var SemanticVariableKind;
 })(SemanticVariableKind || (SemanticVariableKind = {}));
 /**
  * Whether to compile in compatibilty mode. In compatibility mode, the template pipeline will
- * attempt to match the output of `TemplateDefinitionBuilder` as exactly as possible, at the cost of
- * producing quirky or larger code in some cases.
+ * attempt to match the output of `TemplateDefinitionBuilder` as exactly as possible, at the cost
+ * of producing quirky or larger code in some cases.
  */
 var CompatibilityMode;
 (function (CompatibilityMode) {
@@ -9879,6 +9886,8 @@ function transformExpressionsInOp(op, transform, flags) {
                     transformExpressionsInExpression(op.tagNameParams[placeholder], transform, flags);
             }
             break;
+        case OpKind.Projection:
+        case OpKind.ProjectionDef:
         case OpKind.Element:
         case OpKind.ElementStart:
         case OpKind.ElementEnd:
@@ -10269,7 +10278,8 @@ class OpList {
  * The set of OpKinds that represent the creation of an element or container
  */
 const elementContainerOpKinds = new Set([
-    OpKind.Element, OpKind.ElementStart, OpKind.Container, OpKind.ContainerStart, OpKind.Template
+    OpKind.Element, OpKind.ElementStart, OpKind.Container, OpKind.ContainerStart, OpKind.Template,
+    OpKind.Projection
 ]);
 /**
  * Checks whether the given operation represents the creation of an element or container.
@@ -10298,12 +10308,13 @@ function createElementStartOp(tag, xref, namespace, i18n, sourceSpan) {
 /**
  * Create a `TemplateOp`.
  */
-function createTemplateOp(xref, tag, namespace, i18n, sourceSpan) {
+function createTemplateOp(xref, tag, namespace, controlFlow, i18n, sourceSpan) {
     return {
         kind: OpKind.Template,
         xref,
         attributes: null,
         tag,
+        controlFlow,
         decls: null,
         vars: null,
         localRefs: [],
@@ -10395,6 +10406,29 @@ function createNamespaceOp(namespace) {
         kind: OpKind.Namespace,
         active: namespace,
         ...NEW_OP,
+    };
+}
+function createProjectionDefOp(def) {
+    return {
+        kind: OpKind.ProjectionDef,
+        def,
+        ...NEW_OP,
+    };
+}
+function createProjectionOp(xref, selector) {
+    return {
+        kind: OpKind.Projection,
+        xref,
+        selector,
+        projectionSlotIndex: 0,
+        attributes: null,
+        localRefs: [],
+        nonBindable: false,
+        i18n: undefined,
+        sourceSpan: null,
+        ...NEW_OP,
+        ...TRAIT_CONSUMES_SLOT,
+        ...TRAIT_USES_SLOT_INDEX,
     };
 }
 /**
@@ -10499,6 +10533,11 @@ class ComponentCompilationJob extends CompilationJob {
         this.kind = CompilationJobKind.Tmpl;
         this.fnSuffix = 'Template';
         this.views = new Map();
+        /**
+         * Causes ngContentSelectors to be emitted, for content projection slots in the view. Possibly a
+         * reference into the constant pool.
+         */
+        this.contentSelectors = null;
         /**
          * Constant expressions used by operations within this component's compilation.
          *
@@ -10804,7 +10843,7 @@ function phaseAttributeExtraction(job) {
                     break;
                 case OpKind.Property:
                     if (!op.isAnimationTrigger) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null), lookupElement$3(elements, op.target));
                     }
                     break;
                 case OpKind.StyleProp:
@@ -10814,7 +10853,7 @@ function phaseAttributeExtraction(job) {
                     // mode.
                     if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
                         op.expression instanceof EmptyExpr) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$3(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
@@ -10826,7 +10865,7 @@ function phaseAttributeExtraction(job) {
                             unit.create.push(extractedAttributeOp);
                         }
                         else {
-                            OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
+                            OpList.insertBefore(extractedAttributeOp, lookupElement$3(elements, op.target));
                         }
                     }
                     break;
@@ -10837,7 +10876,7 @@ function phaseAttributeExtraction(job) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$2(elements, xref) {
+function lookupElement$3(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -10875,7 +10914,7 @@ function extractAttributeOp(unit, op, elements) {
             unit.create.push(extractedAttributeOp);
         }
         else {
-            const ownerOp = lookupElement$2(elements, op.target);
+            const ownerOp = lookupElement$3(elements, op.target);
             OpList.insertBefore(extractedAttributeOp, ownerOp);
         }
         OpList.remove(op);
@@ -10885,7 +10924,7 @@ function extractAttributeOp(unit, op, elements) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$1(elements, xref) {
+function lookupElement$2(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -10911,7 +10950,7 @@ function phaseBindingSpecialization(job) {
                 case BindingKind.Attribute:
                     if (op.name === 'ngNonBindable') {
                         OpList.remove(op);
-                        const target = lookupElement$1(elements, op.target);
+                        const target = lookupElement$2(elements, op.target);
                         target.nonBindable = true;
                     }
                     else {
@@ -11096,38 +11135,65 @@ function mergeNsAndName(prefix, localName) {
     return prefix ? `:${prefix}:${localName}` : localName;
 }
 
+const BINARY_OPERATORS = new Map([
+    ['&&', BinaryOperator.And],
+    ['>', BinaryOperator.Bigger],
+    ['>=', BinaryOperator.BiggerEquals],
+    ['&', BinaryOperator.BitwiseAnd],
+    ['/', BinaryOperator.Divide],
+    ['==', BinaryOperator.Equals],
+    ['===', BinaryOperator.Identical],
+    ['<', BinaryOperator.Lower],
+    ['<=', BinaryOperator.LowerEquals],
+    ['-', BinaryOperator.Minus],
+    ['%', BinaryOperator.Modulo],
+    ['*', BinaryOperator.Multiply],
+    ['!=', BinaryOperator.NotEquals],
+    ['!==', BinaryOperator.NotIdentical],
+    ['??', BinaryOperator.NullishCoalesce],
+    ['||', BinaryOperator.Or],
+    ['+', BinaryOperator.Plus],
+]);
+const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
+function namespaceForKey(namespacePrefixKey) {
+    if (namespacePrefixKey === null) {
+        return Namespace.HTML;
+    }
+    return NAMESPACES.get(namespacePrefixKey) ?? Namespace.HTML;
+}
+function keyForNamespace(namespace) {
+    for (const [k, n] of NAMESPACES.entries()) {
+        if (n === namespace) {
+            return k;
+        }
+    }
+    return null; // No namespace prefix for HTML
+}
+function prefixWithNamespace(strippedTag, namespace) {
+    if (namespace === Namespace.HTML) {
+        return strippedTag;
+    }
+    return `:${keyForNamespace(namespace)}:${strippedTag}`;
+}
+function literalOrArrayLiteral(value) {
+    if (Array.isArray(value)) {
+        return literalArr(value.map(literalOrArrayLiteral));
+    }
+    return literal(value, INFERRED_TYPE);
+}
+
 /**
  * Converts the semantic attributes of element-like operations (elements, templates) into constant
  * array expressions, and lifts them into the overall component `consts`.
  */
 function phaseConstCollection(job) {
-    if (job instanceof ComponentCompilationJob) {
-        // Serialize the extracted messages into the const array.
-        const messageConstIndices = {};
-        for (const unit of job.units) {
-            for (const op of unit.create) {
-                if (op.kind === OpKind.ExtractedMessage) {
-                    messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
-                    OpList.remove(op);
-                }
-            }
-        }
-        // Assign const index to i18n ops that messages were extracted from.
-        for (const unit of job.units) {
-            for (const op of unit.create) {
-                if (op.kind === OpKind.I18nStart && messageConstIndices[op.xref] !== undefined) {
-                    op.messageIndex = messageConstIndices[op.xref];
-                }
-            }
-        }
-    }
     // Collect all extracted attributes.
-    const elementAttributes = new Map();
+    const allElementAttributes = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.ExtractedAttribute) {
-                const attributes = elementAttributes.get(op.target) || new ElementAttributes();
-                elementAttributes.set(op.target, attributes);
+                const attributes = allElementAttributes.get(op.target) || new ElementAttributes();
+                allElementAttributes.set(op.target, attributes);
                 attributes.add(op.bindingKind, op.name, op.expression);
                 OpList.remove(op);
             }
@@ -11137,9 +11203,8 @@ function phaseConstCollection(job) {
     if (job instanceof ComponentCompilationJob) {
         for (const unit of job.units) {
             for (const op of unit.create) {
-                if (op.kind === OpKind.Element || op.kind === OpKind.ElementStart ||
-                    op.kind === OpKind.Template) {
-                    const attributes = elementAttributes.get(op.xref);
+                if (isElementOrContainerOp(op)) {
+                    const attributes = allElementAttributes.get(op.xref);
                     if (attributes !== undefined) {
                         const attrArray = serializeAttributes(attributes);
                         if (attrArray.entries.length > 0) {
@@ -11153,7 +11218,7 @@ function phaseConstCollection(job) {
     else if (job instanceof HostBindingCompilationJob) {
         // TODO: If the host binding case further diverges, we may want to split it into its own
         // phase.
-        for (const [xref, attributes] of elementAttributes.entries()) {
+        for (const [xref, attributes] of allElementAttributes.entries()) {
             if (xref !== job.root.xref) {
                 throw new Error(`An attribute would be const collected into the host binding's template function, but is not associated with the root xref.`);
             }
@@ -11200,6 +11265,15 @@ class ElementAttributes {
             return;
         }
         this.known.add(name);
+        if (name === 'ngProjectAs') {
+            if (value === null || !(value instanceof LiteralExpr) || (value.value == null) ||
+                (typeof value.value?.toString() !== 'string')) {
+                throw Error('ngProjectAs must have a string literal value');
+            }
+            this.projectAs = value.value.toString();
+            // TODO: TemplateDefinitionBuilder allows `ngProjectAs` to also be assigned as a literal
+            // attribute. Is this sane?
+        }
         const array = this.arrayFor(kind);
         array.push(...getAttributeNameLiterals$1(name));
         if (kind === BindingKind.Attribute || kind === BindingKind.StyleProperty) {
@@ -11235,7 +11309,10 @@ function getAttributeNameLiterals$1(name) {
 function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, styles, template }) {
     const attrArray = [...attributes];
     if (projectAs !== null) {
-        attrArray.push(literal(5 /* core.AttributeMarker.ProjectAs */), literal(projectAs));
+        // Parse the attribute value into a CssSelectorList. Note that we only take the
+        // first selector, because we don't support multiple selectors in ngProjectAs.
+        const parsedR3Selector = parseSelectorToR3Selector(projectAs)[0];
+        attrArray.push(literal(5 /* core.AttributeMarker.ProjectAs */), literalOrArrayLiteral(parsedR3Selector));
     }
     if (classes.length > 0) {
         attrArray.push(literal(1 /* core.AttributeMarker.Classes */), ...classes);
@@ -18880,47 +18957,6 @@ function hyphenate(value) {
         .toLowerCase();
 }
 
-const BINARY_OPERATORS = new Map([
-    ['&&', BinaryOperator.And],
-    ['>', BinaryOperator.Bigger],
-    ['>=', BinaryOperator.BiggerEquals],
-    ['&', BinaryOperator.BitwiseAnd],
-    ['/', BinaryOperator.Divide],
-    ['==', BinaryOperator.Equals],
-    ['===', BinaryOperator.Identical],
-    ['<', BinaryOperator.Lower],
-    ['<=', BinaryOperator.LowerEquals],
-    ['-', BinaryOperator.Minus],
-    ['%', BinaryOperator.Modulo],
-    ['*', BinaryOperator.Multiply],
-    ['!=', BinaryOperator.NotEquals],
-    ['!==', BinaryOperator.NotIdentical],
-    ['??', BinaryOperator.NullishCoalesce],
-    ['||', BinaryOperator.Or],
-    ['+', BinaryOperator.Plus],
-]);
-const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
-function namespaceForKey(namespacePrefixKey) {
-    if (namespacePrefixKey === null) {
-        return Namespace.HTML;
-    }
-    return NAMESPACES.get(namespacePrefixKey) ?? Namespace.HTML;
-}
-function keyForNamespace(namespace) {
-    for (const [k, n] of NAMESPACES.entries()) {
-        if (n === namespace) {
-            return k;
-        }
-    }
-    return null; // No namespace prefix for HTML
-}
-function prefixWithNamespace(strippedTag, namespace) {
-    if (namespace === Namespace.HTML) {
-        return strippedTag;
-    }
-    return `:${keyForNamespace(namespace)}:${strippedTag}`;
-}
-
 /**
  * Generate names for functions and variables across all views.
  *
@@ -19154,7 +19190,7 @@ function phaseNoListenersOnTemplates(job) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement(elements, xref) {
+function lookupElement$1(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -19183,7 +19219,7 @@ function phaseNonbindable(job) {
                 OpList.insertAfter(createDisableBindingsOp(op.xref), op);
             }
             if ((op.kind === OpKind.ElementEnd || op.kind === OpKind.ContainerEnd) &&
-                lookupElement(elements, op.xref).nonBindable) {
+                lookupElement$1(elements, op.xref).nonBindable) {
                 OpList.insertBefore(createEnableBindingsOp(op.xref), op);
             }
         }
@@ -19521,8 +19557,11 @@ function elementContainerEnd() {
 }
 function template(slot, templateFnRef, decls, vars, tag, constIndex, sourceSpan) {
     const args = [literal(slot), templateFnRef, literal(decls), literal(vars)];
-    if (tag != null && constIndex != null) {
-        args.push(literal(tag), literal(constIndex));
+    if (tag !== null) {
+        args.push(literal(tag));
+        if (constIndex !== null) {
+            args.push(literal(constIndex));
+        }
     }
     return call(Identifiers.templateCreate, args, sourceSpan);
 }
@@ -19591,6 +19630,19 @@ function text(slot, initialValue, sourceSpan) {
         args.push(literal(initialValue));
     }
     return call(Identifiers.text, args, sourceSpan);
+}
+function projectionDef(def) {
+    return call(Identifiers.projectionDef, def ? [def] : [], null);
+}
+function projection(slot, projectionSlotIndex, attributes) {
+    const args = [literal(slot)];
+    if (projectionSlotIndex !== 0 || attributes !== null) {
+        args.push(literal(projectionSlotIndex));
+        if (attributes != null) {
+            args.push(literal(attributes));
+        }
+    }
+    return call(Identifiers.projection, args, null);
 }
 function i18nStart(slot, constIndex) {
     return call(Identifiers.i18nStart, [literal(slot), literal(constIndex)], null);
@@ -19982,7 +20034,7 @@ function reifyCreateOperations(unit, ops) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.sourceSpan));
+                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.controlFlow ? null : op.tag, op.attributes, op.sourceSpan));
                 break;
             case OpKind.DisableBindings:
                 OpList.replace(op, disableBindings());
@@ -20018,6 +20070,15 @@ function reifyCreateOperations(unit, ops) {
                         OpList.replace(op, namespaceMath());
                         break;
                 }
+                break;
+            case OpKind.ProjectionDef:
+                OpList.replace(op, projectionDef(op.def));
+                break;
+            case OpKind.Projection:
+                if (op.slot === null) {
+                    throw new Error('No slot was assigned for project instruction');
+                }
+                OpList.replace(op, projection(op.slot, op.projectionSlotIndex, op.attributes));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -21071,7 +21132,99 @@ function allowConservativeInlining(decl, target) {
     }
 }
 
+/**
+ * Locate projection slots, populate the each component's `ngContentSelectors` literal field,
+ * populate `project` arguments, and generate the required `projectionDef` instruction for the job's
+ * root view.
+ */
+function phaseGenerateProjectionDef(job) {
+    // TODO: Why does TemplateDefinitionBuilder force a shared constant?
+    const share = job.compatibility === CompatibilityMode.TemplateDefinitionBuilder;
+    // Collect all selectors from this component, and its nested views. Also, assign each projection a
+    // unique ascending projection slot index.
+    const selectors = [];
+    let projectionSlotIndex = 0;
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.Projection) {
+                selectors.push(op.selector);
+                op.projectionSlotIndex = projectionSlotIndex++;
+            }
+        }
+    }
+    if (selectors.length > 0) {
+        // Create the projectionDef array. If we only found a single wildcard selector, then we use the
+        // default behavior with no arguments instead.
+        let defExpr = null;
+        if (selectors.length > 1 || selectors[0] !== '*') {
+            const def = selectors.map(s => s === '*' ? s : parseSelectorToR3Selector(s));
+            defExpr = job.pool.getConstLiteral(literalOrArrayLiteral(def), share);
+        }
+        // Create the ngContentSelectors constant.
+        job.contentSelectors = job.pool.getConstLiteral(literalOrArrayLiteral(selectors), share);
+        // The projection def instruction goes at the beginning of the root view, before any
+        // `projection` instructions.
+        job.root.create.prepend([createProjectionDefOp(defExpr)]);
+    }
+}
+
+/**
+ * Lifts i18n properties into the consts array.
+ */
+function phaseI18nConstCollection(job) {
+    // Serialize the extracted messages into the const array.
+    // TODO: Use `Map` instead of object.
+    const messageConstIndices = {};
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.ExtractedMessage) {
+                messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
+                OpList.remove(op);
+            }
+        }
+    }
+    // Assign const index to i18n ops that messages were extracted from.
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.I18nStart && messageConstIndices[op.xref] !== undefined) {
+                op.messageIndex = messageConstIndices[op.xref];
+            }
+        }
+    }
+}
+
+/**
+ * Attributes of `ng-content` named 'select' are specifically removed, because they control which
+ * content matches as a property of the `projection`, and are not a plain attribute.
+ */
+function phaseRemoveContentSelectors(job) {
+    for (const unit of job.units) {
+        const elements = getElementsByXrefId(unit);
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.Binding:
+                    const target = lookupElement(elements, op.target);
+                    if (op.name.toLowerCase() === 'select' && target.kind === OpKind.Projection) {
+                        OpList.remove(op);
+                    }
+                    continue;
+            }
+        }
+    }
+}
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+
 const phases = [
+    { kind: CompilationJobKind.Tmpl, fn: phaseRemoveContentSelectors },
     { kind: CompilationJobKind.Tmpl, fn: phaseGenerateI18nBlocks },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
     { kind: CompilationJobKind.Host, fn: phaseHostStylePropertyParsing },
@@ -21086,6 +21239,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeVariadic },
     { kind: CompilationJobKind.Both, fn: phasePureLiteralStructures },
+    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateProjectionDef },
     { kind: CompilationJobKind.Tmpl, fn: phaseGenerateVariables },
     { kind: CompilationJobKind.Tmpl, fn: phaseSaveRestoreView },
     { kind: CompilationJobKind.Tmpl, fn: phaseFindAnyCasts },
@@ -21100,6 +21254,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseSlotAllocation },
     { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nMessageExtraction },
+    { kind: CompilationJobKind.Tmpl, fn: phaseI18nConstCollection },
     { kind: CompilationJobKind.Both, fn: phaseConstCollection },
     { kind: CompilationJobKind.Both, fn: phaseVarCounting },
     { kind: CompilationJobKind.Tmpl, fn: phaseGenerateAdvance },
@@ -21295,6 +21450,9 @@ function ingestNodes(unit, template) {
         else if (node instanceof Template) {
             ingestTemplate(unit, node);
         }
+        else if (node instanceof Content) {
+            ingestContent(unit, node);
+        }
         else if (node instanceof Text$3) {
             ingestText(unit, node);
         }
@@ -21337,7 +21495,7 @@ function ingestTemplate(unit, tmpl) {
         [namespacePrefix, tagNameWithoutNamespace] = splitNsName(tmpl.tagName);
     }
     // TODO: validate the fallback tag name here.
-    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), tmpl.i18n, tmpl.startSourceSpan);
+    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), false, tmpl.i18n, tmpl.startSourceSpan);
     unit.create.push(tplOp);
     ingestBindings(unit, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
@@ -21345,6 +21503,16 @@ function ingestTemplate(unit, tmpl) {
     for (const { name, value } of tmpl.variables) {
         childView.contextVariables.set(name, value);
     }
+}
+/**
+ * Ingest a literal text node from the AST into the given `ViewCompilation`.
+ */
+function ingestContent(unit, content) {
+    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector);
+    for (const attr of content.attributes) {
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
+    }
+    unit.create.push(op);
 }
 /**
  * Ingest a literal text node from the AST into the given `ViewCompilation`.
@@ -21377,7 +21545,7 @@ function ingestSwitchBlock(unit, switchBlock) {
         const cView = unit.job.allocateView(unit.xref);
         if (!firstXref)
             firstXref = cView.xref;
-        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, undefined, null));
+        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined, null));
         const caseExpr = switchCase.expression ? convertAst(switchCase.expression, unit.job) : null;
         conditions.push([cView.xref, caseExpr]);
         ingestNodes(cView, switchCase.children);
@@ -26506,6 +26674,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         transform(tpl, CompilationJobKind.Tmpl);
         // Finally we emit the template function:
         const templateFn = emitTemplateFn(tpl, constantPool);
+        if (tpl.contentSelectors !== null) {
+            definitionMap.set('ngContentSelectors', tpl.contentSelectors);
+        }
         definitionMap.set('decls', literal(tpl.root.decls));
         definitionMap.set('vars', literal(tpl.root.vars));
         if (tpl.consts.length > 0) {
@@ -27733,7 +27904,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.4+sha-9f3b549');
+const VERSION = new Version('17.0.0-next.4+sha-8438e3e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29891,7 +30062,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -29999,7 +30170,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30230,7 +30401,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30265,7 +30436,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30316,7 +30487,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30349,7 +30520,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30400,7 +30571,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-9f3b549'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-8438e3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
