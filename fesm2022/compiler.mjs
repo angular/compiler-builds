@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.4+sha-0ee0f78
+ * @license Angular v17.0.0-next.4+sha-b44533b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3917,8 +3917,8 @@ class SwitchBlockCase {
     }
 }
 class ForLoopBlock {
-    constructor(itemName, expression, trackBy, contextVariables, children, empty, sourceSpan, startSourceSpan, endSourceSpan) {
-        this.itemName = itemName;
+    constructor(item, expression, trackBy, contextVariables, children, empty, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.item = item;
         this.expression = expression;
         this.trackBy = trackBy;
         this.contextVariables = contextVariables;
@@ -4071,6 +4071,8 @@ class RecursiveVisitor$1 {
         visitAll$1(this, block.children);
     }
     visitForLoopBlock(block) {
+        block.item.visit(this);
+        visitAll$1(this, Object.values(block.contextVariables));
         visitAll$1(this, block.children);
         block.empty?.visit(this);
     }
@@ -4082,6 +4084,7 @@ class RecursiveVisitor$1 {
     }
     visitIfBlockBranch(block) {
         visitAll$1(this, block.children);
+        block.expressionAlias?.visit(this);
     }
     visitContent(content) { }
     visitVariable(variable) { }
@@ -23002,16 +23005,15 @@ function parseForLoopParameters(block, errors, bindingParser) {
     }
     const [, itemName, rawExpression] = match;
     const result = {
-        itemName,
+        itemName: new Variable(itemName, '$implicit', expressionParam.sourceSpan, expressionParam.sourceSpan),
         trackBy: null,
         expression: parseBlockParameterToBinding(expressionParam, bindingParser, rawExpression),
-        context: null,
+        context: {},
     };
     for (const param of secondaryParams) {
         const letMatch = param.expression.match(FOR_LOOP_LET_PATTERN);
         if (letMatch !== null) {
-            result.context = result.context || {};
-            parseLetParameter(param.sourceSpan, letMatch[1], result.context, errors);
+            parseLetParameter(param.sourceSpan, letMatch[1], param.sourceSpan, result.context, errors);
             continue;
         }
         const trackMatch = param.expression.match(FOR_LOOP_TRACK_PATTERN);
@@ -23026,15 +23028,22 @@ function parseForLoopParameters(block, errors, bindingParser) {
         }
         errors.push(new ParseError(param.sourceSpan, `Unrecognized loop paramater "${param.expression}"`));
     }
+    // Fill out any variables that haven't been defined explicitly.
+    for (const variableName of ALLOWED_FOR_LOOP_LET_VARIABLES) {
+        if (!result.context.hasOwnProperty(variableName)) {
+            result.context[variableName] =
+                new Variable(variableName, variableName, block.startSourceSpan, block.startSourceSpan);
+        }
+    }
     return result;
 }
 /** Parses the `let` parameter of a `for` loop block. */
-function parseLetParameter(sourceSpan, expression, context, errors) {
+function parseLetParameter(sourceSpan, expression, span, context, errors) {
     const parts = expression.split(',');
     for (const part of parts) {
         const expressionParts = part.split('=');
         const name = expressionParts.length === 2 ? expressionParts[0].trim() : '';
-        const variableName = expressionParts.length === 2 ? expressionParts[1].trim() : '';
+        const variableName = (expressionParts.length === 2 ? expressionParts[1].trim() : '');
         if (name.length === 0 || variableName.length === 0) {
             errors.push(new ParseError(sourceSpan, `Invalid for loop "let" parameter. Parameter should match the pattern "<name> = <variable name>"`));
         }
@@ -23045,7 +23054,7 @@ function parseLetParameter(sourceSpan, expression, context, errors) {
             errors.push(new ParseError(sourceSpan, `Duplicate "let" parameter variable "${variableName}"`));
         }
         else {
-            context[variableName] = name;
+            context[variableName] = new Variable(name, variableName, span, span);
         }
     }
 }
@@ -23162,7 +23171,8 @@ function parseConditionalBlockParameters(block, errors, bindingParser) {
             errors.push(new ParseError(param.sourceSpan, 'Conditional can only have one "as" expression'));
         }
         else {
-            expressionAlias = aliasMatch[1].trim();
+            const name = aliasMatch[1].trim();
+            expressionAlias = new Variable(name, name, param.sourceSpan, param.sourceSpan);
         }
     }
     return { expression, expressionAlias };
@@ -25205,8 +25215,8 @@ class TemplateDefinitionBuilder {
             // If the branch has an alias, it'll be assigned directly to the container's context.
             // We define a variable referring directly to the context so that any nested usages can be
             // rewritten to refer to it.
-            const variables = expressionAlias ?
-                [new Variable(expressionAlias, DIRECT_CONTEXT_REFERENCE, sourceSpan, sourceSpan)] :
+            const variables = expressionAlias !== null ?
+                [new Variable(expressionAlias.name, DIRECT_CONTEXT_REFERENCE, expressionAlias.sourceSpan, expressionAlias.keySpan)] :
                 undefined;
             return {
                 index: this.createEmbeddedTemplateFn(null, children, '_Conditional', sourceSpan, variables),
@@ -25414,11 +25424,7 @@ class TemplateDefinitionBuilder {
         // Allocate one slot for the repeater metadata. The slots for the primary and empty block
         // are implicitly inferred by the runtime to index + 1 and index + 2.
         const blockIndex = this.allocateDataSlot();
-        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [
-            new Variable(block.itemName, '$implicit', block.sourceSpan, block.sourceSpan),
-            new Variable(getLoopLocalName(block, '$index'), '$index', block.sourceSpan, block.sourceSpan),
-            new Variable(getLoopLocalName(block, '$count'), '$count', block.sourceSpan, block.sourceSpan),
-        ]);
+        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [block.item, block.contextVariables.$index, block.contextVariables.$count]);
         const emptyData = block.empty === null ?
             null :
             this.prepareEmbeddedTemplateFn(block.empty.children, '_ForEmpty');
@@ -25448,34 +25454,35 @@ class TemplateDefinitionBuilder {
         this.updateInstruction(block.sourceSpan, Identifiers.repeater, () => [literal(blockIndex), this.convertPropertyBinding(value)]);
     }
     registerComputedLoopVariables(block, bindingScope) {
-        const indexLocalName = getLoopLocalName(block, '$index');
-        const countLocalName = getLoopLocalName(block, '$count');
+        const indexLocalName = block.contextVariables.$index.name;
+        const countLocalName = block.contextVariables.$count.name;
         const level = bindingScope.bindingLevel;
-        bindingScope.set(level, getLoopLocalName(block, '$odd'), scope => scope.get(indexLocalName).modulo(literal(2)).notIdentical(literal(0)));
-        bindingScope.set(level, getLoopLocalName(block, '$even'), scope => scope.get(indexLocalName).modulo(literal(2)).identical(literal(0)));
-        bindingScope.set(level, getLoopLocalName(block, '$first'), scope => scope.get(indexLocalName).identical(literal(0)));
-        bindingScope.set(level, getLoopLocalName(block, '$last'), scope => scope.get(indexLocalName).identical(scope.get(countLocalName).minus(literal(1))));
+        bindingScope.set(level, block.contextVariables.$odd.name, scope => scope.get(indexLocalName).modulo(literal(2)).notIdentical(literal(0)));
+        bindingScope.set(level, block.contextVariables.$even.name, scope => scope.get(indexLocalName).modulo(literal(2)).identical(literal(0)));
+        bindingScope.set(level, block.contextVariables.$first.name, scope => scope.get(indexLocalName).identical(literal(0)));
+        bindingScope.set(level, block.contextVariables.$last.name, scope => scope.get(indexLocalName).identical(scope.get(countLocalName).minus(literal(1))));
     }
     optimizeTrackByFunction(block) {
+        const indexLocalName = block.contextVariables.$index.name;
+        const itemName = block.item.name;
         const ast = block.trackBy.ast;
         // Top-level access of `$index` uses the built in `repeaterTrackByIndex`.
         if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver &&
-            ast.name === getLoopLocalName(block, '$index')) {
+            ast.name === indexLocalName) {
             return { expression: importExpr(Identifiers.repeaterTrackByIndex), usesComponentInstance: false };
         }
         // Top-level access of the item uses the built in `repeaterTrackByIdentity`.
         if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver &&
-            ast.name === block.itemName) {
+            ast.name === itemName) {
             return { expression: importExpr(Identifiers.repeaterTrackByIdentity), usesComponentInstance: false };
         }
         // Top-level calls in the form of `fn($index, item)` can be passed in directly.
         if (ast instanceof Call && ast.receiver instanceof PropertyRead &&
             ast.receiver.receiver instanceof ImplicitReceiver && ast.args.length === 2) {
             const firstIsIndex = ast.args[0] instanceof PropertyRead &&
-                ast.args[0].receiver instanceof ImplicitReceiver &&
-                ast.args[0].name === getLoopLocalName(block, '$index');
+                ast.args[0].receiver instanceof ImplicitReceiver && ast.args[0].name === indexLocalName;
             const secondIsItem = ast.args[1] instanceof PropertyRead &&
-                ast.args[1].receiver instanceof ImplicitReceiver && ast.args[1].name === block.itemName;
+                ast.args[1].receiver instanceof ImplicitReceiver && ast.args[1].name === itemName;
             if (firstIsIndex && secondIsItem) {
                 // If we're in the top-level component, we can access directly through `ctx`,
                 // otherwise we have to get a hold of the component through `componentInstance()`.
@@ -25492,20 +25499,22 @@ class TemplateDefinitionBuilder {
         if (optimizedFn !== null) {
             return optimizedFn;
         }
-        // Referencing these requires access to the context which the tracking function
-        // might not have. `$index` is special because of backwards compatibility.
-        const bannedGlobals = new Set([
-            getLoopLocalName(block, '$count'), getLoopLocalName(block, '$first'),
-            getLoopLocalName(block, '$last'), getLoopLocalName(block, '$even'),
-            getLoopLocalName(block, '$odd')
-        ]);
+        const contextVars = block.contextVariables;
         const scope = new TrackByBindingScope(this._bindingScope, {
             // Alias `$index` and the item name to `$index` and `$item` respectively.
             // This allows us to reuse pure functions that may have different item names,
             // but are otherwise identical.
-            [getLoopLocalName(block, '$index')]: '$index',
-            [block.itemName]: '$item',
-        }, bannedGlobals);
+            [contextVars.$index.name]: '$index',
+            [block.item.name]: '$item',
+            // Accessing these variables in a tracking function will result in a template diagnostic.
+            // We define them as globals so that their accesses are preserved verbatim instead of being
+            // rewritten to the actual accesses.
+            [contextVars.$count.name]: contextVars.$count.name,
+            [contextVars.$first.name]: contextVars.$first.name,
+            [contextVars.$last.name]: contextVars.$last.name,
+            [contextVars.$even.name]: contextVars.$even.name,
+            [contextVars.$odd.name]: contextVars.$odd.name,
+        });
         const params = [new FnParam('$index'), new FnParam('$item')];
         const stmts = convertPureComponentScopeFunction(block.trackBy.ast, scope, variable(CONTEXT_NAME), 'track');
         const usesComponentInstance = scope.getComponentAccessCount() > 0;
@@ -25521,6 +25530,7 @@ class TemplateDefinitionBuilder {
                     stmts[stmts.length - 1] = new ReturnStatement(lastStatement.expr);
                 }
             }
+            // This has to be a function expression, because `.bind` doesn't work on arrow functions.
             fn$1 = fn(params, stmts);
         }
         return {
@@ -26163,24 +26173,19 @@ class BindingScope {
 }
 /** Binding scope of a `track` function inside a `for` loop block. */
 class TrackByBindingScope extends BindingScope {
-    constructor(parentScope, globalAliases, bannedGlobals) {
+    constructor(parentScope, globalAliases) {
         super(parentScope.bindingLevel + 1, parentScope);
         this.globalAliases = globalAliases;
-        this.bannedGlobals = bannedGlobals;
         this.componentAccessCount = 0;
     }
     get(name) {
         let current = this.parent;
-        // Verify that the expression isn't trying to access a variable from a parent scope.
+        // Prevent accesses of template variables outside the `for` loop.
         while (current) {
             if (current.hasLocal(name)) {
-                this.forbiddenAccessError(name);
+                return null;
             }
             current = current.parent;
-        }
-        // If the variable is one of the banned globals, we have to throw.
-        if (this.bannedGlobals.has(name)) {
-            this.forbiddenAccessError(name);
         }
         // Intercept any aliased globals.
         if (this.globalAliases[name]) {
@@ -26193,11 +26198,6 @@ class TrackByBindingScope extends BindingScope {
     /** Gets the number of times the host component has been accessed through the scope. */
     getComponentAccessCount() {
         return this.componentAccessCount;
-    }
-    forbiddenAccessError(propertyName) {
-        // TODO(crisbeto): this should be done through template type checking once it is available.
-        throw new Error(`Accessing ${propertyName} inside of a track expression is not allowed. ` +
-            `Tracking expressions can only access the item, $index and properties on the containing component.`);
     }
 }
 /**
@@ -26515,10 +26515,6 @@ function createClosureModeGuard() {
     return typeofExpr(variable(NG_I18N_CLOSURE_MODE))
         .notIdentical(literal('undefined', STRING_TYPE))
         .and(variable(NG_I18N_CLOSURE_MODE));
-}
-/** Determines the name that a built in loop context variable is available under. */
-function getLoopLocalName(block, name) {
-    return block.contextVariables?.[name] || name;
 }
 
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
@@ -27908,7 +27904,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.4+sha-0ee0f78');
+const VERSION = new Version('17.0.0-next.4+sha-b44533b');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -29428,19 +29424,18 @@ class Scope {
             nodeOrNodes.children.forEach(node => node.visit(this));
         }
         else if (nodeOrNodes instanceof IfBlockBranch) {
-            // TODO(crisbeto): uncomment this when rebasing #51690.
-            // if (nodeOrNodes.expressionAlias !== null) {
-            //   this.visitVariable(nodeOrNodes.expressionAlias);
-            // }
+            if (nodeOrNodes.expressionAlias !== null) {
+                this.visitVariable(nodeOrNodes.expressionAlias);
+            }
             nodeOrNodes.children.forEach(node => node.visit(this));
         }
         else if (nodeOrNodes instanceof ForLoopBlock) {
-            // TODO(crisbeto): uncomment this when rebasing #51690.
-            // this.visitVariable(nodeOrNodes.item);
-            // Object.values(nodeOrNodes.contextVariables).forEach(v => this.visitVariable(v));
+            this.visitVariable(nodeOrNodes.item);
+            Object.values(nodeOrNodes.contextVariables).forEach(v => this.visitVariable(v));
             nodeOrNodes.children.forEach(node => node.visit(this));
         }
-        else if (nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError ||
+        else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty ||
+            nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError ||
             nodeOrNodes instanceof DeferredBlockPlaceholder ||
             nodeOrNodes instanceof DeferredBlockLoading) {
             nodeOrNodes.children.forEach(node => node.visit(this));
@@ -29490,14 +29485,14 @@ class Scope {
         block.cases.forEach(node => node.visit(this));
     }
     visitSwitchBlockCase(block) {
-        block.children.forEach(node => node.visit(this));
+        this.ingestScopedNode(block);
     }
     visitForLoopBlock(block) {
         this.ingestScopedNode(block);
         block.empty?.visit(this);
     }
     visitForLoopBlockEmpty(block) {
-        block.children.forEach(node => node.visit(this));
+        this.ingestScopedNode(block);
     }
     visitIfBlock(block) {
         block.branches.forEach(node => node.visit(this));
@@ -29688,9 +29683,8 @@ class DirectiveBinder {
         block.children.forEach(node => node.visit(this));
     }
     visitForLoopBlock(block) {
-        // TODO(crisbeto): uncomment this when rebasing #51690.
-        // block.item.visit(this);
-        // Object.values(block.contextVariables).forEach(v => v.visit(this));
+        block.item.visit(this);
+        Object.values(block.contextVariables).forEach(v => v.visit(this));
         block.children.forEach(node => node.visit(this));
         block.empty?.visit(this);
     }
@@ -29701,8 +29695,7 @@ class DirectiveBinder {
         block.branches.forEach(node => node.visit(this));
     }
     visitIfBlockBranch(block) {
-        // TODO(crisbeto): uncomment this when rebasing #51690.
-        // block.expressionAlias?.visit(this);
+        block.expressionAlias?.visit(this);
         block.children.forEach(node => node.visit(this));
     }
     // Unused visitors.
@@ -29788,22 +29781,21 @@ class TemplateBinder extends RecursiveAstVisitor {
             this.nestingLevel.set(nodeOrNodes, this.level);
         }
         else if (nodeOrNodes instanceof IfBlockBranch) {
-            // TODO(crisbeto): uncomment this when rebasing #51690.
-            // if (nodeOrNodes.expressionAlias !== null) {
-            //   this.visitNode(nodeOrNodes.expressionAlias);
-            // }
+            if (nodeOrNodes.expressionAlias !== null) {
+                this.visitNode(nodeOrNodes.expressionAlias);
+            }
             nodeOrNodes.children.forEach(this.visitNode);
             this.nestingLevel.set(nodeOrNodes, this.level);
         }
         else if (nodeOrNodes instanceof ForLoopBlock) {
-            // TODO(crisbeto): uncomment this when rebasing #51690.
-            // this.visitNode(nodeOrNodes.item);
-            // Object.values(nodeOrNodes.contextVariables).forEach(v => this.visitNode(v));
+            this.visitNode(nodeOrNodes.item);
+            Object.values(nodeOrNodes.contextVariables).forEach(v => this.visitNode(v));
             nodeOrNodes.trackBy.visit(this);
             nodeOrNodes.children.forEach(this.visitNode);
             this.nestingLevel.set(nodeOrNodes, this.level);
         }
-        else if (nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError ||
+        else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty ||
+            nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError ||
             nodeOrNodes instanceof DeferredBlockPlaceholder ||
             nodeOrNodes instanceof DeferredBlockLoading) {
             nodeOrNodes.children.forEach(node => node.visit(this));
@@ -29884,7 +29876,7 @@ class TemplateBinder extends RecursiveAstVisitor {
     }
     visitSwitchBlockCase(block) {
         block.expression?.visit(this);
-        block.children.forEach(this.visitNode);
+        this.ingestScopedNode(block);
     }
     visitForLoopBlock(block) {
         block.expression.visit(this);
@@ -29892,7 +29884,7 @@ class TemplateBinder extends RecursiveAstVisitor {
         block.empty?.visit(this);
     }
     visitForLoopBlockEmpty(block) {
-        block.children.forEach(this.visitNode);
+        this.ingestScopedNode(block);
     }
     visitIfBlock(block) {
         block.branches.forEach(node => node.visit(this));
@@ -30170,7 +30162,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30278,7 +30270,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30509,7 +30501,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30544,7 +30536,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30595,7 +30587,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30628,7 +30620,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30679,7 +30671,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.4+sha-0ee0f78'));
+    definitionMap.set('version', literal('17.0.0-next.4+sha-b44533b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

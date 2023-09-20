@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.4+sha-0ee0f78
+ * @license Angular v17.0.0-next.4+sha-b44533b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1357,14 +1357,8 @@ declare class FnParam {
     clone(): FnParam;
 }
 
-declare interface ForLoopBlockContext {
-    $index?: string;
-    $first?: string;
-    $last?: string;
-    $even?: string;
-    $odd?: string;
-    $count?: string;
-}
+/** Context variables that can be used inside a `ForLoopBlock`. */
+declare type ForLoopBlockContext = Record<'$index' | '$first' | '$last' | '$even' | '$odd' | '$count', TmplAstVariable>;
 
 /**
  * Specifies how a forward ref has been handled in a MaybeForwardRefExpression
@@ -4387,7 +4381,7 @@ export declare interface SchemaMetadata {
 }
 
 /** Node that has a `Scope` associated with it. */
-export declare type ScopedNode = TmplAstTemplate | TmplAstIfBlockBranch | TmplAstForLoopBlock | TmplAstDeferredBlock | TmplAstDeferredBlockError | TmplAstDeferredBlockLoading | TmplAstDeferredBlockPlaceholder;
+export declare type ScopedNode = TmplAstTemplate | TmplAstSwitchBlockCase | TmplAstIfBlockBranch | TmplAstForLoopBlock | TmplAstForLoopBlockEmpty | TmplAstDeferredBlock | TmplAstDeferredBlockError | TmplAstDeferredBlockLoading | TmplAstDeferredBlockPlaceholder;
 
 declare enum SecurityContext {
     NONE = 0,
@@ -4850,16 +4844,16 @@ export declare class TmplAstElement implements TmplAstNode {
 }
 
 export declare class TmplAstForLoopBlock implements TmplAstNode {
-    itemName: string;
+    item: TmplAstVariable;
     expression: ASTWithSource;
     trackBy: ASTWithSource;
-    contextVariables: ForLoopBlockContext | null;
+    contextVariables: ForLoopBlockContext;
     children: TmplAstNode[];
     empty: TmplAstForLoopBlockEmpty | null;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(itemName: string, expression: ASTWithSource, trackBy: ASTWithSource, contextVariables: ForLoopBlockContext | null, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -4908,10 +4902,10 @@ export declare class TmplAstIfBlock implements TmplAstNode {
 export declare class TmplAstIfBlockBranch implements TmplAstNode {
     expression: AST | null;
     children: TmplAstNode[];
-    expressionAlias: string | null;
+    expressionAlias: TmplAstVariable | null;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
-    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: string | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
+    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: TmplAstVariable | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
