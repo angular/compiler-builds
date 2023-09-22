@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-0598613
+ * @license Angular v17.0.0-next.5+sha-3cbb2a8
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -994,38 +994,6 @@ export declare class DeclareVarStmt extends Statement {
 }
 
 export declare const DEFAULT_INTERPOLATION_CONFIG: InterpolationConfig;
-
-/**
- * Describes a dependency used within a `{#defer}` block.
- */
-export declare interface DeferBlockTemplateDependency {
-    /**
-     * Reference to a dependency.
-     */
-    type: outputAst.WrappedNodeExpr<unknown>;
-    /**
-     * Dependency class name.
-     */
-    symbolName: string;
-    /**
-     * Whether this dependency can be defer-loaded.
-     */
-    isDeferrable: boolean;
-    /**
-     * Import path where this dependency is located.
-     */
-    importPath: string | null;
-}
-
-declare interface DeferredBlockTriggers {
-    when?: TmplAstBoundDeferredTrigger;
-    idle?: TmplAstIdleDeferredTrigger;
-    immediate?: TmplAstImmediateDeferredTrigger;
-    hover?: TmplAstHoverDeferredTrigger;
-    timer?: TmplAstTimerDeferredTrigger;
-    interaction?: TmplAstInteractionDeferredTrigger;
-    viewport?: TmplAstViewportDeferredTrigger;
-}
 
 export declare function devOnlyGuardedExpression(expr: outputAst.Expression): outputAst.Expression;
 
@@ -2902,9 +2870,9 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      */
     deferrableDeclToImportDecl: Map<outputAst.Expression, outputAst.Expression>;
     /**
-     * Map of {#defer} blocks -> their corresponding dependencies.
+     * Map of {#defer} blocks -> their corresponding metadata.
      */
-    deferBlocks: Map<t.DeferredBlock, Array<DeferBlockTemplateDependency>>;
+    deferBlocks: Map<t.DeferredBlock, R3DeferBlockMetadata>;
     /**
      * Specifies how the 'directives' and/or `pipes` array, if generated, need to be emitted.
      */
@@ -3452,6 +3420,38 @@ export declare interface R3DeclareQueryMetadata {
 }
 
 export declare type R3DeclareTemplateDependencyMetadata = R3DeclareDirectiveDependencyMetadata | R3DeclarePipeDependencyMetadata | R3DeclareNgModuleDependencyMetadata;
+
+/**
+ * Information necessary to compile a `defer` block.
+ */
+export declare interface R3DeferBlockMetadata {
+    /** Dependencies used within the block. */
+    deps: R3DeferBlockTemplateDependency[];
+    /** Mapping between triggers and the DOM nodes they refer to. */
+    triggerElements: Map<t.DeferredTrigger, t.Element | null>;
+}
+
+/**
+ * Describes a dependency used within a `{#defer}` block.
+ */
+export declare interface R3DeferBlockTemplateDependency {
+    /**
+     * Reference to a dependency.
+     */
+    type: outputAst.WrappedNodeExpr<unknown>;
+    /**
+     * Dependency class name.
+     */
+    symbolName: string;
+    /**
+     * Whether this dependency can be defer-loaded.
+     */
+    isDeferrable: boolean;
+    /**
+     * Import path where this dependency is located.
+     */
+    importPath: string | null;
+}
 
 declare interface R3DelegatedFnOrClassMetadata extends R3ConstructorFactoryMetadata {
     delegate: outputAst.Expression;
@@ -4558,7 +4558,7 @@ declare namespace t {
         TmplAstDeferredBlockPlaceholder as DeferredBlockPlaceholder,
         TmplAstDeferredBlockLoading as DeferredBlockLoading,
         TmplAstDeferredBlockError as DeferredBlockError,
-        DeferredBlockTriggers,
+        TmplAstDeferredBlockTriggers as DeferredBlockTriggers,
         TmplAstDeferredBlock as DeferredBlock,
         TmplAstSwitchBlock as SwitchBlock,
         TmplAstSwitchBlockCase as SwitchBlockCase,
@@ -4782,11 +4782,11 @@ export declare class TmplAstDeferredBlock implements TmplAstNode {
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    readonly triggers: Readonly<DeferredBlockTriggers>;
-    readonly prefetchTriggers: Readonly<DeferredBlockTriggers>;
+    readonly triggers: Readonly<TmplAstDeferredBlockTriggers>;
+    readonly prefetchTriggers: Readonly<TmplAstDeferredBlockTriggers>;
     private readonly definedTriggers;
     private readonly definedPrefetchTriggers;
-    constructor(children: TmplAstNode[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
     visitAll(visitor: Visitor_3<unknown>): void;
     private visitTriggers;
@@ -4820,6 +4820,16 @@ export declare class TmplAstDeferredBlockPlaceholder implements TmplAstNode {
     endSourceSpan: ParseSourceSpan | null;
     constructor(children: TmplAstNode[], minimumTime: number | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
+}
+
+export declare interface TmplAstDeferredBlockTriggers {
+    when?: TmplAstBoundDeferredTrigger;
+    idle?: TmplAstIdleDeferredTrigger;
+    immediate?: TmplAstImmediateDeferredTrigger;
+    hover?: TmplAstHoverDeferredTrigger;
+    timer?: TmplAstTimerDeferredTrigger;
+    interaction?: TmplAstInteractionDeferredTrigger;
+    viewport?: TmplAstViewportDeferredTrigger;
 }
 
 export declare abstract class TmplAstDeferredTrigger implements TmplAstNode {
