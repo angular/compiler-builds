@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-baaaa6d
+ * @license Angular v17.0.0-next.5+sha-d6bfebe
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -656,12 +656,10 @@ export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outp
  *
  * Generates a call like this:
  * ```
- * setClassMetadataAsync(type, () => {
- *   return [
- *     import('./cmp-a').then(m => m.CmpA);
- *     import('./cmp-b').then(m => m.CmpB);
- *   ];
- * }, (CmpA, CmpB) => {
+ * setClassMetadataAsync(type, () => [
+ *   import('./cmp-a').then(m => m.CmpA);
+ *   import('./cmp-b').then(m => m.CmpB);
+ * ], (CmpA, CmpB) => {
  *   setClassMetadata(type, decorators, ctorParameters, propParameters);
  * });
  * ```
