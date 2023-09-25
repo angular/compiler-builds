@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-3cbb2a8
+ * @license Angular v17.0.0-next.5+sha-16f5fc4
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -25405,42 +25405,43 @@ class TemplateDefinitionBuilder {
         if (timer) {
             this.creationInstruction(timer.sourceSpan, prefetch ? Identifiers.deferPrefetchOnTimer : Identifiers.deferOnTimer, [literal(timer.delay)]);
         }
-        // `deferOnHover()`
+        // `deferOnHover(index, walkUpTimes)`
         if (hover) {
-            this.creationInstruction(hover.sourceSpan, prefetch ? Identifiers.deferPrefetchOnHover : Identifiers.deferOnHover);
+            this.domNodeBasedTrigger('hover', hover, metadata, prefetch ? Identifiers.deferPrefetchOnHover : Identifiers.deferOnHover);
         }
-        // TODO: `deferOnInteraction(index, walkUpTimes)`
+        // `deferOnInteraction(index, walkUpTimes)`
         if (interaction) {
-            const instructionRef = prefetch ? Identifiers.deferPrefetchOnInteraction : Identifiers.deferOnInteraction;
-            const triggerEl = metadata.triggerElements.get(interaction);
-            // Don't generate anything if a trigger cannot be resolved.
-            // We'll have template diagnostics to surface these to users.
-            if (triggerEl) {
-                this.creationInstruction(interaction.sourceSpan, instructionRef, () => {
-                    const location = this.elementLocations.get(triggerEl);
-                    if (!location) {
-                        throw new Error(`Could not determine location of reference passed into ` +
-                            `'interaction' trigger. Template may not have been fully analyzed.`);
-                    }
-                    // A negative depth means that the trigger is inside the placeholder.
-                    // Cap it at -1 since we only care whether or not it's negative.
-                    const depth = Math.max(this.level - location.level, -1);
-                    const params = [literal(location.index)];
-                    // The most common case should be a trigger within the view so we can omit a depth of
-                    // zero. For triggers in parent views and in the placeholder we need to pass it in.
-                    if (depth !== 0) {
-                        params.push(literal(depth));
-                    }
-                    return params;
-                });
-            }
+            this.domNodeBasedTrigger('interaction', interaction, metadata, prefetch ? Identifiers.deferPrefetchOnInteraction : Identifiers.deferOnInteraction);
         }
-        // TODO(crisbeto): currently the reference is passed as a string.
-        // Update this once we figure out how we should refer to the target.
-        // `deferOnViewport(target)`
+        // `deferOnViewport(index, walkUpTimes)`
         if (viewport) {
-            this.creationInstruction(viewport.sourceSpan, prefetch ? Identifiers.deferPrefetchOnViewport : Identifiers.deferOnViewport, [literal(viewport.reference)]);
+            this.domNodeBasedTrigger('viewport', viewport, metadata, prefetch ? Identifiers.deferPrefetchOnViewport : Identifiers.deferOnViewport);
         }
+    }
+    domNodeBasedTrigger(name, trigger, metadata, instructionRef) {
+        const triggerEl = metadata.triggerElements.get(trigger);
+        // Don't generate anything if a trigger cannot be resolved.
+        // We'll have template diagnostics to surface these to users.
+        if (!triggerEl) {
+            return;
+        }
+        this.creationInstruction(trigger.sourceSpan, instructionRef, () => {
+            const location = this.elementLocations.get(triggerEl);
+            if (!location) {
+                throw new Error(`Could not determine location of reference passed into ` +
+                    `'${name}' trigger. Template may not have been fully analyzed.`);
+            }
+            // A negative depth means that the trigger is inside the placeholder.
+            // Cap it at -1 since we only care whether or not it's negative.
+            const depth = Math.max(this.level - location.level, -1);
+            const params = [literal(location.index)];
+            // The most common case should be a trigger within the view so we can omit a depth of
+            // zero. For triggers in parent views and in the placeholder we need to pass it in.
+            if (depth !== 0) {
+                params.push(literal(depth));
+            }
+            return params;
+        });
     }
     allocateDataSlot() {
         return this._dataIndex++;
@@ -28693,7 +28694,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.5+sha-3cbb2a8');
+const VERSION = new Version('17.0.0-next.5+sha-16f5fc4');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30211,7 +30212,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30319,7 +30320,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30550,7 +30551,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30585,7 +30586,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30636,7 +30637,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30669,7 +30670,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30720,7 +30721,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-3cbb2a8'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-16f5fc4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
