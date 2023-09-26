@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-ac1afd8
+ * @license Angular v17.0.0-next.5+sha-c7127b9
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -297,7 +297,7 @@ declare const enum AttributeMarker {
 }
 
 declare interface AttributeValueInterpolationToken extends TokenBase {
-    type: TokenType_2.ATTR_VALUE_INTERPOLATION;
+    type: LexerTokenType.ATTR_VALUE_INTERPOLATION;
     parts: [startMarker: string, expression: string, endMarker: string] | [
     startMarker: string,
     expression: string
@@ -305,7 +305,7 @@ declare interface AttributeValueInterpolationToken extends TokenBase {
 }
 
 declare interface AttributeValueTextToken extends TokenBase {
-    type: TokenType_2.ATTR_VALUE_TEXT;
+    type: LexerTokenType.ATTR_VALUE_TEXT;
     parts: [value: string];
 }
 
@@ -1137,7 +1137,7 @@ export declare class EmptyExpr extends AST {
 }
 
 declare interface EncodedEntityToken extends TokenBase {
-    type: TokenType_2.ENCODED_ENTITY;
+    type: LexerTokenType.ENCODED_ENTITY;
     parts: [decoded: string, encoded: string];
 }
 
@@ -1579,7 +1579,7 @@ export declare interface InterpolationPiece {
 }
 
 declare interface InterpolationToken extends TokenBase {
-    type: TokenType_2.INTERPOLATION;
+    type: LexerTokenType.INTERPOLATION;
     parts: [startMarker: string, expression: string, endMarker: string] | [
     startMarker: string,
     expression: string
@@ -1707,6 +1707,38 @@ export declare interface LexerRange {
     startLine: number;
     startCol: number;
     endPos: number;
+}
+
+export declare const enum LexerTokenType {
+    TAG_OPEN_START = 0,
+    TAG_OPEN_END = 1,
+    TAG_OPEN_END_VOID = 2,
+    TAG_CLOSE = 3,
+    INCOMPLETE_TAG_OPEN = 4,
+    TEXT = 5,
+    ESCAPABLE_RAW_TEXT = 6,
+    RAW_TEXT = 7,
+    INTERPOLATION = 8,
+    ENCODED_ENTITY = 9,
+    COMMENT_START = 10,
+    COMMENT_END = 11,
+    CDATA_START = 12,
+    CDATA_END = 13,
+    ATTR_NAME = 14,
+    ATTR_QUOTE = 15,
+    ATTR_VALUE_TEXT = 16,
+    ATTR_VALUE_INTERPOLATION = 17,
+    DOC_TYPE = 18,
+    EXPANSION_FORM_START = 19,
+    EXPANSION_CASE_VALUE = 20,
+    EXPANSION_CASE_EXP_START = 21,
+    EXPANSION_CASE_EXP_END = 22,
+    EXPANSION_FORM_END = 23,
+    BLOCK_OPEN_START = 24,
+    BLOCK_OPEN_END = 25,
+    BLOCK_CLOSE = 26,
+    BLOCK_PARAMETER = 27,
+    EOF = 28
 }
 
 declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
@@ -4697,7 +4729,7 @@ declare class Text_3 implements Node_3 {
 }
 
 declare interface TextToken extends TokenBase {
-    type: TokenType_2.TEXT | TokenType_2.ESCAPABLE_RAW_TEXT | TokenType_2.RAW_TEXT;
+    type: LexerTokenType.TEXT | LexerTokenType.ESCAPABLE_RAW_TEXT | LexerTokenType.RAW_TEXT;
     parts: [text: string];
 }
 
@@ -5065,7 +5097,7 @@ export declare class Token {
 }
 
 declare interface TokenBase {
-    type: TokenType_2;
+    type: LexerTokenType;
     parts: string[];
     sourceSpan: ParseSourceSpan;
 }
@@ -5142,38 +5174,6 @@ export declare enum TokenType {
     Operator = 5,
     Number = 6,
     Error = 7
-}
-
-declare const enum TokenType_2 {
-    TAG_OPEN_START = 0,
-    TAG_OPEN_END = 1,
-    TAG_OPEN_END_VOID = 2,
-    TAG_CLOSE = 3,
-    INCOMPLETE_TAG_OPEN = 4,
-    TEXT = 5,
-    ESCAPABLE_RAW_TEXT = 6,
-    RAW_TEXT = 7,
-    INTERPOLATION = 8,
-    ENCODED_ENTITY = 9,
-    COMMENT_START = 10,
-    COMMENT_END = 11,
-    CDATA_START = 12,
-    CDATA_END = 13,
-    ATTR_NAME = 14,
-    ATTR_QUOTE = 15,
-    ATTR_VALUE_TEXT = 16,
-    ATTR_VALUE_INTERPOLATION = 17,
-    DOC_TYPE = 18,
-    EXPANSION_FORM_START = 19,
-    EXPANSION_CASE_VALUE = 20,
-    EXPANSION_CASE_EXP_START = 21,
-    EXPANSION_CASE_EXP_END = 22,
-    EXPANSION_FORM_END = 23,
-    BLOCK_OPEN_START = 24,
-    BLOCK_OPEN_END = 25,
-    BLOCK_CLOSE = 26,
-    BLOCK_PARAMETER = 27,
-    EOF = 28
 }
 
 export declare class TransplantedType<T> extends Type {
