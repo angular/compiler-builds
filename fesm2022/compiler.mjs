@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-dcaad16
+ * @license Angular v17.0.0-next.5+sha-f91f222
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -26644,7 +26644,6 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const templateTypeName = meta.name;
     const templateName = templateTypeName ? `${templateTypeName}_Template` : null;
-    const changeDetection = meta.changeDetection;
     // Template compilation is currently conditional as we're in the process of rewriting it.
     if (!USE_TEMPLATE_PIPELINE) {
         // This is the main path currently used in compilation, which compiles the template with the
@@ -26746,9 +26745,18 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (meta.animations !== null) {
         definitionMap.set('data', literalMap([{ key: 'animation', value: meta.animations, quoted: false }]));
     }
-    // Only set the change detection flag if it's defined and it's not the default.
-    if (changeDetection != null && changeDetection !== ChangeDetectionStrategy.Default) {
-        definitionMap.set('changeDetection', literal(changeDetection));
+    // Setting change detection flag
+    if (meta.changeDetection !== null) {
+        if (typeof meta.changeDetection === 'number' &&
+            meta.changeDetection !== ChangeDetectionStrategy.Default) {
+            // changeDetection is resolved during analysis. Only set it if not the default.
+            definitionMap.set('changeDetection', literal(meta.changeDetection));
+        }
+        else if (typeof meta.changeDetection === 'object') {
+            // changeDetection is not resolved during analysis (e.g., we are in local compilation mode).
+            // So place it as is.
+            definitionMap.set('changeDetection', meta.changeDetection);
+        }
     }
     const expression = importExpr(Identifiers.defineComponent).callFn([definitionMap.toLiteralMap()], undefined, true);
     const type = createComponentType(meta);
@@ -28193,7 +28201,7 @@ class CompilerFacadeImpl {
             styles: [...facade.styles, ...template.styles],
             encapsulation: facade.encapsulation,
             interpolation,
-            changeDetection: facade.changeDetection,
+            changeDetection: facade.changeDetection ?? null,
             animations: facade.animations != null ? new WrappedNodeExpr(facade.animations) : null,
             viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) :
                 null,
@@ -28684,7 +28692,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.5+sha-dcaad16');
+const VERSION = new Version('17.0.0-next.5+sha-f91f222');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30191,7 +30199,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30299,7 +30307,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30433,7 +30441,10 @@ function createComponentDefinitionMap(meta, template, templateInfo) {
     definitionMap.set('dependencies', compileUsedDependenciesMetadata(meta));
     definitionMap.set('viewProviders', meta.viewProviders);
     definitionMap.set('animations', meta.animations);
-    if (meta.changeDetection !== undefined) {
+    if (meta.changeDetection !== null) {
+        if (typeof meta.changeDetection === 'object') {
+            throw new Error('Impossible state! Change detection flag is not resolved!');
+        }
         definitionMap.set('changeDetection', importExpr(Identifiers.ChangeDetectionStrategy)
             .prop(ChangeDetectionStrategy[meta.changeDetection]));
     }
@@ -30530,7 +30541,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30565,7 +30576,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30616,7 +30627,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30649,7 +30660,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30700,7 +30711,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-dcaad16'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
