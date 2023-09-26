@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-b771539
+ * @license Angular v17.0.0-next.5+sha-8be2c48
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -448,15 +448,6 @@ export declare class Block implements BaseNode {
     visit(visitor: Visitor, context: any): any;
 }
 
-export declare class BlockGroup implements BaseNode {
-    blocks: Block[];
-    sourceSpan: ParseSourceSpan;
-    startSourceSpan: ParseSourceSpan;
-    endSourceSpan: ParseSourceSpan | null;
-    constructor(blocks: Block[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null);
-    visit(visitor: Visitor, context: any): any;
-}
-
 export declare class BlockParameter implements BaseNode {
     expression: string;
     sourceSpan: ParseSourceSpan;
@@ -538,26 +529,26 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
     getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     /**
      * Get a list of all the directives used by the target,
-     * including directives from `{#defer}` blocks.
+     * including directives from `@defer` blocks.
      */
     getUsedDirectives(): DirectiveT[];
     /**
      * Get a list of eagerly used directives from the target.
-     * Note: this list *excludes* directives from `{#defer}` blocks.
+     * Note: this list *excludes* directives from `@defer` blocks.
      */
     getEagerlyUsedDirectives(): DirectiveT[];
     /**
      * Get a list of all the pipes used by the target,
-     * including pipes from `{#defer}` blocks.
+     * including pipes from `@defer` blocks.
      */
     getUsedPipes(): string[];
     /**
      * Get a list of eagerly used pipes from the target.
-     * Note: this list *excludes* pipes from `{#defer}` blocks.
+     * Note: this list *excludes* pipes from `@defer` blocks.
      */
     getEagerlyUsedPipes(): string[];
     /**
-     * Get a list of all {#defer} blocks used by the target.
+     * Get a list of all `@defer` blocks used by the target.
      */
     getDeferBlocks(): TmplAstDeferredBlock[];
     /**
@@ -652,7 +643,7 @@ export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outp
 
 /**
  * Wraps the `setClassMetadata` function with extra logic that dynamically
- * loads dependencies from `{#defer}` blocks.
+ * loads dependencies from `@defer` blocks.
  *
  * Generates a call like this:
  * ```
@@ -1388,7 +1379,6 @@ declare namespace html {
         Attribute,
         Element_2 as Element,
         Comment_2 as Comment,
-        BlockGroup,
         Block,
         BlockParameter,
         Visitor,
@@ -1956,7 +1946,7 @@ declare enum MissingTranslationStrategy {
 
 export declare const NO_ERRORS_SCHEMA: SchemaMetadata;
 
-declare type Node_2 = Attribute | Comment_2 | Element_2 | Expansion | ExpansionCase | Text_2 | BlockGroup | Block | BlockParameter;
+declare type Node_2 = Attribute | Comment_2 | Element_2 | Expansion | ExpansionCase | Text_2 | Block | BlockParameter;
 export { Node_2 as Node }
 
 declare interface Node_3 {
@@ -2691,7 +2681,7 @@ export declare interface ParseTemplateOptions {
     collectCommentNodes?: boolean;
     /**
      * Names of the blocks that should be enabled. E.g. `enabledBlockTypes: new Set(['defer'])`
-     * would allow usages of `{#defer}{/defer}` in templates.
+     * would allow usages of `@defer {}` in templates.
      */
     enabledBlockTypes?: Set<string>;
 }
@@ -2868,7 +2858,7 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      */
     deferrableDeclToImportDecl: Map<outputAst.Expression, outputAst.Expression>;
     /**
-     * Map of {#defer} blocks -> their corresponding metadata.
+     * Map of `@defer` blocks -> their corresponding metadata.
      */
     deferBlocks: Map<t.DeferredBlock, R3DeferBlockMetadata>;
     /**
@@ -3430,7 +3420,7 @@ export declare interface R3DeferBlockMetadata {
 }
 
 /**
- * Describes a dependency used within a `{#defer}` block.
+ * Describes a dependency used within a `@defer` block.
  */
 export declare interface R3DeferBlockTemplateDependency {
     /**
@@ -4306,7 +4296,6 @@ export declare class RecursiveVisitor implements Visitor {
     visitComment(ast: Comment_2, context: any): any;
     visitExpansion(ast: Expansion, context: any): any;
     visitExpansionCase(ast: ExpansionCase, context: any): any;
-    visitBlockGroup(ast: BlockGroup, context: any): any;
     visitBlock(block: Block, context: any): any;
     visitBlockParameter(ast: BlockParameter, context: any): any;
     private visitChildren;
@@ -5176,13 +5165,11 @@ declare const enum TokenType_2 {
     EXPANSION_CASE_EXP_START = 21,
     EXPANSION_CASE_EXP_END = 22,
     EXPANSION_FORM_END = 23,
-    EOF = 24,
-    BLOCK_GROUP_OPEN_START = 25,
-    BLOCK_GROUP_OPEN_END = 26,
-    BLOCK_GROUP_CLOSE = 27,
-    BLOCK_PARAMETER = 28,
-    BLOCK_OPEN_START = 29,
-    BLOCK_OPEN_END = 30
+    BLOCK_OPEN_START = 24,
+    BLOCK_OPEN_END = 25,
+    BLOCK_CLOSE = 26,
+    BLOCK_PARAMETER = 27,
+    EOF = 28
 }
 
 export declare class TransplantedType<T> extends Type {
@@ -5335,7 +5322,6 @@ export declare interface Visitor {
     visitComment(comment: Comment_2, context: any): any;
     visitExpansion(expansion: Expansion, context: any): any;
     visitExpansionCase(expansionCase: ExpansionCase, context: any): any;
-    visitBlockGroup(group: BlockGroup, context: any): any;
     visitBlock(block: Block, context: any): any;
     visitBlockParameter(parameter: BlockParameter, context: any): any;
 }
