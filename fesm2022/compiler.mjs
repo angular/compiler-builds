@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-4b38e9a
+ * @license Angular v17.0.0-next.5+sha-31295a3
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -25227,15 +25227,13 @@ class TemplateDefinitionBuilder {
         return null;
     }
     visitIfBlock(block) {
+        // Allocate one slot for the result of the expression.
+        this.allocateBindingSlots(null);
         // We have to process the block in two steps: once here and again in the update instruction
         // callback in order to generate the correct expressions when pipes or pure functions are
         // used inside the branch expressions.
         const branchData = block.branches.map(({ expression, expressionAlias, children, sourceSpan }) => {
-            let processedExpression = null;
-            if (expression !== null) {
-                processedExpression = expression.visit(this._valueConverter);
-                this.allocateBindingSlots(processedExpression);
-            }
+            const processedExpression = expression === null ? null : expression.visit(this._valueConverter);
             // If the branch has an alias, it'll be assigned directly to the container's context.
             // We define a variable referring directly to the context so that any nested usages can be
             // rewritten to refer to it.
@@ -25292,19 +25290,17 @@ class TemplateDefinitionBuilder {
         this.updateInstructionWithAdvance(containerIndex, block.branches[0].sourceSpan, Identifiers.conditional, paramsCallback);
     }
     visitSwitchBlock(block) {
-        // Allocate slots for the primary block expression.
         const blockExpression = block.expression.visit(this._valueConverter);
-        this.allocateBindingSlots(blockExpression);
+        this.allocateBindingSlots(null); // Allocate a slot for the primary block expression.
         // We have to process the block in two steps: once here and again in the update instruction
         // callback in order to generate the correct expressions when pipes or pure functions are used.
         const caseData = block.cases.map(currentCase => {
-            const index = this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan);
-            let expression = null;
-            if (currentCase.expression !== null) {
-                expression = currentCase.expression.visit(this._valueConverter);
-                this.allocateBindingSlots(expression);
-            }
-            return { index, expression };
+            return {
+                index: this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan),
+                expression: currentCase.expression === null ?
+                    null :
+                    currentCase.expression.visit(this._valueConverter)
+            };
         });
         // Use the index of the first block as the index for the entire container.
         const containerIndex = caseData[0].index;
@@ -28724,7 +28720,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.5+sha-4b38e9a');
+const VERSION = new Version('17.0.0-next.5+sha-31295a3');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30231,7 +30227,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30339,7 +30335,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30573,7 +30569,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30608,7 +30604,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30659,7 +30655,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30692,7 +30688,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30743,7 +30739,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-4b38e9a'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-31295a3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
