@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-f91f222
+ * @license Angular v17.0.0-next.5+sha-c3cb265
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9618,8 +9618,8 @@ class SafePropertyReadExpr extends ExpressionBase {
     }
 }
 class SafeKeyedReadExpr extends ExpressionBase {
-    constructor(receiver, index) {
-        super();
+    constructor(receiver, index, sourceSpan) {
+        super(sourceSpan);
         this.receiver = receiver;
         this.index = index;
         this.kind = ExpressionKind.SafeKeyedRead;
@@ -9639,7 +9639,7 @@ class SafeKeyedReadExpr extends ExpressionBase {
         this.index = transformExpressionsInExpression(this.index, transform, flags);
     }
     clone() {
-        return new SafeKeyedReadExpr(this.receiver.clone(), this.index.clone());
+        return new SafeKeyedReadExpr(this.receiver.clone(), this.index.clone(), this.sourceSpan);
     }
 }
 class SafeInvokeFunctionExpr extends ExpressionBase {
@@ -10374,7 +10374,7 @@ function createTextOp(xref, initialValue, sourceSpan) {
 /**
  * Create a `ListenerOp`. Host bindings reuse all the listener logic.
  */
-function createListenerOp(target, name, tag, animationPhase, hostListener) {
+function createListenerOp(target, name, tag, animationPhase, hostListener, sourceSpan) {
     return {
         kind: OpKind.Listener,
         target,
@@ -10386,6 +10386,7 @@ function createListenerOp(target, name, tag, animationPhase, hostListener) {
         consumesDollarEvent: false,
         isAnimationListener: animationPhase !== null,
         animationPhase: animationPhase,
+        sourceSpan,
         ...NEW_OP,
         ...TRAIT_USES_SLOT_INDEX,
     };
@@ -19106,10 +19107,6 @@ function phaseNgContainer(job) {
     }
 }
 
-/**
- * Transforms special-case bindings with 'style' or 'class' in their names. Must run before the
- * main binding specialization pass.
- */
 function phaseNoListenersOnTemplates(job) {
     for (const unit of job.units) {
         let inTemplate = false;
@@ -19518,17 +19515,17 @@ function disableBindings() {
 function enableBindings() {
     return call(Identifiers.enableBindings, [], null);
 }
-function listener(name, handlerFn) {
+function listener(name, handlerFn, sourceSpan) {
     return call(Identifiers.listener, [
         literal(name),
         handlerFn,
-    ], null);
+    ], sourceSpan);
 }
-function syntheticHostListener(name, handlerFn) {
+function syntheticHostListener(name, handlerFn, sourceSpan) {
     return call(Identifiers.syntheticHostListener, [
         literal(name),
         handlerFn,
-    ], null);
+    ], sourceSpan);
 }
 function pipe(slot, name) {
     return call(Identifiers.pipe, [
@@ -19614,21 +19611,21 @@ function attribute(name, expression, sanitizer) {
     }
     return call(Identifiers.attribute, args, null);
 }
-function styleProp(name, expression, unit) {
+function styleProp(name, expression, unit, sourceSpan) {
     const args = [literal(name), expression];
     if (unit !== null) {
         args.push(literal(unit));
     }
-    return call(Identifiers.styleProp, args, null);
+    return call(Identifiers.styleProp, args, sourceSpan);
 }
-function classProp(name, expression) {
-    return call(Identifiers.classProp, [literal(name), expression], null);
+function classProp(name, expression, sourceSpan) {
+    return call(Identifiers.classProp, [literal(name), expression], sourceSpan);
 }
-function styleMap(expression) {
-    return call(Identifiers.styleMap, [expression], null);
+function styleMap(expression, sourceSpan) {
+    return call(Identifiers.styleMap, [expression], sourceSpan);
 }
-function classMap(expression) {
-    return call(Identifiers.classMap, [expression], null);
+function classMap(expression, sourceSpan) {
+    return call(Identifiers.classMap, [expression], sourceSpan);
 }
 const PIPE_BINDINGS = [
     Identifiers.pipeBind1,
@@ -19680,35 +19677,35 @@ function propertyInterpolate(name, strings, expressions, sanitizer, sourceSpan) 
     }
     return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, sourceSpan);
 }
-function attributeInterpolate(name, strings, expressions, sanitizer) {
+function attributeInterpolate(name, strings, expressions, sanitizer, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     const extraArgs = [];
     if (sanitizer !== null) {
         extraArgs.push(sanitizer);
     }
-    return callVariadicInstruction(ATTRIBUTE_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, null);
+    return callVariadicInstruction(ATTRIBUTE_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, sourceSpan);
 }
-function stylePropInterpolate(name, strings, expressions, unit) {
+function stylePropInterpolate(name, strings, expressions, unit, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     const extraArgs = [];
     if (unit !== null) {
         extraArgs.push(literal(unit));
     }
-    return callVariadicInstruction(STYLE_PROP_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, null);
+    return callVariadicInstruction(STYLE_PROP_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, sourceSpan);
 }
-function styleMapInterpolate(strings, expressions) {
+function styleMapInterpolate(strings, expressions, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
-    return callVariadicInstruction(STYLE_MAP_INTERPOLATE_CONFIG, [], interpolationArgs, [], null);
+    return callVariadicInstruction(STYLE_MAP_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
 }
-function classMapInterpolate(strings, expressions) {
+function classMapInterpolate(strings, expressions, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
-    return callVariadicInstruction(CLASS_MAP_INTERPOLATE_CONFIG, [], interpolationArgs, [], null);
+    return callVariadicInstruction(CLASS_MAP_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
 }
-function hostProperty(name, expression) {
-    return call(Identifiers.hostProperty, [literal(name), expression], null);
+function hostProperty(name, expression, sourceSpan) {
+    return call(Identifiers.hostProperty, [literal(name), expression], sourceSpan);
 }
-function syntheticHostProperty(name, expression) {
-    return call(Identifiers.syntheticHostProperty, [literal(name), expression], null);
+function syntheticHostProperty(name, expression, sourceSpan) {
+    return call(Identifiers.syntheticHostProperty, [literal(name), expression], sourceSpan);
 }
 function pureFunction(varOffset, fn, args) {
     return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [
@@ -19995,8 +19992,8 @@ function reifyCreateOperations(unit, ops) {
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
                 const reified = op.hostListener && op.isAnimationListener ?
-                    syntheticHostListener(op.name, listenerFn) :
-                    listener(op.name, listenerFn);
+                    syntheticHostListener(op.name, listenerFn, op.sourceSpan) :
+                    listener(op.name, listenerFn, op.sourceSpan);
                 OpList.replace(op, reified);
                 break;
             case OpKind.Variable:
@@ -20052,29 +20049,29 @@ function reifyUpdateOperations(_unit, ops) {
                 break;
             case OpKind.StyleProp:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, stylePropInterpolate(op.name, op.expression.strings, op.expression.expressions, op.unit));
+                    OpList.replace(op, stylePropInterpolate(op.name, op.expression.strings, op.expression.expressions, op.unit, op.sourceSpan));
                 }
                 else {
-                    OpList.replace(op, styleProp(op.name, op.expression, op.unit));
+                    OpList.replace(op, styleProp(op.name, op.expression, op.unit, op.sourceSpan));
                 }
                 break;
             case OpKind.ClassProp:
-                OpList.replace(op, classProp(op.name, op.expression));
+                OpList.replace(op, classProp(op.name, op.expression, op.sourceSpan));
                 break;
             case OpKind.StyleMap:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, styleMapInterpolate(op.expression.strings, op.expression.expressions));
+                    OpList.replace(op, styleMapInterpolate(op.expression.strings, op.expression.expressions, op.sourceSpan));
                 }
                 else {
-                    OpList.replace(op, styleMap(op.expression));
+                    OpList.replace(op, styleMap(op.expression, op.sourceSpan));
                 }
                 break;
             case OpKind.ClassMap:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, classMapInterpolate(op.expression.strings, op.expression.expressions));
+                    OpList.replace(op, classMapInterpolate(op.expression.strings, op.expression.expressions, op.sourceSpan));
                 }
                 else {
-                    OpList.replace(op, classMap(op.expression));
+                    OpList.replace(op, classMap(op.expression, op.sourceSpan));
                 }
                 break;
             case OpKind.InterpolateText:
@@ -20082,7 +20079,7 @@ function reifyUpdateOperations(_unit, ops) {
                 break;
             case OpKind.Attribute:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, attributeInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sanitizer));
+                    OpList.replace(op, attributeInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sanitizer, op.sourceSpan));
                 }
                 else {
                     OpList.replace(op, attribute(op.name, op.expression, op.sanitizer));
@@ -20094,10 +20091,10 @@ function reifyUpdateOperations(_unit, ops) {
                 }
                 else {
                     if (op.isAnimationTrigger) {
-                        OpList.replace(op, syntheticHostProperty(op.name, op.expression));
+                        OpList.replace(op, syntheticHostProperty(op.name, op.expression, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, hostProperty(op.name, op.expression));
+                        OpList.replace(op, hostProperty(op.name, op.expression, op.sourceSpan));
                     }
                 }
                 break;
@@ -21328,6 +21325,7 @@ const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
 /**
  * Process a template AST and convert it into a `ComponentCompilation` in the intermediate
  * representation.
+ * TODO: Refactor more of the ingestion code into phases.
  */
 function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds) {
     const cpl = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds);
@@ -21357,11 +21355,10 @@ function ingestHostProperty(job, property, isTextAttribute) {
     let expression;
     const ast = property.expression.ast;
     if (ast instanceof Interpolation$1) {
-        expression =
-            new Interpolation(ast.strings, ast.expressions.map(expr => convertAst(expr, job)));
+        expression = new Interpolation(ast.strings, ast.expressions.map(expr => convertAst(expr, job, property.sourceSpan)));
     }
     else {
-        expression = convertAst(ast, job);
+        expression = convertAst(ast, job, property.sourceSpan);
     }
     let bindingKind = BindingKind.Property;
     // TODO: this should really be handled in the parser.
@@ -21381,9 +21378,9 @@ function ingestHostAttribute(job, name, value) {
     job.root.update.push(attrBinding);
 }
 function ingestHostEvent(job, event) {
-    const eventBinding = createListenerOp(job.root.xref, event.name, null, event.targetOrPhase, true);
+    const eventBinding = createListenerOp(job.root.xref, event.name, null, event.targetOrPhase, true, event.sourceSpan);
     // TODO: Can this be a chain?
-    eventBinding.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(event.handler.ast, job))));
+    eventBinding.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(event.handler.ast, job, event.sourceSpan), event.handlerSpan)));
     job.root.create.push(eventBinding);
 }
 /**
@@ -21480,7 +21477,11 @@ function ingestBoundText(unit, text) {
     }
     const textXref = unit.job.allocateXrefId();
     unit.create.push(createTextOp(textXref, '', text.sourceSpan));
-    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job))), text.sourceSpan));
+    // TemplateDefinitionBuilder does not generate source maps for sub-expressions inside an
+    // interpolation. We copy that behavior in compatibility mode.
+    // TODO: is it actually correct to generate these extra maps in modern mode?
+    const baseSourceSpan = unit.job.compatibility ? null : text.sourceSpan;
+    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan))), text.sourceSpan));
 }
 /**
  * Ingest a `@switch` block into the given `ViewCompilation`.
@@ -21493,58 +21494,61 @@ function ingestSwitchBlock(unit, switchBlock) {
         if (!firstXref)
             firstXref = cView.xref;
         unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined, null));
-        const caseExpr = switchCase.expression ? convertAst(switchCase.expression, unit.job) : null;
+        const caseExpr = switchCase.expression ?
+            convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) :
+            null;
         conditions.push([cView.xref, caseExpr]);
         ingestNodes(cView, switchCase.children);
     }
-    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job), null);
+    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, switchBlock.startSourceSpan), null);
     conditional.conditions = conditions;
     unit.update.push(conditional);
 }
 /**
  * Convert a template AST expression into an output AST expression.
  */
-function convertAst(ast, job) {
+function convertAst(ast, job, baseSourceSpan) {
     if (ast instanceof ASTWithSource) {
-        return convertAst(ast.ast, job);
+        return convertAst(ast.ast, job, baseSourceSpan);
     }
     else if (ast instanceof PropertyRead) {
         if (ast.receiver instanceof ImplicitReceiver && !(ast.receiver instanceof ThisReceiver)) {
             return new LexicalReadExpr(ast.name);
         }
         else {
-            return new ReadPropExpr(convertAst(ast.receiver, job), ast.name);
+            return new ReadPropExpr(convertAst(ast.receiver, job, baseSourceSpan), ast.name, null, convertSourceSpan(ast.span, baseSourceSpan));
         }
     }
     else if (ast instanceof PropertyWrite) {
-        return new WritePropExpr(convertAst(ast.receiver, job), ast.name, convertAst(ast.value, job));
+        return new WritePropExpr(convertAst(ast.receiver, job, baseSourceSpan), ast.name, convertAst(ast.value, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof KeyedWrite) {
-        return new WriteKeyExpr(convertAst(ast.receiver, job), convertAst(ast.key, job), convertAst(ast.value, job));
+        return new WriteKeyExpr(convertAst(ast.receiver, job, baseSourceSpan), convertAst(ast.key, job, baseSourceSpan), convertAst(ast.value, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof Call) {
         if (ast.receiver instanceof ImplicitReceiver) {
             throw new Error(`Unexpected ImplicitReceiver`);
         }
         else {
-            return new InvokeFunctionExpr(convertAst(ast.receiver, job), ast.args.map(arg => convertAst(arg, job)));
+            return new InvokeFunctionExpr(convertAst(ast.receiver, job, baseSourceSpan), ast.args.map(arg => convertAst(arg, job, baseSourceSpan)), undefined, convertSourceSpan(ast.span, baseSourceSpan));
         }
     }
     else if (ast instanceof LiteralPrimitive) {
-        return literal(ast.value);
+        return literal(ast.value, undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof Binary) {
         const operator = BINARY_OPERATORS.get(ast.operation);
         if (operator === undefined) {
             throw new Error(`AssertionError: unknown binary operator ${ast.operation}`);
         }
-        return new BinaryOperatorExpr(operator, convertAst(ast.left, job), convertAst(ast.right, job));
+        return new BinaryOperatorExpr(operator, convertAst(ast.left, job, baseSourceSpan), convertAst(ast.right, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof ThisReceiver) {
+        // TODO: should context expressions have source maps?
         return new ContextExpr(job.root.xref);
     }
     else if (ast instanceof KeyedRead) {
-        return new ReadKeyExpr(convertAst(ast.receiver, job), convertAst(ast.key, job));
+        return new ReadKeyExpr(convertAst(ast.receiver, job, baseSourceSpan), convertAst(ast.key, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof Chain) {
         throw new Error(`AssertionError: Chain in unknown context`);
@@ -21552,37 +21556,42 @@ function convertAst(ast, job) {
     else if (ast instanceof LiteralMap) {
         const entries = ast.keys.map((key, idx) => {
             const value = ast.values[idx];
-            return new LiteralMapEntry(key.key, convertAst(value, job), key.quoted);
+            // TODO: should literals have source maps, or do we just map the whole surrounding expression?
+            return new LiteralMapEntry(key.key, convertAst(value, job, baseSourceSpan), key.quoted);
         });
-        return new LiteralMapExpr(entries);
+        return new LiteralMapExpr(entries, undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof LiteralArray) {
-        return new LiteralArrayExpr(ast.expressions.map(expr => convertAst(expr, job)));
+        // TODO: should literals have source maps, or do we just map the whole surrounding expression?
+        return new LiteralArrayExpr(ast.expressions.map(expr => convertAst(expr, job, baseSourceSpan)));
     }
     else if (ast instanceof Conditional) {
-        return new ConditionalExpr(convertAst(ast.condition, job), convertAst(ast.trueExp, job), convertAst(ast.falseExp, job));
+        return new ConditionalExpr(convertAst(ast.condition, job, baseSourceSpan), convertAst(ast.trueExp, job, baseSourceSpan), convertAst(ast.falseExp, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof NonNullAssert) {
         // A non-null assertion shouldn't impact generated instructions, so we can just drop it.
-        return convertAst(ast.expression, job);
+        return convertAst(ast.expression, job, baseSourceSpan);
     }
     else if (ast instanceof BindingPipe) {
+        // TODO: pipes should probably have source maps; figure out details.
         return new PipeBindingExpr(job.allocateXrefId(), ast.name, [
-            convertAst(ast.exp, job),
-            ...ast.args.map(arg => convertAst(arg, job)),
+            convertAst(ast.exp, job, baseSourceSpan),
+            ...ast.args.map(arg => convertAst(arg, job, baseSourceSpan)),
         ]);
     }
     else if (ast instanceof SafeKeyedRead) {
-        return new SafeKeyedReadExpr(convertAst(ast.receiver, job), convertAst(ast.key, job));
+        return new SafeKeyedReadExpr(convertAst(ast.receiver, job, baseSourceSpan), convertAst(ast.key, job, baseSourceSpan), convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof SafePropertyRead) {
-        return new SafePropertyReadExpr(convertAst(ast.receiver, job), ast.name);
+        // TODO: source span
+        return new SafePropertyReadExpr(convertAst(ast.receiver, job, baseSourceSpan), ast.name);
     }
     else if (ast instanceof SafeCall) {
-        return new SafeInvokeFunctionExpr(convertAst(ast.receiver, job), ast.args.map(a => convertAst(a, job)));
+        // TODO: source span
+        return new SafeInvokeFunctionExpr(convertAst(ast.receiver, job, baseSourceSpan), ast.args.map(a => convertAst(a, job, baseSourceSpan)));
     }
     else if (ast instanceof EmptyExpr$1) {
-        return new EmptyExpr();
+        return new EmptyExpr(convertSourceSpan(ast.span, baseSourceSpan));
     }
     else {
         throw new Error(`Unhandled expression type: ${ast.constructor.name}`);
@@ -21619,30 +21628,31 @@ function ingestBindings(unit, op, element) {
                 throw Error('Animation listener should have a phase');
             }
         }
-        listenerOp = createListenerOp(op.xref, output.name, op.tag, output.phase, false);
+        listenerOp =
+            createListenerOp(op.xref, output.name, op.tag, output.phase, false, output.sourceSpan);
         // if output.handler is a chain, then push each statement from the chain separately, and
         // return the last one?
-        let inputExprs;
+        let handlerExprs;
         let handler = output.handler;
         if (handler instanceof ASTWithSource) {
             handler = handler.ast;
         }
         if (handler instanceof Chain) {
-            inputExprs = handler.expressions;
+            handlerExprs = handler.expressions;
         }
         else {
-            inputExprs = [handler];
+            handlerExprs = [handler];
         }
-        if (inputExprs.length === 0) {
+        if (handlerExprs.length === 0) {
             throw new Error('Expected listener to have non-empty expression list.');
         }
-        const expressions = inputExprs.map(expr => convertAst(expr, unit.job));
+        const expressions = handlerExprs.map(expr => convertAst(expr, unit.job, output.handlerSpan));
         const returnExpr = expressions.pop();
         for (const expr of expressions) {
-            const stmtOp = createStatementOp(new ExpressionStatement(expr));
+            const stmtOp = createStatementOp(new ExpressionStatement(expr, expr.sourceSpan));
             listenerOp.handlerOps.push(stmtOp);
         }
-        listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr)));
+        listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr, returnExpr.sourceSpan)));
         unit.create.push(listenerOp);
     }
 }
@@ -21658,11 +21668,13 @@ function ingestBinding(view, xref, name, value, type, unit, securityContext, sou
         value = value.ast;
     }
     let expression;
+    // TODO: We could easily generate source maps for subexpressions in these cases, but
+    // TemplateDefinitionBuilder does not. Should we do so?
     if (value instanceof Interpolation$1) {
-        expression = new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, view.job)));
+        expression = new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, view.job, null)));
     }
     else if (value instanceof AST) {
-        expression = convertAst(value, view.job);
+        expression = convertAst(value, view.job, null);
     }
     else {
         expression = value;
@@ -21690,6 +21702,26 @@ function assertIsArray(value) {
     if (!Array.isArray(value)) {
         throw new Error(`AssertionError: expected an array`);
     }
+}
+/**
+ * Creates an absolute `ParseSourceSpan` from the relative `ParseSpan`.
+ *
+ * `ParseSpan` objects are relative to the start of the expression.
+ * This method converts these to full `ParseSourceSpan` objects that
+ * show where the span is within the overall source file.
+ *
+ * @param span the relative span to convert.
+ * @param baseSourceSpan a span corresponding to the base of the expression tree.
+ * @returns a `ParseSourceSpan` for the given span or null if no `baseSourceSpan` was provided.
+ */
+function convertSourceSpan(span, baseSourceSpan) {
+    if (baseSourceSpan === null) {
+        return null;
+    }
+    const start = baseSourceSpan.start.moveBy(span.start);
+    const end = baseSourceSpan.start.moveBy(span.end);
+    const fullStart = baseSourceSpan.fullStart.moveBy(span.start);
+    return new ParseSourceSpan(start, end, fullStart);
 }
 
 const USE_TEMPLATE_PIPELINE = false;
@@ -28692,7 +28724,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.5+sha-f91f222');
+const VERSION = new Version('17.0.0-next.5+sha-c3cb265');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30199,7 +30231,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30307,7 +30339,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30541,7 +30573,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30576,7 +30608,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30627,7 +30659,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30660,7 +30692,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30711,7 +30743,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.5+sha-f91f222'));
+    definitionMap.set('version', literal('17.0.0-next.5+sha-c3cb265'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
