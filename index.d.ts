@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.5+sha-8413b64
+ * @license Angular v17.0.0-next.5+sha-e2e3d69
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4899,8 +4899,8 @@ export declare class TmplAstForLoopBlockEmpty implements TmplAstNode {
 }
 
 export declare class TmplAstHoverDeferredTrigger extends TmplAstDeferredTrigger {
-    reference: string;
-    constructor(reference: string, sourceSpan: ParseSourceSpan);
+    reference: string | null;
+    constructor(reference: string | null, sourceSpan: ParseSourceSpan);
 }
 
 export declare class TmplAstIcu implements TmplAstNode {
@@ -4946,8 +4946,8 @@ export declare class TmplAstImmediateDeferredTrigger extends TmplAstDeferredTrig
 }
 
 export declare class TmplAstInteractionDeferredTrigger extends TmplAstDeferredTrigger {
-    reference: string;
-    constructor(reference: string, sourceSpan: ParseSourceSpan);
+    reference: string | null;
+    constructor(reference: string | null, sourceSpan: ParseSourceSpan);
 }
 
 export declare interface TmplAstNode {
