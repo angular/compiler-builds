@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.6+sha-8d09e9e
+ * @license Angular v17.0.0-next.6+sha-408d3b4
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8889,6 +8889,10 @@ var ExpressionKind;
      * An expression that will cause a literal slot index to be emitted.
      */
     ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 20] = "SlotLiteralExpr";
+    /**
+     * A test expression for a conditional op.
+     */
+    ExpressionKind[ExpressionKind["ConditionalCase"] = 21] = "ConditionalCase";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -9229,17 +9233,19 @@ function createAdvanceOp(delta, sourceSpan) {
 /**
  * Create a conditional op, which will display an embedded view according to a condtion.
  */
-function createConditionalOp(target, test, sourceSpan) {
+function createConditionalOp(target, test, conditions, sourceSpan) {
     return {
         kind: OpKind.Conditional,
         target,
         test,
-        conditions: [],
+        conditions,
         processed: null,
         sourceSpan,
+        contextValue: null,
         ...NEW_OP,
         ...TRAIT_USES_SLOT_INDEX,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
     };
 }
 /**
@@ -9835,6 +9841,39 @@ class SlotLiteralExpr extends ExpressionBase {
     }
     transformInternalExpressions() { }
 }
+class ConditionalCaseExpr extends ExpressionBase {
+    /**
+     * Create an expression for one branch of a conditional.
+     * @param expr The expression to be tested for this case. Might be null, as in an `else` case.
+     * @param target The Xref of the view to be displayed if this condition is true.
+     */
+    constructor(expr, target, alias = null) {
+        super();
+        this.expr = expr;
+        this.target = target;
+        this.alias = alias;
+        this.kind = ExpressionKind.ConditionalCase;
+    }
+    visitExpression(visitor, context) {
+        if (this.expr !== null) {
+            this.expr.visitExpression(visitor, context);
+        }
+    }
+    isEquivalent(e) {
+        return e instanceof ConditionalCaseExpr && e.expr === this.expr;
+    }
+    isConstant() {
+        return true;
+    }
+    clone() {
+        return new ConditionalCaseExpr(this.expr, this.target);
+    }
+    transformInternalExpressions(transform, flags) {
+        if (this.expr !== null) {
+            this.expr = transformExpressionsInExpression(this.expr, transform, flags);
+        }
+    }
+}
 /**
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
  */
@@ -9901,14 +9940,17 @@ function transformExpressionsInOp(op, transform, flags) {
             break;
         case OpKind.Conditional:
             for (const condition of op.conditions) {
-                if (condition[1] === null) {
+                if (condition.expr === null) {
                     // This is a default case.
                     continue;
                 }
-                condition[1] = transformExpressionsInExpression(condition[1], transform, flags);
+                condition.expr = transformExpressionsInExpression(condition.expr, transform, flags);
             }
             if (op.processed !== null) {
                 op.processed = transformExpressionsInExpression(op.processed, transform, flags);
+            }
+            if (op.contextValue !== null) {
+                op.contextValue = transformExpressionsInExpression(op.contextValue, transform, flags);
             }
             break;
         case OpKind.Listener:
@@ -10538,6 +10580,12 @@ function createHostPropertyOp(name, expression, isAnimationTrigger, sourceSpan) 
     };
 }
 
+/**
+ * When referenced in the template's context parameters, this indicates a reference to the entire
+ * context object, rather than a specific parameter.
+ */
+const CTX_REF = 'CTX_REF_MARKER';
+
 var CompilationJobKind;
 (function (CompilationJobKind) {
     CompilationJobKind[CompilationJobKind["Tmpl"] = 0] = "Tmpl";
@@ -10790,6 +10838,7 @@ function varsUsedByOp(op) {
             // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
             return op.interpolation.expressions.length;
         case OpKind.I18nExpression:
+        case OpKind.Conditional:
             return 1;
         default:
             throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
@@ -11153,9 +11202,9 @@ function phaseConditionals(job) {
             }
             let test;
             // Any case with a `null` condition is `default`. If one exists, default to it instead.
-            const defaultCase = op.conditions.findIndex(([xref, cond]) => cond === null);
+            const defaultCase = op.conditions.findIndex((cond) => cond.expr === null);
             if (defaultCase >= 0) {
-                const [xref, cond] = op.conditions.splice(defaultCase, 1)[0];
+                const xref = op.conditions.splice(defaultCase, 1)[0].target;
                 test = new SlotLiteralExpr(xref);
             }
             else {
@@ -11163,13 +11212,26 @@ function phaseConditionals(job) {
                 test = literal(-1);
             }
             // Switch expressions assign their main test to a temporary, to avoid re-executing it.
-            let tmp = new AssignTemporaryExpr(op.test, job.allocateXrefId());
-            // For each remaining condition, test whether the temporary satifies the check.
+            let tmp = op.test == null ? null : new AssignTemporaryExpr(op.test, job.allocateXrefId());
+            // For each remaining condition, test whether the temporary satifies the check. (If no temp is
+            // present, just check each expression directly.)
             for (let i = op.conditions.length - 1; i >= 0; i--) {
-                const useTmp = i === 0 ? tmp : new ReadTemporaryExpr(tmp.xref);
-                const [xref, check] = op.conditions[i];
-                const comparison = new BinaryOperatorExpr(BinaryOperator.Identical, useTmp, check);
-                test = new ConditionalExpr(comparison, new SlotLiteralExpr(xref), test);
+                let conditionalCase = op.conditions[i];
+                if (conditionalCase.expr === null) {
+                    continue;
+                }
+                if (tmp !== null) {
+                    const useTmp = i === 0 ? tmp : new ReadTemporaryExpr(tmp.xref);
+                    conditionalCase.expr =
+                        new BinaryOperatorExpr(BinaryOperator.Identical, useTmp, conditionalCase.expr);
+                }
+                else if (conditionalCase.alias !== null) {
+                    const caseExpressionTemporaryXref = job.allocateXrefId();
+                    conditionalCase.expr =
+                        new AssignTemporaryExpr(conditionalCase.expr, caseExpressionTemporaryXref);
+                    op.contextValue = new ReadTemporaryExpr(caseExpressionTemporaryXref);
+                }
+                test = new ConditionalExpr(conditionalCase.expr, new SlotLiteralExpr(conditionalCase.target), test);
             }
             // Save the resulting aggregate Joost-expression.
             op.processed = test;
@@ -11833,7 +11895,11 @@ function generateVariablesInScopeForView(view, scope) {
     }
     // Add variables for all context variables available in this scope's view.
     for (const [name, value] of view.job.views.get(scope.view).contextVariables) {
-        newOps.push(createVariableOp(view.job.allocateXrefId(), scope.contextVariables.get(name), new ReadPropExpr(new ContextExpr(scope.view), value)));
+        const context = new ContextExpr(scope.view);
+        // We either read the context, or, if the variable is CTX_REF, use the context directly.
+        const variable = value === CTX_REF ? context : new ReadPropExpr(context, value);
+        // Add the variable declaration.
+        newOps.push(createVariableOp(view.job.allocateXrefId(), scope.contextVariables.get(name), variable));
     }
     // Add variables for all local references declared for elements in this scope.
     for (const ref of scope.references) {
@@ -19939,8 +20005,12 @@ function call(instruction, args, sourceSpan) {
     const expr = importExpr(instruction).callFn(args, sourceSpan);
     return createStatementOp(new ExpressionStatement(expr, sourceSpan));
 }
-function conditional(slot, condition) {
-    return call(Identifiers.conditional, [literal(slot), condition], null);
+function conditional(slot, condition, contextValue, sourceSpan) {
+    const args = [literal(slot), condition];
+    if (contextValue !== null) {
+        args.push(contextValue);
+    }
+    return call(Identifiers.conditional, args, sourceSpan);
 }
 /**
  * `InterpolationConfig` for the `textInterpolate` instruction.
@@ -20318,7 +20388,7 @@ function reifyUpdateOperations(_unit, ops) {
                 if (op.slot === null) {
                     throw new Error(`Conditional slot was not set.`);
                 }
-                OpList.replace(op, conditional(op.slot, op.processed));
+                OpList.replace(op, conditional(op.slot, op.processed, op.contextValue, op.sourceSpan));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -21317,6 +21387,13 @@ function allowConservativeInlining(decl, target) {
     // that behavior here.
     switch (decl.variable.kind) {
         case SemanticVariableKind.Identifier:
+            if (decl.initializer instanceof ReadVarExpr && decl.initializer.name === 'ctx') {
+                // Although TemplateDefinitionBuilder is cautious about inlining, we still want to do so
+                // when the variable is the context, to imitate its behavior with aliases in control flow
+                // blocks. This quirky behavior will become dead code once compatibility mode is no longer
+                // supported.
+                return true;
+            }
             return false;
         case SemanticVariableKind.Context:
             // Context can only be inlined into other variables.
@@ -21562,6 +21639,9 @@ function ingestNodes(unit, template) {
         else if (node instanceof BoundText) {
             ingestBoundText(unit, node);
         }
+        else if (node instanceof IfBlock) {
+            ingestIfBlock(unit, node);
+        }
         else if (node instanceof SwitchBlock) {
             ingestSwitchBlock(unit, node);
         }
@@ -21669,24 +21749,48 @@ function ingestBoundText(unit, text) {
     unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan))), i18nPlaceholders, text.sourceSpan));
 }
 /**
- * Ingest a `@switch` block into the given `ViewCompilation`.
+ * Ingest an `@if` block into the given `ViewCompilation`.
+ */
+function ingestIfBlock(unit, ifBlock) {
+    let firstXref = null;
+    let conditions = [];
+    for (const ifCase of ifBlock.branches) {
+        const cView = unit.job.allocateView(unit.xref);
+        if (ifCase.expressionAlias !== null) {
+            cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
+        }
+        if (firstXref === null) {
+            firstXref = cView.xref;
+        }
+        unit.create.push(createTemplateOp(cView.xref, 'Conditional', Namespace.HTML, true, ifCase.sourceSpan));
+        const caseExpr = ifCase.expression ? convertAst(ifCase.expression, unit.job, null) : null;
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, cView.xref, ifCase.expressionAlias);
+        conditions.push(conditionalCaseExpr);
+        ingestNodes(cView, ifCase.children);
+    }
+    const conditional = createConditionalOp(firstXref, null, conditions, ifBlock.sourceSpan);
+    unit.update.push(conditional);
+}
+/**
+ * Ingest an `@switch` block into the given `ViewCompilation`.
  */
 function ingestSwitchBlock(unit, switchBlock) {
     let firstXref = null;
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
-        if (!firstXref)
+        if (firstXref === null) {
             firstXref = cView.xref;
-        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, null));
+        }
+        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, switchCase.sourceSpan));
         const caseExpr = switchCase.expression ?
             convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) :
             null;
-        conditions.push([cView.xref, caseExpr]);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, cView.xref);
+        conditions.push(conditionalCaseExpr);
         ingestNodes(cView, switchCase.children);
     }
-    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, switchBlock.startSourceSpan), null);
-    conditional.conditions = conditions;
+    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, null), conditions, switchBlock.sourceSpan);
     unit.update.push(conditional);
 }
 /**
@@ -28920,7 +29024,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.6+sha-8d09e9e');
+const VERSION = new Version('17.0.0-next.6+sha-408d3b4');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30427,7 +30531,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30535,7 +30639,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30769,7 +30873,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30804,7 +30908,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30855,7 +30959,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30888,7 +30992,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30939,7 +31043,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-8d09e9e'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-408d3b4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
