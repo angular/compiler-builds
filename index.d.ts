@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.6+sha-1beef49
+ * @license Angular v17.0.0-next.6+sha-43e6fb0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2711,11 +2711,8 @@ export declare interface ParseTemplateOptions {
      * rules on a case by case basis, instead of for their whole project within a configuration file.
      */
     collectCommentNodes?: boolean;
-    /**
-     * Names of the blocks that should be enabled. E.g. `enabledBlockTypes: new Set(['defer'])`
-     * would allow usages of `@defer {}` in templates.
-     */
-    enabledBlockTypes?: Set<string>;
+    /** Whether the @ block syntax is enabled. */
+    enableBlockSyntax?: boolean;
 }
 
 export declare class ParseTreeResult {
@@ -5159,7 +5156,8 @@ declare interface TokenizeOptions {
      */
     preserveLineEndings?: boolean;
     /**
-     * Whether the block syntax is enabled at the compiler level.
+     * Whether to tokenize @ block syntax. Otherwise considered text,
+     * or ICU tokens if `tokenizeExpansionForms` is enabled.
      */
     tokenizeBlocks?: boolean;
 }

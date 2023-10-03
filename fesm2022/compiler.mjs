@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.6+sha-1beef49
+ * @license Angular v17.0.0-next.6+sha-43e6fb0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -16901,7 +16901,7 @@ class _Tokenizer {
             new PlainCharacterCursor(_file, range);
         this._preserveLineEndings = options.preserveLineEndings || false;
         this._i18nNormalizeLineEndingsInICUs = options.i18nNormalizeLineEndingsInICUs || false;
-        this._tokenizeBlocks = options.tokenizeBlocks || false;
+        this._tokenizeBlocks = options.tokenizeBlocks ?? true;
         try {
             this._cursor.init();
         }
@@ -24191,26 +24191,6 @@ class HtmlAstToIvyAst {
         if (this.processedNodes.has(block)) {
             return null;
         }
-        if (!this.options.enabledBlockTypes.has(block.name)) {
-            let errorMessage;
-            if (isConnectedDeferLoopBlock(block.name)) {
-                errorMessage = `@${block.name} block can only be used after an @defer block.`;
-                this.processedNodes.add(block);
-            }
-            else if (isConnectedForLoopBlock(block.name)) {
-                errorMessage = `@${block.name} block can only be used after an @for block.`;
-                this.processedNodes.add(block);
-            }
-            else if (isConnectedIfLoopBlock(block.name)) {
-                errorMessage = `@${block.name} block can only be used after an @if or @else if block.`;
-                this.processedNodes.add(block);
-            }
-            else {
-                errorMessage = `Unrecognized block @${block.name}.`;
-            }
-            this.reportError(errorMessage, block.sourceSpan);
-            return null;
-        }
         let result = null;
         switch (block.name) {
             case 'defer':
@@ -24226,10 +24206,23 @@ class HtmlAstToIvyAst {
                 result = createIfBlock(block, this.findConnectedBlocks(index, context, isConnectedIfLoopBlock), this, this.bindingParser);
                 break;
             default:
-                result = {
-                    node: null,
-                    errors: [new ParseError(block.sourceSpan, `Unrecognized block @${block.name}.`)]
-                };
+                let errorMessage;
+                if (isConnectedDeferLoopBlock(block.name)) {
+                    errorMessage = `@${block.name} block can only be used after an @defer block.`;
+                    this.processedNodes.add(block);
+                }
+                else if (isConnectedForLoopBlock(block.name)) {
+                    errorMessage = `@${block.name} block can only be used after an @for block.`;
+                    this.processedNodes.add(block);
+                }
+                else if (isConnectedIfLoopBlock(block.name)) {
+                    errorMessage = `@${block.name} block can only be used after an @if or @else if block.`;
+                    this.processedNodes.add(block);
+                }
+                else {
+                    errorMessage = `Unrecognized block @${block.name}.`;
+                }
+                result = { node: null, errors: [new ParseError(block.sourceSpan, errorMessage)] };
                 break;
         }
         this.errors.push(...result.errors);
@@ -24469,6 +24462,19 @@ function textContents(node) {
         return node.children[0].value;
     }
 }
+
+/*!
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Whether the @ block syntax is enabled by default. This constant exists
+ * so that we can temporarily disable the syntax internally.
+ */
+const BLOCK_SYNTAX_ENABLED_DEFAULT = true;
 
 var TagType;
 (function (TagType) {
@@ -26677,7 +26683,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         leadingTriviaChars: LEADING_TRIVIA_CHARS,
         ...options,
         tokenizeExpansionForms: true,
-        tokenizeBlocks: options.enabledBlockTypes != null && options.enabledBlockTypes.size > 0,
+        tokenizeBlocks: options.enableBlockSyntax ?? BLOCK_SYNTAX_ENABLED_DEFAULT,
     });
     if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
         parseResult.errors.length > 0) {
@@ -26729,10 +26735,7 @@ function parseTemplate(template, templateUrl, options = {}) {
             rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
         }
     }
-    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, {
-        collectCommentNodes: !!options.collectCommentNodes,
-        enabledBlockTypes: options.enabledBlockTypes || new Set(),
-    });
+    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, { collectCommentNodes: !!options.collectCommentNodes });
     errors.push(...parseResult.errors, ...i18nMetaResult.errors);
     const parsedTemplate = {
         interpolationConfig,
@@ -28413,11 +28416,6 @@ function extractScopedNodeEntities(rootScope) {
 class ResourceLoader {
 }
 
-let enabledBlockTypes;
-/** Temporary utility that enables specific block types in JIT compilations. */
-function ɵsetEnabledBlockTypes(types) {
-    enabledBlockTypes = types.length > 0 ? new Set(types) : undefined;
-}
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
@@ -28823,7 +28821,7 @@ function convertPipeDeclarationToMetadata(pipe) {
 function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces, interpolation) {
     const interpolationConfig = interpolation ? InterpolationConfig.fromArray(interpolation) : DEFAULT_INTERPOLATION_CONFIG;
     // Parse the template and check for errors.
-    const parsed = parseTemplate(template, sourceMapUrl, { preserveWhitespaces, interpolationConfig, enabledBlockTypes });
+    const parsed = parseTemplate(template, sourceMapUrl, { preserveWhitespaces, interpolationConfig });
     if (parsed.errors !== null) {
         const errors = parsed.errors.map(err => err.toString()).join(', ');
         throw new Error(`Errors during JIT compilation of template for ${typeName}: ${errors}`);
@@ -29036,7 +29034,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.6+sha-1beef49');
+const VERSION = new Version('17.0.0-next.6+sha-43e6fb0');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30543,7 +30541,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30651,7 +30649,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30928,7 +30926,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30963,7 +30961,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31014,7 +31012,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31047,7 +31045,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31098,7 +31096,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-1beef49'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-43e6fb0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
