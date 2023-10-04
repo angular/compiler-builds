@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.6+sha-7068389
+ * @license Angular v17.0.0-next.6+sha-422a3db
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12042,10 +12042,15 @@ const STYLE_DOT = 'style.';
 const CLASS_DOT = 'class.';
 const STYLE_BANG = 'style!';
 const CLASS_BANG = 'class!';
+const BANG_IMPORTANT = '!important';
 function phaseHostStylePropertyParsing(job) {
     for (const op of job.root.update) {
         if (op.kind !== OpKind.Binding) {
             continue;
+        }
+        if (op.name.endsWith(BANG_IMPORTANT)) {
+            // Delete any `!important` suffixes from the binding name.
+            op.name = op.name.substring(0, op.name.length - BANG_IMPORTANT.length);
         }
         if (op.name.startsWith(STYLE_DOT)) {
             op.bindingKind = BindingKind.StyleProperty;
@@ -19464,30 +19469,6 @@ function phaseNgContainer(job) {
     }
 }
 
-function phaseNoListenersOnTemplates(job) {
-    for (const unit of job.units) {
-        let inTemplate = false;
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.Template:
-                    inTemplate = true;
-                    break;
-                case OpKind.ElementStart:
-                case OpKind.Element:
-                case OpKind.ContainerStart:
-                case OpKind.Container:
-                    inTemplate = false;
-                    break;
-                case OpKind.Listener:
-                    if (inTemplate) {
-                        OpList.remove(op);
-                    }
-                    break;
-            }
-        }
-    }
-}
-
 /**
  * Looks up an element in the given map by xref ID.
  */
@@ -21133,47 +21114,62 @@ function phaseStyleBindingSpecialization(cpl) {
  */
 function phaseTemporaryVariables(cpl) {
     for (const unit of cpl.units) {
-        let opCount = 0;
-        let generatedStatements = [];
-        for (const op of unit.ops()) {
-            // Identify the final time each temp var is read.
-            const finalReads = new Map();
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof ReadTemporaryExpr) {
-                    finalReads.set(expr.xref, expr);
-                }
-            });
-            // Name the temp vars, accounting for the fact that a name can be reused after it has been
-            // read for the final time.
-            let count = 0;
-            const assigned = new Set();
-            const released = new Set();
-            const defs = new Map();
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof AssignTemporaryExpr) {
-                    if (!assigned.has(expr.xref)) {
-                        assigned.add(expr.xref);
-                        // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`.
-                        // It seems to rely on an expression index instead of an op index.
-                        defs.set(expr.xref, `tmp_${opCount}_${count++}`);
-                    }
-                    assignName(defs, expr);
-                }
-                else if (expr instanceof ReadTemporaryExpr) {
-                    if (finalReads.get(expr.xref) === expr) {
-                        released.add(expr.xref);
-                        count--;
-                    }
-                    assignName(defs, expr);
-                }
-            });
-            // Add declarations for the temp vars.
-            generatedStatements.push(...Array.from(new Set(defs.values()))
-                .map(name => createStatementOp(new DeclareVarStmt(name))));
-            opCount++;
-        }
-        unit.update.prepend(generatedStatements);
+        unit.create.prepend(generateTemporaries(unit.create));
+        unit.update.prepend(generateTemporaries(unit.update));
     }
+}
+function generateTemporaries(ops) {
+    let opCount = 0;
+    let generatedStatements = [];
+    // For each op, search for any variables that are assigned or read. For each variable, generate a
+    // name and produce a `DeclareVarStmt` to the beginning of the block.
+    for (const op of ops) {
+        // Identify the final time each temp var is read.
+        const finalReads = new Map();
+        visitExpressionsInOp(op, (expr, flag) => {
+            if (flag & VisitorContextFlag.InChildOperation) {
+                return;
+            }
+            if (expr instanceof ReadTemporaryExpr) {
+                finalReads.set(expr.xref, expr);
+            }
+        });
+        // Name the temp vars, accounting for the fact that a name can be reused after it has been
+        // read for the final time.
+        let count = 0;
+        const assigned = new Set();
+        const released = new Set();
+        const defs = new Map();
+        visitExpressionsInOp(op, (expr, flag) => {
+            if (flag & VisitorContextFlag.InChildOperation) {
+                return;
+            }
+            if (expr instanceof AssignTemporaryExpr) {
+                if (!assigned.has(expr.xref)) {
+                    assigned.add(expr.xref);
+                    // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`.
+                    // It seems to rely on an expression index instead of an op index.
+                    defs.set(expr.xref, `tmp_${opCount}_${count++}`);
+                }
+                assignName(defs, expr);
+            }
+            else if (expr instanceof ReadTemporaryExpr) {
+                if (finalReads.get(expr.xref) === expr) {
+                    released.add(expr.xref);
+                    count--;
+                }
+                assignName(defs, expr);
+            }
+        });
+        // Add declarations for the temp vars.
+        generatedStatements.push(...Array.from(new Set(defs.values()))
+            .map(name => createStatementOp(new DeclareVarStmt(name))));
+        opCount++;
+        if (op.kind === OpKind.Listener) {
+            op.handlerOps.prepend(generateTemporaries(op.handlerOps));
+        }
+    }
+    return generatedStatements;
 }
 /**
  * Assigns a name to the temporary variable in the given temporary variable expression.
@@ -21567,7 +21563,6 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
     { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
-    { kind: CompilationJobKind.Tmpl, fn: phaseNoListenersOnTemplates },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
     { kind: CompilationJobKind.Tmpl, fn: phaseApplyI18nExpressions },
@@ -21871,7 +21866,7 @@ function ingestTemplate(unit, tmpl) {
 function ingestContent(unit, content) {
     const op = createProjectionOp(unit.job.allocateXrefId(), content.selector);
     for (const attr of content.attributes) {
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
     }
     unit.create.push(op);
 }
@@ -22093,13 +22088,20 @@ function convertAst(ast, job, baseSourceSpan) {
  * to their IR representation.
  */
 function ingestBindings(unit, op, element) {
+    let flags = BindingFlags.None;
+    const isPlainTemplate = element instanceof Template && splitNsName(element.tagName ?? '')[1] === 'ng-template';
     if (element instanceof Template) {
+        flags |= BindingFlags.OnNgTemplateElement;
+        if (isPlainTemplate) {
+            flags |= BindingFlags.BindingTargetsTemplate;
+        }
+        const templateAttrFlags = flags | BindingFlags.BindingTargetsTemplate | BindingFlags.IsStructuralTemplateAttribute;
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, true);
+                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, templateAttrFlags | BindingFlags.TextValue);
             }
             else {
-                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, false, true);
+                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, templateAttrFlags);
             }
         }
     }
@@ -22107,10 +22109,10 @@ function ingestBindings(unit, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, flags | BindingFlags.TextValue);
     }
     for (const input of element.inputs) {
-        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false, false);
+        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, flags);
     }
     for (const output of element.outputs) {
         let listenerOp;
@@ -22118,6 +22120,10 @@ function ingestBindings(unit, op, element) {
             if (output.phase === null) {
                 throw Error('Animation listener should have a phase');
             }
+        }
+        if (element instanceof Template && !isPlainTemplate) {
+            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null));
+            continue;
         }
         listenerOp =
             createListenerOp(op.xref, output.name, op.tag, output.phase, false, output.sourceSpan);
@@ -22154,9 +22160,36 @@ const BINDING_KINDS = new Map([
     [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
     [4 /* e.BindingType.Animation */, BindingKind.Animation],
 ]);
-function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, isTextAttribute, isTemplateBinding) {
+var BindingFlags;
+(function (BindingFlags) {
+    BindingFlags[BindingFlags["None"] = 0] = "None";
+    /**
+     * The binding is to a static text literal and not to an expression.
+     */
+    BindingFlags[BindingFlags["TextValue"] = 1] = "TextValue";
+    /**
+     * The binding belongs to the `<ng-template>` side of a `t.Template`.
+     */
+    BindingFlags[BindingFlags["BindingTargetsTemplate"] = 2] = "BindingTargetsTemplate";
+    /**
+     * The binding is on a structural directive.
+     */
+    BindingFlags[BindingFlags["IsStructuralTemplateAttribute"] = 4] = "IsStructuralTemplateAttribute";
+    /**
+     * The binding is on a `t.Template`.
+     */
+    BindingFlags[BindingFlags["OnNgTemplateElement"] = 8] = "OnNgTemplateElement";
+})(BindingFlags || (BindingFlags = {}));
+function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, flags) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
+    }
+    if (flags & BindingFlags.OnNgTemplateElement && !(flags & BindingFlags.BindingTargetsTemplate) &&
+        type === 0 /* e.BindingType.Property */) {
+        // This binding only exists for later const extraction, and is not an actual binding to be
+        // created.
+        view.create.push(createExtractedAttributeOp(xref, BindingKind.Property, name, null));
+        return;
     }
     let expression;
     // TODO: We could easily generate source maps for subexpressions in these cases, but
@@ -22171,7 +22204,7 @@ function ingestBinding(view, xref, name, value, type, unit, securityContext, sou
         expression = value;
     }
     const kind = BINDING_KINDS.get(type);
-    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, isTextAttribute, isTemplateBinding, sourceSpan));
+    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, !!(flags & BindingFlags.TextValue), !!(flags & BindingFlags.IsStructuralTemplateAttribute), sourceSpan));
 }
 /**
  * Process all of the local references on an element-like structure in the template AST and
@@ -29226,7 +29259,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.6+sha-7068389');
+const VERSION = new Version('17.0.0-next.6+sha-422a3db');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30733,7 +30766,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30841,7 +30874,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31118,7 +31151,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31153,7 +31186,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31204,7 +31237,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31237,7 +31270,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31288,7 +31321,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-7068389'));
+    definitionMap.set('version', literal('17.0.0-next.6+sha-422a3db'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
