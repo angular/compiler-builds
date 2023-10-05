@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-ced66d4
+ * @license Angular v17.0.0-next.7+sha-40c5357
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1738,7 +1738,8 @@ export declare const enum LexerTokenType {
     BLOCK_OPEN_END = 25,
     BLOCK_CLOSE = 26,
     BLOCK_PARAMETER = 27,
-    EOF = 28
+    INCOMPLETE_BLOCK_OPEN = 28,
+    EOF = 29
 }
 
 declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
@@ -4587,6 +4588,7 @@ declare namespace t {
         TmplAstForLoopBlockEmpty as ForLoopBlockEmpty,
         TmplAstIfBlock as IfBlock,
         TmplAstIfBlockBranch as IfBlockBranch,
+        TmplAstUnknownBlock as UnknownBlock,
         TmplAstTemplate as Template,
         TmplAstContent as Content,
         TmplAstVariable as Variable,
@@ -4975,6 +4977,7 @@ export declare class TmplAstRecursiveVisitor implements Visitor_3<void> {
     visitBoundText(text: TmplAstBoundText): void;
     visitIcu(icu: TmplAstIcu): void;
     visitDeferredTrigger(trigger: TmplAstDeferredTrigger): void;
+    visitUnknownBlock(block: TmplAstUnknownBlock): void;
 }
 
 export declare class TmplAstReference implements TmplAstNode {
@@ -5050,6 +5053,13 @@ export declare class TmplAstTextAttribute implements TmplAstNode {
 export declare class TmplAstTimerDeferredTrigger extends TmplAstDeferredTrigger {
     delay: number;
     constructor(delay: number, sourceSpan: ParseSourceSpan);
+}
+
+export declare class TmplAstUnknownBlock implements TmplAstNode {
+    name: string;
+    sourceSpan: ParseSourceSpan;
+    constructor(name: string, sourceSpan: ParseSourceSpan);
+    visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
 export declare class TmplAstVariable implements TmplAstNode {
@@ -5361,6 +5371,7 @@ declare interface Visitor_3<Result = any> {
     visitForLoopBlockEmpty(block: TmplAstForLoopBlockEmpty): Result;
     visitIfBlock(block: TmplAstIfBlock): Result;
     visitIfBlockBranch(block: TmplAstIfBlockBranch): Result;
+    visitUnknownBlock(block: TmplAstUnknownBlock): Result;
 }
 
 export declare class WrappedNodeExpr<T> extends Expression {

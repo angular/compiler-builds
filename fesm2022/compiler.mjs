@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-ced66d4
+ * @license Angular v17.0.0-next.7+sha-40c5357
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3972,6 +3972,15 @@ class IfBlockBranch {
         return visitor.visitIfBlockBranch(this);
     }
 }
+class UnknownBlock {
+    constructor(name, sourceSpan) {
+        this.name = name;
+        this.sourceSpan = sourceSpan;
+    }
+    visit(visitor) {
+        return visitor.visitUnknownBlock(this);
+    }
+}
 class Template {
     constructor(
     // tagName is the name of the container element, if applicable.
@@ -4103,6 +4112,7 @@ class RecursiveVisitor$1 {
     visitBoundText(text) { }
     visitIcu(icu) { }
     visitDeferredTrigger(trigger) { }
+    visitUnknownBlock(block) { }
 }
 function visitAll$1(visitor, nodes) {
     const result = [];
@@ -17078,7 +17088,7 @@ class _Tokenizer {
                 this.handleError(e);
             }
         }
-        this._beginToken(28 /* TokenType.EOF */);
+        this._beginToken(29 /* TokenType.EOF */);
         this._endToken([]);
     }
     _getBlockName() {
@@ -17099,7 +17109,7 @@ class _Tokenizer {
     }
     _consumeBlockStart(start) {
         this._beginToken(24 /* TokenType.BLOCK_OPEN_START */, start);
-        this._endToken([this._getBlockName()]);
+        const startToken = this._endToken([this._getBlockName()]);
         if (this._cursor.peek() === $LPAREN) {
             // Advance past the opening paren.
             this._cursor.advance();
@@ -17107,14 +17117,22 @@ class _Tokenizer {
             this._consumeBlockParameters();
             // Allow spaces before the closing paren.
             this._attemptCharCodeUntilFn(isNotWhitespace);
-            // Skip over the closing paren.
-            this._requireCharCode($RPAREN);
-            // Allow spaces after the paren.
-            this._attemptCharCodeUntilFn(isNotWhitespace);
+            if (this._attemptCharCode($RPAREN)) {
+                // Allow spaces after the paren.
+                this._attemptCharCodeUntilFn(isNotWhitespace);
+            }
+            else {
+                startToken.type = 28 /* TokenType.INCOMPLETE_BLOCK_OPEN */;
+                return;
+            }
         }
-        this._beginToken(25 /* TokenType.BLOCK_OPEN_END */);
-        this._requireCharCode($LBRACE);
-        this._endToken([]);
+        if (this._attemptCharCode($LBRACE)) {
+            this._beginToken(25 /* TokenType.BLOCK_OPEN_END */);
+            this._endToken([]);
+        }
+        else {
+            startToken.type = 28 /* TokenType.INCOMPLETE_BLOCK_OPEN */;
+        }
     }
     _consumeBlockEnd(start) {
         this._beginToken(26 /* TokenType.BLOCK_CLOSE */, start);
@@ -18087,7 +18105,7 @@ class _TreeBuilder {
         this._advance();
     }
     build() {
-        while (this._peek.type !== 28 /* TokenType.EOF */) {
+        while (this._peek.type !== 29 /* TokenType.EOF */) {
             if (this._peek.type === 0 /* TokenType.TAG_OPEN_START */ ||
                 this._peek.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
                 this._consumeStartTag(this._advance());
@@ -18118,6 +18136,10 @@ class _TreeBuilder {
             else if (this._peek.type === 26 /* TokenType.BLOCK_CLOSE */) {
                 this._closeVoidElement();
                 this._consumeBlockClose(this._advance());
+            }
+            else if (this._peek.type === 28 /* TokenType.INCOMPLETE_BLOCK_OPEN */) {
+                this._closeVoidElement();
+                this._consumeIncompleteBlock(this._advance());
             }
             else {
                 // Skip all other tokens...
@@ -18192,7 +18214,7 @@ class _TreeBuilder {
         if (!exp)
             return null;
         const end = this._advance();
-        exp.push({ type: 28 /* TokenType.EOF */, parts: [], sourceSpan: end.sourceSpan });
+        exp.push({ type: 29 /* TokenType.EOF */, parts: [], sourceSpan: end.sourceSpan });
         // parse everything in between { and }
         const expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
         expansionCaseParser.build();
@@ -18232,7 +18254,7 @@ class _TreeBuilder {
                     return null;
                 }
             }
-            if (this._peek.type === 28 /* TokenType.EOF */) {
+            if (this._peek.type === 29 /* TokenType.EOF */) {
                 this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
                 return null;
             }
@@ -18434,16 +18456,30 @@ class _TreeBuilder {
         const startSpan = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
         const block = new Block(token.parts[0], parameters, [], span, startSpan);
         this._pushContainer(block, false);
-        return block;
     }
     _consumeBlockClose(token) {
-        const previousContainer = this._getContainer();
         if (!this._popContainer(null, Block, token.sourceSpan)) {
-            const context = previousContainer instanceof Element ?
-                `There is an unclosed "${previousContainer.name}" HTML tag that may have to be closed first.` :
-                `The block may have been closed earlier.`;
-            this.errors.push(TreeError.create(null, token.sourceSpan, `Unexpected closing block. ${context}`));
+            this.errors.push(TreeError.create(null, token.sourceSpan, `Unexpected closing block. The block may have been closed earlier. ` +
+                `If you meant to write the } character, you should use the "&#125;" ` +
+                `HTML entity instead.`));
         }
+    }
+    _consumeIncompleteBlock(token) {
+        const parameters = [];
+        while (this._peek.type === 27 /* TokenType.BLOCK_PARAMETER */) {
+            const paramToken = this._advance();
+            parameters.push(new BlockParameter(paramToken.parts[0], paramToken.sourceSpan));
+        }
+        const end = this._peek.sourceSpan.fullStart;
+        const span = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
+        // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
+        const startSpan = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
+        const block = new Block(token.parts[0], parameters, [], span, startSpan);
+        this._pushContainer(block, false);
+        // Incomplete blocks don't have children so we close them immediately and report an error.
+        this._popContainer(null, Block, null);
+        this.errors.push(TreeError.create(token.parts[0], span, `Incomplete block "${token.parts[0]}". If you meant to write the @ character, ` +
+            `you should use the "&#64;" HTML entity instead.`));
     }
     _getContainer() {
         return this._containerStack.length > 0 ? this._containerStack[this._containerStack.length - 1] :
@@ -24445,7 +24481,10 @@ class HtmlAstToIvyAst {
                 else {
                     errorMessage = `Unrecognized block @${block.name}.`;
                 }
-                result = { node: null, errors: [new ParseError(block.sourceSpan, errorMessage)] };
+                result = {
+                    node: new UnknownBlock(block.name, block.sourceSpan),
+                    errors: [new ParseError(block.sourceSpan, errorMessage)],
+                };
                 break;
         }
         this.errors.push(...result.errors);
@@ -25046,6 +25085,7 @@ class TemplateDefinitionBuilder {
         this.visitIfBlockBranch = invalid;
         this.visitSwitchBlockCase = invalid;
         this.visitForLoopBlockEmpty = invalid;
+        this.visitUnknownBlock = invalid;
         this._bindingScope = parentBindingScope.nestedScope(level);
         // Turn the relative context file path into an identifier by replacing non-alphanumeric
         // characters with underscores.
@@ -28051,6 +28091,7 @@ class Scope {
     visitTextAttribute(attr) { }
     visitIcu(icu) { }
     visitDeferredTrigger(trigger) { }
+    visitUnknownBlock(block) { }
     maybeDeclare(thing) {
         // Declare something with a name, as long as that name isn't taken.
         if (!this.namedEntities.has(thing.name)) {
@@ -28252,6 +28293,7 @@ class DirectiveBinder {
     visitBoundText(text) { }
     visitIcu(icu) { }
     visitDeferredTrigger(trigger) { }
+    visitUnknownBlock(block) { }
 }
 /**
  * Processes a template and extract metadata about expressions and symbols within.
@@ -28380,6 +28422,7 @@ class TemplateBinder extends RecursiveAstVisitor {
     visitText(text) { }
     visitContent(content) { }
     visitTextAttribute(attribute) { }
+    visitUnknownBlock(block) { }
     visitIcu(icu) {
         Object.keys(icu.vars).forEach(key => icu.vars[key].visit(this));
         Object.keys(icu.placeholders).forEach(key => icu.placeholders[key].visit(this));
@@ -29259,7 +29302,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.7+sha-ced66d4');
+const VERSION = new Version('17.0.0-next.7+sha-40c5357');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30766,7 +30809,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30874,7 +30917,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31151,7 +31194,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31186,7 +31229,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31237,7 +31280,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31270,7 +31313,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31321,7 +31364,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-ced66d4'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-40c5357'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -31354,5 +31397,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
