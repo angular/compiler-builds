@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-5464bea
+ * @license Angular v17.0.0-next.7+sha-5b88d13
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3868,12 +3868,13 @@ class DeferredBlockError {
     }
 }
 class DeferredBlock {
-    constructor(children, triggers, prefetchTriggers, placeholder, loading, error, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(children, triggers, prefetchTriggers, placeholder, loading, error, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan) {
         this.children = children;
         this.placeholder = placeholder;
         this.loading = loading;
         this.error = error;
         this.sourceSpan = sourceSpan;
+        this.mainBlockSpan = mainBlockSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
         this.triggers = triggers;
@@ -3890,14 +3891,11 @@ class DeferredBlock {
         this.visitTriggers(this.definedTriggers, this.triggers, visitor);
         this.visitTriggers(this.definedPrefetchTriggers, this.prefetchTriggers, visitor);
         visitAll$1(visitor, this.children);
-        this.placeholder && visitor.visitDeferredBlockPlaceholder(this.placeholder);
-        this.loading && visitor.visitDeferredBlockLoading(this.loading);
-        this.error && visitor.visitDeferredBlockError(this.error);
+        const remainingBlocks = [this.placeholder, this.loading, this.error].filter(x => x !== null);
+        visitAll$1(visitor, remainingBlocks);
     }
     visitTriggers(keys, triggers, visitor) {
-        for (const key of keys) {
-            visitor.visitDeferredTrigger(triggers[key]);
-        }
+        visitAll$1(visitor, keys.map(k => triggers[k]));
     }
 }
 class SwitchBlock {
@@ -3924,7 +3922,7 @@ class SwitchBlockCase {
     }
 }
 class ForLoopBlock {
-    constructor(item, expression, trackBy, contextVariables, children, empty, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(item, expression, trackBy, contextVariables, children, empty, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan) {
         this.item = item;
         this.expression = expression;
         this.trackBy = trackBy;
@@ -3932,6 +3930,7 @@ class ForLoopBlock {
         this.children = children;
         this.empty = empty;
         this.sourceSpan = sourceSpan;
+        this.mainBlockSpan = mainBlockSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
     }
@@ -3940,10 +3939,11 @@ class ForLoopBlock {
     }
 }
 class ForLoopBlockEmpty {
-    constructor(children, sourceSpan, startSourceSpan) {
+    constructor(children, sourceSpan, startSourceSpan, endSourceSpan) {
         this.children = children;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
     }
     visit(visitor) {
         return visitor.visitForLoopBlockEmpty(this);
@@ -3961,12 +3961,13 @@ class IfBlock {
     }
 }
 class IfBlockBranch {
-    constructor(expression, children, expressionAlias, sourceSpan, startSourceSpan) {
+    constructor(expression, children, expressionAlias, sourceSpan, startSourceSpan, endSourceSpan) {
         this.expression = expression;
         this.children = children;
         this.expressionAlias = expressionAlias;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
     }
     visit(visitor) {
         return visitor.visitIfBlockBranch(this);
@@ -23453,7 +23454,7 @@ function createIfBlock(ast, connectedBlocks, visitor, bindingParser) {
     }
     const mainBlockParams = parseConditionalBlockParameters(ast, errors, bindingParser);
     if (mainBlockParams !== null) {
-        branches.push(new IfBlockBranch(mainBlockParams.expression, visitAll(visitor, ast.children, ast.children), mainBlockParams.expressionAlias, ast.sourceSpan, ast.startSourceSpan));
+        branches.push(new IfBlockBranch(mainBlockParams.expression, visitAll(visitor, ast.children, ast.children), mainBlockParams.expressionAlias, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan));
     }
     // Assumes that the structure is valid since we validated it above.
     for (const block of connectedBlocks) {
@@ -23461,15 +23462,23 @@ function createIfBlock(ast, connectedBlocks, visitor, bindingParser) {
         if (ELSE_IF_PATTERN.test(block.name)) {
             const params = parseConditionalBlockParameters(block, errors, bindingParser);
             if (params !== null) {
-                branches.push(new IfBlockBranch(params.expression, children, params.expressionAlias, block.sourceSpan, block.startSourceSpan));
+                branches.push(new IfBlockBranch(params.expression, children, params.expressionAlias, block.sourceSpan, block.startSourceSpan, block.endSourceSpan));
             }
         }
         else if (block.name === 'else') {
-            branches.push(new IfBlockBranch(null, children, null, block.sourceSpan, block.startSourceSpan));
+            branches.push(new IfBlockBranch(null, children, null, block.sourceSpan, block.startSourceSpan, block.endSourceSpan));
         }
     }
+    // The outer IfBlock should have a span that encapsulates all branches.
+    const ifBlockStartSourceSpan = branches.length > 0 ? branches[0].startSourceSpan : ast.startSourceSpan;
+    const ifBlockEndSourceSpan = branches.length > 0 ? branches[branches.length - 1].endSourceSpan : ast.endSourceSpan;
+    let wholeSourceSpan = ast.sourceSpan;
+    const lastBranch = branches[branches.length - 1];
+    if (lastBranch !== undefined) {
+        wholeSourceSpan = new ParseSourceSpan(ifBlockStartSourceSpan.start, lastBranch.sourceSpan.end);
+    }
     return {
-        node: new IfBlock(branches, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan),
+        node: new IfBlock(branches, wholeSourceSpan, ast.startSourceSpan, ifBlockEndSourceSpan),
         errors,
     };
 }
@@ -23488,7 +23497,7 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
                 errors.push(new ParseError(block.sourceSpan, '@empty block cannot have parameters'));
             }
             else {
-                empty = new ForLoopBlockEmpty(visitAll(visitor, block.children, block.children), block.sourceSpan, block.startSourceSpan);
+                empty = new ForLoopBlockEmpty(visitAll(visitor, block.children, block.children), block.sourceSpan, block.startSourceSpan, block.endSourceSpan);
             }
         }
         else {
@@ -23497,10 +23506,16 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
     }
     if (params !== null) {
         if (params.trackBy === null) {
+            // TODO: We should not fail here, and instead try to produce some AST for the language
+            // service.
             errors.push(new ParseError(ast.sourceSpan, '@for loop must have a "track" expression'));
         }
         else {
-            node = new ForLoopBlock(params.itemName, params.expression, params.trackBy, params.context, visitAll(visitor, ast.children, ast.children), empty, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+            // The `for` block has a main span that includes the `empty` branch. For only the span of the
+            // main `for` body, use `mainSourceSpan`.
+            const endSpan = empty?.endSourceSpan ?? ast.endSourceSpan;
+            const sourceSpan = new ParseSourceSpan(ast.sourceSpan.start, endSpan?.end ?? ast.sourceSpan.end);
+            node = new ForLoopBlock(params.itemName, params.expression, params.trackBy, params.context, visitAll(visitor, ast.children, ast.children), empty, sourceSpan, ast.sourceSpan, ast.startSourceSpan, endSpan);
         }
     }
     return { node, errors };
@@ -23579,8 +23594,10 @@ function parseForLoopParameters(block, errors, bindingParser) {
     // Fill out any variables that haven't been defined explicitly.
     for (const variableName of ALLOWED_FOR_LOOP_LET_VARIABLES) {
         if (!result.context.hasOwnProperty(variableName)) {
-            result.context[variableName] =
-                new Variable(variableName, variableName, block.startSourceSpan, block.startSourceSpan);
+            // Give ambiently-available context variables empty spans at the end of the start of the `for`
+            // block, since they are not explicitly defined.
+            const emptySpanAfterForBlockStart = new ParseSourceSpan(block.startSourceSpan.end, block.startSourceSpan.end);
+            result.context[variableName] = new Variable(variableName, variableName, emptySpanAfterForBlockStart, emptySpanAfterForBlockStart);
         }
     }
     return result;
@@ -24075,7 +24092,17 @@ function createDeferredBlock(ast, connectedBlocks, visitor, bindingParser) {
     const errors = [];
     const { placeholder, loading, error } = parseConnectedBlocks(connectedBlocks, errors, visitor);
     const { triggers, prefetchTriggers } = parsePrimaryTriggers(ast.parameters, bindingParser, errors, placeholder);
-    const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, placeholder, loading, error, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+    // The `defer` block has a main span encompassing all of the connected branches as well. For the
+    // span of only the first "main" branch, use `mainSourceSpan`.
+    let lastEndSourceSpan = ast.endSourceSpan;
+    let endOfLastSourceSpan = ast.sourceSpan.end;
+    if (connectedBlocks.length > 0) {
+        const lastConnectedBlock = connectedBlocks[connectedBlocks.length - 1];
+        lastEndSourceSpan = lastConnectedBlock.endSourceSpan;
+        endOfLastSourceSpan = lastConnectedBlock.sourceSpan.end;
+    }
+    const mainDeferredSourceSpan = new ParseSourceSpan(ast.sourceSpan.start, endOfLastSourceSpan);
+    const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, placeholder, loading, error, mainDeferredSourceSpan, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan);
     return { node, errors };
 }
 function parseConnectedBlocks(connectedBlocks, errors, visitor) {
@@ -29302,7 +29329,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.7+sha-5464bea');
+const VERSION = new Version('17.0.0-next.7+sha-5b88d13');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30809,7 +30836,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30917,7 +30944,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31194,7 +31221,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31229,7 +31256,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31280,7 +31307,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31313,7 +31340,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31364,7 +31391,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-5464bea'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-5b88d13'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

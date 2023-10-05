@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-5464bea
+ * @license Angular v17.0.0-next.7+sha-5b88d13
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4802,13 +4802,14 @@ export declare class TmplAstDeferredBlock implements TmplAstNode {
     loading: TmplAstDeferredBlockLoading | null;
     error: TmplAstDeferredBlockError | null;
     sourceSpan: ParseSourceSpan;
+    mainBlockSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     readonly triggers: Readonly<TmplAstDeferredBlockTriggers>;
     readonly prefetchTriggers: Readonly<TmplAstDeferredBlockTriggers>;
     private readonly definedTriggers;
     private readonly definedPrefetchTriggers;
-    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
     visitAll(visitor: Visitor_3<unknown>): void;
     private visitTriggers;
@@ -4883,9 +4884,10 @@ export declare class TmplAstForLoopBlock implements TmplAstNode {
     children: TmplAstNode[];
     empty: TmplAstForLoopBlockEmpty | null;
     sourceSpan: ParseSourceSpan;
+    mainBlockSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -4893,7 +4895,8 @@ export declare class TmplAstForLoopBlockEmpty implements TmplAstNode {
     children: TmplAstNode[];
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
-    constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -4937,7 +4940,8 @@ export declare class TmplAstIfBlockBranch implements TmplAstNode {
     expressionAlias: TmplAstVariable | null;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
-    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: TmplAstVariable | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: TmplAstVariable | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
