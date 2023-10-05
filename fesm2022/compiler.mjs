@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.6+sha-ee0d04b
+ * @license Angular v17.0.0-next.7+sha-0d3373b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3139,7 +3139,14 @@ class AbstractEmitterVisitor {
         return null;
     }
     visitInvokeFunctionExpr(expr, ctx) {
+        const shouldParenthesize = expr.fn instanceof ArrowFunctionExpr;
+        if (shouldParenthesize) {
+            ctx.print(expr.fn, '(');
+        }
         expr.fn.visitExpression(this, ctx);
+        if (shouldParenthesize) {
+            ctx.print(expr.fn, ')');
+        }
         ctx.print(expr, `(`);
         this.visitAllExpressions(expr.args, ctx, ',');
         ctx.print(expr, `)`);
@@ -3438,7 +3445,7 @@ function wrapReference(value) {
 }
 function refsToArray(refs, shouldForwardDeclare) {
     const values = literalArr(refs.map(ref => ref.value));
-    return shouldForwardDeclare ? fn([], [new ReturnStatement(values)]) : values;
+    return shouldForwardDeclare ? arrowFn([], values) : values;
 }
 function createMayBeForwardRefExpression(expression, forwardRef) {
     return { expression, forwardRef };
@@ -3471,7 +3478,7 @@ function convertFromMaybeForwardRefExpression({ expression, forwardRef }) {
  * ```
  */
 function generateForwardRef(expr) {
-    return importExpr(Identifiers.forwardRef).callFn([fn([], [new ReturnStatement(expr)])]);
+    return importExpr(Identifiers.forwardRef).callFn([arrowFn([], expr)]);
 }
 
 var R3FactoryDelegateType;
@@ -3559,7 +3566,7 @@ function compileFactoryFunction(meta) {
     if (baseFactoryVar !== null) {
         // There is a base factory variable so wrap its declaration along with the factory function into
         // an IIFE.
-        factoryFn = fn([], [
+        factoryFn = arrowFn([], [
             new DeclareVarStmt(baseFactoryVar.name), new ReturnStatement(factoryFn)
         ]).callFn([], /* sourceSpan */ undefined, /* pure */ true);
     }
@@ -4931,7 +4938,13 @@ class DefinitionMap {
     }
     set(key, value) {
         if (value) {
-            this.values.push({ key: key, value, quoted: false });
+            const existing = this.values.find(value => value.key === key);
+            if (existing) {
+                existing.value = value;
+            }
+            else {
+                this.values.push({ key: key, value, quoted: false });
+            }
         }
     }
     toLiteralMap() {
@@ -5074,10 +5087,7 @@ function compileInjectable(meta, resolveForwardRefs) {
             });
         }
         else {
-            result = {
-                statements: [],
-                expression: fn([], [new ReturnStatement(meta.useFactory.callFn([]))])
-            };
+            result = { statements: [], expression: arrowFn([], meta.useFactory.callFn([])) };
         }
     }
     else if (meta.useValue !== undefined) {
@@ -5146,7 +5156,7 @@ function delegateToFactory(type, useType, unwrapForwardRefs) {
     return createFactoryFunction(unwrappedType);
 }
 function createFactoryFunction(type) {
-    return fn([new FnParam('t', DYNAMIC_TYPE)], [new ReturnStatement(type.prop('ɵfac').callFn([variable('t')]))]);
+    return arrowFn([new FnParam('t', DYNAMIC_TYPE)], type.prop('ɵfac').callFn([variable('t')]));
 }
 
 const UNUSABLE_INTERPOLATION_REGEXPS = [
@@ -8760,37 +8770,57 @@ var OpKind;
      */
     OpKind[OpKind["ExtractedAttribute"] = 25] = "ExtractedAttribute";
     /**
+     * An operation that configures a `@defer` block.
+     */
+    OpKind[OpKind["Defer"] = 26] = "Defer";
+    /**
+     * An IR operation that provides secondary templates of a `@defer` block.
+     */
+    OpKind[OpKind["DeferSecondaryBlock"] = 27] = "DeferSecondaryBlock";
+    /**
+     * An operation that controls when a `@defer` loads.
+     */
+    OpKind[OpKind["DeferOn"] = 28] = "DeferOn";
+    /**
      * An i18n message that has been extracted for inclusion in the consts array.
      */
-    OpKind[OpKind["ExtractedMessage"] = 26] = "ExtractedMessage";
+    OpKind[OpKind["ExtractedMessage"] = 29] = "ExtractedMessage";
     /**
      * A host binding property.
      */
-    OpKind[OpKind["HostProperty"] = 27] = "HostProperty";
+    OpKind[OpKind["HostProperty"] = 30] = "HostProperty";
     /**
      * A namespace change, which causes the subsequent elements to be processed as either HTML or SVG.
      */
-    OpKind[OpKind["Namespace"] = 28] = "Namespace";
+    OpKind[OpKind["Namespace"] = 31] = "Namespace";
     /**
      * Configure a content projeciton definition for the view.
      */
-    OpKind[OpKind["ProjectionDef"] = 29] = "ProjectionDef";
+    OpKind[OpKind["ProjectionDef"] = 32] = "ProjectionDef";
     /**
      * Create a content projection slot.
      */
-    OpKind[OpKind["Projection"] = 30] = "Projection";
+    OpKind[OpKind["Projection"] = 33] = "Projection";
     /**
      * The start of an i18n block.
      */
-    OpKind[OpKind["I18nStart"] = 31] = "I18nStart";
+    OpKind[OpKind["I18nStart"] = 34] = "I18nStart";
     /**
      * A self-closing i18n on a single element.
      */
-    OpKind[OpKind["I18n"] = 32] = "I18n";
+    OpKind[OpKind["I18n"] = 35] = "I18n";
     /**
      * The end of an i18n block.
      */
-    OpKind[OpKind["I18nEnd"] = 33] = "I18nEnd";
+    OpKind[OpKind["I18nEnd"] = 36] = "I18nEnd";
+    /**
+     * An expression in an i18n message.
+     */
+    OpKind[OpKind["I18nExpression"] = 37] = "I18nExpression";
+    /**
+     * An instruction that applies a set of i18n expressions.
+     */
+    OpKind[OpKind["I18nApply"] = 38] = "I18nApply";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -8881,6 +8911,10 @@ var ExpressionKind;
      * An expression that will cause a literal slot index to be emitted.
      */
     ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 20] = "SlotLiteralExpr";
+    /**
+     * A test expression for a conditional op.
+     */
+    ExpressionKind[ExpressionKind["ConditionalCase"] = 21] = "ConditionalCase";
 })(ExpressionKind || (ExpressionKind = {}));
 /**
  * Distinguishes between different kinds of `SemanticVariable`s.
@@ -8922,6 +8956,15 @@ var SanitizerFn;
     SanitizerFn[SanitizerFn["ResourceUrl"] = 4] = "ResourceUrl";
     SanitizerFn[SanitizerFn["IframeAttribute"] = 5] = "IframeAttribute";
 })(SanitizerFn || (SanitizerFn = {}));
+/**
+ * Enumeration of the different kinds of `@defer` secondary blocks.
+ */
+var DeferSecondaryKind;
+(function (DeferSecondaryKind) {
+    DeferSecondaryKind[DeferSecondaryKind["Loading"] = 0] = "Loading";
+    DeferSecondaryKind[DeferSecondaryKind["Placeholder"] = 1] = "Placeholder";
+    DeferSecondaryKind[DeferSecondaryKind["Error"] = 2] = "Error";
+})(DeferSecondaryKind || (DeferSecondaryKind = {}));
 /**
  * Enumeration of the types of attributes which can be applied to an element.
  */
@@ -8978,6 +9021,10 @@ const ConsumesVarsTrait = Symbol('ConsumesVars');
  */
 const UsesVarOffset = Symbol('UsesVarOffset');
 /**
+ * Marker symbol for `HasConst` trait.
+ */
+const HasConst = Symbol('HasConst');
+/**
  * Default values for most `ConsumesSlotOpTrait` fields (used with the spread operator to initialize
  * implementors of the trait).
  */
@@ -8992,7 +9039,7 @@ const TRAIT_CONSUMES_SLOT = {
  */
 const TRAIT_USES_SLOT_INDEX = {
     [UsesSlotIndex]: true,
-    slot: null,
+    targetSlot: null,
 };
 /**
  * Default values for most `DependsOnSlotContextOpTrait` fields (used with the spread operator to
@@ -9017,6 +9064,14 @@ const TRAIT_USES_VAR_OFFSET = {
     varOffset: null,
 };
 /**
+ * Default values for `HasConst` fields (used with the spread operator to initialize
+ * implementors of this trait).
+ */
+const TRAIT_HAS_CONST = {
+    [HasConst]: true,
+    constIndex: null,
+};
+/**
  * Test whether an operation implements `ConsumesSlotOpTrait`.
  */
 function hasConsumesSlotTrait(op) {
@@ -9039,6 +9094,9 @@ function hasUsesVarOffsetTrait(expr) {
 }
 function hasUsesSlotIndexTrait(value) {
     return value[UsesSlotIndex] === true;
+}
+function hasConstTrait(value) {
+    return value[HasConst] === true;
 }
 
 /**
@@ -9078,11 +9136,12 @@ const NEW_OP = {
 /**
  * Create an `InterpolationTextOp`.
  */
-function createInterpolateTextOp(xref, interpolation, sourceSpan) {
+function createInterpolateTextOp(xref, interpolation, i18nPlaceholders, sourceSpan) {
     return {
         kind: OpKind.InterpolateText,
         target: xref,
         interpolation,
+        i18nPlaceholders,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
@@ -9220,17 +9279,46 @@ function createAdvanceOp(delta, sourceSpan) {
 /**
  * Create a conditional op, which will display an embedded view according to a condtion.
  */
-function createConditionalOp(target, test, sourceSpan) {
+function createConditionalOp(target, test, conditions, sourceSpan) {
     return {
         kind: OpKind.Conditional,
         target,
         test,
-        conditions: [],
+        conditions,
         processed: null,
         sourceSpan,
+        contextValue: null,
         ...NEW_OP,
         ...TRAIT_USES_SLOT_INDEX,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+    };
+}
+/**
+ * Create an i18n expression op.
+ */
+function createI18nExpressionOp(target, expression, i18nPlaceholder, sourceSpan) {
+    return {
+        kind: OpKind.I18nExpression,
+        target,
+        expression,
+        i18nPlaceholder,
+        sourceSpan,
+        ...NEW_OP,
+        ...TRAIT_CONSUMES_VARS,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+    };
+}
+/**
+ * Creates an op to apply i18n expression ops.
+ */
+function createI18nApplyOp(target, sourceSpan) {
+    return {
+        kind: OpKind.I18nApply,
+        target,
+        sourceSpan,
+        ...NEW_OP,
+        ...TRAIT_USES_SLOT_INDEX,
     };
 }
 
@@ -9281,7 +9369,7 @@ class ReferenceExpr extends ExpressionBase {
         this.offset = offset;
         this.kind = ExpressionKind.Reference;
         this[_a] = true;
-        this.slot = null;
+        this.targetSlot = null;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9293,7 +9381,7 @@ class ReferenceExpr extends ExpressionBase {
     transformInternalExpressions() { }
     clone() {
         const expr = new ReferenceExpr(this.target, this.offset);
-        expr.slot = this.slot;
+        expr.targetSlot = this.targetSlot;
         return expr;
     }
 }
@@ -9530,7 +9618,7 @@ class PipeBindingExpr extends ExpressionBase {
         this[_d] = true;
         this[_e] = true;
         this[_f] = true;
-        this.slot = null;
+        this.targetSlot = null;
         this.varOffset = null;
     }
     visitExpression(visitor, context) {
@@ -9551,7 +9639,7 @@ class PipeBindingExpr extends ExpressionBase {
     }
     clone() {
         const r = new PipeBindingExpr(this.target, this.name, this.args.map(a => a.clone()));
-        r.slot = this.slot;
+        r.targetSlot = this.targetSlot;
         r.varOffset = this.varOffset;
         return r;
     }
@@ -9568,7 +9656,7 @@ class PipeBindingVariadicExpr extends ExpressionBase {
         this[_g] = true;
         this[_h] = true;
         this[_j] = true;
-        this.slot = null;
+        this.targetSlot = null;
         this.varOffset = null;
     }
     visitExpression(visitor, context) {
@@ -9585,7 +9673,7 @@ class PipeBindingVariadicExpr extends ExpressionBase {
     }
     clone() {
         const r = new PipeBindingVariadicExpr(this.target, this.name, this.args.clone(), this.numArgs);
-        r.slot = this.slot;
+        r.targetSlot = this.targetSlot;
         r.varOffset = this.varOffset;
         return r;
     }
@@ -9785,19 +9873,55 @@ class SlotLiteralExpr extends ExpressionBase {
         this.target = target;
         this.kind = ExpressionKind.SlotLiteralExpr;
         this[_k] = true;
-        this.slot = null;
+        this.targetSlot = null;
     }
     visitExpression(visitor, context) { }
     isEquivalent(e) {
-        return e instanceof SlotLiteralExpr && e.target === this.target && e.slot === this.slot;
+        return e instanceof SlotLiteralExpr && e.target === this.target &&
+            e.targetSlot === this.targetSlot;
     }
     isConstant() {
         return true;
     }
     clone() {
-        return new SlotLiteralExpr(this.target);
+        const copy = new SlotLiteralExpr(this.target);
+        copy.targetSlot = this.targetSlot;
+        return copy;
     }
     transformInternalExpressions() { }
+}
+class ConditionalCaseExpr extends ExpressionBase {
+    /**
+     * Create an expression for one branch of a conditional.
+     * @param expr The expression to be tested for this case. Might be null, as in an `else` case.
+     * @param target The Xref of the view to be displayed if this condition is true.
+     */
+    constructor(expr, target, alias = null) {
+        super();
+        this.expr = expr;
+        this.target = target;
+        this.alias = alias;
+        this.kind = ExpressionKind.ConditionalCase;
+    }
+    visitExpression(visitor, context) {
+        if (this.expr !== null) {
+            this.expr.visitExpression(visitor, context);
+        }
+    }
+    isEquivalent(e) {
+        return e instanceof ConditionalCaseExpr && e.expr === this.expr;
+    }
+    isConstant() {
+        return true;
+    }
+    clone() {
+        return new ConditionalCaseExpr(this.expr, this.target);
+    }
+    transformInternalExpressions(transform, flags) {
+        if (this.expr !== null) {
+            this.expr = transformExpressionsInExpression(this.expr, transform, flags);
+        }
+    }
 }
 /**
  * Visits all `Expression`s in the AST of `op` with the `visitor` function.
@@ -9851,6 +9975,9 @@ function transformExpressionsInOp(op, transform, flags) {
             op.sanitizer =
                 op.sanitizer && transformExpressionsInExpression(op.sanitizer, transform, flags);
             break;
+        case OpKind.I18nExpression:
+            op.expression = transformExpressionsInExpression(op.expression, transform, flags);
+            break;
         case OpKind.InterpolateText:
             transformExpressionsInInterpolation(op.interpolation, transform, flags);
             break;
@@ -9862,14 +9989,17 @@ function transformExpressionsInOp(op, transform, flags) {
             break;
         case OpKind.Conditional:
             for (const condition of op.conditions) {
-                if (condition[1] === null) {
+                if (condition.expr === null) {
                     // This is a default case.
                     continue;
                 }
-                condition[1] = transformExpressionsInExpression(condition[1], transform, flags);
+                condition.expr = transformExpressionsInExpression(condition.expr, transform, flags);
             }
             if (op.processed !== null) {
                 op.processed = transformExpressionsInExpression(op.processed, transform, flags);
+            }
+            if (op.contextValue !== null) {
+                op.contextValue = transformExpressionsInExpression(op.contextValue, transform, flags);
             }
             break;
         case OpKind.Listener:
@@ -9887,18 +10017,20 @@ function transformExpressionsInOp(op, transform, flags) {
                 transformExpressionsInStatement(statement, transform, flags);
             }
             break;
+        case OpKind.I18n:
         case OpKind.I18nStart:
-            for (const placeholder in op.tagNameParams) {
-                op.tagNameParams[placeholder] =
-                    transformExpressionsInExpression(op.tagNameParams[placeholder], transform, flags);
+            for (const [placeholder, expression] of op.params) {
+                op.params.set(placeholder, transformExpressionsInExpression(expression, transform, flags));
             }
             break;
+        case OpKind.Defer:
+        case OpKind.DeferSecondaryBlock:
+        case OpKind.DeferOn:
         case OpKind.Projection:
         case OpKind.ProjectionDef:
         case OpKind.Element:
         case OpKind.ElementStart:
         case OpKind.ElementEnd:
-        case OpKind.I18n:
         case OpKind.I18nEnd:
         case OpKind.Container:
         case OpKind.ContainerStart:
@@ -9910,6 +10042,7 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Pipe:
         case OpKind.Advance:
         case OpKind.Namespace:
+        case OpKind.I18nApply:
             // These operations contain no expressions.
             break;
         default:
@@ -10190,7 +10323,7 @@ class OpList {
         // Replace `oldOp` with the chain `first` -> `last`.
         if (oldPrev !== null) {
             oldPrev.next = first;
-            first.prev = oldOp.prev;
+            first.prev = oldPrev;
         }
         if (oldNext !== null) {
             oldNext.prev = last;
@@ -10297,7 +10430,7 @@ function isElementOrContainerOp(op) {
 /**
  * Create an `ElementStartOp`.
  */
-function createElementStartOp(tag, xref, namespace, i18n, sourceSpan) {
+function createElementStartOp(tag, xref, namespace, i18nPlaceholder, sourceSpan) {
     return {
         kind: OpKind.ElementStart,
         xref,
@@ -10306,7 +10439,7 @@ function createElementStartOp(tag, xref, namespace, i18n, sourceSpan) {
         localRefs: [],
         nonBindable: false,
         namespace,
-        i18n,
+        i18nPlaceholder,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
         ...NEW_OP,
@@ -10315,19 +10448,18 @@ function createElementStartOp(tag, xref, namespace, i18n, sourceSpan) {
 /**
  * Create a `TemplateOp`.
  */
-function createTemplateOp(xref, tag, namespace, controlFlow, i18n, sourceSpan) {
+function createTemplateOp(xref, tag, namespace, generatedInBlock, i18n, sourceSpan) {
     return {
         kind: OpKind.Template,
         xref,
         attributes: null,
         tag,
-        controlFlow,
+        block: generatedInBlock,
         decls: null,
         vars: null,
         localRefs: [],
         nonBindable: false,
         namespace,
-        i18n,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
         ...NEW_OP,
@@ -10432,11 +10564,9 @@ function createProjectionOp(xref, selector) {
         attributes: null,
         localRefs: [],
         nonBindable: false,
-        i18n: undefined,
         sourceSpan: null,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
-        ...TRAIT_USES_SLOT_INDEX,
     };
 }
 /**
@@ -10450,6 +10580,42 @@ function createExtractedAttributeOp(target, bindingKind, name, expression) {
         name,
         expression,
         ...NEW_OP,
+    };
+}
+function createDeferOp(xref, main, sourceSpan) {
+    return {
+        kind: OpKind.Defer,
+        xref,
+        target: main,
+        loading: null,
+        placeholder: null,
+        error: null,
+        sourceSpan,
+        ...NEW_OP,
+        ...TRAIT_CONSUMES_SLOT,
+        ...TRAIT_USES_SLOT_INDEX,
+    };
+}
+function createDeferSecondaryOp(deferOp, secondaryView, secondaryBlockKind) {
+    return {
+        kind: OpKind.DeferSecondaryBlock,
+        deferOp,
+        target: secondaryView,
+        secondaryBlockKind,
+        constValue: null,
+        makeExpression: literalOrArrayLiteral$1,
+        ...NEW_OP,
+        ...TRAIT_USES_SLOT_INDEX,
+        ...TRAIT_HAS_CONST,
+    };
+}
+function createDeferOnOp(xref, sourceSpan) {
+    return {
+        kind: OpKind.DeferOn,
+        xref,
+        sourceSpan,
+        ...NEW_OP,
+        ...TRAIT_CONSUMES_SLOT,
     };
 }
 /**
@@ -10467,12 +10633,12 @@ function createExtractedMessageOp(owner, expression, statements) {
 /**
  * Create an `I18nStartOp`.
  */
-function createI18nStartOp(xref, i18n) {
+function createI18nStartOp(xref, message) {
     return {
         kind: OpKind.I18nStart,
         xref,
-        i18n,
-        tagNameParams: {},
+        message,
+        params: new Map(),
         messageIndex: null,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
@@ -10488,6 +10654,12 @@ function createI18nEndOp(xref) {
         ...NEW_OP,
     };
 }
+function literalOrArrayLiteral$1(value) {
+    if (Array.isArray(value)) {
+        return literalArr(value.map(literalOrArrayLiteral$1));
+    }
+    return literal(value, INFERRED_TYPE);
+}
 
 function createHostPropertyOp(name, expression, isAnimationTrigger, sourceSpan) {
     return {
@@ -10500,6 +10672,12 @@ function createHostPropertyOp(name, expression, isAnimationTrigger, sourceSpan) 
         ...NEW_OP,
     };
 }
+
+/**
+ * When referenced in the template's context parameters, this indicates a reference to the entire
+ * context object, rather than a specific parameter.
+ */
+const CTX_REF = 'CTX_REF_MARKER';
 
 var CompilationJobKind;
 (function (CompilationJobKind) {
@@ -10688,10 +10866,16 @@ function phaseVarCounting(job) {
     // First, count the vars used in each view, and update the view-level counter.
     for (const unit of job.units) {
         let varCount = 0;
+        // Count variables on top-level ops first. Don't explore nested expressions just yet.
         for (const op of unit.ops()) {
             if (hasConsumesVarsTrait(op)) {
                 varCount += varsUsedByOp(op);
             }
+        }
+        // Count variables on expressions inside ops. We do this later because some of these expressions
+        // might be conditional (e.g. `pipeBinding` inside of a ternary), and we don't want to interfere
+        // with indices for top-level binding slots (e.g. `property`).
+        for (const op of unit.ops()) {
             visitExpressionsInOp(op, expr => {
                 if (!isIrExpression(expr)) {
                     return;
@@ -10752,6 +10936,9 @@ function varsUsedByOp(op) {
         case OpKind.InterpolateText:
             // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
             return op.interpolation.expressions.length;
+        case OpKind.I18nExpression:
+        case OpKind.Conditional:
+            return 1;
         default:
             throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
     }
@@ -10821,6 +11008,35 @@ function removeAnys(e) {
         return e.args[0];
     }
     return e;
+}
+
+/**
+ * Adds apply operations after i18n expressions.
+ */
+function phaseApplyI18nExpressions(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            // Only add apply after expressions that are not followed by more expressions.
+            if (op.kind === OpKind.I18nExpression && needsApplication(op)) {
+                // TODO: what should be the source span for the apply op?
+                OpList.insertAfter(createI18nApplyOp(op.target, null), op);
+            }
+        }
+    }
+}
+/**
+ * Checks whether the given expression op needs to be followed with an apply op.
+ */
+function needsApplication(op) {
+    // If the next op is not another expression, we need to apply.
+    if (op.next?.kind !== OpKind.I18nExpression) {
+        return true;
+    }
+    // If the next op is an expression targeting a different i18n block, we need to apply.
+    if (op.next.target !== op.target) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -10984,14 +11200,20 @@ function phaseBindingSpecialization(job) {
 }
 
 const CHAINABLE = new Set([
-    Identifiers.elementStart,
-    Identifiers.elementEnd,
-    Identifiers.element,
-    Identifiers.property,
-    Identifiers.hostProperty,
-    Identifiers.syntheticHostProperty,
-    Identifiers.styleProp,
     Identifiers.attribute,
+    Identifiers.classProp,
+    Identifiers.element,
+    Identifiers.elementContainer,
+    Identifiers.elementContainerEnd,
+    Identifiers.elementContainerStart,
+    Identifiers.elementEnd,
+    Identifiers.elementStart,
+    Identifiers.hostProperty,
+    Identifiers.i18nExp,
+    Identifiers.listener,
+    Identifiers.listener,
+    Identifiers.property,
+    Identifiers.styleProp,
     Identifiers.stylePropInterpolate1,
     Identifiers.stylePropInterpolate2,
     Identifiers.stylePropInterpolate3,
@@ -11001,13 +11223,8 @@ const CHAINABLE = new Set([
     Identifiers.stylePropInterpolate7,
     Identifiers.stylePropInterpolate8,
     Identifiers.stylePropInterpolateV,
-    Identifiers.classProp,
-    Identifiers.listener,
-    Identifiers.elementContainerStart,
-    Identifiers.elementContainerEnd,
-    Identifiers.elementContainer,
-    Identifiers.listener,
     Identifiers.syntheticHostListener,
+    Identifiers.syntheticHostProperty,
     Identifiers.templateCreate,
 ]);
 /**
@@ -11084,9 +11301,9 @@ function phaseConditionals(job) {
             }
             let test;
             // Any case with a `null` condition is `default`. If one exists, default to it instead.
-            const defaultCase = op.conditions.findIndex(([xref, cond]) => cond === null);
+            const defaultCase = op.conditions.findIndex((cond) => cond.expr === null);
             if (defaultCase >= 0) {
-                const [xref, cond] = op.conditions.splice(defaultCase, 1)[0];
+                const xref = op.conditions.splice(defaultCase, 1)[0].target;
                 test = new SlotLiteralExpr(xref);
             }
             else {
@@ -11094,13 +11311,26 @@ function phaseConditionals(job) {
                 test = literal(-1);
             }
             // Switch expressions assign their main test to a temporary, to avoid re-executing it.
-            let tmp = new AssignTemporaryExpr(op.test, job.allocateXrefId());
-            // For each remaining condition, test whether the temporary satifies the check.
+            let tmp = op.test == null ? null : new AssignTemporaryExpr(op.test, job.allocateXrefId());
+            // For each remaining condition, test whether the temporary satifies the check. (If no temp is
+            // present, just check each expression directly.)
             for (let i = op.conditions.length - 1; i >= 0; i--) {
-                const useTmp = i === 0 ? tmp : new ReadTemporaryExpr(tmp.xref);
-                const [xref, check] = op.conditions[i];
-                const comparison = new BinaryOperatorExpr(BinaryOperator.Identical, useTmp, check);
-                test = new ConditionalExpr(comparison, new SlotLiteralExpr(xref), test);
+                let conditionalCase = op.conditions[i];
+                if (conditionalCase.expr === null) {
+                    continue;
+                }
+                if (tmp !== null) {
+                    const useTmp = i === 0 ? tmp : new ReadTemporaryExpr(tmp.xref);
+                    conditionalCase.expr =
+                        new BinaryOperatorExpr(BinaryOperator.Identical, useTmp, conditionalCase.expr);
+                }
+                else if (conditionalCase.alias !== null) {
+                    const caseExpressionTemporaryXref = job.allocateXrefId();
+                    conditionalCase.expr =
+                        new AssignTemporaryExpr(conditionalCase.expr, caseExpressionTemporaryXref);
+                    op.contextValue = new ReadTemporaryExpr(caseExpressionTemporaryXref);
+                }
+                test = new ConditionalExpr(conditionalCase.expr, new SlotLiteralExpr(conditionalCase.target), test);
             }
             // Save the resulting aggregate Joost-expression.
             op.processed = test;
@@ -11162,14 +11392,15 @@ const BINARY_OPERATORS = new Map([
     ['||', BinaryOperator.Or],
     ['+', BinaryOperator.Plus],
 ]);
-const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
 function namespaceForKey(namespacePrefixKey) {
+    const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
     if (namespacePrefixKey === null) {
         return Namespace.HTML;
     }
     return NAMESPACES.get(namespacePrefixKey) ?? Namespace.HTML;
 }
 function keyForNamespace(namespace) {
+    const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
     for (const [k, n] of NAMESPACES.entries()) {
         if (n === namespace) {
             return k;
@@ -11346,21 +11577,32 @@ const REPLACEMENTS = new Map([
     [OpKind.I18nEnd, [OpKind.I18nStart, OpKind.I18n]],
 ]);
 /**
+ * Op kinds that should not prevent merging of start/end ops.
+ */
+const IGNORED_OP_KINDS = new Set([OpKind.Pipe]);
+/**
  * Replace sequences of mergable elements (e.g. `ElementStart` and `ElementEnd`) with a consolidated
  * element (e.g. `Element`).
  */
 function phaseEmptyElements(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
+            // Find end ops that may be able to be merged.
             const opReplacements = REPLACEMENTS.get(op.kind);
             if (opReplacements === undefined) {
                 continue;
             }
             const [startKind, mergedKind] = opReplacements;
-            if (op.prev !== null && op.prev.kind === startKind) {
+            // Locate the previous (non-ignored) op.
+            let prevOp = op.prev;
+            while (prevOp !== null && IGNORED_OP_KINDS.has(prevOp.kind)) {
+                prevOp = prevOp.prev;
+            }
+            // If the previous op is the corresponding start op, we can megre.
+            if (prevOp !== null && prevOp.kind === startKind) {
                 // Transmute the start instruction to the merged version. This is safe as they're designed
                 // to be identical apart from the `kind`.
-                op.prev.kind = mergedKind;
+                prevOp.kind = mergedKind;
                 // Remove the end instruction.
                 OpList.remove(op);
             }
@@ -11551,13 +11793,31 @@ function phaseGenerateAdvance(job) {
     for (const unit of job.units) {
         // First build a map of all of the declarations in the view that have assigned slots.
         const slotMap = new Map();
+        let lastSlotOp = null;
         for (const op of unit.create) {
+            // For i18n blocks, we want to advance to the last element index in the block before invoking
+            // `i18nExp` instructions, to make sure the necessary lifecycle hooks of components/directives
+            // are properly flushed.
+            if (op.kind === OpKind.I18nEnd) {
+                if (lastSlotOp === null) {
+                    throw Error('Expected to have encountered an op prior to i18nEnd that consumes a slot');
+                }
+                // TODO(mmalerba): For empty i18n blocks, we move to the next slot to match
+                // TemplateDefinitionBuilder. This seems like just a quirk resulting from the special
+                // handling of i18n blocks that can be removed when compatibility is no longer required.
+                let lastSlot = lastSlotOp.slot;
+                if (lastSlotOp.kind === OpKind.I18nStart && job.compatibility) {
+                    lastSlot++;
+                }
+                slotMap.set(op.xref, lastSlot);
+            }
             if (!hasConsumesSlotTrait(op)) {
                 continue;
             }
             else if (op.slot === null) {
                 throw new Error(`AssertionError: expected slots to have been allocated before generating advance() calls`);
             }
+            lastSlotOp = op;
             slotMap.set(op.xref, op.slot);
         }
         // Next, step through the update operations and generate `ir.AdvanceOp`s as required to ensure
@@ -11592,30 +11852,38 @@ function phaseGenerateAdvance(job) {
 }
 
 /**
- * Generate i18n start and end isntructions to mark i18n blocks.
+ * Locate projection slots, populate the each component's `ngContentSelectors` literal field,
+ * populate `project` arguments, and generate the required `projectionDef` instruction for the job's
+ * root view.
  */
-function phaseGenerateI18nBlocks(job) {
+function phaseGenerateProjectionDef(job) {
+    // TODO: Why does TemplateDefinitionBuilder force a shared constant?
+    const share = job.compatibility === CompatibilityMode.TemplateDefinitionBuilder;
+    // Collect all selectors from this component, and its nested views. Also, assign each projection a
+    // unique ascending projection slot index.
+    const selectors = [];
+    let projectionSlotIndex = 0;
     for (const unit of job.units) {
-        const elements = getElementsByXrefId(unit);
         for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.ElementEnd:
-                    const start = elements.get(op.xref);
-                    if (start.i18n instanceof Message) {
-                        const id = job.allocateXrefId();
-                        OpList.insertAfter(createI18nStartOp(id, start.i18n), start);
-                        OpList.insertBefore(createI18nEndOp(id), op);
-                    }
-                    break;
-                case OpKind.Template:
-                    if (op.i18n !== undefined) {
-                        const id = job.allocateXrefId();
-                        OpList.insertBefore(createI18nStartOp(id, op.i18n), op);
-                        OpList.insertAfter(createI18nEndOp(id), op);
-                    }
-                    break;
+            if (op.kind === OpKind.Projection) {
+                selectors.push(op.selector);
+                op.projectionSlotIndex = projectionSlotIndex++;
             }
         }
+    }
+    if (selectors.length > 0) {
+        // Create the projectionDef array. If we only found a single wildcard selector, then we use the
+        // default behavior with no arguments instead.
+        let defExpr = null;
+        if (selectors.length > 1 || selectors[0] !== '*') {
+            const def = selectors.map(s => s === '*' ? s : parseSelectorToR3Selector(s));
+            defExpr = job.pool.getConstLiteral(literalOrArrayLiteral(def), share);
+        }
+        // Create the ngContentSelectors constant.
+        job.contentSelectors = job.pool.getConstLiteral(literalOrArrayLiteral(selectors), share);
+        // The projection def instruction goes at the beginning of the root view, before any
+        // `projection` instructions.
+        job.root.create.prepend([createProjectionDefOp(defExpr)]);
     }
 }
 
@@ -11727,7 +11995,11 @@ function generateVariablesInScopeForView(view, scope) {
     }
     // Add variables for all context variables available in this scope's view.
     for (const [name, value] of view.job.views.get(scope.view).contextVariables) {
-        newOps.push(createVariableOp(view.job.allocateXrefId(), scope.contextVariables.get(name), new ReadPropExpr(new ContextExpr(scope.view), value)));
+        const context = new ContextExpr(scope.view);
+        // We either read the context, or, if the variable is CTX_REF, use the context directly.
+        const variable = value === CTX_REF ? context : new ReadPropExpr(context, value);
+        // Add the variable declaration.
+        newOps.push(createVariableOp(view.job.allocateXrefId(), scope.contextVariables.get(name), variable));
     }
     // Add variables for all local references declared for elements in this scope.
     for (const ref of scope.references) {
@@ -11740,14 +12012,45 @@ function generateVariablesInScopeForView(view, scope) {
     return newOps;
 }
 
+/**
+ * Looks for the HasConst trait, indicating that an op or expression has some data which
+ * should be collected into the constant array. Capable of collecting either a single literal value,
+ * or an array literal.
+ */
+function phaseConstTraitCollection(job) {
+    const collectGlobalConsts = (e) => {
+        if (e instanceof ExpressionBase && hasConstTrait(e)) {
+            // TODO: Figure out how to make this type narrowing work.
+            const ea = e;
+            if (ea.constValue !== null) {
+                ea.constIndex = job.addConst(ea.constValue);
+            }
+        }
+        return e;
+    };
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            if (hasConstTrait(op) && op.constValue !== null) {
+                op.constIndex = job.addConst(op.makeExpression(op.constValue));
+            }
+            transformExpressionsInOp(op, collectGlobalConsts, VisitorContextFlag.None);
+        }
+    }
+}
+
 const STYLE_DOT = 'style.';
 const CLASS_DOT = 'class.';
 const STYLE_BANG = 'style!';
 const CLASS_BANG = 'class!';
+const BANG_IMPORTANT = '!important';
 function phaseHostStylePropertyParsing(job) {
     for (const op of job.root.update) {
         if (op.kind !== OpKind.Binding) {
             continue;
+        }
+        if (op.name.endsWith(BANG_IMPORTANT)) {
+            // Delete any `!important` suffixes from the binding name.
+            op.name = op.name.substring(0, op.name.length - BANG_IMPORTANT.length);
         }
         if (op.name.startsWith(STYLE_DOT)) {
             op.bindingKind = BindingKind.StyleProperty;
@@ -11800,6 +12103,32 @@ function parseProperty$1(name) {
         property = name.substring(0, unitIndex);
     }
     return { property, suffix };
+}
+
+/**
+ * Lifts i18n properties into the consts array.
+ */
+function phaseI18nConstCollection(job) {
+    // Serialize the extracted messages into the const array.
+    // TODO: Use `Map` instead of object.
+    const messageConstIndices = {};
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.ExtractedMessage) {
+                messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
+                OpList.remove(op);
+            }
+        }
+    }
+    // Assign const index to i18n ops that messages were extracted from.
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if ((op.kind === OpKind.I18nStart || op.kind === OpKind.I18n) &&
+                messageConstIndices[op.xref] !== undefined) {
+                op.messageIndex = messageConstIndices[op.xref];
+            }
+        }
+    }
 }
 
 function mapEntry(key, value) {
@@ -16691,7 +17020,7 @@ class _Tokenizer {
             new PlainCharacterCursor(_file, range);
         this._preserveLineEndings = options.preserveLineEndings || false;
         this._i18nNormalizeLineEndingsInICUs = options.i18nNormalizeLineEndingsInICUs || false;
-        this._tokenizeBlocks = options.tokenizeBlocks || false;
+        this._tokenizeBlocks = options.tokenizeBlocks ?? true;
         try {
             this._cursor.init();
         }
@@ -18668,16 +18997,16 @@ function phaseI18nMessageExtraction(job) {
     const fileBasedI18nSuffix = job.relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_').toUpperCase() + '_';
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart && op.i18n instanceof Message) {
+            if ((op.kind === OpKind.I18nStart || op.kind === OpKind.I18n)) {
                 // Sort the params map to match the ordering in TemplateDefinitionBuilder.
-                const params = Object.fromEntries(Object.entries(op.tagNameParams).sort());
+                const params = new Map([...op.params.entries()].sort());
                 const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
                 // Closure Compiler requires const names to start with `MSG_` but disallows any other const
                 // to start with `MSG_`. We define a variable starting with `MSG_` just for the
                 // `goog.getMsg` call
-                const closureVar = i18nGenerateClosureVar(job.pool, op.i18n.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
+                const closureVar = i18nGenerateClosureVar(job.pool, op.message.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
                 // TODO: figure out transformFn.
-                const statements = getTranslationDeclStmts$1(op.i18n, mainVar, closureVar, params, undefined /*transformFn*/);
+                const statements = getTranslationDeclStmts$1(op.message, mainVar, closureVar, params, undefined /*transformFn*/);
                 unit.create.push(createExtractedMessageOp(op.xref, mainVar, statements));
             }
         }
@@ -18709,10 +19038,11 @@ function phaseI18nMessageExtraction(job) {
  * post-processing).
  * @returns An array of statements that defined a given translation.
  */
-function getTranslationDeclStmts$1(message, variable, closureVar, params = {}, transformFn) {
+function getTranslationDeclStmts$1(message, variable, closureVar, params, transformFn) {
+    const paramsObject = Object.fromEntries(params);
     const statements = [
         declareI18nVariable(variable),
-        ifStmt(createClosureModeGuard$1(), createGoogleGetMsgStatements(variable, message, closureVar, params), createLocalizeStatements(variable, message, formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false))),
+        ifStmt(createClosureModeGuard$1(), createGoogleGetMsgStatements(variable, message, closureVar, paramsObject), createLocalizeStatements(variable, message, formatI18nPlaceholderNamesInMap(paramsObject, /* useCamelCase */ false))),
     ];
     if (transformFn) {
         statements.push(new ExpressionStatement(variable.set(transformFn(variable))));
@@ -18755,19 +19085,45 @@ function i18nGenerateClosureVar(pool, messageId, fileBasedI18nSuffix, useExterna
  */
 function phaseI18nTextExtraction(job) {
     for (const unit of job.units) {
-        let inI18nBlock = false;
+        // Remove all text nodes within i18n blocks, their content is already captured in the i18n
+        // message.
+        let currentI18nId = null;
+        const textNodes = new Map();
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
-                    inI18nBlock = true;
+                    currentI18nId = op.xref;
                     break;
                 case OpKind.I18nEnd:
-                    inI18nBlock = false;
+                    currentI18nId = null;
                     break;
                 case OpKind.Text:
-                    if (inI18nBlock) {
+                    if (currentI18nId !== null) {
+                        textNodes.set(op.xref, currentI18nId);
                         OpList.remove(op);
                     }
+                    break;
+            }
+        }
+        // Update any interpolations to the removed text, and instead represent them as a series of i18n
+        // expressions that we then apply.
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.InterpolateText:
+                    if (!textNodes.has(op.target)) {
+                        continue;
+                    }
+                    const i18nBlockId = textNodes.get(op.target);
+                    const ops = [];
+                    for (let i = 0; i < op.interpolation.expressions.length; i++) {
+                        const expr = op.interpolation.expressions[i];
+                        const placeholder = op.i18nPlaceholders[i];
+                        ops.push(createI18nExpressionOp(i18nBlockId, expr, placeholder, expr.sourceSpan ?? op.sourceSpan));
+                    }
+                    if (ops.length > 0) {
+                        // ops.push(ir.createI18nApplyOp(i18nBlockId, op.i18nPlaceholders, op.sourceSpan));
+                    }
+                    OpList.replaceWithMany(op, ops);
                     break;
             }
         }
@@ -18934,7 +19290,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.handlerFnName !== null) {
                     break;
                 }
-                if (!op.hostListener && op.slot === null) {
+                if (!op.hostListener && op.targetSlot === null) {
                     throw new Error(`Expected a slot to be assigned`);
                 }
                 let animation = '';
@@ -18946,7 +19302,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                     op.handlerFnName = `${baseName}_${animation}${op.name}_HostBindingHandler`;
                 }
                 else {
-                    op.handlerFnName = `${unit.fnName}_${op.tag.replace('-', '_')}_${animation}${op.name}_${op.slot}_listener`;
+                    op.handlerFnName = `${unit.fnName}_${op.tag.replace('-', '_')}_${animation}${op.name}_${op.targetSlot}_listener`;
                 }
                 op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
                 break;
@@ -19095,6 +19451,11 @@ function phaseNgContainer(job) {
     for (const unit of job.units) {
         const updatedElementXrefs = new Set();
         for (const op of unit.create) {
+            if (op.kind === OpKind.Element && op.tag === CONTAINER_TAG) {
+                // Transmute the `Element` instruction to `Container`.
+                op.kind = OpKind.Container;
+                updatedElementXrefs.add(op.xref);
+            }
             if (op.kind === OpKind.ElementStart && op.tag === CONTAINER_TAG) {
                 // Transmute the `ElementStart` instruction to `ContainerStart`.
                 op.kind = OpKind.ContainerStart;
@@ -19103,30 +19464,6 @@ function phaseNgContainer(job) {
             if (op.kind === OpKind.ElementEnd && updatedElementXrefs.has(op.xref)) {
                 // This `ElementEnd` is associated with an `ElementStart` we already transmuted.
                 op.kind = OpKind.ContainerEnd;
-            }
-        }
-    }
-}
-
-function phaseNoListenersOnTemplates(job) {
-    for (const unit of job.units) {
-        let inTemplate = false;
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.Template:
-                    inTemplate = true;
-                    break;
-                case OpKind.ElementStart:
-                case OpKind.Element:
-                case OpKind.ContainerStart:
-                case OpKind.Container:
-                    inTemplate = false;
-                    break;
-                case OpKind.Listener:
-                    if (inTemplate) {
-                        OpList.remove(op);
-                    }
-                    break;
             }
         }
     }
@@ -19184,100 +19521,6 @@ function phaseNullishCoalescing(job) {
                 // TODO: When not in compatibility mode for TemplateDefinitionBuilder, we can just emit
                 // `t != null` instead of including an undefined check as well.
                 return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, assignment, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, read, new LiteralExpr(undefined))), read.clone(), expr.rhs);
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-
-/**
- * Parses extracted style and class attributes into separate ExtractedAttributeOps per style or
- * class property.
- */
-function phaseParseExtractedStyles(cpl) {
-    for (const unit of cpl.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedAttribute && op.bindingKind === BindingKind.Attribute &&
-                isStringLiteral(op.expression)) {
-                if (op.name === 'style') {
-                    const parsedStyles = parse(op.expression.value);
-                    for (let i = 0; i < parsedStyles.length - 1; i += 2) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1])), op);
-                    }
-                    OpList.remove(op);
-                }
-                else if (op.name === 'class') {
-                    const parsedClasses = op.expression.value.trim().split(/\s+/g);
-                    for (const parsedClass of parsedClasses) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null), op);
-                    }
-                    OpList.remove(op);
-                }
-            }
-        }
-    }
-}
-
-function phasePipeCreation(job) {
-    for (const unit of job.units) {
-        processPipeBindingsInView(unit);
-    }
-}
-function processPipeBindingsInView(unit) {
-    for (const updateOp of unit.update) {
-        visitExpressionsInOp(updateOp, (expr, flags) => {
-            if (!isIrExpression(expr)) {
-                return;
-            }
-            if (expr.kind !== ExpressionKind.PipeBinding) {
-                return;
-            }
-            if (flags & VisitorContextFlag.InChildOperation) {
-                throw new Error(`AssertionError: pipe bindings should not appear in child expressions`);
-            }
-            if (!hasDependsOnSlotContextTrait(updateOp)) {
-                throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
-            }
-            addPipeToCreationBlock(unit, updateOp.target, expr);
-        });
-    }
-}
-function addPipeToCreationBlock(unit, afterTargetXref, binding) {
-    // Find the appropriate point to insert the Pipe creation operation.
-    // We're looking for `afterTargetXref` (and also want to insert after any other pipe operations
-    // which might be beyond it).
-    for (let op = unit.create.head.next; op.kind !== OpKind.ListEnd; op = op.next) {
-        if (!hasConsumesSlotTrait(op)) {
-            continue;
-        }
-        if (op.xref !== afterTargetXref) {
-            continue;
-        }
-        // We've found a tentative insertion point; however, we also want to skip past any _other_ pipe
-        // operations present.
-        while (op.next.kind === OpKind.Pipe) {
-            op = op.next;
-        }
-        const pipe = createPipeOp(binding.target, binding.name);
-        OpList.insertBefore(pipe, op.next);
-        // This completes adding the pipe to the creation block.
-        return;
-    }
-    // At this point, we've failed to add the pipe to the creation block.
-    throw new Error(`AssertionError: unable to find insertion point for pipe ${binding.name}`);
-}
-
-function phasePipeVariadic(job) {
-    for (const unit of job.units) {
-        for (const op of unit.update) {
-            transformExpressionsInOp(op, expr => {
-                if (!(expr instanceof PipeBindingExpr)) {
-                    return expr;
-                }
-                // Pipes are variadic if they have more than 4 arguments.
-                if (expr.args.length <= 4) {
-                    return expr;
-                }
-                return new PipeBindingVariadicExpr(expr.target, expr.name, literalArr(expr.args), expr.args.length);
             }, VisitorContextFlag.None);
         }
     }
@@ -19372,6 +19615,130 @@ function keepLast(ops) {
     return ops.slice(ops.length - 1);
 }
 
+/**
+ * Parses extracted style and class attributes into separate ExtractedAttributeOps per style or
+ * class property.
+ */
+function phaseParseExtractedStyles(cpl) {
+    for (const unit of cpl.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.ExtractedAttribute && op.bindingKind === BindingKind.Attribute &&
+                isStringLiteral(op.expression)) {
+                if (op.name === 'style') {
+                    const parsedStyles = parse(op.expression.value);
+                    for (let i = 0; i < parsedStyles.length - 1; i += 2) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1])), op);
+                    }
+                    OpList.remove(op);
+                }
+                else if (op.name === 'class') {
+                    const parsedClasses = op.expression.value.trim().split(/\s+/g);
+                    for (const parsedClass of parsedClasses) {
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null), op);
+                    }
+                    OpList.remove(op);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Attributes of `ng-content` named 'select' are specifically removed, because they control which
+ * content matches as a property of the `projection`, and are not a plain attribute.
+ */
+function phaseRemoveContentSelectors(job) {
+    for (const unit of job.units) {
+        const elements = getElementsByXrefId(unit);
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.Binding:
+                    const target = lookupElement(elements, op.target);
+                    if (op.name.toLowerCase() === 'select' && target.kind === OpKind.Projection) {
+                        OpList.remove(op);
+                    }
+                    continue;
+            }
+        }
+    }
+}
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+
+function phasePipeCreation(job) {
+    for (const unit of job.units) {
+        processPipeBindingsInView(unit);
+    }
+}
+function processPipeBindingsInView(unit) {
+    for (const updateOp of unit.update) {
+        visitExpressionsInOp(updateOp, (expr, flags) => {
+            if (!isIrExpression(expr)) {
+                return;
+            }
+            if (expr.kind !== ExpressionKind.PipeBinding) {
+                return;
+            }
+            if (flags & VisitorContextFlag.InChildOperation) {
+                throw new Error(`AssertionError: pipe bindings should not appear in child expressions`);
+            }
+            if (!hasDependsOnSlotContextTrait(updateOp)) {
+                throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
+            }
+            addPipeToCreationBlock(unit, updateOp.target, expr);
+        });
+    }
+}
+function addPipeToCreationBlock(unit, afterTargetXref, binding) {
+    // Find the appropriate point to insert the Pipe creation operation.
+    // We're looking for `afterTargetXref` (and also want to insert after any other pipe operations
+    // which might be beyond it).
+    for (let op = unit.create.head.next; op.kind !== OpKind.ListEnd; op = op.next) {
+        if (!hasConsumesSlotTrait(op)) {
+            continue;
+        }
+        if (op.xref !== afterTargetXref) {
+            continue;
+        }
+        // We've found a tentative insertion point; however, we also want to skip past any _other_ pipe
+        // operations present.
+        while (op.next.kind === OpKind.Pipe) {
+            op = op.next;
+        }
+        const pipe = createPipeOp(binding.target, binding.name);
+        OpList.insertBefore(pipe, op.next);
+        // This completes adding the pipe to the creation block.
+        return;
+    }
+    // At this point, we've failed to add the pipe to the creation block.
+    throw new Error(`AssertionError: unable to find insertion point for pipe ${binding.name}`);
+}
+
+function phasePipeVariadic(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            transformExpressionsInOp(op, expr => {
+                if (!(expr instanceof PipeBindingExpr)) {
+                    return expr;
+                }
+                // Pipes are variadic if they have more than 4 arguments.
+                if (expr.args.length <= 4) {
+                    return expr;
+                }
+                return new PipeBindingVariadicExpr(expr.target, expr.name, literalArr(expr.args), expr.args.length);
+            }, VisitorContextFlag.None);
+        }
+    }
+}
+
 function phasePureFunctionExtraction(job) {
     for (const view of job.units) {
         for (const op of view.ops()) {
@@ -19402,7 +19769,7 @@ class PureFunctionConstant extends GenericKeyFn {
     toSharedConstantDeclaration(declName, keyExpr) {
         const fnParams = [];
         for (let idx = 0; idx < this.numArgs; idx++) {
-            fnParams.push(new FnParam('_p' + idx));
+            fnParams.push(new FnParam('a' + idx));
         }
         // We will never visit `ir.PureFunctionParameterExpr`s that don't belong to us, because this
         // transform runs inside another visitor which will visit nested pure functions before this one.
@@ -19410,9 +19777,9 @@ class PureFunctionConstant extends GenericKeyFn {
             if (!(expr instanceof PureFunctionParameterExpr)) {
                 return expr;
             }
-            return variable('_p' + expr.index);
+            return variable('a' + expr.index);
         }, VisitorContextFlag.None);
-        return new DeclareFunctionStmt(declName, fnParams, [new ReturnStatement(returnExpr)]);
+        return new DeclareVarStmt(declName, new ArrowFunctionExpr(fnParams, returnExpr), undefined, StmtModifier.Final);
     }
 }
 
@@ -19576,6 +19943,25 @@ function text(slot, initialValue, sourceSpan) {
     }
     return call(Identifiers.text, args, sourceSpan);
 }
+function defer(selfSlot, primarySlot, dependencyResolverFn, loadingSlot, placeholderSlot, errorSlot, loadingConfigIndex, placeholderConfigIndex, sourceSpan) {
+    const args = [
+        literal(selfSlot),
+        literal(primarySlot),
+        literal(dependencyResolverFn),
+        literal(loadingSlot),
+        literal(placeholderSlot),
+        literal(errorSlot),
+        literal(loadingConfigIndex),
+        literal(placeholderConfigIndex),
+    ];
+    while (args[args.length - 1].value === null) {
+        args.pop();
+    }
+    return call(Identifiers.defer, args, sourceSpan);
+}
+function deferOn(sourceSpan) {
+    return call(Identifiers.deferOnIdle, [], sourceSpan);
+}
 function projectionDef(def) {
     return call(Identifiers.projectionDef, def ? [def] : [], null);
 }
@@ -19592,8 +19978,8 @@ function projection(slot, projectionSlotIndex, attributes) {
 function i18nStart(slot, constIndex) {
     return call(Identifiers.i18nStart, [literal(slot), literal(constIndex)], null);
 }
-function i18n(slot) {
-    return call(Identifiers.i18n, [literal(slot)], null);
+function i18n(slot, constIndex) {
+    return call(Identifiers.i18n, [literal(slot), literal(constIndex)], null);
 }
 function i18nEnd() {
     return call(Identifiers.i18nEnd, [], null);
@@ -19670,6 +20056,12 @@ function textInterpolate(strings, expressions, sourceSpan) {
     }
     return callVariadicInstruction(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
 }
+function i18nExp(expr, sourceSpan) {
+    return call(Identifiers.i18nExp, [expr], sourceSpan);
+}
+function i18nApply(slot, sourceSpan) {
+    return call(Identifiers.i18nApply, [literal(slot)], sourceSpan);
+}
 function propertyInterpolate(name, strings, expressions, sanitizer, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     const extraArgs = [];
@@ -19739,8 +20131,12 @@ function call(instruction, args, sourceSpan) {
     const expr = importExpr(instruction).callFn(args, sourceSpan);
     return createStatementOp(new ExpressionStatement(expr, sourceSpan));
 }
-function conditional(slot, condition) {
-    return call(Identifiers.conditional, [literal(slot), condition], null);
+function conditional(slot, condition, contextValue, sourceSpan) {
+    const args = [literal(slot), condition];
+    if (contextValue !== null) {
+        args.push(contextValue);
+    }
+    return call(Identifiers.conditional, args, sourceSpan);
 }
 /**
  * `InterpolationConfig` for the `textInterpolate` instruction.
@@ -19972,14 +20368,14 @@ function reifyCreateOperations(unit, ops) {
                 OpList.replace(op, i18nEnd());
                 break;
             case OpKind.I18n:
-                OpList.replace(op, i18n(op.slot));
+                OpList.replace(op, i18n(op.slot, op.messageIndex));
                 break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.controlFlow ? null : op.tag, op.attributes, op.sourceSpan));
+                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.block ? null : op.tag, op.attributes, op.sourceSpan));
                 break;
             case OpKind.DisableBindings:
                 OpList.replace(op, disableBindings());
@@ -20015,6 +20411,15 @@ function reifyCreateOperations(unit, ops) {
                         OpList.replace(op, namespaceMath());
                         break;
                 }
+                break;
+            case OpKind.Defer:
+                OpList.replace(op, defer(op.slot, op.targetSlot, null, op.loading && op.loading.targetSlot, op.placeholder && op.placeholder.targetSlot, op.error && op.error.targetSlot, op.loading?.constIndex ?? null, op.placeholder?.constIndex ?? null, op.sourceSpan));
+                break;
+            case OpKind.DeferSecondaryBlock:
+                OpList.remove(op);
+                break;
+            case OpKind.DeferOn:
+                OpList.replace(op, deferOn(op.sourceSpan));
                 break;
             case OpKind.ProjectionDef:
                 OpList.replace(op, projectionDef(op.def));
@@ -20075,6 +20480,12 @@ function reifyUpdateOperations(_unit, ops) {
                     OpList.replace(op, classMap(op.expression, op.sourceSpan));
                 }
                 break;
+            case OpKind.I18nExpression:
+                OpList.replace(op, i18nExp(op.expression, op.sourceSpan));
+                break;
+            case OpKind.I18nApply:
+                OpList.replace(op, i18nApply(op.targetSlot, op.sourceSpan));
+                break;
             case OpKind.InterpolateText:
                 OpList.replace(op, textInterpolate(op.interpolation.strings, op.interpolation.expressions, op.sourceSpan));
                 break;
@@ -20109,10 +20520,10 @@ function reifyUpdateOperations(_unit, ops) {
                 if (op.processed === null) {
                     throw new Error(`Conditional test was not set.`);
                 }
-                if (op.slot === null) {
+                if (op.targetSlot === null) {
                     throw new Error(`Conditional slot was not set.`);
                 }
-                OpList.replace(op, conditional(op.slot, op.processed));
+                OpList.replace(op, conditional(op.targetSlot, op.processed, op.contextValue, op.sourceSpan));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -20130,7 +20541,7 @@ function reifyIrExpression(expr) {
         case ExpressionKind.NextContext:
             return nextContext(expr.steps);
         case ExpressionKind.Reference:
-            return reference(expr.slot + 1 + expr.offset);
+            return reference(expr.targetSlot + 1 + expr.offset);
         case ExpressionKind.LexicalRead:
             throw new Error(`AssertionError: unresolved LexicalRead of ${expr.name}`);
         case ExpressionKind.RestoreView:
@@ -20165,13 +20576,13 @@ function reifyIrExpression(expr) {
         case ExpressionKind.PureFunctionParameterExpr:
             throw new Error(`AssertionError: expected PureFunctionParameterExpr to have been extracted`);
         case ExpressionKind.PipeBinding:
-            return pipeBind(expr.slot, expr.varOffset, expr.args);
+            return pipeBind(expr.targetSlot, expr.varOffset, expr.args);
         case ExpressionKind.PipeBindingVariadic:
-            return pipeBindV(expr.slot, expr.varOffset, expr.args);
+            return pipeBindV(expr.targetSlot, expr.varOffset, expr.args);
         case ExpressionKind.SanitizerExpr:
             return importExpr(sanitizerIdentifierMap.get(expr.fn));
         case ExpressionKind.SlotLiteralExpr:
-            return literal(expr.slot);
+            return literal(expr.targetSlot);
         default:
             throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
     }
@@ -20300,48 +20711,91 @@ const ESCAPE = '\uFFFD';
  */
 function phaseResolveI18nPlaceholders(job) {
     for (const unit of job.units) {
-        let i18nOp = null;
-        let startTags = [];
-        let closeTags = [];
+        const i18nOps = new Map();
+        let startTagSlots = new Map();
+        let closeTagSlots = new Map();
+        let currentI18nOp = null;
+        // Record slots for tag name placeholders.
         for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart && op.i18n instanceof Message) {
-                i18nOp = op;
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                case OpKind.I18n:
+                    // Initialize collected slots for a new i18n block.
+                    i18nOps.set(op.xref, op);
+                    currentI18nOp = op.kind === OpKind.I18nStart ? op : null;
+                    startTagSlots = new Map();
+                    closeTagSlots = new Map();
+                    break;
+                case OpKind.I18nEnd:
+                    // Add values for tag placeholders.
+                    if (currentI18nOp === null) {
+                        throw Error('Missing corresponding i18n start op for i18n end op');
+                    }
+                    for (const [placeholder, slots] of startTagSlots) {
+                        currentI18nOp.params.set(placeholder, serializeSlots(slots, true));
+                    }
+                    for (const [placeholder, slots] of closeTagSlots) {
+                        currentI18nOp.params.set(placeholder, serializeSlots(slots, false));
+                    }
+                    currentI18nOp = null;
+                    break;
+                case OpKind.Element:
+                case OpKind.ElementStart:
+                    // Record slots for tag placeholders.
+                    if (op.i18nPlaceholder != undefined) {
+                        if (currentI18nOp === null) {
+                            throw Error('i18n tag placeholder should only occur inside an i18n block');
+                        }
+                        if (!op.slot) {
+                            throw Error('Slots should be allocated before i18n placeholder resolution');
+                        }
+                        const { startName, closeName } = op.i18nPlaceholder;
+                        addTagSlot(startTagSlots, startName, op.slot);
+                        addTagSlot(closeTagSlots, closeName, op.slot);
+                    }
+                    break;
             }
-            else if (op.kind === OpKind.I18nEnd) {
-                i18nOp = null;
-            }
-            else if ((op.kind === OpKind.Element || op.kind === OpKind.ElementStart) &&
-                op.i18n instanceof TagPlaceholder) {
-                if (i18nOp === null) {
-                    throw Error('i18n tag placeholder should only occur inside an i18n block');
+        }
+        // Fill in values for each of the expression placeholders applied in i18nApply operations.
+        const i18nBlockPlaceholderIndices = new Map();
+        for (const op of unit.update) {
+            if (op.kind === OpKind.I18nExpression) {
+                const i18nOp = i18nOps.get(op.target);
+                let index = i18nBlockPlaceholderIndices.get(op.target) || 0;
+                if (!i18nOp) {
+                    throw Error('Cannot find corresponding i18nStart for i18nExpr');
                 }
-                // In order to add the keys in the same order as TemplateDefinitionBuilder, we separately
-                // track the start and close tag placeholders.
-                // TODO: when TemplateDefinitionBuilder compatibility is not required, we can just add both
-                //  keys directly to the map here.
-                startTags.push({
-                    i18nOp,
-                    placeholder: op.i18n.startName,
-                    value: literal(`${ESCAPE}#${op.slot}${ESCAPE}`)
-                });
-                closeTags.push({
-                    i18nOp,
-                    placeholder: op.i18n.closeName,
-                    value: literal(`${ESCAPE}/#${op.slot}${ESCAPE}`)
-                });
+                i18nOp.params.set(op.i18nPlaceholder.name, literal(`${ESCAPE}${index++}${ESCAPE}`));
+                i18nBlockPlaceholderIndices.set(op.target, index);
             }
         }
-        // Add the start tags in the order we encountered them, to match TemplateDefinitionBuilder.
-        for (const { i18nOp, placeholder, value } of startTags) {
-            i18nOp.tagNameParams[placeholder] = value;
-        }
-        // Add the close tags in reverse order that we encountered the start tags, to match
-        // TemplateDefinitionBuilder.
-        for (let i = closeTags.length - 1; i >= 0; i--) {
-            const { i18nOp, placeholder, value } = closeTags[i];
-            i18nOp.tagNameParams[placeholder] = value;
+        // Verify that all placeholders have been resolved.
+        for (const op of i18nOps.values()) {
+            for (const placeholder in op.message.placeholders) {
+                if (!op.params.has(placeholder)) {
+                    throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
+                }
+            }
         }
     }
+}
+/**
+ * Updates the given slots map with the specified slot.
+ */
+function addTagSlot(tagSlots, placeholder, slot) {
+    const slots = tagSlots.get(placeholder) || [];
+    slots.push(slot);
+    tagSlots.set(placeholder, slots);
+}
+/**
+ * Serializes a list of slots to a string literal expression.
+ */
+function serializeSlots(slots, start) {
+    const slotStrings = slots.map(slot => `${ESCAPE}${start ? '' : '/'}#${slot}${ESCAPE}`);
+    if (slotStrings.length === 1) {
+        return literal(slotStrings[0]);
+    }
+    return literal(`[${slotStrings.join('|')}]`);
 }
 
 /**
@@ -20586,19 +21040,19 @@ function phaseSlotAllocation(job) {
                 const childView = job.views.get(op.xref);
                 op.decls = childView.decls;
             }
-            if (hasUsesSlotIndexTrait(op) && op.slot === null) {
+            if (hasUsesSlotIndexTrait(op) && op.targetSlot === null) {
                 if (!slotMap.has(op.target)) {
                     // We do expect to find a slot allocated for everything which might be referenced.
                     throw new Error(`AssertionError: no slot allocated for ${OpKind[op.kind]} target ${op.target}`);
                 }
-                op.slot = slotMap.get(op.target);
+                op.targetSlot = slotMap.get(op.target);
             }
             // Process all `ir.Expression`s within this view, and look for `usesSlotIndexExprTrait`.
             visitExpressionsInOp(op, expr => {
                 if (!isIrExpression(expr)) {
                     return;
                 }
-                if (!hasUsesSlotIndexTrait(expr) || expr.slot !== null) {
+                if (!hasUsesSlotIndexTrait(expr) || expr.targetSlot !== null) {
                     return;
                 }
                 // The `UsesSlotIndexExprTrait` indicates that this expression references something declared
@@ -20609,7 +21063,7 @@ function phaseSlotAllocation(job) {
                     throw new Error(`AssertionError: no slot allocated for ${expr.constructor.name} target ${expr.target}`);
                 }
                 // Record the allocated slot on the expression.
-                expr.slot = slotMap.get(expr.target);
+                expr.targetSlot = slotMap.get(expr.target);
             });
         }
     }
@@ -20660,47 +21114,62 @@ function phaseStyleBindingSpecialization(cpl) {
  */
 function phaseTemporaryVariables(cpl) {
     for (const unit of cpl.units) {
-        let opCount = 0;
-        let generatedStatements = [];
-        for (const op of unit.ops()) {
-            // Identify the final time each temp var is read.
-            const finalReads = new Map();
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof ReadTemporaryExpr) {
-                    finalReads.set(expr.xref, expr);
-                }
-            });
-            // Name the temp vars, accounting for the fact that a name can be reused after it has been
-            // read for the final time.
-            let count = 0;
-            const assigned = new Set();
-            const released = new Set();
-            const defs = new Map();
-            visitExpressionsInOp(op, expr => {
-                if (expr instanceof AssignTemporaryExpr) {
-                    if (!assigned.has(expr.xref)) {
-                        assigned.add(expr.xref);
-                        // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`.
-                        // It seems to rely on an expression index instead of an op index.
-                        defs.set(expr.xref, `tmp_${opCount}_${count++}`);
-                    }
-                    assignName(defs, expr);
-                }
-                else if (expr instanceof ReadTemporaryExpr) {
-                    if (finalReads.get(expr.xref) === expr) {
-                        released.add(expr.xref);
-                        count--;
-                    }
-                    assignName(defs, expr);
-                }
-            });
-            // Add declarations for the temp vars.
-            generatedStatements.push(...Array.from(new Set(defs.values()))
-                .map(name => createStatementOp(new DeclareVarStmt(name))));
-            opCount++;
-        }
-        unit.update.prepend(generatedStatements);
+        unit.create.prepend(generateTemporaries(unit.create));
+        unit.update.prepend(generateTemporaries(unit.update));
     }
+}
+function generateTemporaries(ops) {
+    let opCount = 0;
+    let generatedStatements = [];
+    // For each op, search for any variables that are assigned or read. For each variable, generate a
+    // name and produce a `DeclareVarStmt` to the beginning of the block.
+    for (const op of ops) {
+        // Identify the final time each temp var is read.
+        const finalReads = new Map();
+        visitExpressionsInOp(op, (expr, flag) => {
+            if (flag & VisitorContextFlag.InChildOperation) {
+                return;
+            }
+            if (expr instanceof ReadTemporaryExpr) {
+                finalReads.set(expr.xref, expr);
+            }
+        });
+        // Name the temp vars, accounting for the fact that a name can be reused after it has been
+        // read for the final time.
+        let count = 0;
+        const assigned = new Set();
+        const released = new Set();
+        const defs = new Map();
+        visitExpressionsInOp(op, (expr, flag) => {
+            if (flag & VisitorContextFlag.InChildOperation) {
+                return;
+            }
+            if (expr instanceof AssignTemporaryExpr) {
+                if (!assigned.has(expr.xref)) {
+                    assigned.add(expr.xref);
+                    // TODO: Exactly replicate the naming scheme used by `TemplateDefinitionBuilder`.
+                    // It seems to rely on an expression index instead of an op index.
+                    defs.set(expr.xref, `tmp_${opCount}_${count++}`);
+                }
+                assignName(defs, expr);
+            }
+            else if (expr instanceof ReadTemporaryExpr) {
+                if (finalReads.get(expr.xref) === expr) {
+                    released.add(expr.xref);
+                    count--;
+                }
+                assignName(defs, expr);
+            }
+        });
+        // Add declarations for the temp vars.
+        generatedStatements.push(...Array.from(new Set(defs.values()))
+            .map(name => createStatementOp(new DeclareVarStmt(name))));
+        opCount++;
+        if (op.kind === OpKind.Listener) {
+            op.handlerOps.prepend(generateTemporaries(op.handlerOps));
+        }
+    }
+    return generatedStatements;
 }
 /**
  * Assigns a name to the temporary variable in the given temporary variable expression.
@@ -21068,6 +21537,13 @@ function allowConservativeInlining(decl, target) {
     // that behavior here.
     switch (decl.variable.kind) {
         case SemanticVariableKind.Identifier:
+            if (decl.initializer instanceof ReadVarExpr && decl.initializer.name === 'ctx') {
+                // Although TemplateDefinitionBuilder is cautious about inlining, we still want to do so
+                // when the variable is the context, to imitate its behavior with aliases in control flow
+                // blocks. This quirky behavior will become dead code once compatibility mode is no longer
+                // supported.
+                return true;
+            }
             return false;
         case SemanticVariableKind.Context:
             // Context can only be inlined into other variables.
@@ -21077,101 +21553,8 @@ function allowConservativeInlining(decl, target) {
     }
 }
 
-/**
- * Locate projection slots, populate the each component's `ngContentSelectors` literal field,
- * populate `project` arguments, and generate the required `projectionDef` instruction for the job's
- * root view.
- */
-function phaseGenerateProjectionDef(job) {
-    // TODO: Why does TemplateDefinitionBuilder force a shared constant?
-    const share = job.compatibility === CompatibilityMode.TemplateDefinitionBuilder;
-    // Collect all selectors from this component, and its nested views. Also, assign each projection a
-    // unique ascending projection slot index.
-    const selectors = [];
-    let projectionSlotIndex = 0;
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.Projection) {
-                selectors.push(op.selector);
-                op.projectionSlotIndex = projectionSlotIndex++;
-            }
-        }
-    }
-    if (selectors.length > 0) {
-        // Create the projectionDef array. If we only found a single wildcard selector, then we use the
-        // default behavior with no arguments instead.
-        let defExpr = null;
-        if (selectors.length > 1 || selectors[0] !== '*') {
-            const def = selectors.map(s => s === '*' ? s : parseSelectorToR3Selector(s));
-            defExpr = job.pool.getConstLiteral(literalOrArrayLiteral(def), share);
-        }
-        // Create the ngContentSelectors constant.
-        job.contentSelectors = job.pool.getConstLiteral(literalOrArrayLiteral(selectors), share);
-        // The projection def instruction goes at the beginning of the root view, before any
-        // `projection` instructions.
-        job.root.create.prepend([createProjectionDefOp(defExpr)]);
-    }
-}
-
-/**
- * Lifts i18n properties into the consts array.
- */
-function phaseI18nConstCollection(job) {
-    // Serialize the extracted messages into the const array.
-    // TODO: Use `Map` instead of object.
-    const messageConstIndices = {};
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedMessage) {
-                messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
-                OpList.remove(op);
-            }
-        }
-    }
-    // Assign const index to i18n ops that messages were extracted from.
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart && messageConstIndices[op.xref] !== undefined) {
-                op.messageIndex = messageConstIndices[op.xref];
-            }
-        }
-    }
-}
-
-/**
- * Attributes of `ng-content` named 'select' are specifically removed, because they control which
- * content matches as a property of the `projection`, and are not a plain attribute.
- */
-function phaseRemoveContentSelectors(job) {
-    for (const unit of job.units) {
-        const elements = getElementsByXrefId(unit);
-        for (const op of unit.update) {
-            switch (op.kind) {
-                case OpKind.Binding:
-                    const target = lookupElement(elements, op.target);
-                    if (op.name.toLowerCase() === 'select' && target.kind === OpKind.Projection) {
-                        OpList.remove(op);
-                    }
-                    continue;
-            }
-        }
-    }
-}
-/**
- * Looks up an element in the given map by xref ID.
- */
-function lookupElement(elements, xref) {
-    const el = elements.get(xref);
-    if (el === undefined) {
-        throw new Error('All attributes should have an element-like target.');
-    }
-    return el;
-}
-
 const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveContentSelectors },
-    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateI18nBlocks },
-    { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
     { kind: CompilationJobKind.Host, fn: phaseHostStylePropertyParsing },
     { kind: CompilationJobKind.Tmpl, fn: phaseNamespace },
     { kind: CompilationJobKind.Both, fn: phaseStyleBindingSpecialization },
@@ -21180,8 +21563,9 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
     { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
-    { kind: CompilationJobKind.Tmpl, fn: phaseNoListenersOnTemplates },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
+    { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
+    { kind: CompilationJobKind.Tmpl, fn: phaseApplyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeVariadic },
     { kind: CompilationJobKind.Both, fn: phasePureLiteralStructures },
     { kind: CompilationJobKind.Tmpl, fn: phaseGenerateProjectionDef },
@@ -21200,6 +21584,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nMessageExtraction },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nConstCollection },
+    { kind: CompilationJobKind.Tmpl, fn: phaseConstTraitCollection },
     { kind: CompilationJobKind.Both, fn: phaseConstCollection },
     { kind: CompilationJobKind.Both, fn: phaseVarCounting },
     { kind: CompilationJobKind.Tmpl, fn: phaseGenerateAdvance },
@@ -21404,8 +21789,14 @@ function ingestNodes(unit, template) {
         else if (node instanceof BoundText) {
             ingestBoundText(unit, node);
         }
+        else if (node instanceof IfBlock) {
+            ingestIfBlock(unit, node);
+        }
         else if (node instanceof SwitchBlock) {
             ingestSwitchBlock(unit, node);
+        }
+        else if (node instanceof DeferredBlock) {
+            ingestDeferBlock(unit, node);
         }
         else {
             throw new Error(`Unsupported template node: ${node.constructor.name}`);
@@ -21416,23 +21807,37 @@ function ingestNodes(unit, template) {
  * Ingest an element AST from the template into the given `ViewCompilation`.
  */
 function ingestElement(unit, element) {
+    if (element.i18n !== undefined &&
+        !(element.i18n instanceof Message || element.i18n instanceof TagPlaceholder)) {
+        throw Error(`Unhandled i18n metadata type for element: ${element.i18n.constructor.name}`);
+    }
     const staticAttributes = {};
     for (const attr of element.attributes) {
         staticAttributes[attr.name] = attr.value;
     }
     const id = unit.job.allocateXrefId();
     const [namespaceKey, elementName] = splitNsName(element.name);
-    const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.i18n, element.startSourceSpan);
+    const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.i18n instanceof TagPlaceholder ? element.i18n : undefined, element.startSourceSpan);
     unit.create.push(startOp);
     ingestBindings(unit, startOp, element);
     ingestReferences(startOp, element);
     ingestNodes(unit, element.children);
-    unit.create.push(createElementEndOp(id, element.endSourceSpan));
+    const endOp = createElementEndOp(id, element.endSourceSpan);
+    unit.create.push(endOp);
+    // If there is an i18n message associated with this element, insert i18n start and end ops.
+    if (element.i18n instanceof Message) {
+        const i18nBlockId = unit.job.allocateXrefId();
+        OpList.insertAfter(createI18nStartOp(i18nBlockId, element.i18n), startOp);
+        OpList.insertBefore(createI18nEndOp(i18nBlockId), endOp);
+    }
 }
 /**
  * Ingest an `ng-template` node from the AST into the given `ViewCompilation`.
  */
 function ingestTemplate(unit, tmpl) {
+    if (tmpl.i18n !== undefined && !(tmpl.i18n instanceof Message)) {
+        throw Error(`Unhandled i18n metadata type for template: ${tmpl.i18n.constructor.name}`);
+    }
     const childView = unit.job.allocateView(unit.xref);
     let tagNameWithoutNamespace = tmpl.tagName;
     let namespacePrefix = '';
@@ -21440,13 +21845,19 @@ function ingestTemplate(unit, tmpl) {
         [namespacePrefix, tagNameWithoutNamespace] = splitNsName(tmpl.tagName);
     }
     // TODO: validate the fallback tag name here.
-    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), false, tmpl.i18n, tmpl.startSourceSpan);
+    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), false, undefined, tmpl.startSourceSpan);
     unit.create.push(tplOp);
     ingestBindings(unit, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
     ingestNodes(childView, tmpl.children);
     for (const { name, value } of tmpl.variables) {
         childView.contextVariables.set(name, value);
+    }
+    // If there is an i18n message associated with this template, insert i18n start and end ops.
+    if (tmpl.i18n instanceof Message) {
+        const id = unit.job.allocateXrefId();
+        OpList.insertAfter(createI18nStartOp(id, tmpl.i18n), childView.create.head);
+        OpList.insertBefore(createI18nEndOp(id), childView.create.tail);
     }
 }
 /**
@@ -21455,7 +21866,7 @@ function ingestTemplate(unit, tmpl) {
 function ingestContent(unit, content) {
     const op = createProjectionOp(unit.job.allocateXrefId(), content.selector);
     for (const attr of content.attributes) {
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
     }
     unit.create.push(op);
 }
@@ -21476,34 +21887,108 @@ function ingestBoundText(unit, text) {
     if (!(value instanceof Interpolation$1)) {
         throw new Error(`AssertionError: expected Interpolation for BoundText node, got ${value.constructor.name}`);
     }
+    if (text.i18n !== undefined && !(text.i18n instanceof Container)) {
+        throw Error(`Unhandled i18n metadata type for text interpolation: ${text.i18n.constructor.name}`);
+    }
+    const i18nPlaceholders = text.i18n instanceof Container ?
+        text.i18n.children.filter((node) => node instanceof Placeholder) :
+        [];
     const textXref = unit.job.allocateXrefId();
     unit.create.push(createTextOp(textXref, '', text.sourceSpan));
     // TemplateDefinitionBuilder does not generate source maps for sub-expressions inside an
     // interpolation. We copy that behavior in compatibility mode.
     // TODO: is it actually correct to generate these extra maps in modern mode?
     const baseSourceSpan = unit.job.compatibility ? null : text.sourceSpan;
-    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan))), text.sourceSpan));
+    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan))), i18nPlaceholders, text.sourceSpan));
 }
 /**
- * Ingest a `@switch` block into the given `ViewCompilation`.
+ * Ingest an `@if` block into the given `ViewCompilation`.
+ */
+function ingestIfBlock(unit, ifBlock) {
+    let firstXref = null;
+    let conditions = [];
+    for (const ifCase of ifBlock.branches) {
+        const cView = unit.job.allocateView(unit.xref);
+        if (ifCase.expressionAlias !== null) {
+            cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
+        }
+        if (firstXref === null) {
+            firstXref = cView.xref;
+        }
+        unit.create.push(createTemplateOp(cView.xref, 'Conditional', Namespace.HTML, true, undefined, ifCase.sourceSpan));
+        const caseExpr = ifCase.expression ? convertAst(ifCase.expression, unit.job, null) : null;
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, cView.xref, ifCase.expressionAlias);
+        conditions.push(conditionalCaseExpr);
+        ingestNodes(cView, ifCase.children);
+    }
+    const conditional = createConditionalOp(firstXref, null, conditions, ifBlock.sourceSpan);
+    unit.update.push(conditional);
+}
+/**
+ * Ingest an `@switch` block into the given `ViewCompilation`.
  */
 function ingestSwitchBlock(unit, switchBlock) {
     let firstXref = null;
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
-        if (!firstXref)
+        if (firstXref === null) {
             firstXref = cView.xref;
-        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined, null));
+        }
+        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined, switchCase.sourceSpan));
         const caseExpr = switchCase.expression ?
             convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) :
             null;
-        conditions.push([cView.xref, caseExpr]);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, cView.xref);
+        conditions.push(conditionalCaseExpr);
         ingestNodes(cView, switchCase.children);
     }
-    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, switchBlock.startSourceSpan), null);
-    conditional.conditions = conditions;
+    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, null), conditions, switchBlock.sourceSpan);
     unit.update.push(conditional);
+}
+function ingestDeferView(unit, suffix, children, sourceSpan) {
+    if (children === undefined) {
+        return null;
+    }
+    const secondaryView = unit.job.allocateView(unit.xref);
+    ingestNodes(secondaryView, children);
+    const templateOp = createTemplateOp(secondaryView.xref, `Defer${suffix}`, Namespace.HTML, true, undefined, sourceSpan);
+    unit.create.push(templateOp);
+    return templateOp;
+}
+function ingestDeferBlock(unit, deferBlock) {
+    // Generate the defer main view and all secondary views.
+    const main = ingestDeferView(unit, '', deferBlock.children, deferBlock.sourceSpan);
+    const loading = ingestDeferView(unit, 'Loading', deferBlock.loading?.children, deferBlock.loading?.sourceSpan);
+    const placeholder = ingestDeferView(unit, 'Placeholder', deferBlock.placeholder?.children, deferBlock.placeholder?.sourceSpan);
+    const error = ingestDeferView(unit, 'Error', deferBlock.error?.children, deferBlock.error?.sourceSpan);
+    // Create the main defer op, and ops for all secondary views.
+    const deferOp = createDeferOp(unit.job.allocateXrefId(), main.xref, deferBlock.sourceSpan);
+    unit.create.push(deferOp);
+    if (loading && deferBlock.loading) {
+        deferOp.loading =
+            createDeferSecondaryOp(deferOp.xref, loading.xref, DeferSecondaryKind.Loading);
+        if (deferBlock.loading.afterTime !== null || deferBlock.loading.minimumTime !== null) {
+            deferOp.loading.constValue = [deferBlock.loading.minimumTime, deferBlock.loading.afterTime];
+        }
+        unit.create.push(deferOp.loading);
+    }
+    if (placeholder && deferBlock.placeholder) {
+        deferOp.placeholder = createDeferSecondaryOp(deferOp.xref, placeholder.xref, DeferSecondaryKind.Placeholder);
+        if (deferBlock.placeholder.minimumTime !== null) {
+            deferOp.placeholder.constValue = [deferBlock.placeholder.minimumTime];
+        }
+        unit.create.push(deferOp.placeholder);
+    }
+    if (error && deferBlock.error) {
+        deferOp.error =
+            createDeferSecondaryOp(deferOp.xref, error.xref, DeferSecondaryKind.Error);
+        unit.create.push(deferOp.error);
+    }
+    // Configure all defer conditions.
+    const deferOnOp = createDeferOnOp(unit.job.allocateXrefId(), null);
+    // Add all ops to the view.
+    unit.create.push(deferOnOp);
 }
 /**
  * Convert a template AST expression into an output AST expression.
@@ -21603,13 +22088,20 @@ function convertAst(ast, job, baseSourceSpan) {
  * to their IR representation.
  */
 function ingestBindings(unit, op, element) {
+    let flags = BindingFlags.None;
+    const isPlainTemplate = element instanceof Template && splitNsName(element.tagName ?? '')[1] === 'ng-template';
     if (element instanceof Template) {
+        flags |= BindingFlags.OnNgTemplateElement;
+        if (isPlainTemplate) {
+            flags |= BindingFlags.BindingTargetsTemplate;
+        }
+        const templateAttrFlags = flags | BindingFlags.BindingTargetsTemplate | BindingFlags.IsStructuralTemplateAttribute;
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, true);
+                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, templateAttrFlags | BindingFlags.TextValue);
             }
             else {
-                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, false, true);
+                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, templateAttrFlags);
             }
         }
     }
@@ -21617,10 +22109,10 @@ function ingestBindings(unit, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, true, false);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, flags | BindingFlags.TextValue);
     }
     for (const input of element.inputs) {
-        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, false, false);
+        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, flags);
     }
     for (const output of element.outputs) {
         let listenerOp;
@@ -21628,6 +22120,10 @@ function ingestBindings(unit, op, element) {
             if (output.phase === null) {
                 throw Error('Animation listener should have a phase');
             }
+        }
+        if (element instanceof Template && !isPlainTemplate) {
+            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null));
+            continue;
         }
         listenerOp =
             createListenerOp(op.xref, output.name, op.tag, output.phase, false, output.sourceSpan);
@@ -21664,9 +22160,36 @@ const BINDING_KINDS = new Map([
     [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
     [4 /* e.BindingType.Animation */, BindingKind.Animation],
 ]);
-function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, isTextAttribute, isTemplateBinding) {
+var BindingFlags;
+(function (BindingFlags) {
+    BindingFlags[BindingFlags["None"] = 0] = "None";
+    /**
+     * The binding is to a static text literal and not to an expression.
+     */
+    BindingFlags[BindingFlags["TextValue"] = 1] = "TextValue";
+    /**
+     * The binding belongs to the `<ng-template>` side of a `t.Template`.
+     */
+    BindingFlags[BindingFlags["BindingTargetsTemplate"] = 2] = "BindingTargetsTemplate";
+    /**
+     * The binding is on a structural directive.
+     */
+    BindingFlags[BindingFlags["IsStructuralTemplateAttribute"] = 4] = "IsStructuralTemplateAttribute";
+    /**
+     * The binding is on a `t.Template`.
+     */
+    BindingFlags[BindingFlags["OnNgTemplateElement"] = 8] = "OnNgTemplateElement";
+})(BindingFlags || (BindingFlags = {}));
+function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, flags) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
+    }
+    if (flags & BindingFlags.OnNgTemplateElement && !(flags & BindingFlags.BindingTargetsTemplate) &&
+        type === 0 /* e.BindingType.Property */) {
+        // This binding only exists for later const extraction, and is not an actual binding to be
+        // created.
+        view.create.push(createExtractedAttributeOp(xref, BindingKind.Property, name, null));
+        return;
     }
     let expression;
     // TODO: We could easily generate source maps for subexpressions in these cases, but
@@ -21681,7 +22204,7 @@ function ingestBinding(view, xref, name, value, type, unit, securityContext, sou
         expression = value;
     }
     const kind = BINDING_KINDS.get(type);
-    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, isTextAttribute, isTemplateBinding, sourceSpan));
+    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, !!(flags & BindingFlags.TextValue), !!(flags & BindingFlags.IsStructuralTemplateAttribute), sourceSpan));
 }
 /**
  * Process all of the local references on an element-like structure in the template AST and
@@ -23891,26 +24414,6 @@ class HtmlAstToIvyAst {
         if (this.processedNodes.has(block)) {
             return null;
         }
-        if (!this.options.enabledBlockTypes.has(block.name)) {
-            let errorMessage;
-            if (isConnectedDeferLoopBlock(block.name)) {
-                errorMessage = `@${block.name} block can only be used after an @defer block.`;
-                this.processedNodes.add(block);
-            }
-            else if (isConnectedForLoopBlock(block.name)) {
-                errorMessage = `@${block.name} block can only be used after an @for block.`;
-                this.processedNodes.add(block);
-            }
-            else if (isConnectedIfLoopBlock(block.name)) {
-                errorMessage = `@${block.name} block can only be used after an @if or @else if block.`;
-                this.processedNodes.add(block);
-            }
-            else {
-                errorMessage = `Unrecognized block @${block.name}.`;
-            }
-            this.reportError(errorMessage, block.sourceSpan);
-            return null;
-        }
         let result = null;
         switch (block.name) {
             case 'defer':
@@ -23926,10 +24429,23 @@ class HtmlAstToIvyAst {
                 result = createIfBlock(block, this.findConnectedBlocks(index, context, isConnectedIfLoopBlock), this, this.bindingParser);
                 break;
             default:
-                result = {
-                    node: null,
-                    errors: [new ParseError(block.sourceSpan, `Unrecognized block @${block.name}.`)]
-                };
+                let errorMessage;
+                if (isConnectedDeferLoopBlock(block.name)) {
+                    errorMessage = `@${block.name} block can only be used after an @defer block.`;
+                    this.processedNodes.add(block);
+                }
+                else if (isConnectedForLoopBlock(block.name)) {
+                    errorMessage = `@${block.name} block can only be used after an @for block.`;
+                    this.processedNodes.add(block);
+                }
+                else if (isConnectedIfLoopBlock(block.name)) {
+                    errorMessage = `@${block.name} block can only be used after an @if or @else if block.`;
+                    this.processedNodes.add(block);
+                }
+                else {
+                    errorMessage = `Unrecognized block @${block.name}.`;
+                }
+                result = { node: null, errors: [new ParseError(block.sourceSpan, errorMessage)] };
                 break;
         }
         this.errors.push(...result.errors);
@@ -24169,6 +24685,19 @@ function textContents(node) {
         return node.children[0].value;
     }
 }
+
+/*!
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Whether the @ block syntax is enabled by default. This constant exists
+ * so that we can temporarily disable the syntax internally.
+ */
+const BLOCK_SYNTAX_ENABLED_DEFAULT = true;
 
 var TagType;
 (function (TagType) {
@@ -26377,7 +26906,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         leadingTriviaChars: LEADING_TRIVIA_CHARS,
         ...options,
         tokenizeExpansionForms: true,
-        tokenizeBlocks: options.enabledBlockTypes != null && options.enabledBlockTypes.size > 0,
+        tokenizeBlocks: options.enableBlockSyntax ?? BLOCK_SYNTAX_ENABLED_DEFAULT,
     });
     if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors &&
         parseResult.errors.length > 0) {
@@ -26429,10 +26958,7 @@ function parseTemplate(template, templateUrl, options = {}) {
             rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
         }
     }
-    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, {
-        collectCommentNodes: !!options.collectCommentNodes,
-        enabledBlockTypes: options.enabledBlockTypes || new Set(),
-    });
+    const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, { collectCommentNodes: !!options.collectCommentNodes });
     errors.push(...parseResult.errors, ...i18nMetaResult.errors);
     const parsedTemplate = {
         interpolationConfig,
@@ -26707,14 +27233,14 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         // - either as an array:
         //   `consts: [['one', 'two'], ['three', 'four']]`
         // - or as a factory function in case additional statements are present (to support i18n):
-        //   `consts: function() { var i18n_0; if (ngI18nClosureMode) {...} else {...} return [i18n_0];
+        //   `consts: () => { var i18n_0; if (ngI18nClosureMode) {...} else {...} return [i18n_0];
         //   }`
         const { constExpressions, prepareStatements } = templateBuilder.getConsts();
         if (constExpressions.length > 0) {
             let constsExpr = literalArr(constExpressions);
             // Prepare statements are present - turn `consts` into a function.
             if (prepareStatements.length > 0) {
-                constsExpr = fn([], [...prepareStatements, new ReturnStatement(constsExpr)]);
+                constsExpr = arrowFn([], [...prepareStatements, new ReturnStatement(constsExpr)]);
             }
             definitionMap.set('consts', constsExpr);
         }
@@ -26735,7 +27261,9 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         definitionMap.set('vars', literal(tpl.root.vars));
         if (tpl.consts.length > 0) {
             if (tpl.constsInitializers.length > 0) {
-                definitionMap.set('consts', fn([], [...tpl.constsInitializers, new ReturnStatement(literalArr(tpl.consts))]));
+                definitionMap.set('consts', arrowFn([], [
+                    ...tpl.constsInitializers, new ReturnStatement(literalArr(tpl.consts))
+                ]));
             }
             else {
                 definitionMap.set('consts', literalArr(tpl.consts));
@@ -26829,11 +27357,11 @@ function compileDeclarationList(list, mode) {
             return list;
         case 1 /* DeclarationListEmitMode.Closure */:
             // directives: function () { return [MyDir]; }
-            return fn([], [new ReturnStatement(list)]);
+            return arrowFn([], list);
         case 2 /* DeclarationListEmitMode.ClosureResolved */:
             // directives: function () { return [MyDir].map(ng.resolveForwardRef); }
             const resolvedList = list.prop('map').callFn([importExpr(Identifiers.resolveForwardRef)]);
-            return fn([], [new ReturnStatement(resolvedList)]);
+            return arrowFn([], resolvedList);
         case 3 /* DeclarationListEmitMode.RuntimeResolved */:
             throw new Error(`Unsupported with an array of pre-resolved dependencies`);
     }
@@ -28113,11 +28641,6 @@ function extractScopedNodeEntities(rootScope) {
 class ResourceLoader {
 }
 
-let enabledBlockTypes;
-/** Temporary utility that enables specific block types in JIT compilations. */
-function ɵsetEnabledBlockTypes(types) {
-    enabledBlockTypes = types.length > 0 ? new Set(types) : undefined;
-}
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
@@ -28523,7 +29046,7 @@ function convertPipeDeclarationToMetadata(pipe) {
 function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces, interpolation) {
     const interpolationConfig = interpolation ? InterpolationConfig.fromArray(interpolation) : DEFAULT_INTERPOLATION_CONFIG;
     // Parse the template and check for errors.
-    const parsed = parseTemplate(template, sourceMapUrl, { preserveWhitespaces, interpolationConfig, enabledBlockTypes });
+    const parsed = parseTemplate(template, sourceMapUrl, { preserveWhitespaces, interpolationConfig });
     if (parsed.errors !== null) {
         const errors = parsed.errors.map(err => err.toString()).join(', ');
         throw new Error(`Errors during JIT compilation of template for ${typeName}: ${errors}`);
@@ -28736,7 +29259,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.6+sha-ee0d04b');
+const VERSION = new Version('17.0.0-next.7+sha-0d3373b');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, useJit = true, missingTranslation = null, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30243,7 +30766,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30351,7 +30874,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30477,9 +31000,16 @@ function compileDeclareComponentFromMetadata(meta, template, additionalTemplateI
  */
 function createComponentDefinitionMap(meta, template, templateInfo) {
     const definitionMap = createDirectiveDefinitionMap(meta);
+    const blockVisitor = new BlockPresenceVisitor();
+    visitAll$1(blockVisitor, template.nodes);
     definitionMap.set('template', getTemplateExpression(template, templateInfo));
     if (templateInfo.isInline) {
         definitionMap.set('isInline', literal(true));
+    }
+    // Set the minVersion to 17.0.0 if the component is using at least one block in its template.
+    // We don't do this for templates without blocks, in order to preserve backwards compatibility.
+    if (blockVisitor.hasBlocks) {
+        definitionMap.set('minVersion', literal('17.0.0'));
     }
     definitionMap.set('styles', toOptionalLiteralArray(meta.styles, literal));
     definitionMap.set('dependencies', compileUsedDependenciesMetadata(meta));
@@ -30573,6 +31103,42 @@ function compileUsedDependenciesMetadata(meta) {
         }
     });
 }
+class BlockPresenceVisitor extends RecursiveVisitor$1 {
+    constructor() {
+        super(...arguments);
+        this.hasBlocks = false;
+    }
+    visitDeferredBlock() {
+        this.hasBlocks = true;
+    }
+    visitDeferredBlockPlaceholder() {
+        this.hasBlocks = true;
+    }
+    visitDeferredBlockLoading() {
+        this.hasBlocks = true;
+    }
+    visitDeferredBlockError() {
+        this.hasBlocks = true;
+    }
+    visitIfBlock() {
+        this.hasBlocks = true;
+    }
+    visitIfBlockBranch() {
+        this.hasBlocks = true;
+    }
+    visitForLoopBlock() {
+        this.hasBlocks = true;
+    }
+    visitForLoopBlockEmpty() {
+        this.hasBlocks = true;
+    }
+    visitSwitchBlock() {
+        this.hasBlocks = true;
+    }
+    visitSwitchBlockCase() {
+        this.hasBlocks = true;
+    }
+}
 
 /**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
@@ -30585,7 +31151,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30620,7 +31186,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30671,7 +31237,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30704,7 +31270,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30755,7 +31321,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.6+sha-ee0d04b'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-0d3373b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
