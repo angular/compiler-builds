@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-0ec66b8
+ * @license Angular v17.0.0-next.7+sha-c2f270c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -636,6 +636,12 @@ declare class Comment_3 implements TmplAstNode {
     constructor(value: string, sourceSpan: ParseSourceSpan);
     visit<Result>(_visitor: Visitor_3<Result>): Result;
 }
+
+/**
+ * Generate an ngDevMode guarded call to setClassDebugInfo with the debug info about the class
+ * (e.g., the file name in which the class is defined)
+ */
+export declare function compileClassDebugInfo(debugInfo: R3ClassDebugInfo): outputAst.Expression;
 
 export declare function compileClassMetadata(metadata: R3ClassMetadata): outputAst.Expression;
 
@@ -1742,7 +1748,7 @@ export declare const enum LexerTokenType {
     EOF = 29
 }
 
-declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
+export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
 
 declare function literalArr(values: Expression[], type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralArrayExpr;
 
@@ -2828,6 +2834,34 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
 }
 
 /**
+ * Info needed for runtime errors related to a class, such as the location in which the class is
+ * defined.
+ */
+export declare interface R3ClassDebugInfo {
+    /** The class identifier */
+    type: outputAst.Expression;
+    /**
+     * A string literal containing the original class name as appears in its definition.
+     */
+    className: outputAst.Expression;
+    /**
+     * A string literal containing the relative path of the file in which the class is defined.
+     *
+     * The path is relative to the project root. The compiler does the best effort to find the project
+     * root (e.g., using the rootDir of tsconfig), but if it fails this field is set to null,
+     * indicating that the file path was failed to be computed. In this case, the downstream consumers
+     * of the debug info will usually ignore the `lineNumber` field as well and just show the
+     * `className`. For security reasons we never show the absolute file path and prefer to just
+     * return null here.
+     */
+    filePath: outputAst.Expression | null;
+    /**
+     * A number literal number containing the line number in which this class is defined.
+     */
+    lineNumber: outputAst.Expression;
+}
+
+/**
  * Metadata of a class which captures the original Angular decorators of a class. The original
  * decorators are preserved in the generated code to allow TestBed APIs to recompile the class
  * using the original decorator with a set of overrides applied.
@@ -3769,6 +3803,7 @@ export declare class R3Identifiers {
     static deferPrefetchOnHover: outputAst.ExternalReference;
     static deferPrefetchOnInteraction: outputAst.ExternalReference;
     static deferPrefetchOnViewport: outputAst.ExternalReference;
+    static deferEnableTimerScheduling: outputAst.ExternalReference;
     static conditional: outputAst.ExternalReference;
     static repeater: outputAst.ExternalReference;
     static repeaterCreate: outputAst.ExternalReference;
@@ -3871,6 +3906,7 @@ export declare class R3Identifiers {
     static declareClassMetadata: outputAst.ExternalReference;
     static setClassMetadata: outputAst.ExternalReference;
     static setClassMetadataAsync: outputAst.ExternalReference;
+    static setClassDebugInfo: outputAst.ExternalReference;
     static queryRefresh: outputAst.ExternalReference;
     static viewQuery: outputAst.ExternalReference;
     static loadQuery: outputAst.ExternalReference;
