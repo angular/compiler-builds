@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-28a5925
+ * @license Angular v17.0.0-next.7+sha-023a181
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5009,7 +5009,8 @@ export declare class TmplAstSwitchBlockCase implements TmplAstNode {
     children: TmplAstNode[];
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
-    constructor(expression: AST | null, children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan);
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(expression: AST | null, children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
