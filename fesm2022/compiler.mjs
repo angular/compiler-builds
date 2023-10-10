@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-503e67d
+ * @license Angular v17.0.0-next.7+sha-d5dad3e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -26019,18 +26019,17 @@ class TemplateDefinitionBuilder {
         // callback in order to generate the correct expressions when pipes or pure functions are
         // used inside the branch expressions.
         const branchData = block.branches.map(({ expression, expressionAlias, children, sourceSpan }) => {
-            const processedExpression = expression === null ? null : expression.visit(this._valueConverter);
             // If the branch has an alias, it'll be assigned directly to the container's context.
             // We define a variable referring directly to the context so that any nested usages can be
             // rewritten to refer to it.
             const variables = expressionAlias !== null ?
                 [new Variable(expressionAlias.name, DIRECT_CONTEXT_REFERENCE, expressionAlias.sourceSpan, expressionAlias.keySpan)] :
                 undefined;
-            return {
-                index: this.createEmbeddedTemplateFn(null, children, '_Conditional', sourceSpan, variables),
-                expression: processedExpression,
-                alias: expressionAlias
-            };
+            // Note: the template needs to be created *before* we process the expression,
+            // otherwise pipes injecting some symbols won't work (see #52102).
+            const index = this.createEmbeddedTemplateFn(null, children, '_Conditional', sourceSpan, variables);
+            const processedExpression = expression === null ? null : expression.visit(this._valueConverter);
+            return { index, expression: processedExpression, alias: expressionAlias };
         });
         // Use the index of the first block as the index for the entire container.
         const containerIndex = branchData[0].index;
@@ -26076,20 +26075,21 @@ class TemplateDefinitionBuilder {
         this.updateInstructionWithAdvance(containerIndex, block.branches[0].sourceSpan, Identifiers.conditional, paramsCallback);
     }
     visitSwitchBlock(block) {
-        const blockExpression = block.expression.visit(this._valueConverter);
-        this.allocateBindingSlots(null); // Allocate a slot for the primary block expression.
         // We have to process the block in two steps: once here and again in the update instruction
         // callback in order to generate the correct expressions when pipes or pure functions are used.
         const caseData = block.cases.map(currentCase => {
-            return {
-                index: this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan),
-                expression: currentCase.expression === null ?
-                    null :
-                    currentCase.expression.visit(this._valueConverter)
-            };
+            const index = this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan);
+            const expression = currentCase.expression === null ?
+                null :
+                currentCase.expression.visit(this._valueConverter);
+            return { index, expression };
         });
         // Use the index of the first block as the index for the entire container.
         const containerIndex = caseData[0].index;
+        // Note: the expression needs to be processed *after* the template,
+        // otherwise pipes injecting some symbols won't work (see #52102).
+        const blockExpression = block.expression.visit(this._valueConverter);
+        this.allocateBindingSlots(null); // Allocate a slot for the primary block expression.
         this.updateInstructionWithAdvance(containerIndex, block.sourceSpan, Identifiers.conditional, () => {
             const generateCases = (caseIndex) => {
                 // If we've gone beyond the last branch, return the special -1
@@ -26161,11 +26161,13 @@ class TemplateDefinitionBuilder {
                 importExpr(Identifiers.deferEnableTimerScheduling) :
                 TYPED_NULL_EXPR,
         ]));
-        this.createDeferTriggerInstructions(deferredIndex, triggers, metadata, false);
-        this.createDeferTriggerInstructions(deferredIndex, prefetchTriggers, metadata, true);
         // Allocate an extra data slot right after a defer block slot to store
         // instance-specific state of that defer block at runtime.
         this.allocateDataSlot();
+        // Note: the triggers need to be processed *after* the various templates,
+        // otherwise pipes injecting some symbols won't work (see #52102).
+        this.createDeferTriggerInstructions(deferredIndex, triggers, metadata, false);
+        this.createDeferTriggerInstructions(deferredIndex, prefetchTriggers, metadata, true);
     }
     createDeferredDepsFunction(name, metadata) {
         if (metadata.deps.length === 0) {
@@ -26261,8 +26263,6 @@ class TemplateDefinitionBuilder {
             null :
             this.prepareEmbeddedTemplateFn(block.empty.children, '_ForEmpty');
         const { expression: trackByExpression, usesComponentInstance: trackByUsesComponentInstance } = this.createTrackByFunction(block);
-        const value = block.expression.visit(this._valueConverter);
-        this.allocateBindingSlots(value);
         this.registerComputedLoopVariables(block, primaryData.scope);
         // `repeaterCreate(0, ...)`
         this.creationInstruction(block.sourceSpan, Identifiers.repeaterCreate, () => {
@@ -26282,6 +26282,10 @@ class TemplateDefinitionBuilder {
             }
             return params;
         });
+        // Note: the expression needs to be processed *after* the template,
+        // otherwise pipes injecting some symbols won't work (see #52102).
+        const value = block.expression.visit(this._valueConverter);
+        this.allocateBindingSlots(value);
         // `repeater(0, iterable)`
         this.updateInstruction(block.sourceSpan, Identifiers.repeater, () => [literal(blockIndex), this.convertPropertyBinding(value)]);
     }
@@ -29511,7 +29515,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.7+sha-503e67d');
+const VERSION = new Version('17.0.0-next.7+sha-d5dad3e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31037,7 +31041,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31145,7 +31149,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31422,7 +31426,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31457,7 +31461,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31508,7 +31512,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31541,7 +31545,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31592,7 +31596,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-503e67d'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-d5dad3e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
