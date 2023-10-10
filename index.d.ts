@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-229331e
+ * @license Angular v17.0.0-next.7+sha-503e67d
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -726,11 +726,9 @@ export declare function compilePipeFromMetadata(metadata: R3PipeMetadata): R3Com
 
 export declare class CompilerConfig {
     defaultEncapsulation: ViewEncapsulation | null;
-    useJit: boolean;
-    missingTranslation: MissingTranslationStrategy | null;
     preserveWhitespaces: boolean;
     strictInjectionParameters: boolean;
-    constructor({ defaultEncapsulation, useJit, missingTranslation, preserveWhitespaces, strictInjectionParameters }?: {
+    constructor({ defaultEncapsulation, preserveWhitespaces, strictInjectionParameters }?: {
         defaultEncapsulation?: ViewEncapsulation;
         useJit?: boolean;
         missingTranslation?: MissingTranslationStrategy | null;
