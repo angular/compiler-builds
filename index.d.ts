@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-da056a1
+ * @license Angular v17.0.0-next.7+sha-ddd7212
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2857,6 +2857,11 @@ export declare interface R3ClassDebugInfo {
      * A number literal number containing the line number in which this class is defined.
      */
     lineNumber: outputAst.Expression;
+    /**
+     * Whether to check if this component is being rendered without its NgModule being loaded into the
+     * browser. Such checks is carried out only in dev mode.
+     */
+    forbidOrphanRendering: boolean;
 }
 
 /**
