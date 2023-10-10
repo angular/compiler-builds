@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-9bf6495
+ * @license Angular v17.0.0-next.7+sha-21b085d
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3901,9 +3901,15 @@ class DeferredBlock {
     }
 }
 class SwitchBlock {
-    constructor(expression, cases, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(expression, cases, 
+    /**
+     * These blocks are only captured to allow for autocompletion in the language service. They
+     * aren't meant to be processed in any other way.
+     */
+    unknownBlocks, sourceSpan, startSourceSpan, endSourceSpan) {
         this.expression = expression;
         this.cases = cases;
+        this.unknownBlocks = unknownBlocks;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
@@ -23643,23 +23649,20 @@ function isConnectedIfLoopBlock(name) {
 function createIfBlock(ast, connectedBlocks, visitor, bindingParser) {
     const errors = validateIfConnectedBlocks(connectedBlocks);
     const branches = [];
-    if (errors.length > 0) {
-        return { node: null, errors };
-    }
     const mainBlockParams = parseConditionalBlockParameters(ast, errors, bindingParser);
     if (mainBlockParams !== null) {
         branches.push(new IfBlockBranch(mainBlockParams.expression, visitAll(visitor, ast.children, ast.children), mainBlockParams.expressionAlias, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan));
     }
-    // Assumes that the structure is valid since we validated it above.
     for (const block of connectedBlocks) {
-        const children = visitAll(visitor, block.children, block.children);
         if (ELSE_IF_PATTERN.test(block.name)) {
             const params = parseConditionalBlockParameters(block, errors, bindingParser);
             if (params !== null) {
+                const children = visitAll(visitor, block.children, block.children);
                 branches.push(new IfBlockBranch(params.expression, children, params.expressionAlias, block.sourceSpan, block.startSourceSpan, block.endSourceSpan));
             }
         }
         else if (block.name === 'else') {
+            const children = visitAll(visitor, block.children, block.children);
             branches.push(new IfBlockBranch(null, children, null, block.sourceSpan, block.startSourceSpan, block.endSourceSpan));
         }
     }
@@ -23717,15 +23720,19 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
 /** Creates a switch block from an HTML AST node. */
 function createSwitchBlock(ast, visitor, bindingParser) {
     const errors = validateSwitchBlock(ast);
-    if (errors.length > 0) {
-        return { node: null, errors };
-    }
-    const primaryExpression = parseBlockParameterToBinding(ast.parameters[0], bindingParser);
+    const primaryExpression = ast.parameters.length > 0 ?
+        parseBlockParameterToBinding(ast.parameters[0], bindingParser) :
+        bindingParser.parseBinding('', false, ast.sourceSpan, 0);
     const cases = [];
+    const unknownBlocks = [];
     let defaultCase = null;
     // Here we assume that all the blocks are valid given that we validated them above.
     for (const node of ast.children) {
         if (!(node instanceof Block)) {
+            continue;
+        }
+        if ((node.name !== 'case' || node.parameters.length === 0) && node.name !== 'default') {
+            unknownBlocks.push(new UnknownBlock(node.name, node.sourceSpan));
             continue;
         }
         const expression = node.name === 'case' ?
@@ -23744,7 +23751,7 @@ function createSwitchBlock(ast, visitor, bindingParser) {
         cases.push(defaultCase);
     }
     return {
-        node: new SwitchBlock(primaryExpression, cases, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan),
+        node: new SwitchBlock(primaryExpression, cases, unknownBlocks, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan),
         errors
     };
 }
@@ -29515,7 +29522,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-next.7+sha-9bf6495');
+const VERSION = new Version('17.0.0-next.7+sha-21b085d');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31041,7 +31048,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31149,7 +31156,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31426,7 +31433,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31461,7 +31468,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31512,7 +31519,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31545,7 +31552,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31596,7 +31603,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-next.7+sha-9bf6495'));
+    definitionMap.set('version', literal('17.0.0-next.7+sha-21b085d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

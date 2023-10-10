@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-next.7+sha-9bf6495
+ * @license Angular v17.0.0-next.7+sha-21b085d
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5031,10 +5031,20 @@ export declare class TmplAstReference implements TmplAstNode {
 export declare class TmplAstSwitchBlock implements TmplAstNode {
     expression: AST;
     cases: TmplAstSwitchBlockCase[];
+    /**
+     * These blocks are only captured to allow for autocompletion in the language service. They
+     * aren't meant to be processed in any other way.
+     */
+    unknownBlocks: TmplAstUnknownBlock[];
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(expression: AST, cases: TmplAstSwitchBlockCase[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(expression: AST, cases: TmplAstSwitchBlockCase[], 
+    /**
+     * These blocks are only captured to allow for autocompletion in the language service. They
+     * aren't meant to be processed in any other way.
+     */
+    unknownBlocks: TmplAstUnknownBlock[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
