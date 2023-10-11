@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-12aeed8
+ * @license Angular v17.1.0-next.0+sha-0198d21
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8317,7 +8317,7 @@ class ShadowCss {
             // (ie: ".\fc ber" for ".über") is not a separator between 2 selectors
             // also keep in mind that backslashes are replaced by a placeholder by SafeSelector
             // These escaped selectors happen for example when esbuild runs with optimization.minify.
-            if (part.match(_placeholderRe) && selector[res.index + 1]?.match(/[a-fA-F\d]/)) {
+            if (part.match(/__esc-ph-(\d+)__/) && selector[res.index + 1]?.match(/[a-fA-F\d]/)) {
                 continue;
             }
             shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
@@ -8348,7 +8348,13 @@ class SafeSelector {
         // pseudo-class, but writing `.foo\:blue` will match, because the colon was escaped.
         // Replace all escape sequences (`\` followed by a character) with a placeholder so
         // that our handling of pseudo-selectors doesn't mess with them.
-        selector = this._escapeRegexMatches(selector, /(\\.)/g);
+        // Escaped characters have a specific placeholder so they can be detected separately.
+        selector = selector.replace(/(\\.)/g, (_, keep) => {
+            const replaceBy = `__esc-ph-${this.index}__`;
+            this.placeholders.push(keep);
+            this.index++;
+            return replaceBy;
+        });
         // Replaces the expression in `:nth-child(2n + 1)` with a placeholder.
         // WS and "+" would otherwise be interpreted as selector separators.
         this._content = selector.replace(/(:nth-[-\w]+)(\([^)]+\))/g, (_, pseudo, exp) => {
@@ -8359,7 +8365,7 @@ class SafeSelector {
         });
     }
     restore(content) {
-        return content.replace(_placeholderRe, (_ph, index) => this.placeholders[+index]);
+        return content.replace(/__(?:ph|esc-ph)-(\d+)__/g, (_ph, index) => this.placeholders[+index]);
     }
     content() {
         return this._content;
@@ -8411,7 +8417,6 @@ const _commentRe = /\/\*[\s\S]*?\*\//g;
 const _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=/g;
 const COMMENT_PLACEHOLDER = '%COMMENT%';
 const _commentWithHashPlaceHolderRe = new RegExp(COMMENT_PLACEHOLDER, 'g');
-const _placeholderRe = /__ph-(\d+)__/g;
 const BLOCK_PLACEHOLDER = '%BLOCK%';
 const _ruleRe = new RegExp(`(\\s*(?:${COMMENT_PLACEHOLDER}\\s*)*)([^;\\{\\}]+?)(\\s*)((?:{%BLOCK%}?\\s*;?)|(?:\\s*;))`, 'g');
 const CONTENT_PAIRS = new Map([['{', '}']]);
@@ -29526,7 +29531,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-12aeed8');
+const VERSION = new Version('17.1.0-next.0+sha-0198d21');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31056,7 +31061,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31164,7 +31169,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31441,7 +31446,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31476,7 +31481,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31527,7 +31532,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31560,7 +31565,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31611,7 +31616,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-12aeed8'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-0198d21'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
