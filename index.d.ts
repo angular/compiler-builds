@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-20e7e21
+ * @license Angular v17.1.0-next.0+sha-ca81661
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -323,23 +323,24 @@ export declare class Binary extends AST {
 }
 
 export declare enum BinaryOperator {
-    Equals = 0,
-    NotEquals = 1,
-    Identical = 2,
-    NotIdentical = 3,
-    Minus = 4,
-    Plus = 5,
-    Divide = 6,
-    Multiply = 7,
-    Modulo = 8,
-    And = 9,
-    Or = 10,
-    BitwiseAnd = 11,
-    Lower = 12,
-    LowerEquals = 13,
-    Bigger = 14,
-    BiggerEquals = 15,
-    NullishCoalesce = 16
+    Assign = 0,
+    Equals = 1,
+    NotEquals = 2,
+    Identical = 3,
+    NotIdentical = 4,
+    Minus = 5,
+    Plus = 6,
+    Divide = 7,
+    Multiply = 8,
+    Modulo = 9,
+    And = 10,
+    Or = 11,
+    BitwiseAnd = 12,
+    Lower = 13,
+    LowerEquals = 14,
+    Bigger = 15,
+    BiggerEquals = 16,
+    NullishCoalesce = 17
 }
 
 export declare class BinaryOperatorExpr extends Expression {
@@ -3866,6 +3867,7 @@ export declare class R3Identifiers {
     static projection: outputAst.ExternalReference;
     static projectionDef: outputAst.ExternalReference;
     static reference: outputAst.ExternalReference;
+    static shallowReference: outputAst.ExternalReference;
     static inject: outputAst.ExternalReference;
     static injectAttribute: outputAst.ExternalReference;
     static directiveInject: outputAst.ExternalReference;
@@ -3932,6 +3934,14 @@ export declare class R3Identifiers {
     static trustConstantHtml: outputAst.ExternalReference;
     static trustConstantResourceUrl: outputAst.ExternalReference;
     static validateIframeAttribute: outputAst.ExternalReference;
+    static getInputSignalWriteType: {
+        name: string;
+        moduleName: string;
+    };
+    static propertyCreate: outputAst.ExternalReference;
+    static stringifyInterpolation: outputAst.ExternalReference;
+    static viewQueryCreate: outputAst.ExternalReference;
+    static contentQueryCreate: outputAst.ExternalReference;
 }
 
 export declare interface R3InjectableMetadata {
