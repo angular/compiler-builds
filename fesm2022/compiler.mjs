@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-9f4927e
+ * @license Angular v17.1.0-next.0+sha-9bc9464
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -19382,7 +19382,8 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
-                addNamesToView(childView, `${baseName}_${prefixWithNamespace(op.tag, op.namespace)}_${op.slot}`, state, compatibility);
+                const tagToken = op.tag === null ? '' : '_' + prefixWithNamespace(op.tag, op.namespace);
+                addNamesToView(childView, `${baseName}${tagToken}_${op.slot}`, state, compatibility);
                 break;
             case OpKind.StyleProp:
                 op.name = normalizeStylePropName(op.name);
@@ -19978,7 +19979,7 @@ function elementContainerEnd() {
 }
 function template(slot, templateFnRef, decls, vars, tag, constIndex, sourceSpan) {
     const args = [literal(slot), templateFnRef, literal(decls), literal(vars)];
-    if (tag !== null) {
+    if (tag !== null || constIndex !== null) {
         args.push(literal(tag));
         if (constIndex !== null) {
             args.push(literal(constIndex));
@@ -21224,7 +21225,7 @@ function phaseResolveSanitizers(job) {
  * Checks whether the given op represents an iframe element.
  */
 function isIframeElement$1(op) {
-    return op.kind === OpKind.ElementStart && op.tag.toLowerCase() === 'iframe';
+    return op.kind === OpKind.ElementStart && op.tag?.toLowerCase() === 'iframe';
 }
 
 function phaseSaveRestoreView(job) {
@@ -22133,8 +22134,7 @@ function ingestTemplate(unit, tmpl) {
         [namespacePrefix, tagNameWithoutNamespace] = splitNsName(tmpl.tagName);
     }
     const i18nPlaceholder = tmpl.i18n instanceof TagPlaceholder ? tmpl.i18n : undefined;
-    // TODO: validate the fallback tag name here.
-    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace ?? 'ng-template', namespaceForKey(namespacePrefix), false, i18nPlaceholder, tmpl.startSourceSpan);
+    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace, namespaceForKey(namespacePrefix), false, i18nPlaceholder, tmpl.startSourceSpan);
     unit.create.push(tplOp);
     ingestBindings(unit, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
@@ -22142,8 +22142,10 @@ function ingestTemplate(unit, tmpl) {
     for (const { name, value } of tmpl.variables) {
         childView.contextVariables.set(name, value);
     }
-    // If there is an i18n message associated with this template, insert i18n start and end ops.
-    if (tmpl.i18n instanceof Message) {
+    // If this is a plain template and there is an i18n message associated with it, insert i18n start
+    // and end ops. For structural directive templates, the i18n ops will be added when ingesting the
+    // element/template the directive is placed on.
+    if (isPlainTemplate(tmpl) && tmpl.i18n instanceof Message) {
         const id = unit.job.allocateXrefId();
         OpList.insertAfter(createI18nStartOp(id, tmpl.i18n), childView.create.head);
         OpList.insertBefore(createI18nEndOp(id), childView.create.tail);
@@ -22373,15 +22375,34 @@ function convertAst(ast, job, baseSourceSpan) {
     }
 }
 /**
+ * Checks whether the given template is a plain ng-template (as opposed to another kind of template
+ * such as a structural directive template or control flow template). This is checked based on the
+ * tagName. We can expect that only plain ng-templates will come through with a tagName of
+ * 'ng-template'.
+ *
+ * Here are some of the cases we expect:
+ *
+ * | Angular HTML                       | Template tagName   |
+ * | ---------------------------------- | ------------------ |
+ * | `<ng-template>`                    | 'ng-template'      |
+ * | `<div *ngIf="true">`               | 'div'              |
+ * | `<svg><ng-template>`               | 'svg:ng-template'  |
+ * | `@if (true) {`                     | 'Conditional'      |
+ * | `<ng-template *ngIf>` (plain)      | 'ng-template'      |
+ * | `<ng-template *ngIf>` (structural) | null               |
+ */
+function isPlainTemplate(tmpl) {
+    return splitNsName(tmpl.tagName ?? '')[1] === 'ng-template';
+}
+/**
  * Process all of the bindings on an element-like structure in the template AST and convert them
  * to their IR representation.
  */
 function ingestBindings(unit, op, element) {
     let flags = BindingFlags.None;
-    const isPlainTemplate = element instanceof Template && splitNsName(element.tagName ?? '')[1] === 'ng-template';
     if (element instanceof Template) {
         flags |= BindingFlags.OnNgTemplateElement;
-        if (isPlainTemplate) {
+        if (element instanceof Template && isPlainTemplate(element)) {
             flags |= BindingFlags.BindingTargetsTemplate;
         }
         const templateAttrFlags = flags | BindingFlags.BindingTargetsTemplate | BindingFlags.IsStructuralTemplateAttribute;
@@ -22410,7 +22431,7 @@ function ingestBindings(unit, op, element) {
                 throw Error('Animation listener should have a phase');
             }
         }
-        if (element instanceof Template && !isPlainTemplate) {
+        if (element instanceof Template && !isPlainTemplate(element)) {
             unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null));
             continue;
         }
@@ -29578,7 +29599,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-9f4927e');
+const VERSION = new Version('17.1.0-next.0+sha-9bc9464');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31108,7 +31129,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31216,7 +31237,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31493,7 +31514,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31528,7 +31549,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31579,7 +31600,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31612,7 +31633,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31663,7 +31684,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-9f4927e'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-9bc9464'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
