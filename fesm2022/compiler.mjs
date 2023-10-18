@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-1640743
+ * @license Angular v17.1.0-next.0+sha-35b0691
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8846,6 +8846,14 @@ var OpKind;
      * An instruction that applies a set of i18n expressions.
      */
     OpKind[OpKind["I18nApply"] = 38] = "I18nApply";
+    /**
+     * An instruction to create an ICU expression.
+     */
+    OpKind[OpKind["Icu"] = 39] = "Icu";
+    /**
+     * An instruction to update an ICU expression.
+     */
+    OpKind[OpKind["IcuUpdate"] = 40] = "IcuUpdate";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9024,6 +9032,22 @@ var BindingKind;
      */
     BindingKind[BindingKind["Animation"] = 6] = "Animation";
 })(BindingKind || (BindingKind = {}));
+/**
+ * Enumeration of possible times i18n params can be resolved.
+ */
+var I18nParamResolutionTime;
+(function (I18nParamResolutionTime) {
+    /**
+     * Param is resolved at message creation time. Most params should be resolved at message creation
+     * time. However, ICU params need to be handled in post-processing.
+     */
+    I18nParamResolutionTime[I18nParamResolutionTime["Creation"] = 0] = "Creation";
+    /**
+     * Param is resolved during post-processing. This should be used for params who's value comes from
+     * an ICU.
+     */
+    I18nParamResolutionTime[I18nParamResolutionTime["Postproccessing"] = 1] = "Postproccessing";
+})(I18nParamResolutionTime || (I18nParamResolutionTime = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -9322,13 +9346,14 @@ function createConditionalOp(target, test, conditions, sourceSpan) {
 /**
  * Create an i18n expression op.
  */
-function createI18nExpressionOp(owner, expression, i18nPlaceholder, sourceSpan) {
+function createI18nExpressionOp(owner, expression, i18nPlaceholder, resolutionTime, sourceSpan) {
     return {
         kind: OpKind.I18nExpression,
         owner,
         target: owner,
         expression,
         i18nPlaceholder,
+        resolutionTime,
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_VARS,
@@ -9345,6 +9370,17 @@ function createI18nApplyOp(target, sourceSpan) {
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_USES_SLOT_INDEX,
+    };
+}
+/**
+ * Creates an op to update an ICU expression.
+ */
+function createIcuUpdateOp(xref, sourceSpan) {
+    return {
+        kind: OpKind.IcuUpdate,
+        xref,
+        sourceSpan,
+        ...NEW_OP,
     };
 }
 
@@ -10069,6 +10105,8 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Advance:
         case OpKind.Namespace:
         case OpKind.I18nApply:
+        case OpKind.Icu:
+        case OpKind.IcuUpdate:
             // These operations contain no expressions.
             break;
         default:
@@ -10667,6 +10705,7 @@ function createI18nStartOp(xref, message, root) {
         root: root ?? xref,
         message,
         params: new Map(),
+        postprocessingParams: new Map(),
         messageIndex: null,
         subTemplateIndex: null,
         needsPostprocessing: false,
@@ -10681,6 +10720,18 @@ function createI18nEndOp(xref) {
     return {
         kind: OpKind.I18nEnd,
         xref,
+        ...NEW_OP,
+    };
+}
+/**
+ * Creates an op to create an ICU expression.
+ */
+function createIcuOp(xref, message, sourceSpan) {
+    return {
+        kind: OpKind.Icu,
+        xref,
+        message,
+        sourceSpan,
         ...NEW_OP,
     };
 }
@@ -19068,9 +19119,16 @@ function phaseI18nMessageExtraction(job) {
                     // const to start with `MSG_`. We define a variable starting with `MSG_` just for the
                     // `goog.getMsg` call
                     const closureVar = i18nGenerateClosureVar(job.pool, op.message.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
-                    const transformFn = op.needsPostprocessing ?
-                        (expr) => importExpr(Identifiers.i18nPostprocess).callFn([expr]) :
-                        undefined;
+                    let transformFn = undefined;
+                    // If nescessary, add a post-processing step and resolve any placeholder params that are
+                    // set in post-processing.
+                    if (op.needsPostprocessing) {
+                        const extraTransformFnParams = [];
+                        if (op.postprocessingParams.size > 0) {
+                            extraTransformFnParams.push(literalMap([...op.postprocessingParams.entries()].map(([key, value]) => ({ key, value, quoted: true }))));
+                        }
+                        transformFn = (expr) => importExpr(Identifiers.i18nPostprocess).callFn([expr, ...extraTransformFnParams]);
+                    }
                     const statements = getTranslationDeclStmts$1(op.message, mainVar, closureVar, params, transformFn);
                     unit.create.push(createExtractedMessageOp(op.xref, mainVar, statements));
                 }
@@ -19184,12 +19242,56 @@ function phaseI18nTextExtraction(job) {
                     for (let i = 0; i < op.interpolation.expressions.length; i++) {
                         const expr = op.interpolation.expressions[i];
                         const placeholder = op.i18nPlaceholders[i];
-                        ops.push(createI18nExpressionOp(i18nBlockId, expr, placeholder, expr.sourceSpan ?? op.sourceSpan));
+                        ops.push(createI18nExpressionOp(i18nBlockId, expr, placeholder.name, I18nParamResolutionTime.Creation, expr.sourceSpan ?? op.sourceSpan));
                     }
                     if (ops.length > 0) {
                         // ops.push(ir.createI18nApplyOp(i18nBlockId, op.i18nPlaceholders, op.sourceSpan));
                     }
                     OpList.replaceWithMany(op, ops);
+                    break;
+            }
+        }
+    }
+}
+
+/**
+ * Extracts ICUs into i18n expressions.
+ */
+function phaseIcuExtraction(job) {
+    for (const unit of job.units) {
+        // Build a map of ICU to the i18n block they belong to, then remove the `Icu` ops.
+        const icus = new Map();
+        let currentI18nId = null;
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    currentI18nId = op.xref;
+                    break;
+                case OpKind.I18nEnd:
+                    currentI18nId = null;
+                    break;
+                case OpKind.Icu:
+                    if (currentI18nId === null) {
+                        throw Error('Unexpected ICU outside of an i18n block.');
+                    }
+                    icus.set(op.xref, { message: op.message, i18nBlockId: currentI18nId });
+                    OpList.remove(op);
+                    break;
+            }
+        }
+        // Replace the `IcuUpdate` ops with `i18nExpr` ops.
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.IcuUpdate:
+                    const { message, i18nBlockId } = icus.get(op.xref);
+                    const icuNode = message.nodes.find((n) => n instanceof Icu);
+                    if (icuNode === undefined) {
+                        throw Error('Could not find ICU in i18n AST');
+                    }
+                    if (icuNode.expressionPlaceholder === undefined) {
+                        throw Error('ICU is missing an i18n placeholder');
+                    }
+                    OpList.replace(op, createI18nExpressionOp(i18nBlockId, new LexicalReadExpr(icuNode.expression), icuNode.expressionPlaceholder, I18nParamResolutionTime.Postproccessing, null));
                     break;
             }
         }
@@ -20886,9 +20988,9 @@ class I18nPlaceholderParams {
     /**
      * Adds a new value to the params map.
      */
-    addValue(placeholder, value, subTemplateIndex, flags) {
+    addValue(placeholder, value, subTemplateIndex, resolutionTime, flags) {
         const placeholderValues = this.values.get(placeholder) ?? [];
-        placeholderValues.push({ value, subTemplateIndex, flags });
+        placeholderValues.push({ value, subTemplateIndex, resolutionTime, flags });
         this.values.set(placeholder, placeholderValues);
     }
     /**
@@ -20896,12 +20998,23 @@ class I18nPlaceholderParams {
      */
     saveToOp(op) {
         for (const [placeholder, placeholderValues] of this.values) {
-            // We need to run post-processing for any 1i8n ops that contain parameters with more than one
-            // value.
-            if (placeholderValues.length > 1) {
+            // We need to run post-processing for any 1i8n ops that contain parameters with more than
+            // one value, even if there are no parameters resolved at post-processing time.
+            const creationValues = placeholderValues.filter(({ resolutionTime }) => resolutionTime === I18nParamResolutionTime.Creation);
+            if (creationValues.length > 1) {
                 op.needsPostprocessing = true;
             }
-            op.params.set(placeholder, literal(this.serializeValues(placeholderValues)));
+            // Save creation time params to op.
+            const serializedCreationValues = this.serializeValues(creationValues);
+            if (serializedCreationValues !== null) {
+                op.params.set(placeholder, literal(serializedCreationValues));
+            }
+            // Save post-processing time params to op.
+            const serializedPostprocessingValues = this.serializeValues(placeholderValues.filter(({ resolutionTime }) => resolutionTime === I18nParamResolutionTime.Postproccessing));
+            if (serializedPostprocessingValues !== null) {
+                op.needsPostprocessing = true;
+                op.postprocessingParams.set(placeholder, literal(serializedPostprocessingValues));
+            }
         }
     }
     /**
@@ -20925,6 +21038,9 @@ class I18nPlaceholderParams {
      * Serializes a list of i18n placeholder values.
      */
     serializeValues(values) {
+        if (values.length === 0) {
+            return null;
+        }
         const serializedValues = values.map(value => this.serializeValue(value));
         return serializedValues.length === 1 ?
             serializedValues[0] :
@@ -20970,7 +21086,7 @@ function phaseResolveI18nPlaceholders(job) {
     for (const op of i18nOps.values()) {
         if (op.xref === op.root) {
             for (const placeholder in op.message.placeholders) {
-                if (!op.params.has(placeholder)) {
+                if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
                     throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
                 }
             }
@@ -21009,7 +21125,7 @@ function resolvePlaceholders(job, params, i18nOps) {
                         if (closeName === '') {
                             flags |= I18nParamValueFlags.CloseTag;
                         }
-                        addParam(params, currentI18nOp, startName, op.slot, currentI18nOp.subTemplateIndex, flags);
+                        addParam(params, currentI18nOp, startName, op.slot, currentI18nOp.subTemplateIndex, I18nParamResolutionTime.Creation, flags);
                     }
                     break;
                 case OpKind.ElementEnd:
@@ -21021,7 +21137,7 @@ function resolvePlaceholders(job, params, i18nOps) {
                         const { closeName } = startOp.i18nPlaceholder;
                         // Self-closing tags don't have a closing tag placeholder.
                         if (closeName !== '') {
-                            addParam(params, currentI18nOp, closeName, startOp.slot, currentI18nOp.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
+                            addParam(params, currentI18nOp, closeName, startOp.slot, currentI18nOp.subTemplateIndex, I18nParamResolutionTime.Creation, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
                         }
                     }
                     break;
@@ -21031,8 +21147,8 @@ function resolvePlaceholders(job, params, i18nOps) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
                         const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentI18nOp, op);
-                        addParam(params, currentI18nOp, op.i18nPlaceholder.startName, op.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
-                        addParam(params, currentI18nOp, op.i18nPlaceholder.closeName, op.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
+                        addParam(params, currentI18nOp, op.i18nPlaceholder.startName, op.slot, subTemplateIndex, I18nParamResolutionTime.Creation, I18nParamValueFlags.TemplateTag);
+                        addParam(params, currentI18nOp, op.i18nPlaceholder.closeName, op.slot, subTemplateIndex, I18nParamResolutionTime.Creation, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
                     }
                     break;
             }
@@ -21046,7 +21162,7 @@ function resolvePlaceholders(job, params, i18nOps) {
                 if (!i18nOp) {
                     throw Error('Cannot find corresponding i18nStart for i18nExpr');
                 }
-                addParam(params, i18nOp, op.i18nPlaceholder.name, index++, i18nOp.subTemplateIndex);
+                addParam(params, i18nOp, op.i18nPlaceholder, index++, i18nOp.subTemplateIndex, op.resolutionTime);
                 i18nBlockPlaceholderIndices.set(op.owner, index);
             }
         }
@@ -21055,9 +21171,9 @@ function resolvePlaceholders(job, params, i18nOps) {
 /**
  * Add a param to the params map for the given i18n op.
  */
-function addParam(params, i18nOp, placeholder, value, subTemplateIndex, flags = I18nParamValueFlags.None) {
+function addParam(params, i18nOp, placeholder, value, subTemplateIndex, resolutionTime, flags = I18nParamValueFlags.None) {
     const i18nOpParams = params.get(i18nOp.xref) || new I18nPlaceholderParams();
-    i18nOpParams.addValue(placeholder, value, subTemplateIndex, flags);
+    i18nOpParams.addValue(placeholder, value, subTemplateIndex, resolutionTime, flags);
     params.set(i18nOp.xref, i18nOpParams);
 }
 /**
@@ -21839,6 +21955,32 @@ function allowConservativeInlining(decl, target) {
     }
 }
 
+/**
+ * Wraps ICUs that do not already belong to an i18n block in a new i18n block.
+ */
+function phaseWrapIcus(job) {
+    for (const unit of job.units) {
+        let currentI18nOp = null;
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    currentI18nOp = op;
+                    break;
+                case OpKind.I18nEnd:
+                    currentI18nOp = null;
+                    break;
+                case OpKind.Icu:
+                    if (currentI18nOp === null) {
+                        const id = job.allocateXrefId();
+                        OpList.insertBefore(createI18nStartOp(id, op.message), op);
+                        OpList.insertAfter(createI18nEndOp(id), op);
+                    }
+                    break;
+            }
+        }
+    }
+}
+
 const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveContentSelectors },
     { kind: CompilationJobKind.Host, fn: phaseHostStylePropertyParsing },
@@ -21846,12 +21988,14 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseStyleBindingSpecialization },
     { kind: CompilationJobKind.Both, fn: phaseBindingSpecialization },
     { kind: CompilationJobKind.Tmpl, fn: phasePropagateI18nBlocks },
+    { kind: CompilationJobKind.Tmpl, fn: phaseWrapIcus },
     { kind: CompilationJobKind.Both, fn: phaseAttributeExtraction },
     { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
     { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
+    { kind: CompilationJobKind.Tmpl, fn: phaseIcuExtraction },
     { kind: CompilationJobKind.Tmpl, fn: phaseApplyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeVariadic },
     { kind: CompilationJobKind.Both, fn: phasePureLiteralStructures },
@@ -22086,6 +22230,9 @@ function ingestNodes(unit, template) {
         else if (node instanceof DeferredBlock) {
             ingestDeferBlock(unit, node);
         }
+        else if (node instanceof Icu$1) {
+            ingestIcu(unit, node);
+        }
         else {
             throw new Error(`Unsupported template node: ${node.constructor.name}`);
         }
@@ -22280,6 +22427,16 @@ function ingestDeferBlock(unit, deferBlock) {
     const deferOnOp = createDeferOnOp(unit.job.allocateXrefId(), null);
     // Add all ops to the view.
     unit.create.push(deferOnOp);
+}
+function ingestIcu(unit, icu) {
+    if (icu.i18n instanceof Message) {
+        const xref = unit.job.allocateXrefId();
+        unit.create.push(createIcuOp(xref, icu.i18n, null));
+        unit.update.push(createIcuUpdateOp(xref, null));
+    }
+    else {
+        throw Error(`Unhandled i18n metadata type for ICU: ${icu.i18n?.constructor.name}`);
+    }
 }
 /**
  * Convert a template AST expression into an output AST expression.
@@ -29599,7 +29756,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-1640743');
+const VERSION = new Version('17.1.0-next.0+sha-35b0691');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31129,7 +31286,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31237,7 +31394,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31514,7 +31671,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31549,7 +31706,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31600,7 +31757,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31633,7 +31790,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31684,7 +31841,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-1640743'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-35b0691'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
