@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-1f66090
+ * @license Angular v17.1.0-next.0+sha-67b9720
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -442,9 +442,10 @@ export declare class Block implements BaseNode {
     parameters: BlockParameter[];
     children: Node_2[];
     sourceSpan: ParseSourceSpan;
+    nameSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, parameters: BlockParameter[], children: Node_2[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null);
+    constructor(name: string, parameters: BlockParameter[], children: Node_2[], sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null);
     visit(visitor: Visitor, context: any): any;
 }
 
@@ -5112,7 +5113,8 @@ export declare class TmplAstTimerDeferredTrigger extends TmplAstDeferredTrigger 
 export declare class TmplAstUnknownBlock implements TmplAstNode {
     name: string;
     sourceSpan: ParseSourceSpan;
-    constructor(name: string, sourceSpan: ParseSourceSpan);
+    nameSpan: ParseSourceSpan;
+    constructor(name: string, sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
