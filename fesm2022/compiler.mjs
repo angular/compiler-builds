@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-rc.0+sha-569f57d
+ * @license Angular v17.0.0-rc.0+sha-f206d10
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3983,9 +3983,10 @@ class IfBlockBranch {
     }
 }
 class UnknownBlock {
-    constructor(name, sourceSpan) {
+    constructor(name, sourceSpan, nameSpan) {
         this.name = name;
         this.sourceSpan = sourceSpan;
+        this.nameSpan = nameSpan;
     }
     visit(visitor) {
         return visitor.visitUnknownBlock(this);
@@ -13972,11 +13973,12 @@ class Comment {
     }
 }
 class Block {
-    constructor(name, parameters, children, sourceSpan, startSourceSpan, endSourceSpan = null) {
+    constructor(name, parameters, children, sourceSpan, nameSpan, startSourceSpan, endSourceSpan = null) {
         this.name = name;
         this.parameters = parameters;
         this.children = children;
         this.sourceSpan = sourceSpan;
+        this.nameSpan = nameSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
     }
@@ -17790,7 +17792,7 @@ class _Tokenizer {
             }
         }
         if (this._tokenizeBlocks && !this._inInterpolation && !this._isInExpansion() &&
-            (this._isBlockStart() || this._cursor.peek() === $RBRACE)) {
+            (this._cursor.peek() === $AT || this._cursor.peek() === $RBRACE)) {
             return true;
         }
         return false;
@@ -17808,17 +17810,6 @@ class _Tokenizer {
             const code = tmp.peek();
             if (($a <= code && code <= $z) || ($A <= code && code <= $Z) ||
                 code === $SLASH || code === $BANG) {
-                return true;
-            }
-        }
-        return false;
-    }
-    _isBlockStart() {
-        if (this._tokenizeBlocks && this._cursor.peek() === $AT) {
-            const tmp = this._cursor.clone();
-            // If it is, also verify that the next character is a valid block identifier.
-            tmp.advance();
-            if (isBlockNameChar(tmp.peek())) {
                 return true;
             }
         }
@@ -18530,7 +18521,7 @@ class _TreeBuilder {
         const span = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
         // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
         const startSpan = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
-        const block = new Block(token.parts[0], parameters, [], span, startSpan);
+        const block = new Block(token.parts[0], parameters, [], span, token.sourceSpan, startSpan);
         this._pushContainer(block, false);
     }
     _consumeBlockClose(token) {
@@ -18550,7 +18541,7 @@ class _TreeBuilder {
         const span = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
         // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
         const startSpan = new ParseSourceSpan(token.sourceSpan.start, end, token.sourceSpan.fullStart);
-        const block = new Block(token.parts[0], parameters, [], span, startSpan);
+        const block = new Block(token.parts[0], parameters, [], span, token.sourceSpan, startSpan);
         this._pushContainer(block, false);
         // Incomplete blocks don't have children so we close them immediately and report an error.
         this._popContainer(null, Block, null);
@@ -23323,7 +23314,7 @@ class WhitespaceVisitor {
         return expansionCase;
     }
     visitBlock(block, context) {
-        return new Block(block.name, block.parameters, visitAllWithSiblings(this, block.children), block.sourceSpan, block.startSourceSpan, block.endSourceSpan);
+        return new Block(block.name, block.parameters, visitAllWithSiblings(this, block.children), block.sourceSpan, block.nameSpan, block.startSourceSpan, block.endSourceSpan);
     }
     visitBlockParameter(parameter, context) {
         return parameter;
@@ -23962,7 +23953,7 @@ function createSwitchBlock(ast, visitor, bindingParser) {
             continue;
         }
         if ((node.name !== 'case' || node.parameters.length === 0) && node.name !== 'default') {
-            unknownBlocks.push(new UnknownBlock(node.name, node.sourceSpan));
+            unknownBlocks.push(new UnknownBlock(node.name, node.sourceSpan, node.nameSpan));
             continue;
         }
         const expression = node.name === 'case' ?
@@ -24940,7 +24931,7 @@ class HtmlAstToIvyAst {
                     errorMessage = `Unrecognized block @${block.name}.`;
                 }
                 result = {
-                    node: new UnknownBlock(block.name, block.sourceSpan),
+                    node: new UnknownBlock(block.name, block.sourceSpan, block.nameSpan),
                     errors: [new ParseError(block.sourceSpan, errorMessage)],
                 };
                 break;
@@ -29756,7 +29747,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-rc.0+sha-569f57d');
+const VERSION = new Version('17.0.0-rc.0+sha-f206d10');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31286,7 +31277,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31394,7 +31385,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31671,7 +31662,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31706,7 +31697,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31757,7 +31748,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31790,7 +31781,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31841,7 +31832,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-569f57d'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-f206d10'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
