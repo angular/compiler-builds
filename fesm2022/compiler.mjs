@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-rc.0+sha-d2f8412
+ * @license Angular v17.0.0-rc.0+sha-114a2f8
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10586,7 +10586,7 @@ class OpList {
  */
 const elementContainerOpKinds = new Set([
     OpKind.Element, OpKind.ElementStart, OpKind.Container, OpKind.ContainerStart, OpKind.Template,
-    OpKind.Projection, OpKind.RepeaterCreate
+    OpKind.RepeaterCreate
 ]);
 /**
  * Checks whether the given operation represents the creation of an element or container.
@@ -10745,16 +10745,15 @@ function createProjectionDefOp(def) {
         ...NEW_OP,
     };
 }
-function createProjectionOp(xref, selector) {
+function createProjectionOp(xref, selector, sourceSpan) {
     return {
         kind: OpKind.Projection,
         xref,
         selector,
         projectionSlotIndex: 0,
-        attributes: null,
+        attributes: [],
         localRefs: [],
-        nonBindable: false,
-        sourceSpan: null,
+        sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
     };
@@ -11070,137 +11069,6 @@ class HostBindingCompilationUnit extends CompilationUnit {
 }
 
 /**
- * Counts the number of variable slots used within each view, and stores that on the view itself, as
- * well as propagates it to the `ir.TemplateOp` for embedded views.
- */
-function phaseVarCounting(job) {
-    // First, count the vars used in each view, and update the view-level counter.
-    for (const unit of job.units) {
-        let varCount = 0;
-        // Count variables on top-level ops first. Don't explore nested expressions just yet.
-        for (const op of unit.ops()) {
-            if (hasConsumesVarsTrait(op)) {
-                varCount += varsUsedByOp(op);
-            }
-        }
-        // Count variables on expressions inside ops. We do this later because some of these expressions
-        // might be conditional (e.g. `pipeBinding` inside of a ternary), and we don't want to interfere
-        // with indices for top-level binding slots (e.g. `property`).
-        for (const op of unit.ops()) {
-            visitExpressionsInOp(op, expr => {
-                if (!isIrExpression(expr)) {
-                    return;
-                }
-                // Some expressions require knowledge of the number of variable slots consumed.
-                if (hasUsesVarOffsetTrait(expr)) {
-                    expr.varOffset = varCount;
-                }
-                if (hasConsumesVarsTrait(expr)) {
-                    varCount += varsUsedByIrExpression(expr);
-                }
-            });
-        }
-        unit.vars = varCount;
-    }
-    if (job instanceof ComponentCompilationJob) {
-        // Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is
-        // an embedded view).
-        for (const unit of job.units) {
-            for (const op of unit.create) {
-                if (op.kind !== OpKind.Template && op.kind !== OpKind.RepeaterCreate) {
-                    continue;
-                }
-                const childView = job.views.get(op.xref);
-                op.vars = childView.vars;
-            }
-        }
-    }
-}
-/**
- * Different operations that implement `ir.UsesVarsTrait` use different numbers of variables, so
- * count the variables used by any particular `op`.
- */
-function varsUsedByOp(op) {
-    let slots;
-    switch (op.kind) {
-        case OpKind.Property:
-        case OpKind.HostProperty:
-        case OpKind.Attribute:
-            // All of these bindings use 1 variable slot, plus 1 slot for every interpolated expression,
-            // if any.
-            slots = 1;
-            if (op.expression instanceof Interpolation) {
-                slots += op.expression.expressions.length;
-            }
-            return slots;
-        case OpKind.StyleProp:
-        case OpKind.ClassProp:
-        case OpKind.StyleMap:
-        case OpKind.ClassMap:
-            // Style & class bindings use 2 variable slots, plus 1 slot for every interpolated expression,
-            // if any.
-            slots = 2;
-            if (op.expression instanceof Interpolation) {
-                slots += op.expression.expressions.length;
-            }
-            return slots;
-        case OpKind.InterpolateText:
-            // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
-            return op.interpolation.expressions.length;
-        case OpKind.I18nExpression:
-        case OpKind.Conditional:
-            return 1;
-        default:
-            throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
-    }
-}
-function varsUsedByIrExpression(expr) {
-    switch (expr.kind) {
-        case ExpressionKind.PureFunctionExpr:
-            return 1 + expr.args.length;
-        case ExpressionKind.PipeBinding:
-            return 1 + expr.args.length;
-        case ExpressionKind.PipeBindingVariadic:
-            return 1 + expr.numArgs;
-        default:
-            throw new Error(`AssertionError: unhandled ConsumesVarsTrait expression ${expr.constructor.name}`);
-    }
-}
-
-function phaseAlignPipeVariadicVarOffset(job) {
-    for (const unit of job.units) {
-        for (const op of unit.update) {
-            visitExpressionsInOp(op, expr => {
-                if (!(expr instanceof PipeBindingVariadicExpr)) {
-                    return expr;
-                }
-                if (!(expr.args instanceof PureFunctionExpr)) {
-                    return expr;
-                }
-                if (expr.varOffset === null || expr.args.varOffset === null) {
-                    throw new Error(`Must run after variable counting`);
-                }
-                // The structure of this variadic pipe expression is:
-                // PipeBindingVariadic(#, Y, PureFunction(X, ...ARGS))
-                // Where X and Y are the slot offsets for the variables used by these operations, and Y > X.
-                // In `TemplateDefinitionBuilder` the PipeBindingVariadic variable slots are allocated
-                // before the PureFunction slots, which is unusually out-of-order.
-                //
-                // To maintain identical output for the tests in question, we adjust the variable offsets of
-                // these two calls to emulate TDB's behavior. This is not perfect, because the ARGS of the
-                // PureFunction call may also allocate slots which by TDB's ordering would come after X, and
-                // we don't account for that. Still, this should be enough to pass the existing pipe tests.
-                // Put the PipeBindingVariadic vars where the PureFunction vars were previously allocated.
-                expr.varOffset = expr.args.varOffset;
-                // Put the PureFunction vars following the PipeBindingVariadic vars.
-                expr.args.varOffset = expr.varOffset + varsUsedByIrExpression(expr);
-                return undefined;
-            });
-        }
-    }
-}
-
-/**
  * Find any function calls to `$any`, excluding `this.$any`, and delete them.
  */
 function phaseFindAnyCasts(job) {
@@ -11276,17 +11144,40 @@ function phaseAssignI18nSlotDependencies(job) {
 }
 
 /**
+ * Attribute interpolations of the form `[attr.foo]="{{foo}}""` should be "collapsed" into a plain
+ * attribute instruction, instead of an `attributeInterpolate` instruction.
+ *
+ * (We cannot do this for singleton property interpolations, because `propertyInterpolate`
+ * stringifies its expression.)
+ *
+ * The reification step is also capable of performing this transformation, but doing it early in the
+ * pipeline allows other phases to accurately know what instruction will be emitted.
+ */
+function phaseCollapseSingletonInterpolations(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            const eligibleOpKind = op.kind === OpKind.Attribute;
+            if (eligibleOpKind && op.expression instanceof Interpolation &&
+                op.expression.strings.length === 2 &&
+                op.expression.strings.every((s) => s === '')) {
+                op.expression = op.expression.expressions[0];
+            }
+        }
+    }
+}
+
+/**
  * Gets a map of all elements in the given view by their xref id.
  */
-function getElementsByXrefId(unit) {
-    const elements = new Map();
+function createOpXrefMap(unit) {
+    const map = new Map();
     for (const op of unit.create) {
-        if (!isElementOrContainerOp(op)) {
+        if (!hasConsumesSlotTrait(op)) {
             continue;
         }
-        elements.set(op.xref, op);
+        map.set(op.xref, op);
     }
-    return elements;
+    return map;
 }
 
 /**
@@ -11295,7 +11186,7 @@ function getElementsByXrefId(unit) {
  */
 function phaseAttributeExtraction(job) {
     for (const unit of job.units) {
-        const elements = getElementsByXrefId(unit);
+        const elements = createOpXrefMap(unit);
         for (const op of unit.ops()) {
             switch (op.kind) {
                 case OpKind.Attribute:
@@ -11303,7 +11194,7 @@ function phaseAttributeExtraction(job) {
                     break;
                 case OpKind.Property:
                     if (!op.isAnimationTrigger) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null), lookupElement$3(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.StyleProp:
@@ -11313,7 +11204,7 @@ function phaseAttributeExtraction(job) {
                     // mode.
                     if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
                         op.expression instanceof EmptyExpr) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$3(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
@@ -11325,7 +11216,7 @@ function phaseAttributeExtraction(job) {
                             unit.create.push(extractedAttributeOp);
                         }
                         else {
-                            OpList.insertBefore(extractedAttributeOp, lookupElement$3(elements, op.target));
+                            OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
                         }
                     }
                     break;
@@ -11336,7 +11227,7 @@ function phaseAttributeExtraction(job) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$3(elements, xref) {
+function lookupElement$2(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -11374,7 +11265,7 @@ function extractAttributeOp(unit, op, elements) {
             unit.create.push(extractedAttributeOp);
         }
         else {
-            const ownerOp = lookupElement$3(elements, op.target);
+            const ownerOp = lookupElement$2(elements, op.target);
             OpList.insertBefore(extractedAttributeOp, ownerOp);
         }
         OpList.remove(op);
@@ -11384,7 +11275,7 @@ function extractAttributeOp(unit, op, elements) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$2(elements, xref) {
+function lookupElement$1(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -11410,7 +11301,7 @@ function phaseBindingSpecialization(job) {
                 case BindingKind.Attribute:
                     if (op.name === 'ngNonBindable') {
                         OpList.remove(op);
-                        const target = lookupElement$2(elements, op.target);
+                        const target = lookupElement$1(elements, op.target);
                         target.nonBindable = true;
                     }
                     else {
@@ -11570,6 +11461,9 @@ function phaseConditionals(job) {
             }
             // Save the resulting aggregate Joost-expression.
             op.processed = test;
+            // Clear the original conditions array, since we no longer need it, and don't want it to
+            // affect subsequent phases (e.g. pipe creation).
+            op.conditions = [];
         }
     }
 }
@@ -19810,7 +19704,7 @@ function phaseNgContainer(job) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$1(elements, xref) {
+function lookupElement(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -19839,7 +19733,7 @@ function phaseNonbindable(job) {
                 OpList.insertAfter(createDisableBindingsOp(op.xref), op);
             }
             if ((op.kind === OpKind.ElementEnd || op.kind === OpKind.ContainerEnd) &&
-                lookupElement$1(elements, op.xref).nonBindable) {
+                lookupElement(elements, op.xref).nonBindable) {
                 OpList.insertBefore(createEnableBindingsOp(op.xref), op);
             }
         }
@@ -19867,9 +19761,14 @@ function phaseNullishCoalescing(job) {
 function kindTest(kind) {
     return (op) => op.kind === kind;
 }
+function kindWithInterpolationTest(kind, interpolation) {
+    return (op) => {
+        return op.kind === kind && interpolation === op.expression instanceof Interpolation;
+    };
+}
 /**
  * Defines the groups based on `OpKind` that ops will be divided into, for the various create
- * binding kinds. Ops will be collected into groups, then optionally transformed, before recombining
+ * op kinds. Ops will be collected into groups, then optionally transformed, before recombining
  * the groups in the order defined here.
  */
 const CREATE_ORDERING = [
@@ -19877,18 +19776,20 @@ const CREATE_ORDERING = [
     { test: op => op.kind === OpKind.Listener && !(op.hostListener && op.isAnimationListener) },
 ];
 /**
- * As above, but for update ops.
+ * Defines the groups based on `OpKind` that ops will be divided into, for the various update
+ * op kinds.
  */
 const UPDATE_ORDERING = [
-    { test: op => op.kind === OpKind.HostProperty && op.expression instanceof Interpolation },
-    { test: op => op.kind === OpKind.HostProperty && !(op.expression instanceof Interpolation) },
+    { test: kindWithInterpolationTest(OpKind.HostProperty, true) },
+    { test: kindWithInterpolationTest(OpKind.HostProperty, false) },
     { test: kindTest(OpKind.StyleMap), transform: keepLast },
     { test: kindTest(OpKind.ClassMap), transform: keepLast },
     { test: kindTest(OpKind.StyleProp) },
     { test: kindTest(OpKind.ClassProp) },
-    { test: op => op.kind === OpKind.Property && op.expression instanceof Interpolation },
-    { test: op => op.kind === OpKind.Property && !(op.expression instanceof Interpolation) },
-    { test: kindTest(OpKind.Attribute) },
+    { test: kindWithInterpolationTest(OpKind.Property, true) },
+    { test: kindWithInterpolationTest(OpKind.Attribute, true) },
+    { test: kindWithInterpolationTest(OpKind.Property, false) },
+    { test: kindWithInterpolationTest(OpKind.Attribute, false) },
 ];
 /**
  * The set of all op kinds we handle in the reordering phase.
@@ -19903,32 +19804,34 @@ function phaseOrdering(job) {
         // be reordered, put the ones we've pulled so far back in the correct order. Finally, if we
         // still have ops pulled at the end, put them back in the correct order.
         // Create mode:
-        let opsToOrder = [];
-        for (const op of unit.create) {
-            if (handledOpKinds.has(op.kind)) {
-                opsToOrder.push(op);
-                OpList.remove(op);
-            }
-            else {
-                OpList.insertBefore(reorder(opsToOrder, CREATE_ORDERING), op);
-                opsToOrder = [];
-            }
-        }
-        unit.create.push(reorder(opsToOrder, CREATE_ORDERING));
+        orderWithin(unit.create, CREATE_ORDERING);
         // Update mode:
-        opsToOrder = [];
-        for (const op of unit.update) {
-            if (handledOpKinds.has(op.kind)) {
-                opsToOrder.push(op);
-                OpList.remove(op);
-            }
-            else {
-                OpList.insertBefore(reorder(opsToOrder, UPDATE_ORDERING), op);
-                opsToOrder = [];
-            }
-        }
-        unit.update.push(reorder(opsToOrder, UPDATE_ORDERING));
+        orderWithin(unit.update, UPDATE_ORDERING);
     }
+}
+/**
+ * Order all the ops within the specified group.
+ */
+function orderWithin(opList, ordering) {
+    let opsToOrder = [];
+    // Only reorder ops that target the same xref; do not mix ops that target different xrefs.
+    let firstTargetInGroup = null;
+    for (const op of opList) {
+        const currentTarget = hasDependsOnSlotContextTrait(op) ? op.target : null;
+        if (!handledOpKinds.has(op.kind) ||
+            (currentTarget !== firstTargetInGroup &&
+                (firstTargetInGroup !== null && currentTarget !== null))) {
+            OpList.insertBefore(reorder(opsToOrder, ordering), op);
+            opsToOrder = [];
+            firstTargetInGroup = null;
+        }
+        if (handledOpKinds.has(op.kind)) {
+            opsToOrder.push(op);
+            OpList.remove(op);
+            firstTargetInGroup = currentTarget ?? firstTargetInGroup;
+        }
+    }
+    opList.push(reorder(opsToOrder, ordering));
 }
 /**
  * Reorders the given list of ops according to the ordering defined by `ORDERING`.
@@ -19987,15 +19890,15 @@ function phaseParseExtractedStyles(cpl) {
  */
 function phaseRemoveContentSelectors(job) {
     for (const unit of job.units) {
-        const elements = getElementsByXrefId(unit);
+        const elements = createOpXrefMap(unit);
         for (const op of unit.update) {
             switch (op.kind) {
                 case OpKind.Binding:
-                    const target = lookupElement(elements, op.target);
+                    const target = lookupInXrefMap(elements, op.target);
                     if (op.name.toLowerCase() === 'select' && target.kind === OpKind.Projection) {
                         OpList.remove(op);
                     }
-                    continue;
+                    break;
             }
         }
     }
@@ -20003,10 +19906,10 @@ function phaseRemoveContentSelectors(job) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement(elements, xref) {
-    const el = elements.get(xref);
+function lookupInXrefMap(map, xref) {
+    const el = map.get(xref);
     if (el === undefined) {
-        throw new Error('All attributes should have an element-like target.');
+        throw new Error('All attributes should have an slottable target.');
     }
     return el;
 }
@@ -20035,7 +19938,15 @@ function processPipeBindingsInView(unit) {
                 !hasUsesSlotIndexTrait(updateOp)) {
                 throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
             }
-            addPipeToCreationBlock(unit, updateOp.target, expr);
+            if (unit.job.compatibility) {
+                addPipeToCreationBlock(unit, updateOp.target, expr);
+            }
+            else {
+                // When not in compatibility mode, we just add the pipe to the end of the create block. This
+                // is not only simpler and faster, but allows more chaining opportunities for other
+                // instructions.
+                unit.create.push(createPipeOp(expr.target, expr.name));
+            }
         });
     }
 }
@@ -20357,15 +20268,15 @@ function deferOn(sourceSpan) {
 function projectionDef(def) {
     return call(Identifiers.projectionDef, def ? [def] : [], null);
 }
-function projection(slot, projectionSlotIndex, attributes) {
+function projection(slot, projectionSlotIndex, attributes, sourceSpan) {
     const args = [literal(slot)];
-    if (projectionSlotIndex !== 0 || attributes !== null) {
+    if (projectionSlotIndex !== 0 || attributes.length > 0) {
         args.push(literal(projectionSlotIndex));
-        if (attributes != null) {
-            args.push(literal(attributes));
+        if (attributes.length > 0) {
+            args.push(literalArr(attributes.map(attr => literal(attr))));
         }
     }
-    return call(Identifiers.projection, args, null);
+    return call(Identifiers.projection, args, sourceSpan);
 }
 function i18nStart(slot, constIndex, subTemplateIndex) {
     const args = [literal(slot), literal(constIndex)];
@@ -20849,7 +20760,7 @@ function reifyCreateOperations(unit, ops) {
                 if (op.slot === null) {
                     throw new Error('No slot was assigned for project instruction');
                 }
-                OpList.replace(op, projection(op.slot, op.projectionSlotIndex, op.attributes));
+                OpList.replace(op, projection(op.slot, op.projectionSlotIndex, op.attributes, op.sourceSpan));
                 break;
             case OpKind.RepeaterCreate:
                 if (op.slot === null) {
@@ -21114,6 +21025,10 @@ function processLexicalScope$1(view, ops) {
                 processLexicalScope$1(view, op.handlerOps);
                 break;
         }
+    }
+    if (view === view.job.root) {
+        // Prefer `ctx` of the root view to any variables which happen to contain the root context.
+        scope.set(view.xref, variable('ctx'));
     }
     for (const op of ops) {
         transformExpressionsInOp(op, expr => {
@@ -21544,7 +21459,7 @@ const sanitizers = new Map([
  */
 function phaseResolveSanitizers(job) {
     for (const unit of job.units) {
-        const elements = getElementsByXrefId(unit);
+        const elements = createOpXrefMap(unit);
         let sanitizerFn;
         for (const op of unit.update) {
             switch (op.kind) {
@@ -21558,7 +21473,7 @@ function phaseResolveSanitizers(job) {
                     // <iframe>).
                     if (op.sanitizer === null) {
                         const ownerOp = elements.get(op.target);
-                        if (ownerOp === undefined) {
+                        if (ownerOp === undefined || !isElementOrContainerOp(ownerOp)) {
                             throw Error('Property should have an element-like owner');
                         }
                         if (isIframeElement$1(ownerOp) && isIframeSecuritySensitiveAttr(op.name)) {
@@ -21815,6 +21730,137 @@ function assignName(names, expr) {
         throw new Error(`Found xref with unassigned name: ${expr.xref}`);
     }
     expr.name = name;
+}
+
+/**
+ * Counts the number of variable slots used within each view, and stores that on the view itself, as
+ * well as propagates it to the `ir.TemplateOp` for embedded views.
+ */
+function phaseVarCounting(job) {
+    // First, count the vars used in each view, and update the view-level counter.
+    for (const unit of job.units) {
+        let varCount = 0;
+        // Count variables on top-level ops first. Don't explore nested expressions just yet.
+        for (const op of unit.ops()) {
+            if (hasConsumesVarsTrait(op)) {
+                varCount += varsUsedByOp(op);
+            }
+        }
+        // Count variables on expressions inside ops. We do this later because some of these expressions
+        // might be conditional (e.g. `pipeBinding` inside of a ternary), and we don't want to interfere
+        // with indices for top-level binding slots (e.g. `property`).
+        for (const op of unit.ops()) {
+            visitExpressionsInOp(op, expr => {
+                if (!isIrExpression(expr)) {
+                    return;
+                }
+                // TemplateDefinitionBuilder assigns variable offsets for everything but pure functions
+                // first, and then assigns offsets to pure functions lazily. We emulate that behavior by
+                // assigning offsets in two passes instead of one, only in compatibility mode.
+                if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
+                    expr instanceof PureFunctionExpr) {
+                    return;
+                }
+                // Some expressions require knowledge of the number of variable slots consumed.
+                if (hasUsesVarOffsetTrait(expr)) {
+                    expr.varOffset = varCount;
+                }
+                if (hasConsumesVarsTrait(expr)) {
+                    varCount += varsUsedByIrExpression(expr);
+                }
+            });
+        }
+        // Compatiblity mode pass for pure function offsets (as explained above).
+        if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
+            for (const op of unit.ops()) {
+                visitExpressionsInOp(op, expr => {
+                    if (!isIrExpression(expr) || !(expr instanceof PureFunctionExpr)) {
+                        return;
+                    }
+                    // Some expressions require knowledge of the number of variable slots consumed.
+                    if (hasUsesVarOffsetTrait(expr)) {
+                        expr.varOffset = varCount;
+                    }
+                    if (hasConsumesVarsTrait(expr)) {
+                        varCount += varsUsedByIrExpression(expr);
+                    }
+                });
+            }
+        }
+        unit.vars = varCount;
+    }
+    if (job instanceof ComponentCompilationJob) {
+        // Add var counts for each view to the `ir.TemplateOp` which declares that view (if the view is
+        // an embedded view).
+        for (const unit of job.units) {
+            for (const op of unit.create) {
+                if (op.kind !== OpKind.Template && op.kind !== OpKind.RepeaterCreate) {
+                    continue;
+                }
+                const childView = job.views.get(op.xref);
+                op.vars = childView.vars;
+            }
+        }
+    }
+}
+/**
+ * Different operations that implement `ir.UsesVarsTrait` use different numbers of variables, so
+ * count the variables used by any particular `op`.
+ */
+function varsUsedByOp(op) {
+    let slots;
+    switch (op.kind) {
+        case OpKind.Property:
+        case OpKind.HostProperty:
+        case OpKind.Attribute:
+            // All of these bindings use 1 variable slot, plus 1 slot for every interpolated expression,
+            // if any.
+            slots = 1;
+            if (op.expression instanceof Interpolation && !isSingletonInterpolation(op.expression)) {
+                slots += op.expression.expressions.length;
+            }
+            return slots;
+        case OpKind.StyleProp:
+        case OpKind.ClassProp:
+        case OpKind.StyleMap:
+        case OpKind.ClassMap:
+            // Style & class bindings use 2 variable slots, plus 1 slot for every interpolated expression,
+            // if any.
+            slots = 2;
+            if (op.expression instanceof Interpolation) {
+                slots += op.expression.expressions.length;
+            }
+            return slots;
+        case OpKind.InterpolateText:
+            // `ir.InterpolateTextOp`s use a variable slot for each dynamic expression.
+            return op.interpolation.expressions.length;
+        case OpKind.I18nExpression:
+        case OpKind.Conditional:
+            return 1;
+        default:
+            throw new Error(`Unhandled op: ${OpKind[op.kind]}`);
+    }
+}
+function varsUsedByIrExpression(expr) {
+    switch (expr.kind) {
+        case ExpressionKind.PureFunctionExpr:
+            return 1 + expr.args.length;
+        case ExpressionKind.PipeBinding:
+            return 1 + expr.args.length;
+        case ExpressionKind.PipeBindingVariadic:
+            return 1 + expr.numArgs;
+        default:
+            throw new Error(`AssertionError: unhandled ConsumesVarsTrait expression ${expr.constructor.name}`);
+    }
+}
+function isSingletonInterpolation(expr) {
+    if (expr.expressions.length !== 1 || expr.strings.length !== 2) {
+        return false;
+    }
+    if (expr.strings[0] !== '' || expr.strings[1] !== '') {
+        return false;
+    }
+    return true;
 }
 
 /**
@@ -22400,6 +22446,8 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseAttributeExtraction },
     { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
+    { kind: CompilationJobKind.Both, fn: phaseCollapseSingletonInterpolations },
+    { kind: CompilationJobKind.Both, fn: phaseOrdering },
     { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
@@ -22439,8 +22487,6 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseEmptyElements },
     { kind: CompilationJobKind.Tmpl, fn: phaseNonbindable },
     { kind: CompilationJobKind.Both, fn: phasePureFunctionExtraction },
-    { kind: CompilationJobKind.Tmpl, fn: phaseAlignPipeVariadicVarOffset },
-    { kind: CompilationJobKind.Both, fn: phaseOrdering },
     { kind: CompilationJobKind.Both, fn: phaseReify },
     { kind: CompilationJobKind.Both, fn: phaseChaining },
 ];
@@ -22702,7 +22748,7 @@ function ingestTemplate(unit, tmpl) {
     ingestReferences(tplOp, tmpl);
     ingestNodes(childView, tmpl.children);
     for (const { name, value } of tmpl.variables) {
-        childView.contextVariables.set(name, value);
+        childView.contextVariables.set(name, value !== '' ? value : '$implicit');
     }
     // If this is a plain template and there is an i18n message associated with it, insert i18n start
     // and end ops. For structural directive templates, the i18n ops will be added when ingesting the
@@ -22717,7 +22763,7 @@ function ingestTemplate(unit, tmpl) {
  * Ingest a literal text node from the AST into the given `ViewCompilation`.
  */
 function ingestContent(unit, content) {
-    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector);
+    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.sourceSpan);
     for (const attr of content.attributes) {
         ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
     }
@@ -30216,7 +30262,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-rc.0+sha-d2f8412');
+const VERSION = new Version('17.0.0-rc.0+sha-114a2f8');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31746,7 +31792,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31854,7 +31900,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32131,7 +32177,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32166,7 +32212,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32217,7 +32263,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32250,7 +32296,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32301,7 +32347,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-rc.0+sha-d2f8412'));
+    definitionMap.set('version', literal('17.0.0-rc.0+sha-114a2f8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
