@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-rc.1+sha-8e17dd7
+ * @license Angular v17.0.0-rc.1+sha-4461cef
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9080,6 +9080,30 @@ var I18nParamResolutionTime;
      */
     I18nParamResolutionTime[I18nParamResolutionTime["Postproccessing"] = 1] = "Postproccessing";
 })(I18nParamResolutionTime || (I18nParamResolutionTime = {}));
+/**
+ * Flags that describe what an i18n param value. These determine how the value is serialized into
+ * the final map.
+ */
+var I18nParamValueFlags;
+(function (I18nParamValueFlags) {
+    I18nParamValueFlags[I18nParamValueFlags["None"] = 0] = "None";
+    /**
+     *  This value represtents an element tag.
+     */
+    I18nParamValueFlags[I18nParamValueFlags["ElementTag"] = 1] = "ElementTag";
+    /**
+     * This value represents a template tag.
+     */
+    I18nParamValueFlags[I18nParamValueFlags["TemplateTag"] = 2] = "TemplateTag";
+    /**
+     * This value represents the opening of a tag.
+     */
+    I18nParamValueFlags[I18nParamValueFlags["OpenTag"] = 4] = "OpenTag";
+    /**
+     * This value represents the closing of a tag.
+     */
+    I18nParamValueFlags[I18nParamValueFlags["CloseTag"] = 8] = "CloseTag";
+})(I18nParamValueFlags || (I18nParamValueFlags = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -10167,12 +10191,6 @@ function transformExpressionsInOp(op, transform, flags) {
             op.expression =
                 op.expression && transformExpressionsInExpression(op.expression, transform, flags);
             break;
-        case OpKind.ExtractedMessage:
-            op.expression = transformExpressionsInExpression(op.expression, transform, flags);
-            for (const statement of op.statements) {
-                transformExpressionsInStatement(statement, transform, flags);
-            }
-            break;
         case OpKind.RepeaterCreate:
             op.track = transformExpressionsInExpression(op.track, transform, flags);
             if (op.trackByFn !== null) {
@@ -10182,34 +10200,31 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Repeater:
             op.collection = transformExpressionsInExpression(op.collection, transform, flags);
             break;
-        case OpKind.I18n:
-        case OpKind.I18nStart:
-            for (const [placeholder, expression] of op.params) {
-                op.params.set(placeholder, transformExpressionsInExpression(expression, transform, flags));
-            }
-            break;
-        case OpKind.Defer:
-        case OpKind.DeferSecondaryBlock:
-        case OpKind.DeferOn:
-        case OpKind.Projection:
-        case OpKind.ProjectionDef:
-        case OpKind.Element:
-        case OpKind.ElementStart:
-        case OpKind.ElementEnd:
-        case OpKind.I18nEnd:
-        case OpKind.Container:
-        case OpKind.ContainerStart:
-        case OpKind.ContainerEnd:
-        case OpKind.Template:
-        case OpKind.DisableBindings:
-        case OpKind.EnableBindings:
-        case OpKind.Text:
-        case OpKind.Pipe:
         case OpKind.Advance:
-        case OpKind.Namespace:
+        case OpKind.Container:
+        case OpKind.ContainerEnd:
+        case OpKind.ContainerStart:
+        case OpKind.Defer:
+        case OpKind.DeferOn:
+        case OpKind.DeferSecondaryBlock:
+        case OpKind.DisableBindings:
+        case OpKind.Element:
+        case OpKind.ElementEnd:
+        case OpKind.ElementStart:
+        case OpKind.EnableBindings:
+        case OpKind.ExtractedMessage:
+        case OpKind.I18n:
         case OpKind.I18nApply:
+        case OpKind.I18nEnd:
+        case OpKind.I18nStart:
         case OpKind.Icu:
         case OpKind.IcuUpdate:
+        case OpKind.Namespace:
+        case OpKind.Pipe:
+        case OpKind.Projection:
+        case OpKind.ProjectionDef:
+        case OpKind.Template:
+        case OpKind.Text:
             // These operations contain no expressions.
             break;
         default:
@@ -10810,12 +10825,17 @@ function createDeferOnOp(xref, sourceSpan) {
 /**
  * Create an `ExtractedMessageOp`.
  */
-function createExtractedMessageOp(owner, expression, statements) {
+function createExtractedMessageOp(owner, message, isRoot) {
     return {
         kind: OpKind.ExtractedMessage,
         owner,
-        expression,
-        statements,
+        message,
+        isRoot,
+        params: new Map(),
+        postprocessingParams: new Map(),
+        needsPostprocessing: false,
+        formattedParams: null,
+        formattedPostprocessingParams: null,
         ...NEW_OP,
     };
 }
@@ -10828,11 +10848,8 @@ function createI18nStartOp(xref, message, root) {
         xref,
         root: root ?? xref,
         message,
-        params: new Map(),
-        postprocessingParams: new Map(),
         messageIndex: null,
         subTemplateIndex: null,
-        needsPostprocessing: false,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
     };
@@ -11144,29 +11161,6 @@ function phaseAssignI18nSlotDependencies(job) {
 }
 
 /**
- * Attribute interpolations of the form `[attr.foo]="{{foo}}""` should be "collapsed" into a plain
- * attribute instruction, instead of an `attributeInterpolate` instruction.
- *
- * (We cannot do this for singleton property interpolations, because `propertyInterpolate`
- * stringifies its expression.)
- *
- * The reification step is also capable of performing this transformation, but doing it early in the
- * pipeline allows other phases to accurately know what instruction will be emitted.
- */
-function phaseCollapseSingletonInterpolations(job) {
-    for (const unit of job.units) {
-        for (const op of unit.update) {
-            const eligibleOpKind = op.kind === OpKind.Attribute;
-            if (eligibleOpKind && op.expression instanceof Interpolation &&
-                op.expression.strings.length === 2 &&
-                op.expression.strings.every((s) => s === '')) {
-                op.expression = op.expression.expressions[0];
-            }
-        }
-    }
-}
-
-/**
  * Gets a map of all elements in the given view by their xref id.
  */
 function createOpXrefMap(unit) {
@@ -11413,6 +11407,29 @@ function chainOperationsInList(opList) {
                 instruction,
                 expression: op.statement.expr,
             };
+        }
+    }
+}
+
+/**
+ * Attribute interpolations of the form `[attr.foo]="{{foo}}""` should be "collapsed" into a plain
+ * attribute instruction, instead of an `attributeInterpolate` instruction.
+ *
+ * (We cannot do this for singleton property interpolations, because `propertyInterpolate`
+ * stringifies its expression.)
+ *
+ * The reification step is also capable of performing this transformation, but doing it early in the
+ * pipeline allows other phases to accurately know what instruction will be emitted.
+ */
+function phaseCollapseSingletonInterpolations(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            const eligibleOpKind = op.kind === OpKind.Attribute;
+            if (eligibleOpKind && op.expression instanceof Interpolation &&
+                op.expression.strings.length === 2 &&
+                op.expression.strings.every((s) => s === '')) {
+                op.expression = op.expression.expressions[0];
+            }
         }
     }
 }
@@ -11915,35 +11932,109 @@ function ternaryTransform(e) {
     return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.Equals, e.guard, NULL_EXPR), NULL_EXPR, e.expr);
 }
 
-function phaseRepeaterDerivedVars(job) {
-    const repeaters = new Map();
+/**
+ * The escape sequence used indicate message param values.
+ */
+const ESCAPE = '\uFFFD';
+/**
+ * Marker used to indicate an element tag.
+ */
+const ELEMENT_MARKER = '#';
+/**
+ * Marker used to indicate a template tag.
+ */
+const TEMPLATE_MARKER = '*';
+/**
+ * Marker used to indicate closing of an element or template tag.
+ */
+const TAG_CLOSE_MARKER = '/';
+/**
+ * Marker used to indicate the sub-template context.
+ */
+const CONTEXT_MARKER = ':';
+/**
+ * Marker used to indicate the start of a list of values.
+ */
+const LIST_START_MARKER = '[';
+/**
+ * Marker used to indicate the end of a list of values.
+ */
+const LIST_END_MARKER = ']';
+/**
+ * Delimiter used to separate multiple values in a list.
+ */
+const LIST_DELIMITER = '|';
+/**
+ * Formats the param maps on extracted message ops into a maps of `Expression` objects that can be
+ * used in the final output.
+ */
+function phaseFormatI18nParams(job) {
     for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            if (op.kind === OpKind.RepeaterCreate) {
-                repeaters.set(op.xref, op);
+        for (const op of unit.create) {
+            if (op.kind === OpKind.ExtractedMessage) {
+                if (op.isRoot) {
+                    op.formattedParams = formatParams(op.params);
+                    op.formattedPostprocessingParams = formatParams(op.postprocessingParams);
+                    // The message will need post-processing if there are any post-processing params, or if
+                    // there are any normal params that have multiple values
+                    op.needsPostprocessing = op.postprocessingParams.size > 0;
+                    for (const [param, values] of op.params) {
+                        if (values.length > 1) {
+                            op.needsPostprocessing = true;
+                        }
+                    }
+                }
             }
         }
     }
-    for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            transformExpressionsInOp(op, expr => {
-                if (!(expr instanceof DerivedRepeaterVarExpr)) {
-                    return expr;
-                }
-                const repeaterOp = repeaters.get(expr.xref);
-                switch (expr.identity) {
-                    case DerivedRepeaterVarIdentity.First:
-                        return new BinaryOperatorExpr(BinaryOperator.Identical, new LexicalReadExpr(repeaterOp.varNames.$index), literal(0));
-                    case DerivedRepeaterVarIdentity.Last:
-                        return new BinaryOperatorExpr(BinaryOperator.Identical, new LexicalReadExpr(repeaterOp.varNames.$index), new BinaryOperatorExpr(BinaryOperator.Minus, new LexicalReadExpr(repeaterOp.varNames.$count), literal(1)));
-                    case DerivedRepeaterVarIdentity.Even:
-                        return new BinaryOperatorExpr(BinaryOperator.Identical, new BinaryOperatorExpr(BinaryOperator.Modulo, new LexicalReadExpr(repeaterOp.varNames.$index), literal(2)), literal(0));
-                    case DerivedRepeaterVarIdentity.Odd:
-                        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, new BinaryOperatorExpr(BinaryOperator.Modulo, new LexicalReadExpr(repeaterOp.varNames.$index), literal(2)), literal(0));
-                }
-            }, VisitorContextFlag.None);
+}
+/**
+ * Formats a map of `I18nParamValue[]` values into a map of `Expression` values.
+ */
+function formatParams(params) {
+    const result = new Map();
+    for (const [placeholder, placeholderValues] of [...params].sort()) {
+        const serializedValues = formatParamValues(placeholderValues);
+        if (serializedValues !== null) {
+            result.set(placeholder, literal(formatParamValues(placeholderValues)));
         }
     }
+    return result;
+}
+/**
+ * Formats an `I18nParamValue[]` into a string (or null for empty array).
+ */
+function formatParamValues(values) {
+    if (values.length === 0) {
+        return null;
+    }
+    const serializedValues = values.map(value => formatValue(value));
+    return serializedValues.length === 1 ?
+        serializedValues[0] :
+        `${LIST_START_MARKER}${serializedValues.join(LIST_DELIMITER)}${LIST_END_MARKER}`;
+}
+/**
+ * Formats a single `I18nParamValue` into a string
+ */
+function formatValue(value) {
+    let tagMarker = '';
+    let closeMarker = '';
+    if (value.flags & I18nParamValueFlags.ElementTag) {
+        tagMarker = ELEMENT_MARKER;
+    }
+    else if (value.flags & I18nParamValueFlags.TemplateTag) {
+        tagMarker = TEMPLATE_MARKER;
+    }
+    if (tagMarker !== '') {
+        closeMarker = value.flags & I18nParamValueFlags.CloseTag ? TAG_CLOSE_MARKER : '';
+    }
+    const context = value.subTemplateIndex === null ? '' : `${CONTEXT_MARKER}${value.subTemplateIndex}`;
+    // Self-closing tags use a special form that concatenates the start and close tag values.
+    if ((value.flags & I18nParamValueFlags.OpenTag) &&
+        (value.flags & I18nParamValueFlags.CloseTag)) {
+        return `${ESCAPE}${tagMarker}${value.value}${context}${ESCAPE}${ESCAPE}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE}`;
+    }
+    return `${ESCAPE}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE}`;
 }
 
 /**
@@ -12251,31 +12342,6 @@ function parseProperty$1(name) {
         property = name.substring(0, unitIndex);
     }
     return { property, suffix };
-}
-
-/**
- * Lifts i18n properties into the consts array.
- */
-function phaseI18nConstCollection(job) {
-    // Serialize the extracted messages into the const array.
-    // TODO: Use `Map` instead of object.
-    const messageConstIndices = {};
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedMessage) {
-                messageConstIndices[op.owner] = job.addConst(op.expression, op.statements);
-                OpList.remove(op);
-            }
-        }
-    }
-    // Assign const index to i18n ops that messages were extracted from.
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart) {
-                op.messageIndex = messageConstIndices[op.root];
-            }
-        }
-    }
 }
 
 function mapEntry(key, value) {
@@ -19155,16 +19221,18 @@ const NG_I18N_CLOSURE_MODE$1 = 'ngI18nClosureMode';
  * considers variables like `I18N_0` as constants and throws an error when their value changes.
  */
 const TRANSLATION_VAR_PREFIX = 'i18n_';
-/** Extracts i18n messages into the consts array. */
-function phaseI18nMessageExtraction(job) {
+/**
+ * Lifts i18n properties into the consts array.
+ */
+function phaseI18nConstCollection(job) {
     const fileBasedI18nSuffix = job.relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_').toUpperCase() + '_';
+    const messageConstIndices = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart) {
-                // Only extract messages from root i18n ops, not sub-template ones.
-                if (op.xref === op.root) {
-                    // Sort the params map to match the ordering in TemplateDefinitionBuilder.
-                    const params = new Map([...op.params.entries()].sort());
+            if (op.kind === OpKind.ExtractedMessage) {
+                // Serialize the extracted root messages into the const array.
+                if (op.isRoot) {
+                    assertAllParamsResolved(op);
                     const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
                     // Closure Compiler requires const names to start with `MSG_` but disallows any other
                     // const to start with `MSG_`. We define a variable starting with `MSG_` just for the
@@ -19175,14 +19243,24 @@ function phaseI18nMessageExtraction(job) {
                     // set in post-processing.
                     if (op.needsPostprocessing) {
                         const extraTransformFnParams = [];
-                        if (op.postprocessingParams.size > 0) {
-                            extraTransformFnParams.push(literalMap([...op.postprocessingParams.entries()].map(([key, value]) => ({ key, value, quoted: true }))));
+                        if (op.formattedPostprocessingParams.size > 0) {
+                            extraTransformFnParams.push(literalMap([...op.formattedPostprocessingParams].map(([key, value]) => ({ key, value, quoted: true }))));
                         }
                         transformFn = (expr) => importExpr(Identifiers.i18nPostprocess).callFn([expr, ...extraTransformFnParams]);
                     }
-                    const statements = getTranslationDeclStmts$1(op.message, mainVar, closureVar, params, transformFn);
-                    unit.create.push(createExtractedMessageOp(op.xref, mainVar, statements));
+                    const statements = getTranslationDeclStmts$1(op.message, mainVar, closureVar, op.formattedParams, transformFn);
+                    messageConstIndices.set(op.owner, job.addConst(mainVar, statements));
                 }
+                // Remove the extracted messages from the IR now that they have been collected.
+                OpList.remove(op);
+            }
+        }
+    }
+    // Assign const index to i18n ops that messages were extracted from.
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.I18nStart) {
+                op.messageIndex = messageConstIndices.get(op.root);
             }
         }
     }
@@ -19253,6 +19331,37 @@ function i18nGenerateClosureVar(pool, messageId, fileBasedI18nSuffix, useExterna
         name = pool.uniqueName(prefix);
     }
     return variable(name);
+}
+/**
+ * Asserts that all of the message's placeholders have values.
+ */
+function assertAllParamsResolved(op) {
+    if (op.formattedParams === null || op.formattedPostprocessingParams === null) {
+        throw Error('Params should have been formatted.');
+    }
+    for (const placeholder in op.message.placeholders) {
+        if (!op.formattedParams.has(placeholder) &&
+            !op.formattedPostprocessingParams.has(placeholder)) {
+            throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
+        }
+    }
+    for (const placeholder in op.message.placeholderToMessage) {
+        if (!op.formattedParams.has(placeholder) &&
+            !op.formattedPostprocessingParams.has(placeholder)) {
+            throw Error(`Failed to resolve i18n message placeholder: ${placeholder}`);
+        }
+    }
+}
+
+/** Extracts i18n messages into their own op. */
+function phaseI18nMessageExtraction(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.I18nStart) {
+                unit.create.push(createExtractedMessageOp(op.xref, op.message, op.xref === op.root));
+            }
+        }
+    }
 }
 
 /**
@@ -20038,6 +20147,59 @@ function wrapTemplateWithI18n(unit, parentI18n) {
         const id = unit.job.allocateXrefId();
         OpList.insertAfter(createI18nStartOp(id, parentI18n.message, parentI18n.root), unit.create.head);
         OpList.insertBefore(createI18nEndOp(id), unit.create.tail);
+    }
+}
+
+/**
+ * Propagate extractd message placeholders up to their root extracted message op.
+ */
+function phasePropagateI18nPlaceholders(job) {
+    // Record all of the i18n and extracted message ops for use later.
+    const i18nOps = new Map();
+    const extractedMessageOps = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    i18nOps.set(op.xref, op);
+                    break;
+                case OpKind.ExtractedMessage:
+                    extractedMessageOps.set(op.owner, op);
+                    break;
+            }
+        }
+    }
+    // For each non-root message, merge its params into the root message's params.
+    for (const [xref, childExtractedMessageOp] of extractedMessageOps) {
+        if (!childExtractedMessageOp.isRoot) {
+            const i18nOp = i18nOps.get(xref);
+            if (i18nOp === undefined) {
+                throw Error('Could not find owner i18n block for extracted message.');
+            }
+            const rootExtractedMessageOp = extractedMessageOps.get(i18nOp.root);
+            if (rootExtractedMessageOp === undefined) {
+                throw Error('Could not find extracted message op for root i18n block.');
+            }
+            mergeParams(rootExtractedMessageOp.params, childExtractedMessageOp.params);
+            mergeParams(rootExtractedMessageOp.postprocessingParams, childExtractedMessageOp.postprocessingParams);
+        }
+    }
+}
+/**
+ * Merges the params in the `from` map to into the `to` map.
+ */
+function mergeParams(to, from) {
+    for (const [placeholder, fromValues] of from) {
+        const toValues = to.get(placeholder) || [];
+        // TODO(mmalerba): Child element close tag params should be prepended to maintain the same order
+        // as TemplateDefinitionBuilder. Can be cleaned up when compatibility is no longer required.
+        const flags = fromValues[0].flags;
+        if ((flags & I18nParamValueFlags.CloseTag) && !(flags & I18nParamValueFlags.OpenTag)) {
+            to.set(placeholder, [...fromValues, ...toValues]);
+        }
+        else {
+            to.set(placeholder, [...toValues, ...fromValues]);
+        }
     }
 }
 
@@ -20995,6 +21157,37 @@ function phaseRemoveEmptyBindings(job) {
     }
 }
 
+function phaseRepeaterDerivedVars(job) {
+    const repeaters = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            if (op.kind === OpKind.RepeaterCreate) {
+                repeaters.set(op.xref, op);
+            }
+        }
+    }
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            transformExpressionsInOp(op, expr => {
+                if (!(expr instanceof DerivedRepeaterVarExpr)) {
+                    return expr;
+                }
+                const repeaterOp = repeaters.get(expr.xref);
+                switch (expr.identity) {
+                    case DerivedRepeaterVarIdentity.First:
+                        return new BinaryOperatorExpr(BinaryOperator.Identical, new LexicalReadExpr(repeaterOp.varNames.$index), literal(0));
+                    case DerivedRepeaterVarIdentity.Last:
+                        return new BinaryOperatorExpr(BinaryOperator.Identical, new LexicalReadExpr(repeaterOp.varNames.$index), new BinaryOperatorExpr(BinaryOperator.Minus, new LexicalReadExpr(repeaterOp.varNames.$count), literal(1)));
+                    case DerivedRepeaterVarIdentity.Even:
+                        return new BinaryOperatorExpr(BinaryOperator.Identical, new BinaryOperatorExpr(BinaryOperator.Modulo, new LexicalReadExpr(repeaterOp.varNames.$index), literal(2)), literal(0));
+                    case DerivedRepeaterVarIdentity.Odd:
+                        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, new BinaryOperatorExpr(BinaryOperator.Modulo, new LexicalReadExpr(repeaterOp.varNames.$index), literal(2)), literal(0));
+                }
+            }, VisitorContextFlag.None);
+        }
+    }
+}
+
 /**
  * Resolves `ir.ContextExpr` expressions (which represent embedded view or component contexts) to
  * either the `ctx` parameter to component functions (for the current view context) or to variables
@@ -21070,201 +21263,46 @@ function resolveDollarEvent(unit, ops) {
 }
 
 /**
- * The escape sequence used indicate message param values.
+ * Resolve the element placeholders in i18n messages.
  */
-const ESCAPE = '\uFFFD';
-/**
- * Marker used to indicate an element tag.
- */
-const ELEMENT_MARKER = '#';
-/**
- * Marker used to indicate a template tag.
- */
-const TEMPLATE_MARKER = '*';
-/**
- * Marker used to indicate closing of an element or template tag.
- */
-const TAG_CLOSE_MARKER = '/';
-/**
- * Marker used to indicate the sub-template context.
- */
-const CONTEXT_MARKER = ':';
-/**
- * Marker used to indicate the start of a list of values.
- */
-const LIST_START_MARKER = '[';
-/**
- * Marker used to indicate the end of a list of values.
- */
-const LIST_END_MARKER = ']';
-/**
- * Delimiter used to separate multiple values in a list.
- */
-const LIST_DELIMITER = '|';
-/**
- * Flags that describe what an i18n param value. These determine how the value is serialized into
- * the final map.
- */
-var I18nParamValueFlags;
-(function (I18nParamValueFlags) {
-    I18nParamValueFlags[I18nParamValueFlags["None"] = 0] = "None";
-    /**
-     *  This value represtents an element tag.
-     */
-    I18nParamValueFlags[I18nParamValueFlags["ElementTag"] = 1] = "ElementTag";
-    /**
-     * This value represents a template tag.
-     */
-    I18nParamValueFlags[I18nParamValueFlags["TemplateTag"] = 2] = "TemplateTag";
-    /**
-     * This value represents the opening of a tag.
-     */
-    I18nParamValueFlags[I18nParamValueFlags["OpenTag"] = 4] = "OpenTag";
-    /**
-     * This value represents the closing of a tag.
-     */
-    I18nParamValueFlags[I18nParamValueFlags["CloseTag"] = 8] = "CloseTag";
-})(I18nParamValueFlags || (I18nParamValueFlags = {}));
-/**
- * Represents the complete i18n params map for an i18n op.
- */
-class I18nPlaceholderParams {
-    constructor() {
-        this.values = new Map();
-    }
-    /**
-     * Adds a new value to the params map.
-     */
-    addValue(placeholder, value, subTemplateIndex, resolutionTime, flags) {
-        const placeholderValues = this.values.get(placeholder) ?? [];
-        placeholderValues.push({ value, subTemplateIndex, resolutionTime, flags });
-        this.values.set(placeholder, placeholderValues);
-    }
-    /**
-     * Saves the params map, in serialized form, into the given i18n op.
-     */
-    saveToOp(op) {
-        for (const [placeholder, placeholderValues] of this.values) {
-            // We need to run post-processing for any 1i8n ops that contain parameters with more than
-            // one value, even if there are no parameters resolved at post-processing time.
-            const creationValues = placeholderValues.filter(({ resolutionTime }) => resolutionTime === I18nParamResolutionTime.Creation);
-            if (creationValues.length > 1) {
-                op.needsPostprocessing = true;
-            }
-            // Save creation time params to op.
-            const serializedCreationValues = this.serializeValues(creationValues);
-            if (serializedCreationValues !== null) {
-                op.params.set(placeholder, literal(serializedCreationValues));
-            }
-            // Save post-processing time params to op.
-            const serializedPostprocessingValues = this.serializeValues(placeholderValues.filter(({ resolutionTime }) => resolutionTime === I18nParamResolutionTime.Postproccessing));
-            if (serializedPostprocessingValues !== null) {
-                op.needsPostprocessing = true;
-                op.postprocessingParams.set(placeholder, literal(serializedPostprocessingValues));
-            }
-        }
-    }
-    /**
-     * Merges another param map into this one.
-     */
-    merge(other) {
-        for (const [placeholder, otherValues] of other.values) {
-            const currentValues = this.values.get(placeholder) || [];
-            // Child element close tag params should be prepended to maintain the same order as
-            // TemplateDefinitionBuilder.
-            const flags = otherValues[0].flags;
-            if ((flags & I18nParamValueFlags.CloseTag) && !(flags & I18nParamValueFlags.OpenTag)) {
-                this.values.set(placeholder, [...otherValues, ...currentValues]);
-            }
-            else {
-                this.values.set(placeholder, [...currentValues, ...otherValues]);
-            }
-        }
-    }
-    /**
-     * Serializes a list of i18n placeholder values.
-     */
-    serializeValues(values) {
-        if (values.length === 0) {
-            return null;
-        }
-        const serializedValues = values.map(value => this.serializeValue(value));
-        return serializedValues.length === 1 ?
-            serializedValues[0] :
-            `${LIST_START_MARKER}${serializedValues.join(LIST_DELIMITER)}${LIST_END_MARKER}`;
-    }
-    /**
-     * Serializes a single i18n placeholder value.
-     */
-    serializeValue(value) {
-        let tagMarker = '';
-        let closeMarker = '';
-        if (value.flags & I18nParamValueFlags.ElementTag) {
-            tagMarker = ELEMENT_MARKER;
-        }
-        else if (value.flags & I18nParamValueFlags.TemplateTag) {
-            tagMarker = TEMPLATE_MARKER;
-        }
-        if (tagMarker !== '') {
-            closeMarker = value.flags & I18nParamValueFlags.CloseTag ? TAG_CLOSE_MARKER : '';
-        }
-        const context = value.subTemplateIndex === null ? '' : `${CONTEXT_MARKER}${value.subTemplateIndex}`;
-        // Self-closing tags use a special form that concatenates the start and close tag values.
-        if ((value.flags & I18nParamValueFlags.OpenTag) &&
-            (value.flags & I18nParamValueFlags.CloseTag)) {
-            return `${ESCAPE}${tagMarker}${value.value}${context}${ESCAPE}${ESCAPE}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE}`;
-        }
-        return `${ESCAPE}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE}`;
-    }
-}
-/**
- * Resolve the placeholders in i18n messages.
- */
-function phaseResolveI18nPlaceholders(job) {
-    const params = new Map();
-    const i18nOps = new Map();
-    resolvePlaceholders(job, params, i18nOps);
-    propagatePlaceholders(params, i18nOps);
-    // After colleccting all params, save them to the i18n ops.
-    for (const [xref, i18nOpParams] of params) {
-        i18nOpParams.saveToOp(i18nOps.get(xref));
-    }
-    // Validate the root i18n ops have all placeholders filled in.
-    for (const op of i18nOps.values()) {
-        if (op.xref === op.root) {
-            for (const placeholder in op.message.placeholders) {
-                if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
-                    throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
-                }
-            }
-        }
-    }
-}
-/**
- * Resolve placeholders for each i18n op.
- */
-function resolvePlaceholders(job, params, i18nOps) {
+function phaseResolveI18nElementPlaceholders(job) {
+    // Record all of the element and extracted message ops for use later.
+    const extractedMessageOps = new Map();
+    const elements = new Map();
     for (const unit of job.units) {
-        const elements = new Map();
-        let currentI18nOp = null;
-        // Record slots for tag name placeholders.
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.ExtractedMessage:
+                    extractedMessageOps.set(op.owner, op);
+                    break;
+                case OpKind.ElementStart:
+                    elements.set(op.xref, op);
+                    break;
+            }
+        }
+    }
+    for (const unit of job.units) {
+        // Track the current i18n op and corresponding extracted message op as we step through the
+        // creation IR.
+        let currentOps = null;
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
-                    i18nOps.set(op.xref, op);
-                    currentI18nOp = op.kind === OpKind.I18nStart ? op : null;
+                    if (!extractedMessageOps.has(op.xref)) {
+                        throw Error('Could not find extracted message for i18n op');
+                    }
+                    currentOps = { i18n: op, extractedMessage: extractedMessageOps.get(op.xref) };
                     break;
                 case OpKind.I18nEnd:
-                    currentI18nOp = null;
+                    currentOps = null;
                     break;
                 case OpKind.ElementStart:
                     // For elements with i18n placeholders, record its slot value in the params map under the
                     // corresponding tag start placeholder.
                     if (op.i18nPlaceholder !== undefined) {
-                        if (currentI18nOp === null) {
+                        if (currentOps === null) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
-                        elements.set(op.xref, op);
                         const { startName, closeName } = op.i18nPlaceholder;
                         let flags = I18nParamValueFlags.ElementTag | I18nParamValueFlags.OpenTag;
                         // For self-closing tags, there is no close tag placeholder. Instead, the start tag
@@ -21272,56 +21310,39 @@ function resolvePlaceholders(job, params, i18nOps) {
                         if (closeName === '') {
                             flags |= I18nParamValueFlags.CloseTag;
                         }
-                        addParam(params, currentI18nOp, startName, op.slot, currentI18nOp.subTemplateIndex, I18nParamResolutionTime.Creation, flags);
+                        addParam(currentOps.extractedMessage.params, startName, op.slot, currentOps.i18n.subTemplateIndex, flags);
                     }
                     break;
                 case OpKind.ElementEnd:
+                    // For elements with i18n placeholders, record its slot value in the params map under the
+                    // corresponding tag close placeholder.
                     const startOp = elements.get(op.xref);
                     if (startOp && startOp.i18nPlaceholder !== undefined) {
-                        if (currentI18nOp === null) {
+                        if (currentOps === null) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
                         const { closeName } = startOp.i18nPlaceholder;
                         // Self-closing tags don't have a closing tag placeholder.
                         if (closeName !== '') {
-                            addParam(params, currentI18nOp, closeName, startOp.slot, currentI18nOp.subTemplateIndex, I18nParamResolutionTime.Creation, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
+                            addParam(currentOps.extractedMessage.params, closeName, startOp.slot, currentOps.i18n.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
                         }
                     }
                     break;
                 case OpKind.Template:
+                    // For templates with i18n placeholders, record its slot value in the params map under the
+                    // corresponding template start and close placeholders.
                     if (op.i18nPlaceholder !== undefined) {
-                        if (currentI18nOp === null) {
+                        if (currentOps === null) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
-                        const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentI18nOp, op);
-                        addParam(params, currentI18nOp, op.i18nPlaceholder.startName, op.slot, subTemplateIndex, I18nParamResolutionTime.Creation, I18nParamValueFlags.TemplateTag);
-                        addParam(params, currentI18nOp, op.i18nPlaceholder.closeName, op.slot, subTemplateIndex, I18nParamResolutionTime.Creation, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
+                        const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentOps.i18n, op);
+                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.startName, op.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
+                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.closeName, op.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
                     }
                     break;
             }
         }
-        // Fill in values for each of the i18n expression placeholders.
-        const i18nBlockPlaceholderIndices = new Map();
-        for (const op of unit.update) {
-            if (op.kind === OpKind.I18nExpression) {
-                const i18nOp = i18nOps.get(op.owner);
-                let index = i18nBlockPlaceholderIndices.get(op.owner) || 0;
-                if (!i18nOp) {
-                    throw Error('Cannot find corresponding i18nStart for i18nExpr');
-                }
-                addParam(params, i18nOp, op.i18nPlaceholder, index++, i18nOp.subTemplateIndex, op.resolutionTime);
-                i18nBlockPlaceholderIndices.set(op.owner, index);
-            }
-        }
     }
-}
-/**
- * Add a param to the params map for the given i18n op.
- */
-function addParam(params, i18nOp, placeholder, value, subTemplateIndex, resolutionTime, flags = I18nParamValueFlags.None) {
-    const i18nOpParams = params.get(i18nOp.xref) || new I18nPlaceholderParams();
-    i18nOpParams.addValue(placeholder, value, subTemplateIndex, resolutionTime, flags);
-    params.set(i18nOp.xref, i18nOpParams);
 }
 /**
  * Get the subTemplateIndex for the given template op. For template ops, use the subTemplateIndex of
@@ -21335,15 +21356,59 @@ function getSubTemplateIndexForTemplateTag(job, i18nOp, op) {
     }
     return i18nOp.subTemplateIndex;
 }
+/** Add a param value to the given params map. */
+function addParam(params, placeholder, value, subTemplateIndex, flags = I18nParamValueFlags.None) {
+    const values = params.get(placeholder) ?? [];
+    values.push({ value, subTemplateIndex, flags });
+    params.set(placeholder, values);
+}
+
 /**
- * Propagate placeholders up to their root i18n op.
+ * Resolve the i18n expression placeholders in i18n messages.
  */
-function propagatePlaceholders(params, i18nOps) {
-    for (const [xref, opParams] of params) {
-        const op = i18nOps.get(xref);
-        if (op.xref !== op.root) {
-            const rootParams = params.get(op.root) || new I18nPlaceholderParams();
-            rootParams.merge(opParams);
+function phaseResolveI18nExpressionPlaceholders(job) {
+    // Record all of the i18n and extracted message ops for use later.
+    const i18nOps = new Map();
+    const extractedMessageOps = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    i18nOps.set(op.xref, op);
+                    break;
+                case OpKind.ExtractedMessage:
+                    extractedMessageOps.set(op.owner, op);
+                    break;
+            }
+        }
+    }
+    // Keep track of the next available expression index per i18n block.
+    const expressionIndices = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            if (op.kind === OpKind.I18nExpression) {
+                const i18nOp = i18nOps.get(op.owner);
+                let index = expressionIndices.get(op.owner) || 0;
+                if (!i18nOp) {
+                    throw Error('Cannot find corresponding i18n block for i18nExpr');
+                }
+                const extractedMessageOp = extractedMessageOps.get(i18nOp.xref);
+                if (!extractedMessageOp) {
+                    throw Error('Cannot find extracted message for i18n block');
+                }
+                // Add the expression index in the appropriate params map.
+                const params = op.resolutionTime === I18nParamResolutionTime.Creation ?
+                    extractedMessageOp.params :
+                    extractedMessageOp.postprocessingParams;
+                const values = params.get(op.i18nPlaceholder) || [];
+                values.push({
+                    value: index,
+                    subTemplateIndex: i18nOp.subTemplateIndex,
+                    flags: I18nParamValueFlags.None
+                });
+                params.set(op.i18nPlaceholder, values);
+                expressionIndices.set(op.owner, index + 1);
+            }
         }
     }
 }
@@ -21730,6 +21795,133 @@ function assignName(names, expr) {
         throw new Error(`Found xref with unassigned name: ${expr.xref}`);
     }
     expr.name = name;
+}
+
+/**
+ * Generate track functions that need to be extracted to the constant pool. This entails wrapping
+ * them in an arrow (or traditional) function, replacing context reads with `this.`, and storing
+ * them in the constant pool.
+ *
+ * Note that, if a track function was previously optimized, it will not need to be extracted, and
+ * this phase is a no-op.
+ */
+function phaseTrackFnGeneration(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind !== OpKind.RepeaterCreate) {
+                continue;
+            }
+            if (op.trackByFn !== null) {
+                // The final track function was already set, probably because it was optimized.
+                continue;
+            }
+            // Find all component context reads.
+            let usesComponentContext = false;
+            op.track = transformExpressionsInExpression(op.track, expr => {
+                if (expr instanceof TrackContextExpr) {
+                    usesComponentContext = true;
+                    return variable('this');
+                }
+                return expr;
+            }, VisitorContextFlag.None);
+            let fn;
+            const fnParams = [new FnParam('$index'), new FnParam('$item')];
+            if (usesComponentContext) {
+                fn = new FunctionExpr(fnParams, [new ReturnStatement(op.track)]);
+            }
+            else {
+                fn = arrowFn(fnParams, op.track);
+            }
+            op.trackByFn = job.pool.getSharedFunctionReference(fn, '_forTrack');
+        }
+    }
+}
+
+function phaseTrackFnOptimization(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind !== OpKind.RepeaterCreate) {
+                continue;
+            }
+            if (op.track instanceof ReadVarExpr && op.track.name === '$index') {
+                // Top-level access of `$index` uses the built in `repeaterTrackByIndex`.
+                op.trackByFn = importExpr(Identifiers.repeaterTrackByIndex);
+            }
+            else if (op.track instanceof ReadVarExpr && op.track.name === '$item') {
+                // Top-level access of the item uses the built in `repeaterTrackByIdentity`.
+                op.trackByFn = importExpr(Identifiers.repeaterTrackByIdentity);
+            }
+            else if (isTrackByFunctionCall(job.root.xref, op.track)) {
+                // Top-level method calls in the form of `fn($index, item)` can be passed in directly.
+                if (op.track.receiver.receiver.view === unit.xref) {
+                    // TODO: this may be wrong
+                    op.trackByFn = op.track.receiver;
+                }
+                else {
+                    // This is a plain method call, but not in the component's root view.
+                    // We need to get the component instance, and then call the method on it.
+                    op.trackByFn =
+                        importExpr(Identifiers.componentInstance).callFn([]).prop(op.track.receiver.name);
+                    // Because the context is not avaiable (without a special function), we don't want to
+                    // try to resolve it later. Let's get rid of it by overwriting the original track
+                    // expression (which won't be used anyway).
+                    op.track = op.trackByFn;
+                }
+            }
+            else {
+                // The track function could not be optimized.
+                // Replace context reads with a special IR expression, since context reads in a track
+                // function are emitted specially.
+                op.track = transformExpressionsInExpression(op.track, expr => {
+                    if (expr instanceof ContextExpr) {
+                        op.usesComponentInstance = true;
+                        return new TrackContextExpr(expr.view);
+                    }
+                    return expr;
+                }, VisitorContextFlag.None);
+            }
+        }
+    }
+}
+function isTrackByFunctionCall(rootView, expr) {
+    if (!(expr instanceof InvokeFunctionExpr) || expr.args.length !== 2) {
+        return false;
+    }
+    if (!(expr.receiver instanceof ReadPropExpr &&
+        expr.receiver.receiver instanceof ContextExpr) ||
+        expr.receiver.receiver.view !== rootView) {
+        return false;
+    }
+    const [arg0, arg1] = expr.args;
+    if (!(arg0 instanceof ReadVarExpr) || arg0.name !== '$index') {
+        return false;
+    }
+    if (!(arg1 instanceof ReadVarExpr) || arg1.name !== '$item') {
+        return false;
+    }
+    return true;
+}
+
+function phaseTrackVariables(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind !== OpKind.RepeaterCreate) {
+                continue;
+            }
+            op.track = transformExpressionsInExpression(op.track, expr => {
+                if (expr instanceof LexicalReadExpr) {
+                    if (expr.name === op.varNames.$index) {
+                        return variable('$index');
+                    }
+                    else if (expr.name === op.varNames.$implicit) {
+                        return variable('$item');
+                    }
+                    // TODO: handle prohibited context variables (emit as globals?)
+                }
+                return expr;
+            }, VisitorContextFlag.None);
+        }
+    }
 }
 
 /**
@@ -22300,133 +22492,6 @@ function phaseWrapIcus(job) {
     }
 }
 
-function phaseTrackVariables(job) {
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind !== OpKind.RepeaterCreate) {
-                continue;
-            }
-            op.track = transformExpressionsInExpression(op.track, expr => {
-                if (expr instanceof LexicalReadExpr) {
-                    if (expr.name === op.varNames.$index) {
-                        return variable('$index');
-                    }
-                    else if (expr.name === op.varNames.$implicit) {
-                        return variable('$item');
-                    }
-                    // TODO: handle prohibited context variables (emit as globals?)
-                }
-                return expr;
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-
-/**
- * Generate track functions that need to be extracted to the constant pool. This entails wrapping
- * them in an arrow (or traditional) function, replacing context reads with `this.`, and storing
- * them in the constant pool.
- *
- * Note that, if a track function was previously optimized, it will not need to be extracted, and
- * this phase is a no-op.
- */
-function phaseTrackFnGeneration(job) {
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind !== OpKind.RepeaterCreate) {
-                continue;
-            }
-            if (op.trackByFn !== null) {
-                // The final track function was already set, probably because it was optimized.
-                continue;
-            }
-            // Find all component context reads.
-            let usesComponentContext = false;
-            op.track = transformExpressionsInExpression(op.track, expr => {
-                if (expr instanceof TrackContextExpr) {
-                    usesComponentContext = true;
-                    return variable('this');
-                }
-                return expr;
-            }, VisitorContextFlag.None);
-            let fn;
-            const fnParams = [new FnParam('$index'), new FnParam('$item')];
-            if (usesComponentContext) {
-                fn = new FunctionExpr(fnParams, [new ReturnStatement(op.track)]);
-            }
-            else {
-                fn = arrowFn(fnParams, op.track);
-            }
-            op.trackByFn = job.pool.getSharedFunctionReference(fn, '_forTrack');
-        }
-    }
-}
-
-function phaseTrackFnOptimization(job) {
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind !== OpKind.RepeaterCreate) {
-                continue;
-            }
-            if (op.track instanceof ReadVarExpr && op.track.name === '$index') {
-                // Top-level access of `$index` uses the built in `repeaterTrackByIndex`.
-                op.trackByFn = importExpr(Identifiers.repeaterTrackByIndex);
-            }
-            else if (op.track instanceof ReadVarExpr && op.track.name === '$item') {
-                // Top-level access of the item uses the built in `repeaterTrackByIdentity`.
-                op.trackByFn = importExpr(Identifiers.repeaterTrackByIdentity);
-            }
-            else if (isTrackByFunctionCall(job.root.xref, op.track)) {
-                // Top-level method calls in the form of `fn($index, item)` can be passed in directly.
-                if (op.track.receiver.receiver.view === unit.xref) {
-                    // TODO: this may be wrong
-                    op.trackByFn = op.track.receiver;
-                }
-                else {
-                    // This is a plain method call, but not in the component's root view.
-                    // We need to get the component instance, and then call the method on it.
-                    op.trackByFn =
-                        importExpr(Identifiers.componentInstance).callFn([]).prop(op.track.receiver.name);
-                    // Because the context is not avaiable (without a special function), we don't want to
-                    // try to resolve it later. Let's get rid of it by overwriting the original track
-                    // expression (which won't be used anyway).
-                    op.track = op.trackByFn;
-                }
-            }
-            else {
-                // The track function could not be optimized.
-                // Replace context reads with a special IR expression, since context reads in a track
-                // function are emitted specially.
-                op.track = transformExpressionsInExpression(op.track, expr => {
-                    if (expr instanceof ContextExpr) {
-                        op.usesComponentInstance = true;
-                        return new TrackContextExpr(expr.view);
-                    }
-                    return expr;
-                }, VisitorContextFlag.None);
-            }
-        }
-    }
-}
-function isTrackByFunctionCall(rootView, expr) {
-    if (!(expr instanceof InvokeFunctionExpr) || expr.args.length !== 2) {
-        return false;
-    }
-    if (!(expr.receiver instanceof ReadPropExpr &&
-        expr.receiver.receiver instanceof ContextExpr) ||
-        expr.receiver.receiver.view !== rootView) {
-        return false;
-    }
-    const [arg0, arg1] = expr.args;
-    if (!(arg0 instanceof ReadVarExpr) || arg0.name !== '$index') {
-        return false;
-    }
-    if (!(arg1 instanceof ReadVarExpr) || arg1.name !== '$item') {
-        return false;
-    }
-    return true;
-}
-
 /**
  *
  * @license
@@ -22471,9 +22536,12 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseExpandSafeReads },
     { kind: CompilationJobKind.Both, fn: phaseTemporaryVariables },
     { kind: CompilationJobKind.Tmpl, fn: phaseSlotAllocation },
-    { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nPlaceholders },
-    { kind: CompilationJobKind.Tmpl, fn: phaseTrackFnGeneration },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nMessageExtraction },
+    { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nElementPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nExpressionPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: phasePropagateI18nPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: phaseFormatI18nParams },
+    { kind: CompilationJobKind.Tmpl, fn: phaseTrackFnGeneration },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nConstCollection },
     { kind: CompilationJobKind.Tmpl, fn: phaseConstTraitCollection },
     { kind: CompilationJobKind.Both, fn: phaseConstCollection },
@@ -30262,7 +30330,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-rc.1+sha-8e17dd7');
+const VERSION = new Version('17.0.0-rc.1+sha-4461cef');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31792,7 +31860,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31900,7 +31968,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32177,7 +32245,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32212,7 +32280,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32263,7 +32331,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32296,7 +32364,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32347,7 +32415,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-8e17dd7'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-4461cef'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
