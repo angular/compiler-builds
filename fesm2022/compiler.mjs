@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-7bb3ffb
+ * @license Angular v17.1.0-next.0+sha-b5ef68f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10645,14 +10645,14 @@ function createElementStartOp(tag, xref, namespace, i18nPlaceholder, sourceSpan)
 /**
  * Create a `TemplateOp`.
  */
-function createTemplateOp(xref, tag, functionNameSuffix, namespace, i18nPlaceholder, sourceSpan) {
+function createTemplateOp(xref, tag, namespace, generatedInBlock, i18nPlaceholder, sourceSpan) {
     return {
         kind: OpKind.Template,
         xref,
         attributes: null,
         tag,
         slot: new SlotHandle(),
-        functionNameSuffix,
+        block: generatedInBlock,
         decls: null,
         vars: null,
         localRefs: [],
@@ -10664,7 +10664,7 @@ function createTemplateOp(xref, tag, functionNameSuffix, namespace, i18nPlacehol
         ...NEW_OP,
     };
 }
-function createRepeaterCreateOp(primaryView, emptyView, tag, track, varNames, sourceSpan) {
+function createRepeaterCreateOp(primaryView, emptyView, track, varNames, sourceSpan) {
     return {
         kind: OpKind.RepeaterCreate,
         attributes: null,
@@ -10673,8 +10673,7 @@ function createRepeaterCreateOp(primaryView, emptyView, tag, track, varNames, so
         emptyView,
         track,
         trackByFn: null,
-        tag,
-        functionNameSuffix: 'For',
+        tag: 'For',
         namespace: Namespace.HTML,
         nonBindable: false,
         localRefs: [],
@@ -19651,10 +19650,11 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.emptyView !== null) {
                     const emptyView = unit.job.views.get(op.emptyView);
                     // Repeater empty view function is at slot +2 (metadata is in the first slot).
-                    addNamesToView(emptyView, `${baseName}_${`${op.functionNameSuffix}Empty`}_${op.slot.slot + 2}`, state, compatibility);
+                    addNamesToView(emptyView, `${baseName}_${prefixWithNamespace(`${op.tag}Empty`, op.namespace)}_${op.slot.slot + 2}`, state, compatibility);
                 }
+                const repeaterToken = op.tag === null ? '' : '_' + prefixWithNamespace(op.tag, op.namespace);
                 // Repeater primary view function is at slot +1 (metadata is in the first slot).
-                addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.slot.slot + 1}`, state, compatibility);
+                addNamesToView(unit.job.views.get(op.xref), `${baseName}${repeaterToken}_${op.slot.slot + 1}`, state, compatibility);
                 break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
@@ -19664,8 +19664,8 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.slot.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
-                const suffix = op.functionNameSuffix.length === 0 ? '' : `_${op.functionNameSuffix}`;
-                addNamesToView(childView, `${baseName}${suffix}_${op.slot.slot}`, state, compatibility);
+                const tagToken = op.tag === null ? '' : '_' + prefixWithNamespace(op.tag, op.namespace);
+                addNamesToView(childView, `${baseName}${tagToken}_${op.slot.slot}`, state, compatibility);
                 break;
             case OpKind.StyleProp:
                 op.name = normalizeStylePropName(op.name);
@@ -20473,20 +20473,20 @@ function i18nStart(slot, constIndex, subTemplateIndex) {
     }
     return call(Identifiers.i18nStart, args, null);
 }
-function repeaterCreate(slot, viewFnName, decls, vars, tag, constIndex, trackByFn, trackByUsesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, sourceSpan) {
-    const args = [
+function repeaterCreate(slot, viewFnName, decls, vars, trackByFn, trackByUsesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, sourceSpan) {
+    let args = [
         literal(slot),
         variable(viewFnName),
         literal(decls),
         literal(vars),
-        literal(tag),
-        literal(constIndex),
         trackByFn,
     ];
     if (trackByUsesComponentInstance || emptyViewFnName !== null) {
         args.push(literal(trackByUsesComponentInstance));
         if (emptyViewFnName !== null) {
-            args.push(variable(emptyViewFnName), literal(emptyDecls), literal(emptyVars));
+            args.push(variable(emptyViewFnName));
+            args.push(literal(emptyDecls));
+            args.push(literal(emptyVars));
         }
     }
     return call(Identifiers.repeaterCreate, args, sourceSpan);
@@ -20895,7 +20895,7 @@ function reifyCreateOperations(unit, ops) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                OpList.replace(op, template(op.slot.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.sourceSpan));
+                OpList.replace(op, template(op.slot.slot, variable(childView.fnName), childView.decls, childView.vars, op.block ? null : op.tag, op.attributes, op.sourceSpan));
                 break;
             case OpKind.DisableBindings:
                 OpList.replace(op, disableBindings());
@@ -20996,7 +20996,7 @@ function reifyCreateOperations(unit, ops) {
                     emptyDecls = emptyView.decls;
                     emptyVars = emptyView.vars;
                 }
-                OpList.replace(op, repeaterCreate(op.slot.slot, repeaterView.fnName, op.decls, op.vars, op.tag, op.attributes, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.sourceSpan));
+                OpList.replace(op, repeaterCreate(op.slot.slot, repeaterView.fnName, op.decls, op.vars, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.sourceSpan));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -22894,6 +22894,10 @@ function ingestElement(unit, element) {
         !(element.i18n instanceof Message || element.i18n instanceof TagPlaceholder)) {
         throw Error(`Unhandled i18n metadata type for element: ${element.i18n.constructor.name}`);
     }
+    const staticAttributes = {};
+    for (const attr of element.attributes) {
+        staticAttributes[attr.name] = attr.value;
+    }
     const id = unit.job.allocateXrefId();
     const [namespaceKey, elementName] = splitNsName(element.name);
     const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.i18n instanceof TagPlaceholder ? element.i18n : undefined, element.startSourceSpan);
@@ -22925,11 +22929,7 @@ function ingestTemplate(unit, tmpl) {
         [namespacePrefix, tagNameWithoutNamespace] = splitNsName(tmpl.tagName);
     }
     const i18nPlaceholder = tmpl.i18n instanceof TagPlaceholder ? tmpl.i18n : undefined;
-    const namespace = namespaceForKey(namespacePrefix);
-    const functionNameSuffix = tagNameWithoutNamespace === null ?
-        '' :
-        prefixWithNamespace(tagNameWithoutNamespace, namespace);
-    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace, functionNameSuffix, namespace, i18nPlaceholder, tmpl.startSourceSpan);
+    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace, namespaceForKey(namespacePrefix), false, i18nPlaceholder, tmpl.startSourceSpan);
     unit.create.push(tplOp);
     ingestBindings(unit, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
@@ -22994,19 +22994,12 @@ function ingestIfBlock(unit, ifBlock) {
     let firstXref = null;
     let firstSlotHandle = null;
     let conditions = [];
-    for (let i = 0; i < ifBlock.branches.length; i++) {
-        const ifCase = ifBlock.branches[i];
+    for (const ifCase of ifBlock.branches) {
         const cView = unit.job.allocateView(unit.xref);
-        let tagName = null;
-        // Only the first branch can be used for projection, because the conditional
-        // uses the container of the first branch as the insertion point for all branches.
-        if (i === 0) {
-            tagName = ingestControlFlowInsertionPoint(unit, cView.xref, ifCase);
-        }
         if (ifCase.expressionAlias !== null) {
             cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
         }
-        const tmplOp = createTemplateOp(cView.xref, tagName, 'Conditional', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan);
+        const tmplOp = createTemplateOp(cView.xref, 'Conditional', Namespace.HTML, true, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan);
         unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
@@ -23029,7 +23022,7 @@ function ingestSwitchBlock(unit, switchBlock) {
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
-        const tmplOp = createTemplateOp(cView.xref, null, 'Case', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan);
+        const tmplOp = createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan);
         unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
@@ -23051,7 +23044,7 @@ function ingestDeferView(unit, suffix, children, sourceSpan) {
     }
     const secondaryView = unit.job.allocateView(unit.xref);
     ingestNodes(secondaryView, children);
-    const templateOp = createTemplateOp(secondaryView.xref, null, `Defer${suffix}`, Namespace.HTML, undefined, sourceSpan);
+    const templateOp = createTemplateOp(secondaryView.xref, `Defer${suffix}`, Namespace.HTML, true, undefined, sourceSpan);
     unit.create.push(templateOp);
     return templateOp;
 }
@@ -23179,8 +23172,7 @@ function ingestForBlock(unit, forBlock) {
         $odd: forBlock.contextVariables.$odd.name,
         $implicit: forBlock.item.name,
     };
-    const tagName = ingestControlFlowInsertionPoint(unit, repeaterView.xref, forBlock);
-    const repeaterCreate = createRepeaterCreateOp(repeaterView.xref, emptyView?.xref ?? null, tagName, track, varNames, forBlock.sourceSpan);
+    const repeaterCreate = createRepeaterCreateOp(repeaterView.xref, emptyView?.xref ?? null, track, varNames, forBlock.sourceSpan);
     unit.create.push(repeaterCreate);
     const expression = convertAst(forBlock.expression, unit.job, convertSourceSpan(forBlock.expression.span, forBlock.sourceSpan));
     const repeater = createRepeaterOp(repeaterCreate.xref, repeaterCreate.slot, expression, forBlock.sourceSpan);
@@ -23461,57 +23453,6 @@ function convertSourceSpan(span, baseSourceSpan) {
     const end = baseSourceSpan.start.moveBy(span.end);
     const fullStart = baseSourceSpan.fullStart.moveBy(span.start);
     return new ParseSourceSpan(start, end, fullStart);
-}
-/**
- * With the directive-based control flow users were able to conditionally project content using
- * the `*` syntax. E.g. `<div *ngIf="expr" projectMe></div>` will be projected into
- * `<ng-content select="[projectMe]"/>`, because the attributes and tag name from the `div` are
- * copied to the template via the template creation instruction. With `@if` and `@for` that is
- * not the case, because the conditional is placed *around* elements, rather than *on* them.
- * The result is that content projection won't work in the same way if a user converts from
- * `*ngIf` to `@if`.
- *
- * This function aims to cover the most common case by doing the same copying when a control flow
- * node has *one and only one* root element or template node.
- *
- * This approach comes with some caveats:
- * 1. As soon as any other node is added to the root, the copying behavior won't work anymore.
- *    A diagnostic will be added to flag cases like this and to explain how to work around it.
- * 2. If `preserveWhitespaces` is enabled, it's very likely that indentation will break this
- *    workaround, because it'll include an additional text node as the first child. We can work
- *    around it here, but in a discussion it was decided not to, because the user explicitly opted
- *    into preserving the whitespace and we would have to drop it from the generated code.
- *    The diagnostic mentioned point #1 will flag such cases to users.
- *
- * @returns Tag name to be used for the control flow template.
- */
-function ingestControlFlowInsertionPoint(unit, xref, node) {
-    let root = null;
-    for (const child of node.children) {
-        // Skip over comment nodes.
-        if (child instanceof Comment$1) {
-            continue;
-        }
-        // We can only infer the tag name/attributes if there's a single root node.
-        if (root !== null) {
-            return null;
-        }
-        // Root nodes can only elements or templates with a tag name (e.g. `<div *foo></div>`).
-        if (child instanceof Element$1 || (child instanceof Template && child.tagName !== null)) {
-            root = child;
-        }
-    }
-    // If we've found a single root node, its tag name and *static* attributes can be copied
-    // to the surrounding template to be used for content projection. Note that it's important
-    // that we don't copy any bound attributes since they don't participate in content projection
-    // and they can be used in directive matching (in the case of `Template.templateAttrs`).
-    if (root !== null) {
-        for (const attr of root.attributes) {
-            ingestBinding(unit, xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
-        }
-        return root instanceof Element$1 ? root.name : root.tagName;
-    }
-    return null;
 }
 
 const USE_TEMPLATE_PIPELINE = false;
@@ -24891,10 +24832,8 @@ function validateSwitchBlock(ast) {
         return errors;
     }
     for (const node of ast.children) {
-        // Skip over comments and empty text nodes inside the switch block.
-        // Empty text nodes can be used for formatting while comments don't affect the runtime.
-        if (node instanceof Comment ||
-            (node instanceof Text && node.value.trim().length === 0)) {
+        // Skip over empty text nodes inside the switch block since they can be used for formatting.
+        if (node instanceof Text && node.value.trim().length === 0) {
             continue;
         }
         if (!(node instanceof Block) || (node.name !== 'case' && node.name !== 'default')) {
@@ -25017,7 +24956,7 @@ function stripOptionalParentheses(param, errors) {
 }
 
 /** Pattern for a timing value in a trigger. */
-const TIME_PATTERN = /^\d+\.?\d*(ms|s)?$/;
+const TIME_PATTERN = /^\d+(ms|s)?$/;
 /** Pattern for a separator between keywords in a trigger expression. */
 const SEPARATOR_PATTERN = /^\s$/;
 /** Pairs of characters that form syntax that is comma-delimited. */
@@ -25318,7 +25257,7 @@ function parseDeferredTime(value) {
         return null;
     }
     const [time, units] = match;
-    return parseFloat(time) * (units === 's' ? 1000 : 1);
+    return parseInt(time) * (units === 's' ? 1000 : 1);
 }
 
 /** Pattern to identify a `prefetch when` trigger. */
@@ -26202,8 +26141,6 @@ const NG_CONTENT_SELECT_ATTR = 'select';
 const NG_PROJECT_AS_ATTR_NAME = 'ngProjectAs';
 // Global symbols available only inside event bindings.
 const EVENT_BINDING_SCOPE_GLOBALS = new Set(['$event']);
-// Tag name of the `ng-template` element.
-const NG_TEMPLATE_TAG_NAME = 'ng-template';
 // List of supported global targets for event listeners
 const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers.resolveWindow], ['document', Identifiers.resolveDocument], ['body', Identifiers.resolveBody]]);
 const LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
@@ -26975,6 +26912,7 @@ class TemplateDefinitionBuilder {
         // it based on the parent nodes inside the template instruction.
         const tagNameWithoutNamespace = template.tagName ? splitNsName(template.tagName)[1] : template.tagName;
         const contextNameSuffix = template.tagName ? '_' + sanitizeIdentifier(template.tagName) : '';
+        const NG_TEMPLATE_TAG_NAME = 'ng-template';
         // prepare attributes parameter (including attributes used for directive matching)
         const attrsExprs = this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, template.attributes, template.inputs, template.outputs, undefined /* styles */, template.templateAttrs);
         const templateIndex = this.createEmbeddedTemplateFn(tagNameWithoutNamespace, template.children, contextNameSuffix, template.sourceSpan, template.variables, attrsExprs, template.references, template.i18n);
@@ -27077,28 +27015,18 @@ class TemplateDefinitionBuilder {
         // We have to process the block in two steps: once here and again in the update instruction
         // callback in order to generate the correct expressions when pipes or pure functions are
         // used inside the branch expressions.
-        const branchData = block.branches.map((branch, branchIndex) => {
-            const { expression, expressionAlias, children, sourceSpan } = branch;
+        const branchData = block.branches.map(({ expression, expressionAlias, children, sourceSpan }) => {
             // If the branch has an alias, it'll be assigned directly to the container's context.
             // We define a variable referring directly to the context so that any nested usages can be
             // rewritten to refer to it.
             const variables = expressionAlias !== null ?
                 [new Variable(expressionAlias.name, DIRECT_CONTEXT_REFERENCE, expressionAlias.sourceSpan, expressionAlias.keySpan)] :
                 undefined;
-            let tagName = null;
-            let attrsExprs;
-            // Only the first branch can be used for projection, because the conditional
-            // uses the container of the first branch as the insertion point for all branches.
-            if (branchIndex === 0) {
-                const inferredData = this.inferProjectionDataFromInsertionPoint(branch);
-                tagName = inferredData.tagName;
-                attrsExprs = inferredData.attrsExprs;
-            }
             // Note: the template needs to be created *before* we process the expression,
             // otherwise pipes injecting some symbols won't work (see #52102).
-            const templateIndex = this.createEmbeddedTemplateFn(tagName, children, '_Conditional', sourceSpan, variables, attrsExprs);
+            const index = this.createEmbeddedTemplateFn(null, children, '_Conditional', sourceSpan, variables);
             const processedExpression = expression === null ? null : expression.visit(this._valueConverter);
-            return { index: templateIndex, expression: processedExpression, alias: expressionAlias };
+            return { index, expression: processedExpression, alias: expressionAlias };
         });
         // Use the index of the first block as the index for the entire container.
         const containerIndex = branchData[0].index;
@@ -27320,41 +27248,6 @@ class TemplateDefinitionBuilder {
             return params;
         });
     }
-    /**
-     * Infers the data used for content projection (tag name and attributes) from the content of a
-     * node.
-     * @param node Node for which to infer the projection data.
-     */
-    inferProjectionDataFromInsertionPoint(node) {
-        let root = null;
-        let tagName = null;
-        let attrsExprs;
-        for (const child of node.children) {
-            // Skip over comment nodes.
-            if (child instanceof Comment$1) {
-                continue;
-            }
-            // We can only infer the tag name/attributes if there's a single root node.
-            if (root !== null) {
-                root = null;
-                break;
-            }
-            // Root nodes can only elements or templates with a tag name (e.g. `<div *foo></div>`).
-            if (child instanceof Element$1 || (child instanceof Template && child.tagName !== null)) {
-                root = child;
-            }
-        }
-        // If we've found a single root node, its tag name and *static* attributes can be copied
-        // to the surrounding template to be used for content projection. Note that it's important
-        // that we don't copy any bound attributes since they don't participate in content projection
-        // and they can be used in directive matching (in the case of `Template.templateAttrs`).
-        if (root !== null) {
-            tagName = root instanceof Element$1 ? root.name : root.tagName;
-            attrsExprs =
-                this.getAttributeExpressions(NG_TEMPLATE_TAG_NAME, root.attributes, root.inputs, []);
-        }
-        return { tagName, attrsExprs };
-    }
     allocateDataSlot() {
         return this._dataIndex++;
     }
@@ -27362,7 +27255,6 @@ class TemplateDefinitionBuilder {
         // Allocate one slot for the repeater metadata. The slots for the primary and empty block
         // are implicitly inferred by the runtime to index + 1 and index + 2.
         const blockIndex = this.allocateDataSlot();
-        const { tagName, attrsExprs } = this.inferProjectionDataFromInsertionPoint(block);
         const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [block.item, block.contextVariables.$index, block.contextVariables.$count]);
         const { expression: trackByExpression, usesComponentInstance: trackByUsesComponentInstance } = this.createTrackByFunction(block);
         let emptyData = null;
@@ -27379,8 +27271,6 @@ class TemplateDefinitionBuilder {
                 variable(primaryData.name),
                 literal(primaryData.getConstCount()),
                 literal(primaryData.getVarCount()),
-                literal(tagName),
-                this.addAttrsToConsts(attrsExprs || null),
                 trackByExpression,
             ];
             if (emptyData !== null) {
@@ -29913,25 +29803,13 @@ class R3BoundTarget {
         }
         const name = trigger.reference;
         if (name === null) {
-            let trigger = null;
-            if (block.placeholder !== null) {
-                for (const child of block.placeholder.children) {
-                    // Skip over comment nodes. Currently by default the template parser doesn't capture
-                    // comments, but we have a safeguard here just in case since it can be enabled.
-                    if (child instanceof Comment$1) {
-                        continue;
-                    }
-                    // We can only infer the trigger if there's one root element node. Any other
-                    // nodes at the root make it so that we can't infer the trigger anymore.
-                    if (trigger !== null) {
-                        return null;
-                    }
-                    if (child instanceof Element$1) {
-                        trigger = child;
-                    }
-                }
-            }
-            return trigger;
+            const children = block.placeholder ? block.placeholder.children : null;
+            // If the trigger doesn't have a reference, it is inferred as the root element node of the
+            // placeholder, if it only has one root node. Otherwise it's ambiguous so we don't
+            // attempt to resolve further.
+            return children !== null && children.length === 1 && children[0] instanceof Element$1 ?
+                children[0] :
+                null;
         }
         const outsideRef = this.findEntityInScope(block, name);
         // First try to resolve the target in the scope of the main deferred block. Note that we
@@ -29943,7 +29821,7 @@ class R3BoundTarget {
             }
         }
         // If the trigger couldn't be found in the main block, check the
-        // placeholder block which is shown before the main block has loaded.
+        // placeholder  block which is shown before the main block has loaded.
         if (block.placeholder !== null) {
             const refInPlaceholder = this.findEntityInScope(block.placeholder, name);
             const targetInPlaceholder = refInPlaceholder instanceof Reference ? this.getReferenceTarget(refInPlaceholder) : null;
@@ -30638,7 +30516,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-7bb3ffb');
+const VERSION = new Version('17.1.0-next.0+sha-b5ef68f');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32168,7 +32046,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32276,7 +32154,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32553,7 +32431,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32588,7 +32466,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32639,7 +32517,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32672,7 +32550,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32723,7 +32601,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-7bb3ffb'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-b5ef68f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
