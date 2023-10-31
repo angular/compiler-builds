@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-rc.1+sha-e74b578
+ * @license Angular v17.0.0-rc.1+sha-595009e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8966,6 +8966,10 @@ var ExpressionKind;
      * properties ($even, $first, etc.).
      */
     ExpressionKind[ExpressionKind["DerivedRepeaterVar"] = 23] = "DerivedRepeaterVar";
+    /**
+     * An expression that will be automatically extracted to the component const array.
+     */
+    ExpressionKind[ExpressionKind["ConstCollected"] = 24] = "ConstCollected";
 })(ExpressionKind || (ExpressionKind = {}));
 var VariableFlags;
 (function (VariableFlags) {
@@ -9104,6 +9108,27 @@ var I18nParamValueFlags;
      */
     I18nParamValueFlags[I18nParamValueFlags["CloseTag"] = 8] = "CloseTag";
 })(I18nParamValueFlags || (I18nParamValueFlags = {}));
+/**
+ * Whether the active namespace is HTML, MathML, or SVG mode.
+ */
+var Namespace;
+(function (Namespace) {
+    Namespace[Namespace["HTML"] = 0] = "HTML";
+    Namespace[Namespace["SVG"] = 1] = "SVG";
+    Namespace[Namespace["Math"] = 2] = "Math";
+})(Namespace || (Namespace = {}));
+/**
+ * The type of a `@defer` trigger, for use in the ir.
+ */
+var DeferTriggerKind;
+(function (DeferTriggerKind) {
+    DeferTriggerKind[DeferTriggerKind["Idle"] = 0] = "Idle";
+    DeferTriggerKind[DeferTriggerKind["Immediate"] = 1] = "Immediate";
+    DeferTriggerKind[DeferTriggerKind["Timer"] = 2] = "Timer";
+    DeferTriggerKind[DeferTriggerKind["Hover"] = 3] = "Hover";
+    DeferTriggerKind[DeferTriggerKind["Interaction"] = 4] = "Interaction";
+    DeferTriggerKind[DeferTriggerKind["Viewport"] = 5] = "Viewport";
+})(DeferTriggerKind || (DeferTriggerKind = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -9114,10 +9139,6 @@ const ConsumesSlot = Symbol('ConsumesSlot');
  */
 const DependsOnSlotContext = Symbol('DependsOnSlotContext');
 /**
- * Marker symbol for `UsesSlotIndex` trait.
- */
-const UsesSlotIndex = Symbol('UsesSlotIndex');
-/**
  * Marker symbol for `ConsumesVars` trait.
  */
 const ConsumesVarsTrait = Symbol('ConsumesVars');
@@ -9126,25 +9147,12 @@ const ConsumesVarsTrait = Symbol('ConsumesVars');
  */
 const UsesVarOffset = Symbol('UsesVarOffset');
 /**
- * Marker symbol for `HasConst` trait.
- */
-const HasConst = Symbol('HasConst');
-/**
  * Default values for most `ConsumesSlotOpTrait` fields (used with the spread operator to initialize
  * implementors of the trait).
  */
 const TRAIT_CONSUMES_SLOT = {
     [ConsumesSlot]: true,
-    slot: null,
     numSlotsUsed: 1,
-};
-/**
- * Default values for most `UsesSlotIndexTrait` fields (used with the spread operator to initialize
- * implementors of the trait).
- */
-const TRAIT_USES_SLOT_INDEX = {
-    [UsesSlotIndex]: true,
-    targetSlot: null,
 };
 /**
  * Default values for most `DependsOnSlotContextOpTrait` fields (used with the spread operator to
@@ -9169,14 +9177,6 @@ const TRAIT_USES_VAR_OFFSET = {
     varOffset: null,
 };
 /**
- * Default values for `HasConst` fields (used with the spread operator to initialize
- * implementors of this trait).
- */
-const TRAIT_HAS_CONST = {
-    [HasConst]: true,
-    constIndex: null,
-};
-/**
  * Test whether an operation implements `ConsumesSlotOpTrait`.
  */
 function hasConsumesSlotTrait(op) {
@@ -9196,12 +9196,6 @@ function hasConsumesVarsTrait(value) {
  */
 function hasUsesVarOffsetTrait(expr) {
     return expr[UsesVarOffset] === true;
-}
-function hasUsesSlotIndexTrait(value) {
-    return value[UsesSlotIndex] === true;
-}
-function hasConstTrait(value) {
-    return value[HasConst] === true;
 }
 
 /**
@@ -9385,38 +9379,39 @@ function createAdvanceOp(delta, sourceSpan) {
 /**
  * Create a conditional op, which will display an embedded view according to a condtion.
  */
-function createConditionalOp(target, test, conditions, sourceSpan) {
+function createConditionalOp(target, targetSlot, test, conditions, sourceSpan) {
     return {
         kind: OpKind.Conditional,
         target,
+        targetSlot,
         test,
         conditions,
         processed: null,
         sourceSpan,
         contextValue: null,
         ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
     };
 }
-function createRepeaterOp(repeaterCreate, collection, sourceSpan) {
+function createRepeaterOp(repeaterCreate, targetSlot, collection, sourceSpan) {
     return {
         kind: OpKind.Repeater,
         target: repeaterCreate,
+        targetSlot,
         collection,
         sourceSpan,
         ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
     };
 }
 /**
  * Create an i18n expression op.
  */
-function createI18nExpressionOp(owner, expression, i18nPlaceholder, resolutionTime, sourceSpan) {
+function createI18nExpressionOp(owner, ownerSlot, expression, i18nPlaceholder, resolutionTime, sourceSpan) {
     return {
         kind: OpKind.I18nExpression,
         owner,
+        ownerSlot,
         target: owner,
         expression,
         i18nPlaceholder,
@@ -9430,13 +9425,13 @@ function createI18nExpressionOp(owner, expression, i18nPlaceholder, resolutionTi
 /**
  *Creates an op to apply i18n expression ops
  */
-function createI18nApplyOp(target, sourceSpan) {
+function createI18nApplyOp(target, targetSlot, sourceSpan) {
     return {
         kind: OpKind.I18nApply,
         target,
+        targetSlot,
         sourceSpan,
         ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
     };
 }
 /**
@@ -9451,7 +9446,7 @@ function createIcuUpdateOp(xref, sourceSpan) {
     };
 }
 
-var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+var _a, _b, _c, _d, _e, _f;
 /**
  * Check whether a given `o.Expression` is a logical IR expression type.
  */
@@ -9494,14 +9489,12 @@ class LexicalReadExpr extends ExpressionBase {
  * Runtime operation to retrieve the value of a local reference.
  */
 class ReferenceExpr extends ExpressionBase {
-    static { _a = UsesSlotIndex; }
-    constructor(target, offset) {
+    constructor(target, targetSlot, offset) {
         super();
         this.target = target;
+        this.targetSlot = targetSlot;
         this.offset = offset;
         this.kind = ExpressionKind.Reference;
-        this[_a] = true;
-        this.targetSlot = null;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9512,9 +9505,7 @@ class ReferenceExpr extends ExpressionBase {
     }
     transformInternalExpressions() { }
     clone() {
-        const expr = new ReferenceExpr(this.target, this.offset);
-        expr.targetSlot = this.targetSlot;
-        return expr;
+        return new ReferenceExpr(this.target, this.targetSlot, this.offset);
     }
 }
 /**
@@ -9692,12 +9683,12 @@ class ReadVariableExpr extends ExpressionBase {
     }
 }
 class PureFunctionExpr extends ExpressionBase {
-    static { _b = ConsumesVarsTrait, _c = UsesVarOffset; }
+    static { _a = ConsumesVarsTrait, _b = UsesVarOffset; }
     constructor(expression, args) {
         super();
         this.kind = ExpressionKind.PureFunctionExpr;
+        this[_a] = true;
         this[_b] = true;
-        this[_c] = true;
         this.varOffset = null;
         /**
          * Once extracted to the `ConstantPool`, a reference to the function which defines the computation
@@ -9761,17 +9752,16 @@ class PureFunctionParameterExpr extends ExpressionBase {
     }
 }
 class PipeBindingExpr extends ExpressionBase {
-    static { _d = UsesSlotIndex, _e = ConsumesVarsTrait, _f = UsesVarOffset; }
-    constructor(target, name, args) {
+    static { _c = ConsumesVarsTrait, _d = UsesVarOffset; }
+    constructor(target, targetSlot, name, args) {
         super();
         this.target = target;
+        this.targetSlot = targetSlot;
         this.name = name;
         this.args = args;
         this.kind = ExpressionKind.PipeBinding;
+        this[_c] = true;
         this[_d] = true;
-        this[_e] = true;
-        this[_f] = true;
-        this.targetSlot = null;
         this.varOffset = null;
     }
     visitExpression(visitor, context) {
@@ -9791,25 +9781,23 @@ class PipeBindingExpr extends ExpressionBase {
         }
     }
     clone() {
-        const r = new PipeBindingExpr(this.target, this.name, this.args.map(a => a.clone()));
-        r.targetSlot = this.targetSlot;
+        const r = new PipeBindingExpr(this.target, this.targetSlot, this.name, this.args.map(a => a.clone()));
         r.varOffset = this.varOffset;
         return r;
     }
 }
 class PipeBindingVariadicExpr extends ExpressionBase {
-    static { _g = UsesSlotIndex, _h = ConsumesVarsTrait, _j = UsesVarOffset; }
-    constructor(target, name, args, numArgs) {
+    static { _e = ConsumesVarsTrait, _f = UsesVarOffset; }
+    constructor(target, targetSlot, name, args, numArgs) {
         super();
         this.target = target;
+        this.targetSlot = targetSlot;
         this.name = name;
         this.args = args;
         this.numArgs = numArgs;
         this.kind = ExpressionKind.PipeBindingVariadic;
-        this[_g] = true;
-        this[_h] = true;
-        this[_j] = true;
-        this.targetSlot = null;
+        this[_e] = true;
+        this[_f] = true;
         this.varOffset = null;
     }
     visitExpression(visitor, context) {
@@ -9825,8 +9813,7 @@ class PipeBindingVariadicExpr extends ExpressionBase {
         this.args = transformExpressionsInExpression(this.args, transform, flags);
     }
     clone() {
-        const r = new PipeBindingVariadicExpr(this.target, this.name, this.args.clone(), this.numArgs);
-        r.targetSlot = this.targetSlot;
+        const r = new PipeBindingVariadicExpr(this.target, this.targetSlot, this.name, this.args.clone(), this.numArgs);
         r.varOffset = this.varOffset;
         return r;
     }
@@ -10020,26 +10007,20 @@ class SanitizerExpr extends ExpressionBase {
     transformInternalExpressions() { }
 }
 class SlotLiteralExpr extends ExpressionBase {
-    static { _k = UsesSlotIndex; }
-    constructor(target) {
+    constructor(slot) {
         super();
-        this.target = target;
+        this.slot = slot;
         this.kind = ExpressionKind.SlotLiteralExpr;
-        this[_k] = true;
-        this.targetSlot = null;
     }
     visitExpression(visitor, context) { }
     isEquivalent(e) {
-        return e instanceof SlotLiteralExpr && e.target === this.target &&
-            e.targetSlot === this.targetSlot;
+        return e instanceof SlotLiteralExpr && e.slot === this.slot;
     }
     isConstant() {
         return true;
     }
     clone() {
-        const copy = new SlotLiteralExpr(this.target);
-        copy.targetSlot = this.targetSlot;
-        return copy;
+        return new SlotLiteralExpr(this.slot);
     }
     transformInternalExpressions() { }
 }
@@ -10049,10 +10030,11 @@ class ConditionalCaseExpr extends ExpressionBase {
      * @param expr The expression to be tested for this case. Might be null, as in an `else` case.
      * @param target The Xref of the view to be displayed if this condition is true.
      */
-    constructor(expr, target, alias = null) {
+    constructor(expr, target, targetSlot, alias = null) {
         super();
         this.expr = expr;
         this.target = target;
+        this.targetSlot = targetSlot;
         this.alias = alias;
         this.kind = ExpressionKind.ConditionalCase;
     }
@@ -10068,7 +10050,7 @@ class ConditionalCaseExpr extends ExpressionBase {
         return true;
     }
     clone() {
-        return new ConditionalCaseExpr(this.expr, this.target);
+        return new ConditionalCaseExpr(this.expr, this.target, this.targetSlot);
     }
     transformInternalExpressions(transform, flags) {
         if (this.expr !== null) {
@@ -10101,6 +10083,31 @@ class DerivedRepeaterVarExpr extends ExpressionBase {
     }
     clone() {
         return new DerivedRepeaterVarExpr(this.xref, this.identity);
+    }
+}
+class ConstCollectedExpr extends ExpressionBase {
+    constructor(expr) {
+        super();
+        this.expr = expr;
+        this.kind = ExpressionKind.ConstCollected;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.expr = transform(this.expr, flags);
+    }
+    visitExpression(visitor, context) {
+        this.expr.visitExpression(visitor, context);
+    }
+    isEquivalent(e) {
+        if (!(e instanceof ConstCollectedExpr)) {
+            return false;
+        }
+        return this.expr.isEquivalent(e.expr);
+    }
+    isConstant() {
+        return this.expr.isConstant();
+    }
+    clone() {
+        return new ConstCollectedExpr(this.expr);
     }
 }
 /**
@@ -10200,13 +10207,20 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Repeater:
             op.collection = transformExpressionsInExpression(op.collection, transform, flags);
             break;
+        case OpKind.Defer:
+            if (op.loadingConfig !== null) {
+                op.loadingConfig = transformExpressionsInExpression(op.loadingConfig, transform, flags);
+            }
+            if (op.placeholderConfig !== null) {
+                op.placeholderConfig =
+                    transformExpressionsInExpression(op.placeholderConfig, transform, flags);
+            }
+            break;
         case OpKind.Advance:
         case OpKind.Container:
         case OpKind.ContainerEnd:
         case OpKind.ContainerStart:
-        case OpKind.Defer:
         case OpKind.DeferOn:
-        case OpKind.DeferSecondaryBlock:
         case OpKind.DisableBindings:
         case OpKind.Element:
         case OpKind.ElementEnd:
@@ -10596,6 +10610,12 @@ class OpList {
     }
 }
 
+class SlotHandle {
+    constructor() {
+        this.slot = null;
+    }
+}
+
 /**
  * The set of OpKinds that represent the creation of an element or container
  */
@@ -10617,6 +10637,7 @@ function createElementStartOp(tag, xref, namespace, i18nPlaceholder, sourceSpan)
         kind: OpKind.ElementStart,
         xref,
         tag,
+        slot: new SlotHandle(),
         attributes: null,
         localRefs: [],
         nonBindable: false,
@@ -10636,6 +10657,7 @@ function createTemplateOp(xref, tag, namespace, generatedInBlock, i18nPlaceholde
         xref,
         attributes: null,
         tag,
+        slot: new SlotHandle(),
         block: generatedInBlock,
         decls: null,
         vars: null,
@@ -10653,6 +10675,7 @@ function createRepeaterCreateOp(primaryView, emptyView, track, varNames, sourceS
         kind: OpKind.RepeaterCreate,
         attributes: null,
         xref: primaryView,
+        slot: new SlotHandle(),
         emptyView,
         track,
         trackByFn: null,
@@ -10702,6 +10725,7 @@ function createTextOp(xref, initialValue, sourceSpan) {
     return {
         kind: OpKind.Text,
         xref,
+        slot: new SlotHandle(),
         initialValue,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
@@ -10711,10 +10735,11 @@ function createTextOp(xref, initialValue, sourceSpan) {
 /**
  * Create a `ListenerOp`. Host bindings reuse all the listener logic.
  */
-function createListenerOp(target, name, tag, animationPhase, hostListener, sourceSpan) {
+function createListenerOp(target, targetSlot, name, tag, animationPhase, hostListener, sourceSpan) {
     return {
         kind: OpKind.Listener,
         target,
+        targetSlot,
         tag,
         hostListener,
         name,
@@ -10725,27 +10750,18 @@ function createListenerOp(target, name, tag, animationPhase, hostListener, sourc
         animationPhase: animationPhase,
         sourceSpan,
         ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
     };
 }
-function createPipeOp(xref, name) {
+function createPipeOp(xref, slot, name) {
     return {
         kind: OpKind.Pipe,
         xref,
+        slot,
         name,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
     };
 }
-/**
- * Whether the active namespace is HTML, MathML, or SVG mode.
- */
-var Namespace;
-(function (Namespace) {
-    Namespace[Namespace["HTML"] = 0] = "HTML";
-    Namespace[Namespace["SVG"] = 1] = "SVG";
-    Namespace[Namespace["Math"] = 2] = "Math";
-})(Namespace || (Namespace = {}));
 function createNamespaceOp(namespace) {
     return {
         kind: OpKind.Namespace,
@@ -10764,6 +10780,7 @@ function createProjectionOp(xref, selector, sourceSpan) {
     return {
         kind: OpKind.Projection,
         xref,
+        slot: new SlotHandle(),
         selector,
         projectionSlotIndex: 0,
         attributes: [],
@@ -10786,40 +10803,38 @@ function createExtractedAttributeOp(target, bindingKind, name, expression) {
         ...NEW_OP,
     };
 }
-function createDeferOp(xref, main, sourceSpan) {
+function createDeferOp(xref, main, mainSlot, sourceSpan) {
     return {
         kind: OpKind.Defer,
         xref,
-        target: main,
-        loading: null,
-        placeholder: null,
-        error: null,
+        slot: new SlotHandle(),
+        mainView: main,
+        mainSlot,
+        loadingView: null,
+        loadingSlot: null,
+        loadingConfig: null,
+        loadingMinimumTime: null,
+        loadingAfterTime: null,
+        placeholderView: null,
+        placeholderSlot: null,
+        placeholderConfig: null,
+        placeholderMinimumTime: null,
+        errorView: null,
+        errorSlot: null,
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
-        ...TRAIT_USES_SLOT_INDEX,
+        numSlotsUsed: 2,
     };
 }
-function createDeferSecondaryOp(deferOp, secondaryView, secondaryBlockKind) {
-    return {
-        kind: OpKind.DeferSecondaryBlock,
-        deferOp,
-        target: secondaryView,
-        secondaryBlockKind,
-        constValue: null,
-        makeExpression: literalOrArrayLiteral$1,
-        ...NEW_OP,
-        ...TRAIT_USES_SLOT_INDEX,
-        ...TRAIT_HAS_CONST,
-    };
-}
-function createDeferOnOp(xref, sourceSpan) {
+function createDeferOnOp(defer, trigger, prefetch, sourceSpan) {
     return {
         kind: OpKind.DeferOn,
-        xref,
+        defer,
+        trigger,
+        prefetch,
         sourceSpan,
         ...NEW_OP,
-        ...TRAIT_CONSUMES_SLOT,
     };
 }
 /**
@@ -10846,6 +10861,7 @@ function createI18nStartOp(xref, message, root) {
     return {
         kind: OpKind.I18nStart,
         xref,
+        slot: new SlotHandle(),
         root: root ?? xref,
         message,
         messageIndex: null,
@@ -11115,7 +11131,7 @@ function phaseApplyI18nExpressions(job) {
             // Only add apply after expressions that are not followed by more expressions.
             if (op.kind === OpKind.I18nExpression && needsApplication(op)) {
                 // TODO: what should be the source span for the apply op?
-                OpList.insertAfter(createI18nApplyOp(op.owner, null), op);
+                OpList.insertAfter(createI18nApplyOp(op.owner, op.ownerSlot, null), op);
             }
         }
     }
@@ -11447,8 +11463,8 @@ function phaseConditionals(job) {
             // Any case with a `null` condition is `default`. If one exists, default to it instead.
             const defaultCase = op.conditions.findIndex((cond) => cond.expr === null);
             if (defaultCase >= 0) {
-                const xref = op.conditions.splice(defaultCase, 1)[0].target;
-                test = new SlotLiteralExpr(xref);
+                const slot = op.conditions.splice(defaultCase, 1)[0].targetSlot;
+                test = new SlotLiteralExpr(slot);
             }
             else {
                 // By default, a switch evaluates to `-1`, causing no template to be displayed.
@@ -11474,7 +11490,7 @@ function phaseConditionals(job) {
                         new AssignTemporaryExpr(conditionalCase.expr, caseExpressionTemporaryXref);
                     op.contextValue = new ReadTemporaryExpr(caseExpressionTemporaryXref);
                 }
-                test = new ConditionalExpr(conditionalCase.expr, new SlotLiteralExpr(conditionalCase.target), test);
+                test = new ConditionalExpr(conditionalCase.expr, new SlotLiteralExpr(conditionalCase.targetSlot), test);
             }
             // Save the resulting aggregate Joost-expression.
             op.processed = test;
@@ -11565,7 +11581,7 @@ function literalOrArrayLiteral(value) {
     if (Array.isArray(value)) {
         return literalArr(value.map(literalOrArrayLiteral));
     }
-    return literal(value, INFERRED_TYPE);
+    return literal(value);
 }
 
 /**
@@ -12049,10 +12065,10 @@ function phaseGenerateAdvance(job) {
             if (!hasConsumesSlotTrait(op)) {
                 continue;
             }
-            else if (op.slot === null) {
+            else if (op.slot.slot === null) {
                 throw new Error(`AssertionError: expected slots to have been allocated before generating advance() calls`);
             }
-            slotMap.set(op.xref, op.slot);
+            slotMap.set(op.xref, op.slot.slot);
         }
         // Next, step through the update operations and generate `ir.AdvanceOp`s as required to ensure
         // the runtime's implicit slot counter will be set to the correct slot before executing each
@@ -12201,6 +12217,7 @@ function getScopeForView(view, parent) {
                     scope.references.push({
                         name: op.localRefs[offset].name,
                         targetId: op.xref,
+                        targetSlot: op.slot,
                         offset,
                         variable: {
                             kind: SemanticVariableKind.Identifier,
@@ -12242,7 +12259,7 @@ function generateVariablesInScopeForView(view, scope) {
     }
     // Add variables for all local references declared for elements in this scope.
     for (const ref of scope.references) {
-        newOps.push(createVariableOp(view.job.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.offset), VariableFlags.None));
+        newOps.push(createVariableOp(view.job.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.targetSlot, ref.offset), VariableFlags.None));
     }
     if (scope.parent !== null) {
         // Recursively add variables from the parent scope.
@@ -12251,28 +12268,15 @@ function generateVariablesInScopeForView(view, scope) {
     return newOps;
 }
 
-/**
- * Looks for the HasConst trait, indicating that an op or expression has some data which
- * should be collected into the constant array. Capable of collecting either a single literal value,
- * or an array literal.
- */
-function phaseConstTraitCollection(job) {
-    const collectGlobalConsts = (e) => {
-        if (e instanceof ExpressionBase && hasConstTrait(e)) {
-            // TODO: Figure out how to make this type narrowing work.
-            const ea = e;
-            if (ea.constValue !== null) {
-                ea.constIndex = job.addConst(ea.constValue);
-            }
-        }
-        return e;
-    };
+function phaseConstExpressionCollection(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
-            if (hasConstTrait(op) && op.constValue !== null) {
-                op.constIndex = job.addConst(op.makeExpression(op.constValue));
-            }
-            transformExpressionsInOp(op, collectGlobalConsts, VisitorContextFlag.None);
+            transformExpressionsInOp(op, expr => {
+                if (!(expr instanceof ConstCollectedExpr)) {
+                    return expr;
+                }
+                return literal(job.addConst(expr.expr));
+            }, VisitorContextFlag.None);
         }
     }
 }
@@ -19372,18 +19376,21 @@ function phaseI18nTextExtraction(job) {
         // Remove all text nodes within i18n blocks, their content is already captured in the i18n
         // message.
         let currentI18nId = null;
+        let currentI18nSlot = null;
         const textNodes = new Map();
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
                     currentI18nId = op.xref;
+                    currentI18nSlot = op.slot;
                     break;
                 case OpKind.I18nEnd:
                     currentI18nId = null;
+                    currentI18nSlot = null;
                     break;
                 case OpKind.Text:
-                    if (currentI18nId !== null) {
-                        textNodes.set(op.xref, currentI18nId);
+                    if (currentI18nId !== null && currentI18nSlot !== null) {
+                        textNodes.set(op.xref, { xref: currentI18nId, slot: currentI18nSlot });
                         OpList.remove(op);
                     }
                     break;
@@ -19397,12 +19404,12 @@ function phaseI18nTextExtraction(job) {
                     if (!textNodes.has(op.target)) {
                         continue;
                     }
-                    const i18nBlockId = textNodes.get(op.target);
+                    const i18nBlock = textNodes.get(op.target);
                     const ops = [];
                     for (let i = 0; i < op.interpolation.expressions.length; i++) {
                         const expr = op.interpolation.expressions[i];
                         const placeholder = op.i18nPlaceholders[i];
-                        ops.push(createI18nExpressionOp(i18nBlockId, expr, placeholder.name, I18nParamResolutionTime.Creation, expr.sourceSpan ?? op.sourceSpan));
+                        ops.push(createI18nExpressionOp(i18nBlock.xref, i18nBlock.slot, expr, placeholder.name, I18nParamResolutionTime.Creation, expr.sourceSpan ?? op.sourceSpan));
                     }
                     if (ops.length > 0) {
                         // ops.push(ir.createI18nApplyOp(i18nBlockId, op.i18nPlaceholders, op.sourceSpan));
@@ -19422,19 +19429,22 @@ function phaseIcuExtraction(job) {
         // Build a map of ICU to the i18n block they belong to, then remove the `Icu` ops.
         const icus = new Map();
         let currentI18nId = null;
+        let currentI18nSlot = null;
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
                     currentI18nId = op.xref;
+                    currentI18nSlot = op.slot;
                     break;
                 case OpKind.I18nEnd:
                     currentI18nId = null;
+                    currentI18nSlot = null;
                     break;
                 case OpKind.Icu:
                     if (currentI18nId === null) {
                         throw Error('Unexpected ICU outside of an i18n block.');
                     }
-                    icus.set(op.xref, { message: op.message, i18nBlockId: currentI18nId });
+                    icus.set(op.xref, { message: op.message, i18nBlockId: currentI18nId, i18nBlockSlot: currentI18nSlot });
                     OpList.remove(op);
                     break;
             }
@@ -19443,7 +19453,7 @@ function phaseIcuExtraction(job) {
         for (const op of unit.update) {
             switch (op.kind) {
                 case OpKind.IcuUpdate:
-                    const { message, i18nBlockId } = icus.get(op.xref);
+                    const { message, i18nBlockId, i18nBlockSlot } = icus.get(op.xref);
                     const icuNode = message.nodes.find((n) => n instanceof Icu);
                     if (icuNode === undefined) {
                         throw Error('Could not find ICU in i18n AST');
@@ -19451,7 +19461,7 @@ function phaseIcuExtraction(job) {
                     if (icuNode.expressionPlaceholder === undefined) {
                         throw Error('ICU is missing an i18n placeholder');
                     }
-                    OpList.replace(op, createI18nExpressionOp(i18nBlockId, new LexicalReadExpr(icuNode.expression), icuNode.expressionPlaceholder, I18nParamResolutionTime.Postproccessing, null));
+                    OpList.replace(op, createI18nExpressionOp(i18nBlockId, i18nBlockSlot, new LexicalReadExpr(icuNode.expression), icuNode.expressionPlaceholder, I18nParamResolutionTime.Postproccessing, null));
                     break;
             }
         }
@@ -19617,7 +19627,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.handlerFnName !== null) {
                     break;
                 }
-                if (!op.hostListener && op.targetSlot === null) {
+                if (!op.hostListener && op.targetSlot.slot === null) {
                     throw new Error(`Expected a slot to be assigned`);
                 }
                 let animation = '';
@@ -19629,7 +19639,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                     op.handlerFnName = `${baseName}_${animation}${op.name}_HostBindingHandler`;
                 }
                 else {
-                    op.handlerFnName = `${unit.fnName}_${op.tag.replace('-', '_')}_${animation}${op.name}_${op.targetSlot}_listener`;
+                    op.handlerFnName = `${unit.fnName}_${op.tag.replace('-', '_')}_${animation}${op.name}_${op.targetSlot.slot}_listener`;
                 }
                 op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
                 break;
@@ -19640,28 +19650,28 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
-                if (op.slot === null) {
+                if (op.slot.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
                 if (op.emptyView !== null) {
                     const emptyView = unit.job.views.get(op.emptyView);
                     // Repeater empty view function is at slot +2 (metadata is in the first slot).
-                    addNamesToView(emptyView, `${baseName}_${prefixWithNamespace(`${op.tag}Empty`, op.namespace)}_${op.slot + 2}`, state, compatibility);
+                    addNamesToView(emptyView, `${baseName}_${prefixWithNamespace(`${op.tag}Empty`, op.namespace)}_${op.slot.slot + 2}`, state, compatibility);
                 }
                 const repeaterToken = op.tag === null ? '' : '_' + prefixWithNamespace(op.tag, op.namespace);
                 // Repeater primary view function is at slot +1 (metadata is in the first slot).
-                addNamesToView(unit.job.views.get(op.xref), `${baseName}${repeaterToken}_${op.slot + 1}`, state, compatibility);
+                addNamesToView(unit.job.views.get(op.xref), `${baseName}${repeaterToken}_${op.slot.slot + 1}`, state, compatibility);
                 break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                if (op.slot === null) {
+                if (op.slot.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
                 const tagToken = op.tag === null ? '' : '_' + prefixWithNamespace(op.tag, op.namespace);
-                addNamesToView(childView, `${baseName}${tagToken}_${op.slot}`, state, compatibility);
+                addNamesToView(childView, `${baseName}${tagToken}_${op.slot.slot}`, state, compatibility);
                 break;
             case OpKind.StyleProp:
                 op.name = normalizeStylePropName(op.name);
@@ -20040,21 +20050,19 @@ function processPipeBindingsInView(unit) {
             if (flags & VisitorContextFlag.InChildOperation) {
                 throw new Error(`AssertionError: pipe bindings should not appear in child expressions`);
             }
-            // This update op must be associated with a create op that consumes a slot (either by
-            // depending on the ambient context of `target`, or merely referencing that create op via
-            // `target`).
-            if (!hasDependsOnSlotContextTrait(updateOp) &&
-                !hasUsesSlotIndexTrait(updateOp)) {
-                throw new Error(`AssertionError: pipe binding associated with non-slot operation ${OpKind[updateOp.kind]}`);
-            }
             if (unit.job.compatibility) {
+                // TODO: We can delete this cast and check once compatibility mode is removed.
+                const slotHandle = updateOp.target;
+                if (slotHandle == undefined) {
+                    throw new Error(`AssertionError: expected slot handle to be assigned for pipe creation`);
+                }
                 addPipeToCreationBlock(unit, updateOp.target, expr);
             }
             else {
                 // When not in compatibility mode, we just add the pipe to the end of the create block. This
                 // is not only simpler and faster, but allows more chaining opportunities for other
                 // instructions.
-                unit.create.push(createPipeOp(expr.target, expr.name));
+                unit.create.push(createPipeOp(expr.target, expr.targetSlot, expr.name));
             }
         });
     }
@@ -20075,7 +20083,7 @@ function addPipeToCreationBlock(unit, afterTargetXref, binding) {
         while (op.next.kind === OpKind.Pipe) {
             op = op.next;
         }
-        const pipe = createPipeOp(binding.target, binding.name);
+        const pipe = createPipeOp(binding.target, binding.targetSlot, binding.name);
         OpList.insertBefore(pipe, op.next);
         // This completes adding the pipe to the creation block.
         return;
@@ -20095,7 +20103,7 @@ function phasePipeVariadic(job) {
                 if (expr.args.length <= 4) {
                     return expr;
                 }
-                return new PipeBindingVariadicExpr(expr.target, expr.name, literalArr(expr.args), expr.args.length);
+                return new PipeBindingVariadicExpr(expr.target, expr.targetSlot, expr.name, literalArr(expr.args), expr.args.length);
             }, VisitorContextFlag.None);
         }
     }
@@ -20408,7 +20416,7 @@ function text(slot, initialValue, sourceSpan) {
     }
     return call(Identifiers.text, args, sourceSpan);
 }
-function defer(selfSlot, primarySlot, dependencyResolverFn, loadingSlot, placeholderSlot, errorSlot, loadingConfigIndex, placeholderConfigIndex, sourceSpan) {
+function defer(selfSlot, primarySlot, dependencyResolverFn, loadingSlot, placeholderSlot, errorSlot, loadingConfig, placeholderConfig, enableTimerScheduling, sourceSpan) {
     const args = [
         literal(selfSlot),
         literal(primarySlot),
@@ -20416,16 +20424,40 @@ function defer(selfSlot, primarySlot, dependencyResolverFn, loadingSlot, placeho
         literal(loadingSlot),
         literal(placeholderSlot),
         literal(errorSlot),
-        literal(loadingConfigIndex),
-        literal(placeholderConfigIndex),
+        loadingConfig ?? literal(null),
+        placeholderConfig ?? literal(null),
+        enableTimerScheduling ? importExpr(Identifiers.deferEnableTimerScheduling) : literal(null),
     ];
-    while (args[args.length - 1].value === null) {
+    let expr;
+    while ((expr = args[args.length - 1]) !== null && expr instanceof LiteralExpr &&
+        expr.value === null) {
         args.pop();
     }
     return call(Identifiers.defer, args, sourceSpan);
 }
-function deferOn(sourceSpan) {
-    return call(Identifiers.deferOnIdle, [], sourceSpan);
+const deferTriggerToR3TriggerInstructionsMap = new Map([
+    [DeferTriggerKind.Idle, [Identifiers.deferOnIdle, Identifiers.deferPrefetchOnIdle]],
+    [
+        DeferTriggerKind.Immediate,
+        [Identifiers.deferOnImmediate, Identifiers.deferPrefetchOnImmediate]
+    ],
+    [DeferTriggerKind.Timer, [Identifiers.deferOnTimer, Identifiers.deferPrefetchOnTimer]],
+    [DeferTriggerKind.Hover, [Identifiers.deferOnHover, Identifiers.deferPrefetchOnHover]],
+    [
+        DeferTriggerKind.Interaction,
+        [Identifiers.deferOnInteraction, Identifiers.deferPrefetchOnInteraction]
+    ],
+    [
+        DeferTriggerKind.Viewport, [Identifiers.deferOnViewport, Identifiers.deferPrefetchOnViewport]
+    ],
+]);
+function deferOn(trigger, args, prefetch, sourceSpan) {
+    const instructions = deferTriggerToR3TriggerInstructionsMap.get(trigger);
+    if (instructions === undefined) {
+        throw new Error(`Unable to determine instruction for trigger ${trigger}`);
+    }
+    const instructionToCall = prefetch ? instructions[1] : instructions[0];
+    return call(instructionToCall, args.map(a => literal(a)), sourceSpan);
 }
 function projectionDef(def) {
     return call(Identifiers.projectionDef, def ? [def] : [], null);
@@ -20835,41 +20867,41 @@ function reifyCreateOperations(unit, ops) {
         transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
         switch (op.kind) {
             case OpKind.Text:
-                OpList.replace(op, text(op.slot, op.initialValue, op.sourceSpan));
+                OpList.replace(op, text(op.slot.slot, op.initialValue, op.sourceSpan));
                 break;
             case OpKind.ElementStart:
-                OpList.replace(op, elementStart(op.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, elementStart(op.slot.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.Element:
-                OpList.replace(op, element(op.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, element(op.slot.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.ElementEnd:
                 OpList.replace(op, elementEnd(op.sourceSpan));
                 break;
             case OpKind.ContainerStart:
-                OpList.replace(op, elementContainerStart(op.slot, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, elementContainerStart(op.slot.slot, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.Container:
-                OpList.replace(op, elementContainer(op.slot, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, elementContainer(op.slot.slot, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.ContainerEnd:
                 OpList.replace(op, elementContainerEnd());
                 break;
             case OpKind.I18nStart:
-                OpList.replace(op, i18nStart(op.slot, op.messageIndex, op.subTemplateIndex));
+                OpList.replace(op, i18nStart(op.slot.slot, op.messageIndex, op.subTemplateIndex));
                 break;
             case OpKind.I18nEnd:
                 OpList.replace(op, i18nEnd());
                 break;
             case OpKind.I18n:
-                OpList.replace(op, i18n(op.slot, op.messageIndex, op.subTemplateIndex));
+                OpList.replace(op, i18n(op.slot.slot, op.messageIndex, op.subTemplateIndex));
                 break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                OpList.replace(op, template(op.slot, variable(childView.fnName), childView.decls, childView.vars, op.block ? null : op.tag, op.attributes, op.sourceSpan));
+                OpList.replace(op, template(op.slot.slot, variable(childView.fnName), childView.decls, childView.vars, op.block ? null : op.tag, op.attributes, op.sourceSpan));
                 break;
             case OpKind.DisableBindings:
                 OpList.replace(op, disableBindings());
@@ -20878,7 +20910,7 @@ function reifyCreateOperations(unit, ops) {
                 OpList.replace(op, enableBindings());
                 break;
             case OpKind.Pipe:
-                OpList.replace(op, pipe(op.slot, op.name));
+                OpList.replace(op, pipe(op.slot.slot, op.name));
                 break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
@@ -20907,25 +20939,45 @@ function reifyCreateOperations(unit, ops) {
                 }
                 break;
             case OpKind.Defer:
-                OpList.replace(op, defer(op.slot, op.targetSlot, null, op.loading && op.loading.targetSlot, op.placeholder && op.placeholder.targetSlot, op.error && op.error.targetSlot, op.loading?.constIndex ?? null, op.placeholder?.constIndex ?? null, op.sourceSpan));
-                break;
-            case OpKind.DeferSecondaryBlock:
-                OpList.remove(op);
+                const timerScheduling = !!op.loadingMinimumTime || !!op.loadingAfterTime || !!op.placeholderMinimumTime;
+                OpList.replace(op, defer(op.slot.slot, op.mainSlot.slot, null, op.loadingSlot?.slot ?? null, op.placeholderSlot?.slot ?? null, op.errorSlot?.slot ?? null, op.loadingConfig, op.placeholderConfig, timerScheduling, op.sourceSpan));
                 break;
             case OpKind.DeferOn:
-                OpList.replace(op, deferOn(op.sourceSpan));
+                let args = [];
+                switch (op.trigger.kind) {
+                    case DeferTriggerKind.Idle:
+                    case DeferTriggerKind.Immediate:
+                        break;
+                    case DeferTriggerKind.Timer:
+                        args = [op.trigger.delay];
+                        break;
+                    case DeferTriggerKind.Interaction:
+                    case DeferTriggerKind.Hover:
+                    case DeferTriggerKind.Viewport:
+                        if (op.trigger.targetSlot?.slot == null || op.trigger.targetSlotViewSteps === null) {
+                            throw new Error(`Slot or view steps not set in trigger reification for trigger kind ${op.trigger.kind}`);
+                        }
+                        args = [op.trigger.targetSlot.slot];
+                        if (op.trigger.targetSlotViewSteps !== 0) {
+                            args.push(op.trigger.targetSlotViewSteps);
+                        }
+                        break;
+                    default:
+                        throw new Error(`AssertionError: Unsupported reification of defer trigger kind ${op.trigger.kind}`);
+                }
+                OpList.replace(op, deferOn(op.trigger.kind, args, op.prefetch, op.sourceSpan));
                 break;
             case OpKind.ProjectionDef:
                 OpList.replace(op, projectionDef(op.def));
                 break;
             case OpKind.Projection:
-                if (op.slot === null) {
+                if (op.slot.slot === null) {
                     throw new Error('No slot was assigned for project instruction');
                 }
-                OpList.replace(op, projection(op.slot, op.projectionSlotIndex, op.attributes, op.sourceSpan));
+                OpList.replace(op, projection(op.slot.slot, op.projectionSlotIndex, op.attributes, op.sourceSpan));
                 break;
             case OpKind.RepeaterCreate:
-                if (op.slot === null) {
+                if (op.slot.slot === null) {
                     throw new Error('No slot was assigned for repeater instruction');
                 }
                 if (!(unit instanceof ViewCompilationUnit)) {
@@ -20950,7 +21002,7 @@ function reifyCreateOperations(unit, ops) {
                     emptyDecls = emptyView.decls;
                     emptyVars = emptyView.vars;
                 }
-                OpList.replace(op, repeaterCreate(op.slot, repeaterView.fnName, op.decls, op.vars, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.sourceSpan));
+                OpList.replace(op, repeaterCreate(op.slot.slot, repeaterView.fnName, op.decls, op.vars, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.sourceSpan));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -21006,7 +21058,7 @@ function reifyUpdateOperations(_unit, ops) {
                 OpList.replace(op, i18nExp(op.expression, op.sourceSpan));
                 break;
             case OpKind.I18nApply:
-                OpList.replace(op, i18nApply(op.targetSlot, op.sourceSpan));
+                OpList.replace(op, i18nApply(op.targetSlot.slot, op.sourceSpan));
                 break;
             case OpKind.InterpolateText:
                 OpList.replace(op, textInterpolate(op.interpolation.strings, op.interpolation.expressions, op.sourceSpan));
@@ -21042,13 +21094,13 @@ function reifyUpdateOperations(_unit, ops) {
                 if (op.processed === null) {
                     throw new Error(`Conditional test was not set.`);
                 }
-                if (op.targetSlot === null) {
+                if (op.targetSlot.slot === null) {
                     throw new Error(`Conditional slot was not set.`);
                 }
-                OpList.replace(op, conditional(op.targetSlot, op.processed, op.contextValue, op.sourceSpan));
+                OpList.replace(op, conditional(op.targetSlot.slot, op.processed, op.contextValue, op.sourceSpan));
                 break;
             case OpKind.Repeater:
-                OpList.replace(op, repeater(op.targetSlot, op.collection, op.sourceSpan));
+                OpList.replace(op, repeater(op.targetSlot.slot, op.collection, op.sourceSpan));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -21066,7 +21118,7 @@ function reifyIrExpression(expr) {
         case ExpressionKind.NextContext:
             return nextContext(expr.steps);
         case ExpressionKind.Reference:
-            return reference(expr.targetSlot + 1 + expr.offset);
+            return reference(expr.targetSlot.slot + 1 + expr.offset);
         case ExpressionKind.LexicalRead:
             throw new Error(`AssertionError: unresolved LexicalRead of ${expr.name}`);
         case ExpressionKind.RestoreView:
@@ -21101,13 +21153,13 @@ function reifyIrExpression(expr) {
         case ExpressionKind.PureFunctionParameterExpr:
             throw new Error(`AssertionError: expected PureFunctionParameterExpr to have been extracted`);
         case ExpressionKind.PipeBinding:
-            return pipeBind(expr.targetSlot, expr.varOffset, expr.args);
+            return pipeBind(expr.targetSlot.slot, expr.varOffset, expr.args);
         case ExpressionKind.PipeBindingVariadic:
-            return pipeBindV(expr.targetSlot, expr.varOffset, expr.args);
+            return pipeBindV(expr.targetSlot.slot, expr.varOffset, expr.args);
         case ExpressionKind.SanitizerExpr:
             return importExpr(sanitizerIdentifierMap.get(expr.fn));
         case ExpressionKind.SlotLiteralExpr:
-            return literal(expr.targetSlot);
+            return literal(expr.slot.slot);
         default:
             throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
     }
@@ -21310,7 +21362,7 @@ function phaseResolveI18nElementPlaceholders(job) {
                         if (closeName === '') {
                             flags |= I18nParamValueFlags.CloseTag;
                         }
-                        addParam(currentOps.extractedMessage.params, startName, op.slot, currentOps.i18n.subTemplateIndex, flags);
+                        addParam(currentOps.extractedMessage.params, startName, op.slot.slot, currentOps.i18n.subTemplateIndex, flags);
                     }
                     break;
                 case OpKind.ElementEnd:
@@ -21324,7 +21376,7 @@ function phaseResolveI18nElementPlaceholders(job) {
                         const { closeName } = startOp.i18nPlaceholder;
                         // Self-closing tags don't have a closing tag placeholder.
                         if (closeName !== '') {
-                            addParam(currentOps.extractedMessage.params, closeName, startOp.slot, currentOps.i18n.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
+                            addParam(currentOps.extractedMessage.params, closeName, startOp.slot.slot, currentOps.i18n.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
                         }
                     }
                     break;
@@ -21336,8 +21388,8 @@ function phaseResolveI18nElementPlaceholders(job) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
                         const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentOps.i18n, op);
-                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.startName, op.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
-                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.closeName, op.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
+                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.startName, op.slot.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
+                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.closeName, op.slot.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
                     }
                     break;
             }
@@ -21631,9 +21683,9 @@ function phaseSlotAllocation(job) {
                 continue;
             }
             // Assign slots to this declaration starting at the current `slotCount`.
-            op.slot = slotCount;
+            op.slot.slot = slotCount;
             // And track its assigned slot in the `slotMap`.
-            slotMap.set(op.xref, op.slot);
+            slotMap.set(op.xref, op.slot.slot);
             // Each declaration may use more than 1 slot, so increment `slotCount` to reserve the number
             // of slots required.
             slotCount += op.numSlotsUsed;
@@ -21655,31 +21707,6 @@ function phaseSlotAllocation(job) {
                 const childView = job.views.get(op.xref);
                 op.decls = childView.decls;
             }
-            if (hasUsesSlotIndexTrait(op) && op.target !== null && op.targetSlot === null) {
-                if (!slotMap.has(op.target)) {
-                    // We do expect to find a slot allocated for everything which might be referenced.
-                    throw new Error(`AssertionError: no slot allocated for ${OpKind[op.kind]} target ${op.target}`);
-                }
-                op.targetSlot = slotMap.get(op.target);
-            }
-            // Process all `ir.Expression`s within this view, and look for `usesSlotIndexExprTrait`.
-            visitExpressionsInOp(op, expr => {
-                if (!isIrExpression(expr)) {
-                    return;
-                }
-                if (!hasUsesSlotIndexTrait(expr) || expr.targetSlot !== null) {
-                    return;
-                }
-                // The `UsesSlotIndexExprTrait` indicates that this expression references something declared
-                // in this component template by its slot index. Use the `target` `ir.XrefId` to find the
-                // allocated slot for that declaration in `slotMap`.
-                if (!slotMap.has(expr.target)) {
-                    // We do expect to find a slot allocated for everything which might be referenced.
-                    throw new Error(`AssertionError: no slot allocated for ${expr.constructor.name} target ${expr.target}`);
-                }
-                // Record the allocated slot on the expression.
-                expr.targetSlot = slotMap.get(expr.target);
-            });
         }
     }
 }
@@ -22115,7 +22142,7 @@ var Fence;
      * Note that all `ContextWrite` fences are implicitly `ContextRead` fences as operations which
      * change the view context do so based on the current one.
      */
-    Fence[Fence["ViewContextWrite"] = 3] = "ViewContextWrite";
+    Fence[Fence["ViewContextWrite"] = 2] = "ViewContextWrite";
     /**
      * Indicates that a call is required for its side-effects, even if nothing reads its result.
      *
@@ -22295,9 +22322,9 @@ function optimizeVariablesInOpList(ops, compatibility) {
 function fencesForIrExpression(expr) {
     switch (expr.kind) {
         case ExpressionKind.NextContext:
-            return Fence.ViewContextWrite;
+            return Fence.ViewContextRead | Fence.ViewContextWrite;
         case ExpressionKind.RestoreView:
-            return Fence.ViewContextWrite | Fence.SideEffectful;
+            return Fence.ViewContextRead | Fence.ViewContextWrite | Fence.SideEffectful;
         case ExpressionKind.Reference:
             return Fence.ViewContextRead;
         default:
@@ -22492,6 +22519,102 @@ function phaseWrapIcus(job) {
     }
 }
 
+function phaseDeferResolveTargets(job) {
+    const scopes = new Map();
+    function getScopeForView(view) {
+        if (scopes.has(view.xref)) {
+            return scopes.get(view.xref);
+        }
+        const scope = new Scope$1();
+        for (const op of view.create) {
+            // add everything that can be referenced.
+            if (!isElementOrContainerOp(op) || op.localRefs === null) {
+                continue;
+            }
+            if (!Array.isArray(op.localRefs)) {
+                throw new Error('LocalRefs were already processed, but were needed to resolve defer targets.');
+            }
+            for (const ref of op.localRefs) {
+                if (ref.target !== '') {
+                    continue;
+                }
+                scope.targets.set(ref.name, { xref: op.xref, slot: op.slot });
+            }
+        }
+        scopes.set(view.xref, scope);
+        return scope;
+    }
+    function resolveTrigger(deferOwnerView, op, placeholderView) {
+        switch (op.trigger.kind) {
+            case DeferTriggerKind.Idle:
+            case DeferTriggerKind.Immediate:
+            case DeferTriggerKind.Timer:
+                return;
+            case DeferTriggerKind.Hover:
+            case DeferTriggerKind.Interaction:
+            case DeferTriggerKind.Viewport:
+                if (op.trigger.targetName === null) {
+                    return;
+                }
+                let view = placeholderView !== null ? job.views.get(placeholderView) : deferOwnerView;
+                let step = placeholderView !== null ? -1 : 0;
+                while (view !== null) {
+                    const scope = getScopeForView(view);
+                    if (scope.targets.has(op.trigger.targetName)) {
+                        const { xref, slot } = scope.targets.get(op.trigger.targetName);
+                        op.trigger.targetXref = xref;
+                        op.trigger.targetView = view.xref;
+                        op.trigger.targetSlotViewSteps = step;
+                        op.trigger.targetSlot = slot;
+                        return;
+                    }
+                    view = view.parent !== null ? job.views.get(view.parent) : null;
+                    step++;
+                }
+                break;
+            default:
+                throw new Error(`Trigger kind ${op.trigger.kind} not handled`);
+        }
+    }
+    // Find the defer ops, and assign the data about their targets.
+    for (const unit of job.units) {
+        const defers = new Map();
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.Defer:
+                    defers.set(op.xref, op);
+                    break;
+                case OpKind.DeferOn:
+                    const deferOp = defers.get(op.defer);
+                    resolveTrigger(unit, op, deferOp.placeholderView);
+                    break;
+            }
+        }
+    }
+}
+class Scope$1 {
+    constructor() {
+        this.targets = new Map();
+    }
+}
+
+function phaseDeferConfigs(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind !== OpKind.Defer) {
+                continue;
+            }
+            if (op.placeholderMinimumTime !== null) {
+                op.placeholderConfig =
+                    new ConstCollectedExpr(literalOrArrayLiteral([op.placeholderMinimumTime]));
+            }
+            if (op.loadingMinimumTime !== null || op.loadingAfterTime !== null) {
+                op.loadingConfig = new ConstCollectedExpr(literalOrArrayLiteral([op.loadingMinimumTime, op.loadingAfterTime]));
+            }
+        }
+    }
+}
+
 /**
  *
  * @license
@@ -22515,6 +22638,7 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: phaseOrdering },
     { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
     { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
+    { kind: CompilationJobKind.Tmpl, fn: phaseDeferConfigs },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
     { kind: CompilationJobKind.Tmpl, fn: phaseIcuExtraction },
     { kind: CompilationJobKind.Tmpl, fn: phaseApplyI18nExpressions },
@@ -22528,6 +22652,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseRepeaterDerivedVars },
     { kind: CompilationJobKind.Tmpl, fn: phaseTrackVariables },
     { kind: CompilationJobKind.Both, fn: phaseResolveNames },
+    { kind: CompilationJobKind.Tmpl, fn: phaseDeferResolveTargets },
     { kind: CompilationJobKind.Tmpl, fn: phaseTrackFnOptimization },
     { kind: CompilationJobKind.Both, fn: phaseResolveContexts },
     { kind: CompilationJobKind.Tmpl, fn: phaseResolveSanitizers },
@@ -22543,7 +22668,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: phaseFormatI18nParams },
     { kind: CompilationJobKind.Tmpl, fn: phaseTrackFnGeneration },
     { kind: CompilationJobKind.Tmpl, fn: phaseI18nConstCollection },
-    { kind: CompilationJobKind.Tmpl, fn: phaseConstTraitCollection },
+    { kind: CompilationJobKind.Tmpl, fn: phaseConstExpressionCollection },
     { kind: CompilationJobKind.Both, fn: phaseConstCollection },
     { kind: CompilationJobKind.Tmpl, fn: phaseAssignI18nSlotDependencies },
     { kind: CompilationJobKind.Both, fn: phaseVarCounting },
@@ -22722,7 +22847,7 @@ function ingestHostAttribute(job, name, value) {
     job.root.update.push(attrBinding);
 }
 function ingestHostEvent(job, event) {
-    const eventBinding = createListenerOp(job.root.xref, event.name, null, event.targetOrPhase, true, event.sourceSpan);
+    const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, event.targetOrPhase, true, event.sourceSpan);
     // TODO: Can this be a chain?
     eventBinding.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(event.handler.ast, job, event.sourceSpan), event.handlerSpan)));
     job.root.create.push(eventBinding);
@@ -22873,22 +22998,25 @@ function ingestBoundText(unit, text) {
  */
 function ingestIfBlock(unit, ifBlock) {
     let firstXref = null;
+    let firstSlotHandle = null;
     let conditions = [];
     for (const ifCase of ifBlock.branches) {
         const cView = unit.job.allocateView(unit.xref);
         if (ifCase.expressionAlias !== null) {
             cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
         }
+        const tmplOp = createTemplateOp(cView.xref, 'Conditional', Namespace.HTML, true, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan);
+        unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
+            firstSlotHandle = tmplOp.slot;
         }
-        unit.create.push(createTemplateOp(cView.xref, 'Conditional', Namespace.HTML, true, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan));
         const caseExpr = ifCase.expression ? convertAst(ifCase.expression, unit.job, null) : null;
-        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, cView.xref, ifCase.expressionAlias);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.slot, ifCase.expressionAlias);
         conditions.push(conditionalCaseExpr);
         ingestNodes(cView, ifCase.children);
     }
-    const conditional = createConditionalOp(firstXref, null, conditions, ifBlock.sourceSpan);
+    const conditional = createConditionalOp(firstXref, firstSlotHandle, null, conditions, ifBlock.sourceSpan);
     unit.update.push(conditional);
 }
 /**
@@ -22896,21 +23024,24 @@ function ingestIfBlock(unit, ifBlock) {
  */
 function ingestSwitchBlock(unit, switchBlock) {
     let firstXref = null;
+    let firstSlotHandle = null;
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
+        const tmplOp = createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan);
+        unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
+            firstSlotHandle = tmplOp.slot;
         }
-        unit.create.push(createTemplateOp(cView.xref, 'Case', Namespace.HTML, true, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan));
         const caseExpr = switchCase.expression ?
             convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) :
             null;
-        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, cView.xref);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.slot);
         conditions.push(conditionalCaseExpr);
         ingestNodes(cView, switchCase.children);
     }
-    const conditional = createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, null), conditions, switchBlock.sourceSpan);
+    const conditional = createConditionalOp(firstXref, firstSlotHandle, convertAst(switchBlock.expression, unit.job, null), conditions, switchBlock.sourceSpan);
     unit.update.push(conditional);
 }
 function ingestDeferView(unit, suffix, children, sourceSpan) {
@@ -22930,32 +23061,74 @@ function ingestDeferBlock(unit, deferBlock) {
     const placeholder = ingestDeferView(unit, 'Placeholder', deferBlock.placeholder?.children, deferBlock.placeholder?.sourceSpan);
     const error = ingestDeferView(unit, 'Error', deferBlock.error?.children, deferBlock.error?.sourceSpan);
     // Create the main defer op, and ops for all secondary views.
-    const deferOp = createDeferOp(unit.job.allocateXrefId(), main.xref, deferBlock.sourceSpan);
+    const deferXref = unit.job.allocateXrefId();
+    const deferOp = createDeferOp(deferXref, main.xref, main.slot, deferBlock.sourceSpan);
+    deferOp.placeholderView = placeholder?.xref ?? null;
+    deferOp.placeholderSlot = placeholder?.slot ?? null;
+    deferOp.loadingSlot = loading?.slot ?? null;
+    deferOp.errorSlot = error?.slot ?? null;
+    deferOp.placeholderMinimumTime = deferBlock.placeholder?.minimumTime ?? null;
+    deferOp.loadingMinimumTime = deferBlock.loading?.minimumTime ?? null;
+    deferOp.loadingAfterTime = deferBlock.loading?.afterTime ?? null;
     unit.create.push(deferOp);
-    if (loading && deferBlock.loading) {
-        deferOp.loading =
-            createDeferSecondaryOp(deferOp.xref, loading.xref, DeferSecondaryKind.Loading);
-        if (deferBlock.loading.afterTime !== null || deferBlock.loading.minimumTime !== null) {
-            deferOp.loading.constValue = [deferBlock.loading.minimumTime, deferBlock.loading.afterTime];
+    // Configure all defer `on` conditions.
+    // TODO: refactor prefetch triggers to use a separate op type, with a shared superclass. This will
+    // make it easier to refactor prefetch behavior in the future.
+    let prefetch = false;
+    let deferOnOps = [];
+    for (const triggers of [deferBlock.triggers, deferBlock.prefetchTriggers]) {
+        if (triggers.idle !== undefined) {
+            const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Idle }, prefetch, null);
+            deferOnOps.push(deferOnOp);
         }
-        unit.create.push(deferOp.loading);
-    }
-    if (placeholder && deferBlock.placeholder) {
-        deferOp.placeholder = createDeferSecondaryOp(deferOp.xref, placeholder.xref, DeferSecondaryKind.Placeholder);
-        if (deferBlock.placeholder.minimumTime !== null) {
-            deferOp.placeholder.constValue = [deferBlock.placeholder.minimumTime];
+        if (triggers.immediate !== undefined) {
+            const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Immediate }, prefetch, null);
+            deferOnOps.push(deferOnOp);
         }
-        unit.create.push(deferOp.placeholder);
+        if (triggers.timer !== undefined) {
+            const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Timer, delay: triggers.timer.delay }, prefetch, null);
+            deferOnOps.push(deferOnOp);
+        }
+        if (triggers.hover !== undefined) {
+            const deferOnOp = createDeferOnOp(deferXref, {
+                kind: DeferTriggerKind.Hover,
+                targetName: triggers.hover.reference,
+                targetXref: null,
+                targetSlot: null,
+                targetView: null,
+                targetSlotViewSteps: null,
+            }, prefetch, null);
+            deferOnOps.push(deferOnOp);
+        }
+        if (triggers.interaction !== undefined) {
+            const deferOnOp = createDeferOnOp(deferXref, {
+                kind: DeferTriggerKind.Interaction,
+                targetName: triggers.interaction.reference,
+                targetXref: null,
+                targetSlot: null,
+                targetView: null,
+                targetSlotViewSteps: null,
+            }, prefetch, null);
+            deferOnOps.push(deferOnOp);
+        }
+        if (triggers.viewport !== undefined) {
+            const deferOnOp = createDeferOnOp(deferXref, {
+                kind: DeferTriggerKind.Viewport,
+                targetName: triggers.viewport.reference,
+                targetXref: null,
+                targetSlot: null,
+                targetView: null,
+                targetSlotViewSteps: null,
+            }, prefetch, null);
+            deferOnOps.push(deferOnOp);
+        }
+        // If no (non-prefetching) defer triggers were provided, default to `idle`.
+        if (deferOnOps.length === 0) {
+            deferOnOps.push(createDeferOnOp(deferXref, { kind: DeferTriggerKind.Idle }, false, null));
+        }
+        prefetch = true;
     }
-    if (error && deferBlock.error) {
-        deferOp.error =
-            createDeferSecondaryOp(deferOp.xref, error.xref, DeferSecondaryKind.Error);
-        unit.create.push(deferOp.error);
-    }
-    // Configure all defer conditions.
-    const deferOnOp = createDeferOnOp(unit.job.allocateXrefId(), null);
-    // Add all ops to the view.
-    unit.create.push(deferOnOp);
+    unit.create.push(deferOnOps);
 }
 function ingestIcu(unit, icu) {
     if (icu.i18n instanceof Message) {
@@ -23008,7 +23181,7 @@ function ingestForBlock(unit, forBlock) {
     const repeaterCreate = createRepeaterCreateOp(repeaterView.xref, emptyView?.xref ?? null, track, varNames, forBlock.sourceSpan);
     unit.create.push(repeaterCreate);
     const expression = convertAst(forBlock.expression, unit.job, convertSourceSpan(forBlock.expression.span, forBlock.sourceSpan));
-    const repeater = createRepeaterOp(repeaterCreate.xref, expression, forBlock.sourceSpan);
+    const repeater = createRepeaterOp(repeaterCreate.xref, repeaterCreate.slot, expression, forBlock.sourceSpan);
     unit.update.push(repeater);
 }
 /**
@@ -23082,7 +23255,7 @@ function convertAst(ast, job, baseSourceSpan) {
     }
     else if (ast instanceof BindingPipe) {
         // TODO: pipes should probably have source maps; figure out details.
-        return new PipeBindingExpr(job.allocateXrefId(), ast.name, [
+        return new PipeBindingExpr(job.allocateXrefId(), new SlotHandle(), ast.name, [
             convertAst(ast.exp, job, baseSourceSpan),
             ...ast.args.map(arg => convertAst(arg, job, baseSourceSpan)),
         ]);
@@ -23166,8 +23339,7 @@ function ingestBindings(unit, op, element) {
             unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null));
             continue;
         }
-        listenerOp =
-            createListenerOp(op.xref, output.name, op.tag, output.phase, false, output.sourceSpan);
+        listenerOp = createListenerOp(op.xref, op.slot, output.name, op.tag, output.phase, false, output.sourceSpan);
         // if output.handler is a chain, then push each statement from the chain separately, and
         // return the last one?
         let handlerExprs;
@@ -30330,7 +30502,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-rc.1+sha-e74b578');
+const VERSION = new Version('17.0.0-rc.1+sha-595009e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31860,7 +32032,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31968,7 +32140,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32245,7 +32417,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32280,7 +32452,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32331,7 +32503,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32364,7 +32536,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32415,7 +32587,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-e74b578'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-595009e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
