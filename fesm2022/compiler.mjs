@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-a3028e2
+ * @license Angular v17.1.0-next.0+sha-c5980d6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -24590,7 +24590,7 @@ function normalizeNgContentSelect(selectAttr) {
 }
 
 /** Pattern for the expression in a for loop block. */
-const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+(.*)/;
+const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+([\S\s]*)/;
 /** Pattern for the tracking expression in a for loop block. */
 const FOR_LOOP_TRACK_PATTERN = /^track\s+([\S\s]*)/;
 /** Pattern for the `as` expression in a conditional block. */
@@ -24832,8 +24832,10 @@ function validateSwitchBlock(ast) {
         return errors;
     }
     for (const node of ast.children) {
-        // Skip over empty text nodes inside the switch block since they can be used for formatting.
-        if (node instanceof Text && node.value.trim().length === 0) {
+        // Skip over comments and empty text nodes inside the switch block.
+        // Empty text nodes can be used for formatting while comments don't affect the runtime.
+        if (node instanceof Comment ||
+            (node instanceof Text && node.value.trim().length === 0)) {
             continue;
         }
         if (!(node instanceof Block) || (node.name !== 'case' && node.name !== 'default')) {
@@ -24956,7 +24958,7 @@ function stripOptionalParentheses(param, errors) {
 }
 
 /** Pattern for a timing value in a trigger. */
-const TIME_PATTERN = /^\d+(ms|s)?$/;
+const TIME_PATTERN = /^\d+\.?\d*(ms|s)?$/;
 /** Pattern for a separator between keywords in a trigger expression. */
 const SEPARATOR_PATTERN = /^\s$/;
 /** Pairs of characters that form syntax that is comma-delimited. */
@@ -25257,7 +25259,7 @@ function parseDeferredTime(value) {
         return null;
     }
     const [time, units] = match;
-    return parseInt(time) * (units === 's' ? 1000 : 1);
+    return parseFloat(time) * (units === 's' ? 1000 : 1);
 }
 
 /** Pattern to identify a `prefetch when` trigger. */
@@ -29803,13 +29805,25 @@ class R3BoundTarget {
         }
         const name = trigger.reference;
         if (name === null) {
-            const children = block.placeholder ? block.placeholder.children : null;
-            // If the trigger doesn't have a reference, it is inferred as the root element node of the
-            // placeholder, if it only has one root node. Otherwise it's ambiguous so we don't
-            // attempt to resolve further.
-            return children !== null && children.length === 1 && children[0] instanceof Element$1 ?
-                children[0] :
-                null;
+            let trigger = null;
+            if (block.placeholder !== null) {
+                for (const child of block.placeholder.children) {
+                    // Skip over comment nodes. Currently by default the template parser doesn't capture
+                    // comments, but we have a safeguard here just in case since it can be enabled.
+                    if (child instanceof Comment$1) {
+                        continue;
+                    }
+                    // We can only infer the trigger if there's one root element node. Any other
+                    // nodes at the root make it so that we can't infer the trigger anymore.
+                    if (trigger !== null) {
+                        return null;
+                    }
+                    if (child instanceof Element$1) {
+                        trigger = child;
+                    }
+                }
+            }
+            return trigger;
         }
         const outsideRef = this.findEntityInScope(block, name);
         // First try to resolve the target in the scope of the main deferred block. Note that we
@@ -29821,7 +29835,7 @@ class R3BoundTarget {
             }
         }
         // If the trigger couldn't be found in the main block, check the
-        // placeholder  block which is shown before the main block has loaded.
+        // placeholder block which is shown before the main block has loaded.
         if (block.placeholder !== null) {
             const refInPlaceholder = this.findEntityInScope(block.placeholder, name);
             const targetInPlaceholder = refInPlaceholder instanceof Reference ? this.getReferenceTarget(refInPlaceholder) : null;
@@ -30516,7 +30530,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-a3028e2');
+const VERSION = new Version('17.1.0-next.0+sha-c5980d6');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32046,7 +32060,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32154,7 +32168,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32431,7 +32445,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32466,7 +32480,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32517,7 +32531,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32550,7 +32564,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32601,7 +32615,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-a3028e2'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-c5980d6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
