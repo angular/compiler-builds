@@ -33,7 +33,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', o.literal('17.0.0-rc.1+sha-4461cef'));
+    definitionMap.set('version', o.literal('17.0.0-rc.1+sha-e74b578'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
