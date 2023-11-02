@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-rc.1+sha-cc13d6f
+ * @license Angular v17.0.0-rc.1+sha-0d88e25
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8794,69 +8794,65 @@ var OpKind;
      */
     OpKind[OpKind["Defer"] = 26] = "Defer";
     /**
-     * An IR operation that provides secondary templates of a `@defer` block.
-     */
-    OpKind[OpKind["DeferSecondaryBlock"] = 27] = "DeferSecondaryBlock";
-    /**
      * An operation that controls when a `@defer` loads.
      */
-    OpKind[OpKind["DeferOn"] = 28] = "DeferOn";
+    OpKind[OpKind["DeferOn"] = 27] = "DeferOn";
     /**
      * An i18n message that has been extracted for inclusion in the consts array.
      */
-    OpKind[OpKind["ExtractedMessage"] = 29] = "ExtractedMessage";
+    OpKind[OpKind["ExtractedMessage"] = 28] = "ExtractedMessage";
     /**
      * A host binding property.
      */
-    OpKind[OpKind["HostProperty"] = 30] = "HostProperty";
+    OpKind[OpKind["HostProperty"] = 29] = "HostProperty";
     /**
      * A namespace change, which causes the subsequent elements to be processed as either HTML or SVG.
      */
-    OpKind[OpKind["Namespace"] = 31] = "Namespace";
+    OpKind[OpKind["Namespace"] = 30] = "Namespace";
     /**
      * Configure a content projeciton definition for the view.
      */
-    OpKind[OpKind["ProjectionDef"] = 32] = "ProjectionDef";
+    OpKind[OpKind["ProjectionDef"] = 31] = "ProjectionDef";
     /**
      * Create a content projection slot.
      */
-    OpKind[OpKind["Projection"] = 33] = "Projection";
+    OpKind[OpKind["Projection"] = 32] = "Projection";
     /**
      * Create a repeater creation instruction op.
      */
-    OpKind[OpKind["RepeaterCreate"] = 34] = "RepeaterCreate";
+    OpKind[OpKind["RepeaterCreate"] = 33] = "RepeaterCreate";
     /**
      * An update up for a repeater.
      */
-    OpKind[OpKind["Repeater"] = 35] = "Repeater";
+    OpKind[OpKind["Repeater"] = 34] = "Repeater";
     /**
      * The start of an i18n block.
      */
-    OpKind[OpKind["I18nStart"] = 36] = "I18nStart";
+    OpKind[OpKind["I18nStart"] = 35] = "I18nStart";
     /**
      * A self-closing i18n on a single element.
      */
-    OpKind[OpKind["I18n"] = 37] = "I18n";
+    OpKind[OpKind["I18n"] = 36] = "I18n";
     /**
      * The end of an i18n block.
      */
-    OpKind[OpKind["I18nEnd"] = 38] = "I18nEnd";
+    OpKind[OpKind["I18nEnd"] = 37] = "I18nEnd";
     /**
      * An expression in an i18n message.
      */
-    OpKind[OpKind["I18nExpression"] = 39] = "I18nExpression";
+    OpKind[OpKind["I18nExpression"] = 38] = "I18nExpression";
     /**
      * An instruction that applies a set of i18n expressions.
      */
-    OpKind[OpKind["I18nApply"] = 40] = "I18nApply";
+    OpKind[OpKind["I18nApply"] = 39] = "I18nApply";
     /**
      * An instruction to create an ICU expression.
      */
-    OpKind[OpKind["Icu"] = 41] = "Icu";
+    OpKind[OpKind["Icu"] = 40] = "Icu";
     /**
      * An instruction to update an ICU expression.
      */
-    OpKind[OpKind["IcuUpdate"] = 42] = "IcuUpdate";
+    OpKind[OpKind["IcuUpdate"] = 41] = "IcuUpdate";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9123,6 +9119,16 @@ var DeferTriggerKind;
     DeferTriggerKind[DeferTriggerKind["Interaction"] = 4] = "Interaction";
     DeferTriggerKind[DeferTriggerKind["Viewport"] = 5] = "Viewport";
 })(DeferTriggerKind || (DeferTriggerKind = {}));
+/**
+ * Repeaters implicitly define these derived variables, and child nodes may read them.
+ */
+var DerivedRepeaterVarIdentity;
+(function (DerivedRepeaterVarIdentity) {
+    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["First"] = 0] = "First";
+    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Last"] = 1] = "Last";
+    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Even"] = 2] = "Even";
+    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Odd"] = 3] = "Odd";
+})(DerivedRepeaterVarIdentity || (DerivedRepeaterVarIdentity = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -10052,13 +10058,6 @@ class ConditionalCaseExpr extends ExpressionBase {
         }
     }
 }
-var DerivedRepeaterVarIdentity;
-(function (DerivedRepeaterVarIdentity) {
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["First"] = 0] = "First";
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Last"] = 1] = "Last";
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Even"] = 2] = "Even";
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Odd"] = 3] = "Odd";
-})(DerivedRepeaterVarIdentity || (DerivedRepeaterVarIdentity = {}));
 class DerivedRepeaterVarExpr extends ExpressionBase {
     constructor(xref, identity) {
         super();
@@ -10631,7 +10630,7 @@ function createElementStartOp(tag, xref, namespace, i18nPlaceholder, sourceSpan)
         kind: OpKind.ElementStart,
         xref,
         tag,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         attributes: null,
         localRefs: [],
         nonBindable: false,
@@ -10651,7 +10650,7 @@ function createTemplateOp(xref, tag, functionNameSuffix, namespace, i18nPlacehol
         xref,
         attributes: null,
         tag,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         functionNameSuffix,
         decls: null,
         vars: null,
@@ -10669,7 +10668,7 @@ function createRepeaterCreateOp(primaryView, emptyView, tag, track, varNames, so
         kind: OpKind.RepeaterCreate,
         attributes: null,
         xref: primaryView,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         emptyView,
         track,
         trackByFn: null,
@@ -10720,7 +10719,7 @@ function createTextOp(xref, initialValue, sourceSpan) {
     return {
         kind: OpKind.Text,
         xref,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         initialValue,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
@@ -10751,7 +10750,7 @@ function createPipeOp(xref, slot, name) {
     return {
         kind: OpKind.Pipe,
         xref,
-        slot,
+        handle: slot,
         name,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
@@ -10775,7 +10774,7 @@ function createProjectionOp(xref, selector, sourceSpan) {
     return {
         kind: OpKind.Projection,
         xref,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         selector,
         projectionSlotIndex: 0,
         attributes: [],
@@ -10802,7 +10801,7 @@ function createDeferOp(xref, main, mainSlot, sourceSpan) {
     return {
         kind: OpKind.Defer,
         xref,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         mainView: main,
         mainSlot,
         loadingView: null,
@@ -10856,7 +10855,7 @@ function createI18nStartOp(xref, message, root) {
     return {
         kind: OpKind.I18nStart,
         xref,
-        slot: new SlotHandle(),
+        handle: new SlotHandle(),
         root: root ?? xref,
         message,
         messageIndex: null,
@@ -11097,9 +11096,10 @@ class HostBindingCompilationUnit extends CompilationUnit {
 }
 
 /**
- * Find any function calls to `$any`, excluding `this.$any`, and delete them.
+ * Find any function calls to `$any`, excluding `this.$any`, and delete them, since they have no
+ * runtime effects.
  */
-function phaseFindAnyCasts(job) {
+function deleteAnyCasts(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             transformExpressionsInOp(op, removeAnys, VisitorContextFlag.None);
@@ -11120,7 +11120,7 @@ function removeAnys(e) {
 /**
  * Adds apply operations after i18n expressions.
  */
-function phaseApplyI18nExpressions(job) {
+function applyI18nExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.update) {
             // Only add apply after expressions that are not followed by more expressions.
@@ -11149,7 +11149,7 @@ function needsApplication(op) {
 /**
  * Updates i18n expression ops to depend on the last slot in their owning i18n block.
  */
-function phaseAssignI18nSlotDependencies(job) {
+function assignI18nSlotDependencies(job) {
     const i18nLastSlotConsumers = new Map();
     let lastSlotConsumer = null;
     for (const unit of job.units) {
@@ -11189,7 +11189,7 @@ function createOpXrefMap(unit) {
  * Find all extractable attribute and binding ops, and create ExtractedAttributeOps for them.
  * In cases where no instruction needs to be generated for the attribute or binding, it is removed.
  */
-function phaseAttributeExtraction(job) {
+function extractAttributes(job) {
     for (const unit of job.units) {
         const elements = createOpXrefMap(unit);
         for (const op of unit.ops()) {
@@ -11287,7 +11287,7 @@ function lookupElement$1(elements, xref) {
     }
     return el;
 }
-function phaseBindingSpecialization(job) {
+function specializeBindings(job) {
     const elements = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
@@ -11376,7 +11376,7 @@ const CHAINABLE = new Set([
  * elementStart(0, 'div')(1, 'span');
  * ```
  */
-function phaseChaining(job) {
+function chain(job) {
     for (const unit of job.units) {
         chainOperationsInList(unit.create);
         chainOperationsInList(unit.update);
@@ -11432,7 +11432,7 @@ function chainOperationsInList(opList) {
  * The reification step is also capable of performing this transformation, but doing it early in the
  * pipeline allows other phases to accurately know what instruction will be emitted.
  */
-function phaseCollapseSingletonInterpolations(job) {
+function collapseSingletonInterpolations(job) {
     for (const unit of job.units) {
         for (const op of unit.update) {
             const eligibleOpKind = op.kind === OpKind.Attribute;
@@ -11446,9 +11446,9 @@ function phaseCollapseSingletonInterpolations(job) {
 }
 
 /**
- * Collapse the various conditions of conditional ops into a single test expression.
+ * Collapse the various conditions of conditional ops (if, switch) into a single test expression.
  */
-function phaseConditionals(job) {
+function generateConditionalExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             if (op.kind !== OpKind.Conditional) {
@@ -11583,7 +11583,7 @@ function literalOrArrayLiteral(value) {
  * Converts the semantic attributes of element-like operations (elements, templates) into constant
  * array expressions, and lifts them into the overall component `consts`.
  */
-function phaseConstCollection(job) {
+function collectElementConsts(job) {
     // Collect all extracted attributes.
     const allElementAttributes = new Map();
     for (const unit of job.units) {
@@ -11729,6 +11729,112 @@ function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, s
     return literalArr(attrArray);
 }
 
+/**
+ * Defer instructions take a configuration array, which should be collected into the component
+ * consts. This phase finds the config options, and creates the corresponding const array.
+ */
+function configureDeferInstructions(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind !== OpKind.Defer) {
+                continue;
+            }
+            if (op.placeholderMinimumTime !== null) {
+                op.placeholderConfig =
+                    new ConstCollectedExpr(literalOrArrayLiteral([op.placeholderMinimumTime]));
+            }
+            if (op.loadingMinimumTime !== null || op.loadingAfterTime !== null) {
+                op.loadingConfig = new ConstCollectedExpr(literalOrArrayLiteral([op.loadingMinimumTime, op.loadingAfterTime]));
+            }
+        }
+    }
+}
+
+/**
+ * Some `defer` conditions can reference other elements in the template, using their local reference
+ * names. However, the semantics are quite different from the normal local reference system: in
+ * particular, we need to look at local reference names in enclosing views. This phase resolves
+ * all such references to actual xrefs.
+ */
+function resolveDeferTargetNames(job) {
+    const scopes = new Map();
+    function getScopeForView(view) {
+        if (scopes.has(view.xref)) {
+            return scopes.get(view.xref);
+        }
+        const scope = new Scope$1();
+        for (const op of view.create) {
+            // add everything that can be referenced.
+            if (!isElementOrContainerOp(op) || op.localRefs === null) {
+                continue;
+            }
+            if (!Array.isArray(op.localRefs)) {
+                throw new Error('LocalRefs were already processed, but were needed to resolve defer targets.');
+            }
+            for (const ref of op.localRefs) {
+                if (ref.target !== '') {
+                    continue;
+                }
+                scope.targets.set(ref.name, { xref: op.xref, slot: op.handle });
+            }
+        }
+        scopes.set(view.xref, scope);
+        return scope;
+    }
+    function resolveTrigger(deferOwnerView, op, placeholderView) {
+        switch (op.trigger.kind) {
+            case DeferTriggerKind.Idle:
+            case DeferTriggerKind.Immediate:
+            case DeferTriggerKind.Timer:
+                return;
+            case DeferTriggerKind.Hover:
+            case DeferTriggerKind.Interaction:
+            case DeferTriggerKind.Viewport:
+                if (op.trigger.targetName === null) {
+                    return;
+                }
+                let view = placeholderView !== null ? job.views.get(placeholderView) : deferOwnerView;
+                let step = placeholderView !== null ? -1 : 0;
+                while (view !== null) {
+                    const scope = getScopeForView(view);
+                    if (scope.targets.has(op.trigger.targetName)) {
+                        const { xref, slot } = scope.targets.get(op.trigger.targetName);
+                        op.trigger.targetXref = xref;
+                        op.trigger.targetView = view.xref;
+                        op.trigger.targetSlotViewSteps = step;
+                        op.trigger.targetSlot = slot;
+                        return;
+                    }
+                    view = view.parent !== null ? job.views.get(view.parent) : null;
+                    step++;
+                }
+                break;
+            default:
+                throw new Error(`Trigger kind ${op.trigger.kind} not handled`);
+        }
+    }
+    // Find the defer ops, and assign the data about their targets.
+    for (const unit of job.units) {
+        const defers = new Map();
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.Defer:
+                    defers.set(op.xref, op);
+                    break;
+                case OpKind.DeferOn:
+                    const deferOp = defers.get(op.defer);
+                    resolveTrigger(unit, op, deferOp.placeholderView);
+                    break;
+            }
+        }
+    }
+}
+class Scope$1 {
+    constructor() {
+        this.targets = new Map();
+    }
+}
+
 const REPLACEMENTS = new Map([
     [OpKind.ElementEnd, [OpKind.ElementStart, OpKind.Element]],
     [OpKind.ContainerEnd, [OpKind.ContainerStart, OpKind.Container]],
@@ -11739,10 +11845,10 @@ const REPLACEMENTS = new Map([
  */
 const IGNORED_OP_KINDS = new Set([OpKind.Pipe]);
 /**
- * Replace sequences of mergable elements (e.g. `ElementStart` and `ElementEnd`) with a consolidated
- * element (e.g. `Element`).
+ * Replace sequences of mergable instructions (e.g. `ElementStart` and `ElementEnd`) with a
+ * consolidated instruction (e.g. `Element`).
  */
-function phaseEmptyElements(job) {
+function collapseEmptyInstructions(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             // Find end ops that may be able to be merged.
@@ -11769,10 +11875,13 @@ function phaseEmptyElements(job) {
 }
 
 /**
- * Finds all unresolved safe read expressions, and converts them into the appropriate output AST
- * reads, guarded by null checks.
+ * Safe read expressions such as `a?.b` have different semantics in Angular templates as
+ * compared to JavaScript. In particular, they default to `null` instead of `undefined`. This phase
+ * finds all unresolved safe read expressions, and converts them into the appropriate output AST
+ * reads, guarded by null checks. We generate temporaries as needed, to avoid re-evaluating the same
+ * sub-expression multiple times.
  */
-function phaseExpandSafeReads(job) {
+function expandSafeReads(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             transformExpressionsInOp(op, e => safeTransform(e, { job }), VisitorContextFlag.None);
@@ -11979,7 +12088,7 @@ const LIST_DELIMITER = '|';
  * Formats the param maps on extracted message ops into a maps of `Expression` objects that can be
  * used in the final output.
  */
-function phaseFormatI18nParams(job) {
+function formatI18nParams(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.ExtractedMessage) {
@@ -12052,7 +12161,7 @@ function formatValue(value) {
  * Generate `ir.AdvanceOp`s in between `ir.UpdateOp`s that ensure the runtime's implicit slot
  * context will be advanced correctly.
  */
-function phaseGenerateAdvance(job) {
+function generateAdvance(job) {
     for (const unit of job.units) {
         // First build a map of all of the declarations in the view that have assigned slots.
         const slotMap = new Map();
@@ -12060,10 +12169,10 @@ function phaseGenerateAdvance(job) {
             if (!hasConsumesSlotTrait(op)) {
                 continue;
             }
-            else if (op.slot.slot === null) {
+            else if (op.handle.slot === null) {
                 throw new Error(`AssertionError: expected slots to have been allocated before generating advance() calls`);
             }
-            slotMap.set(op.xref, op.slot.slot);
+            slotMap.set(op.xref, op.handle.slot);
         }
         // Next, step through the update operations and generate `ir.AdvanceOp`s as required to ensure
         // the runtime's implicit slot counter will be set to the correct slot before executing each
@@ -12101,7 +12210,7 @@ function phaseGenerateAdvance(job) {
  * populate `project` arguments, and generate the required `projectionDef` instruction for the job's
  * root view.
  */
-function phaseGenerateProjectionDef(job) {
+function generateProjectionDefs(job) {
     // TODO: Why does TemplateDefinitionBuilder force a shared constant?
     const share = job.compatibility === CompatibilityMode.TemplateDefinitionBuilder;
     // Collect all selectors from this component, and its nested views. Also, assign each projection a
@@ -12146,7 +12255,7 @@ function phaseGenerateProjectionDef(job) {
  * Variables are generated here unconditionally, and may optimized away in future operations if it
  * turns out their values (and any side effects) are unused.
  */
-function phaseGenerateVariables(job) {
+function generateVariables(job) {
     recursivelyProcessView(job.root, /* there is no parent scope for the root view */ null);
 }
 /**
@@ -12212,7 +12321,7 @@ function getScopeForView(view, parent) {
                     scope.references.push({
                         name: op.localRefs[offset].name,
                         targetId: op.xref,
-                        targetSlot: op.slot,
+                        targetSlot: op.handle,
                         offset,
                         variable: {
                             kind: SemanticVariableKind.Identifier,
@@ -12263,7 +12372,13 @@ function generateVariablesInScopeForView(view, scope) {
     return newOps;
 }
 
-function phaseConstExpressionCollection(job) {
+/**
+ * `ir.ConstCollectedExpr` may be present in any IR expression. This means that expression needs to
+ * be lifted into the component const array, and replaced with a reference to the const array at its
+ *
+ * usage site. This phase walks the IR and performs this transformation.
+ */
+function collectConstExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             transformExpressionsInOp(op, expr => {
@@ -12281,7 +12396,13 @@ const CLASS_DOT = 'class.';
 const STYLE_BANG = 'style!';
 const CLASS_BANG = 'class!';
 const BANG_IMPORTANT = '!important';
-function phaseHostStylePropertyParsing(job) {
+/**
+ * Host bindings are compiled using a different parser entrypoint, and are parsed quite differently
+ * as a result. Therefore, we need to do some extra parsing for host style properties, as compared
+ * to non-host style properties.
+ * TODO: Unify host bindings and non-host bindings in the parser.
+ */
+function parseHostStyleProperties(job) {
     for (const op of job.root.update) {
         if (op.kind !== OpKind.Binding) {
             continue;
@@ -19222,8 +19343,9 @@ const NG_I18N_CLOSURE_MODE$1 = 'ngI18nClosureMode';
 const TRANSLATION_VAR_PREFIX = 'i18n_';
 /**
  * Lifts i18n properties into the consts array.
+ * TODO: Can we use `ConstCollectedExpr`?
  */
-function phaseI18nConstCollection(job) {
+function collectI18nConsts(job) {
     const fileBasedI18nSuffix = job.relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_').toUpperCase() + '_';
     const messageConstIndices = new Map();
     for (const unit of job.units) {
@@ -19352,8 +19474,10 @@ function assertAllParamsResolved(op) {
     }
 }
 
-/** Extracts i18n messages into their own op. */
-function phaseI18nMessageExtraction(job) {
+/**
+ * Extracts i18n messages into their own op.
+ */
+function extractI18nMessages(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.I18nStart) {
@@ -19366,7 +19490,7 @@ function phaseI18nMessageExtraction(job) {
 /**
  * Removes text nodes within i18n blocks since they are already hardcoded into the i18n message.
  */
-function phaseI18nTextExtraction(job) {
+function extractI18nText(job) {
     for (const unit of job.units) {
         // Remove all text nodes within i18n blocks, their content is already captured in the i18n
         // message.
@@ -19377,7 +19501,7 @@ function phaseI18nTextExtraction(job) {
             switch (op.kind) {
                 case OpKind.I18nStart:
                     currentI18nId = op.xref;
-                    currentI18nSlot = op.slot;
+                    currentI18nSlot = op.handle;
                     break;
                 case OpKind.I18nEnd:
                     currentI18nId = null;
@@ -19419,7 +19543,7 @@ function phaseI18nTextExtraction(job) {
 /**
  * Extracts ICUs into i18n expressions.
  */
-function phaseIcuExtraction(job) {
+function extractI18nICUs(job) {
     for (const unit of job.units) {
         // Build a map of ICU to the i18n block they belong to, then remove the `Icu` ops.
         const icus = new Map();
@@ -19429,7 +19553,7 @@ function phaseIcuExtraction(job) {
             switch (op.kind) {
                 case OpKind.I18nStart:
                     currentI18nId = op.xref;
-                    currentI18nSlot = op.slot;
+                    currentI18nSlot = op.handle;
                     break;
                 case OpKind.I18nEnd:
                     currentI18nId = null;
@@ -19467,7 +19591,7 @@ function phaseIcuExtraction(job) {
  * Lifts local reference declarations on element-like structures within each view into an entry in
  * the `consts` array for the whole component.
  */
-function phaseLocalRefs(job) {
+function liftLocalRefs(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
@@ -19500,7 +19624,7 @@ function serializeLocalRefs(refs) {
 /**
  * Change namespaces between HTML, SVG and MathML, depending on the next element.
  */
-function phaseNamespace(job) {
+function emitNamespaceChanges(job) {
     for (const unit of job.units) {
         let activeNamespace = Namespace.HTML;
         for (const op of unit.create) {
@@ -19600,8 +19724,8 @@ function hyphenate(value) {
  * This includes propagating those names into any `ir.ReadVariableExpr`s of those variables, so that
  * the reads can be emitted correctly.
  */
-function phaseNaming(cpl) {
-    addNamesToView(cpl.root, cpl.componentName, { index: 0 }, cpl.compatibility === CompatibilityMode.TemplateDefinitionBuilder);
+function nameFunctionsAndVariables(job) {
+    addNamesToView(job.root, job.componentName, { index: 0 }, job.compatibility === CompatibilityMode.TemplateDefinitionBuilder);
 }
 function addNamesToView(unit, baseName, state, compatibility) {
     if (unit.fnName === null) {
@@ -19645,27 +19769,27 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
-                if (op.slot.slot === null) {
+                if (op.handle.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
                 if (op.emptyView !== null) {
                     const emptyView = unit.job.views.get(op.emptyView);
                     // Repeater empty view function is at slot +2 (metadata is in the first slot).
-                    addNamesToView(emptyView, `${baseName}_${`${op.functionNameSuffix}Empty`}_${op.slot.slot + 2}`, state, compatibility);
+                    addNamesToView(emptyView, `${baseName}_${`${op.functionNameSuffix}Empty`}_${op.handle.slot + 2}`, state, compatibility);
                 }
                 // Repeater primary view function is at slot +1 (metadata is in the first slot).
-                addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.slot.slot + 1}`, state, compatibility);
+                addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.handle.slot + 1}`, state, compatibility);
                 break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                if (op.slot.slot === null) {
+                if (op.handle.slot === null) {
                     throw new Error(`Expected slot to be assigned`);
                 }
                 const suffix = op.functionNameSuffix.length === 0 ? '' : `_${op.functionNameSuffix}`;
-                addNamesToView(childView, `${baseName}${suffix}_${op.slot.slot}`, state, compatibility);
+                addNamesToView(childView, `${baseName}${suffix}_${op.handle.slot}`, state, compatibility);
                 break;
             case OpKind.StyleProp:
                 op.name = normalizeStylePropName(op.name);
@@ -19741,7 +19865,7 @@ function stripImportant(name) {
  *     is, the call is purely side-effectful).
  *   * No operations in between them uses the implicit context.
  */
-function phaseMergeNextContext(job) {
+function mergeNextContextExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.Listener) {
@@ -19797,7 +19921,7 @@ const CONTAINER_TAG = 'ng-container';
 /**
  * Replace an `Element` or `ElementStart` whose tag is `ng-container` with a specific op.
  */
-function phaseNgContainer(job) {
+function generateNgContainerOps(job) {
     for (const unit of job.units) {
         const updatedElementXrefs = new Set();
         for (const op of unit.create) {
@@ -19829,7 +19953,7 @@ function lookupElement(elements, xref) {
  * all descendants of that container. Therefore, we must emit `disableBindings` and `enableBindings`
  * instructions for every such container.
  */
-function phaseNonbindable(job) {
+function disableBindings$1(job) {
     const elements = new Map();
     for (const view of job.units) {
         for (const op of view.create) {
@@ -19853,7 +19977,13 @@ function phaseNonbindable(job) {
     }
 }
 
-function phaseNullishCoalescing(job) {
+/**
+ * Nullish coalescing expressions such as `a ?? b` have different semantics in Angular templates as
+ * compared to JavaScript. In particular, they default to `null` instead of `undefined`. Therefore,
+ * we replace them with ternary expressions, assigning temporaries as needed to avoid re-evaluating
+ * the same sub-expression multiple times.
+ */
+function generateNullishCoalesceExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             transformExpressionsInOp(op, expr => {
@@ -19911,7 +20041,12 @@ const handledOpKinds = new Set([
     OpKind.Listener, OpKind.StyleMap, OpKind.ClassMap, OpKind.StyleProp,
     OpKind.ClassProp, OpKind.Property, OpKind.HostProperty, OpKind.Attribute
 ]);
-function phaseOrdering(job) {
+/**
+ * Many type of operations have ordering constraints that must be respected. For example, a
+ * `ClassMap` instruction must be ordered after a `StyleMap` instruction, in order to have
+ * predictable semantics that match TemplateDefinitionBuilder and don't break applications.
+ */
+function orderOps(job) {
     for (const unit of job.units) {
         // First, we pull out ops that need to be ordered. Then, when we encounter an op that shouldn't
         // be reordered, put the ones we've pulled so far back in the correct order. Finally, if we
@@ -19973,8 +20108,8 @@ function keepLast(ops) {
  * Parses extracted style and class attributes into separate ExtractedAttributeOps per style or
  * class property.
  */
-function phaseParseExtractedStyles(cpl) {
-    for (const unit of cpl.units) {
+function parseExtractedStyles(job) {
+    for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.ExtractedAttribute && op.bindingKind === BindingKind.Attribute &&
                 isStringLiteral(op.expression)) {
@@ -20001,7 +20136,7 @@ function phaseParseExtractedStyles(cpl) {
  * Attributes of `ng-content` named 'select' are specifically removed, because they control which
  * content matches as a property of the `projection`, and are not a plain attribute.
  */
-function phaseRemoveContentSelectors(job) {
+function removeContentSelectors(job) {
     for (const unit of job.units) {
         const elements = createOpXrefMap(unit);
         for (const op of unit.update) {
@@ -20027,7 +20162,14 @@ function lookupInXrefMap(map, xref) {
     return el;
 }
 
-function phasePipeCreation(job) {
+/**
+ * This phase generates pipe creation instructions. We do this based on the pipe bindings found in
+ * the update block, in the order we see them.
+ *
+ * When not in compatibility mode, we can simply group all these creation instructions together, to
+ * maximize chaining opportunities.
+ */
+function createPipes(job) {
     for (const unit of job.units) {
         processPipeBindingsInView(unit);
     }
@@ -20086,7 +20228,11 @@ function addPipeToCreationBlock(unit, afterTargetXref, binding) {
     throw new Error(`AssertionError: unable to find insertion point for pipe ${binding.name}`);
 }
 
-function phasePipeVariadic(job) {
+/**
+ * Pipes that accept more than 4 arguments are variadic, and are handled with a different runtime
+ * instruction.
+ */
+function createVariadicPipes(job) {
     for (const unit of job.units) {
         for (const op of unit.update) {
             transformExpressionsInOp(op, expr => {
@@ -20107,7 +20253,7 @@ function phasePipeVariadic(job) {
  * Propagate i18n blocks down through child templates that act as placeholders in the root i18n
  * message.
  */
-function phasePropagateI18nBlocks(job) {
+function propagateI18nBlocks(job) {
     propagateI18nBlocksToTemplates(job.root, 0);
 }
 /**
@@ -20155,7 +20301,7 @@ function wrapTemplateWithI18n(unit, parentI18n) {
 /**
  * Propagate extractd message placeholders up to their root extracted message op.
  */
-function phasePropagateI18nPlaceholders(job) {
+function propogateI18nPlaceholders(job) {
     // Record all of the i18n and extracted message ops for use later.
     const i18nOps = new Map();
     const extractedMessageOps = new Map();
@@ -20205,7 +20351,7 @@ function mergeParams(to, from) {
     }
 }
 
-function phasePureFunctionExtraction(job) {
+function extractPureFunctions(job) {
     for (const view of job.units) {
         for (const op of view.ops()) {
             visitExpressionsInOp(op, expr => {
@@ -20250,9 +20396,9 @@ class PureFunctionConstant extends GenericKeyFn {
     }
 }
 
-function phasePureLiteralStructures(job) {
-    for (const view of job.units) {
-        for (const op of view.update) {
+function generatePureLiteralStructures(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
             transformExpressionsInOp(op, (expr, flags) => {
                 if (flags & VisitorContextFlag.InChildOperation) {
                     return expr;
@@ -20850,8 +20996,8 @@ const sanitizerIdentifierMap = new Map([
  * structures. After reification, the create/update operation lists of all views should only contain
  * `ir.StatementOp`s (which wrap generated `o.Statement`s).
  */
-function phaseReify(cpl) {
-    for (const unit of cpl.units) {
+function reify(job) {
+    for (const unit of job.units) {
         reifyCreateOperations(unit, unit.create);
         reifyUpdateOperations(unit, unit.update);
     }
@@ -20861,41 +21007,41 @@ function reifyCreateOperations(unit, ops) {
         transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
         switch (op.kind) {
             case OpKind.Text:
-                OpList.replace(op, text(op.slot.slot, op.initialValue, op.sourceSpan));
+                OpList.replace(op, text(op.handle.slot, op.initialValue, op.sourceSpan));
                 break;
             case OpKind.ElementStart:
-                OpList.replace(op, elementStart(op.slot.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, elementStart(op.handle.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.Element:
-                OpList.replace(op, element(op.slot.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, element(op.handle.slot, op.tag, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.ElementEnd:
                 OpList.replace(op, elementEnd(op.sourceSpan));
                 break;
             case OpKind.ContainerStart:
-                OpList.replace(op, elementContainerStart(op.slot.slot, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, elementContainerStart(op.handle.slot, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.Container:
-                OpList.replace(op, elementContainer(op.slot.slot, op.attributes, op.localRefs, op.sourceSpan));
+                OpList.replace(op, elementContainer(op.handle.slot, op.attributes, op.localRefs, op.sourceSpan));
                 break;
             case OpKind.ContainerEnd:
                 OpList.replace(op, elementContainerEnd());
                 break;
             case OpKind.I18nStart:
-                OpList.replace(op, i18nStart(op.slot.slot, op.messageIndex, op.subTemplateIndex));
+                OpList.replace(op, i18nStart(op.handle.slot, op.messageIndex, op.subTemplateIndex));
                 break;
             case OpKind.I18nEnd:
                 OpList.replace(op, i18nEnd());
                 break;
             case OpKind.I18n:
-                OpList.replace(op, i18n(op.slot.slot, op.messageIndex, op.subTemplateIndex));
+                OpList.replace(op, i18n(op.handle.slot, op.messageIndex, op.subTemplateIndex));
                 break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                OpList.replace(op, template(op.slot.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.sourceSpan));
+                OpList.replace(op, template(op.handle.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.sourceSpan));
                 break;
             case OpKind.DisableBindings:
                 OpList.replace(op, disableBindings());
@@ -20904,7 +21050,7 @@ function reifyCreateOperations(unit, ops) {
                 OpList.replace(op, enableBindings());
                 break;
             case OpKind.Pipe:
-                OpList.replace(op, pipe(op.slot.slot, op.name));
+                OpList.replace(op, pipe(op.handle.slot, op.name));
                 break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
@@ -20934,7 +21080,7 @@ function reifyCreateOperations(unit, ops) {
                 break;
             case OpKind.Defer:
                 const timerScheduling = !!op.loadingMinimumTime || !!op.loadingAfterTime || !!op.placeholderMinimumTime;
-                OpList.replace(op, defer(op.slot.slot, op.mainSlot.slot, null, op.loadingSlot?.slot ?? null, op.placeholderSlot?.slot ?? null, op.errorSlot?.slot ?? null, op.loadingConfig, op.placeholderConfig, timerScheduling, op.sourceSpan));
+                OpList.replace(op, defer(op.handle.slot, op.mainSlot.slot, null, op.loadingSlot?.slot ?? null, op.placeholderSlot?.slot ?? null, op.errorSlot?.slot ?? null, op.loadingConfig, op.placeholderConfig, timerScheduling, op.sourceSpan));
                 break;
             case OpKind.DeferOn:
                 let args = [];
@@ -20965,13 +21111,13 @@ function reifyCreateOperations(unit, ops) {
                 OpList.replace(op, projectionDef(op.def));
                 break;
             case OpKind.Projection:
-                if (op.slot.slot === null) {
+                if (op.handle.slot === null) {
                     throw new Error('No slot was assigned for project instruction');
                 }
-                OpList.replace(op, projection(op.slot.slot, op.projectionSlotIndex, op.attributes, op.sourceSpan));
+                OpList.replace(op, projection(op.handle.slot, op.projectionSlotIndex, op.attributes, op.sourceSpan));
                 break;
             case OpKind.RepeaterCreate:
-                if (op.slot.slot === null) {
+                if (op.handle.slot === null) {
                     throw new Error('No slot was assigned for repeater instruction');
                 }
                 if (!(unit instanceof ViewCompilationUnit)) {
@@ -20996,7 +21142,7 @@ function reifyCreateOperations(unit, ops) {
                     emptyDecls = emptyView.decls;
                     emptyVars = emptyView.vars;
                 }
-                OpList.replace(op, repeaterCreate(op.slot.slot, repeaterView.fnName, op.decls, op.vars, op.tag, op.attributes, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.sourceSpan));
+                OpList.replace(op, repeaterCreate(op.handle.slot, repeaterView.fnName, op.decls, op.vars, op.tag, op.attributes, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.sourceSpan));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -21183,7 +21329,10 @@ function reifyListenerHandler(unit, name, handlerOps, consumesDollarEvent) {
     return fn(params, handlerStmts, undefined, undefined, name);
 }
 
-function phaseRemoveEmptyBindings(job) {
+/**
+ * Bidningd with no content can be safely deleted.
+ */
+function removeEmptyBindings(job) {
     for (const unit of job.units) {
         for (const op of unit.update) {
             switch (op.kind) {
@@ -21203,7 +21352,12 @@ function phaseRemoveEmptyBindings(job) {
     }
 }
 
-function phaseRepeaterDerivedVars(job) {
+/**
+ * Inside the body of a repeater, certain context variables (such as `$first`) are ambiently
+ * available. This phase finds those variable usages, and replaces them with the appropriate
+ * expression.
+ */
+function generateRepeaterDerivedVars(job) {
     const repeaters = new Map();
     for (const unit of job.units) {
         for (const op of unit.ops()) {
@@ -21239,8 +21393,8 @@ function phaseRepeaterDerivedVars(job) {
  * either the `ctx` parameter to component functions (for the current view context) or to variables
  * that store those contexts (for contexts accessed via the `nextContext()` instruction).
  */
-function phaseResolveContexts(cpl) {
-    for (const unit of cpl.units) {
+function resolveContexts(job) {
+    for (const unit of job.units) {
         processLexicalScope$1(unit, unit.create);
         processLexicalScope$1(unit, unit.update);
     }
@@ -21288,13 +21442,13 @@ function processLexicalScope$1(view, ops) {
  * Any variable inside a listener with the name `$event` will be transformed into a output lexical
  * read immediately, and does not participate in any of the normal logic for handling variables.
  */
-function phaseResolveDollarEvent(job) {
+function resolveDollarEvent(job) {
     for (const unit of job.units) {
-        resolveDollarEvent(unit, unit.create);
-        resolveDollarEvent(unit, unit.update);
+        transformDollarEvent(unit, unit.create);
+        transformDollarEvent(unit, unit.update);
     }
 }
-function resolveDollarEvent(unit, ops) {
+function transformDollarEvent(unit, ops) {
     for (const op of ops) {
         if (op.kind === OpKind.Listener) {
             transformExpressionsInOp(op, (expr) => {
@@ -21311,7 +21465,7 @@ function resolveDollarEvent(unit, ops) {
 /**
  * Resolve the element placeholders in i18n messages.
  */
-function phaseResolveI18nElementPlaceholders(job) {
+function resolveI18nElementPlaceholders(job) {
     // Record all of the element and extracted message ops for use later.
     const extractedMessageOps = new Map();
     const elements = new Map();
@@ -21356,7 +21510,7 @@ function phaseResolveI18nElementPlaceholders(job) {
                         if (closeName === '') {
                             flags |= I18nParamValueFlags.CloseTag;
                         }
-                        addParam(currentOps.extractedMessage.params, startName, op.slot.slot, currentOps.i18n.subTemplateIndex, flags);
+                        addParam(currentOps.extractedMessage.params, startName, op.handle.slot, currentOps.i18n.subTemplateIndex, flags);
                     }
                     break;
                 case OpKind.ElementEnd:
@@ -21370,7 +21524,7 @@ function phaseResolveI18nElementPlaceholders(job) {
                         const { closeName } = startOp.i18nPlaceholder;
                         // Self-closing tags don't have a closing tag placeholder.
                         if (closeName !== '') {
-                            addParam(currentOps.extractedMessage.params, closeName, startOp.slot.slot, currentOps.i18n.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
+                            addParam(currentOps.extractedMessage.params, closeName, startOp.handle.slot, currentOps.i18n.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
                         }
                     }
                     break;
@@ -21382,8 +21536,8 @@ function phaseResolveI18nElementPlaceholders(job) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
                         const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentOps.i18n, op);
-                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.startName, op.slot.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
-                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.closeName, op.slot.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
+                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.startName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
+                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.closeName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
                     }
                     break;
             }
@@ -21412,7 +21566,7 @@ function addParam(params, placeholder, value, subTemplateIndex, flags = I18nPara
 /**
  * Resolve the i18n expression placeholders in i18n messages.
  */
-function phaseResolveI18nExpressionPlaceholders(job) {
+function resolveI18nExpressionPlaceholders(job) {
     // Record all of the i18n and extracted message ops for use later.
     const i18nOps = new Map();
     const extractedMessageOps = new Map();
@@ -21466,8 +21620,8 @@ function phaseResolveI18nExpressionPlaceholders(job) {
  * Also matches `ir.RestoreViewExpr` expressions with the variables of their corresponding saved
  * views.
  */
-function phaseResolveNames(cpl) {
-    for (const unit of cpl.units) {
+function resolveNames(job) {
+    for (const unit of job.units) {
         processLexicalScope(unit, unit.create, null);
         processLexicalScope(unit, unit.update, null);
     }
@@ -21568,7 +21722,7 @@ const sanitizers = new Map([
 /**
  * Resolves sanitization functions for ops that need them.
  */
-function phaseResolveSanitizers(job) {
+function resolveSanitizers(job) {
     for (const unit of job.units) {
         const elements = createOpXrefMap(unit);
         let sanitizerFn;
@@ -21603,21 +21757,26 @@ function isIframeElement$1(op) {
     return op.kind === OpKind.ElementStart && op.tag?.toLowerCase() === 'iframe';
 }
 
-function phaseSaveRestoreView(job) {
-    for (const view of job.views.values()) {
-        view.create.prepend([
-            createVariableOp(view.job.allocateXrefId(), {
+/**
+ * When inside of a listener, we may need access to one or more enclosing views. Therefore, each
+ * view should save the current view, and each listener must have the ability to restore the
+ * appropriate view. We eagerly generate all save view variables; they will be optimized away later.
+ */
+function saveAndRestoreView(job) {
+    for (const unit of job.units) {
+        unit.create.prepend([
+            createVariableOp(unit.job.allocateXrefId(), {
                 kind: SemanticVariableKind.SavedView,
                 name: null,
-                view: view.xref,
+                view: unit.xref,
             }, new GetCurrentViewExpr(), VariableFlags.None),
         ]);
-        for (const op of view.create) {
+        for (const op of unit.create) {
             if (op.kind !== OpKind.Listener) {
                 continue;
             }
             // Embedded views always need the save/restore view operation.
-            let needsRestoreView = view !== job.root;
+            let needsRestoreView = unit !== job.root;
             if (!needsRestoreView) {
                 for (const handlerOp of op.handlerOps) {
                     visitExpressionsInOp(handlerOp, expr => {
@@ -21629,7 +21788,7 @@ function phaseSaveRestoreView(job) {
                 }
             }
             if (needsRestoreView) {
-                addSaveRestoreViewOperationToListener(view, op);
+                addSaveRestoreViewOperationToListener(unit, op);
             }
         }
     }
@@ -21661,7 +21820,7 @@ function addSaveRestoreViewOperationToListener(unit, op) {
  * This phase is also responsible for counting the number of slots used for each view (its `decls`)
  * and propagating that number into the `Template` operations which declare embedded views.
  */
-function phaseSlotAllocation(job) {
+function allocateSlots(job) {
     // Map of all declarations in all views within the component which require an assigned slot index.
     // This map needs to be global (across all views within the component) since it's possible to
     // reference a slot from one view from an expression within another (e.g. local references work
@@ -21677,9 +21836,9 @@ function phaseSlotAllocation(job) {
                 continue;
             }
             // Assign slots to this declaration starting at the current `slotCount`.
-            op.slot.slot = slotCount;
+            op.handle.slot = slotCount;
             // And track its assigned slot in the `slotMap`.
-            slotMap.set(op.xref, op.slot.slot);
+            slotMap.set(op.xref, op.handle.slot);
             // Each declaration may use more than 1 slot, so increment `slotCount` to reserve the number
             // of slots required.
             slotCount += op.numSlotsUsed;
@@ -21709,8 +21868,8 @@ function phaseSlotAllocation(job) {
  * Transforms special-case bindings with 'style' or 'class' in their names. Must run before the
  * main binding specialization pass.
  */
-function phaseStyleBindingSpecialization(cpl) {
-    for (const unit of cpl.units) {
+function specializeStyleBindings(job) {
+    for (const unit of job.units) {
         for (const op of unit.update) {
             if (op.kind !== OpKind.Binding) {
                 continue;
@@ -21748,8 +21907,8 @@ function phaseStyleBindingSpecialization(cpl) {
  * in the double keyed read `a?.[f()]?.[f()]`, the two function calls have non-overlapping scopes.
  * Implement an algorithm for reuse.
  */
-function phaseTemporaryVariables(cpl) {
-    for (const unit of cpl.units) {
+function generateTemporaryVariables(job) {
+    for (const unit of job.units) {
         unit.create.prepend(generateTemporaries(unit.create));
         unit.update.prepend(generateTemporaries(unit.update));
     }
@@ -21826,7 +21985,7 @@ function assignName(names, expr) {
  * Note that, if a track function was previously optimized, it will not need to be extracted, and
  * this phase is a no-op.
  */
-function phaseTrackFnGeneration(job) {
+function generateTrackFns(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind !== OpKind.RepeaterCreate) {
@@ -21858,7 +22017,13 @@ function phaseTrackFnGeneration(job) {
     }
 }
 
-function phaseTrackFnOptimization(job) {
+/**
+ * `track` functions in `for` repeaters can sometimes be "optimized," i.e. transformed into inline
+ * expressions, in lieu of an external function call. For example, tracking by `$index` can be be
+ * optimized into an inline `trackByIndex` reference. This phase checks track expressions for
+ * optimizable cases.
+ */
+function optimizeTrackFns(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind !== OpKind.RepeaterCreate) {
@@ -21923,7 +22088,12 @@ function isTrackByFunctionCall(rootView, expr) {
     return true;
 }
 
-function phaseTrackVariables(job) {
+/**
+ * Inside the `track` expression on a `for` repeater, the `$index` and `$item` variables are
+ * ambiently available. In this phase, we find those variable usages, and replace them with the
+ * appropriate output read.
+ */
+function generateTrackVariables(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind !== OpKind.RepeaterCreate) {
@@ -21949,7 +22119,7 @@ function phaseTrackVariables(job) {
  * Counts the number of variable slots used within each view, and stores that on the view itself, as
  * well as propagates it to the `ir.TemplateOp` for embedded views.
  */
-function phaseVarCounting(job) {
+function countVariables(job) {
     // First, count the vars used in each view, and update the view-level counter.
     for (const unit of job.units) {
         let varCount = 0;
@@ -22094,7 +22264,7 @@ function isSingletonInterpolation(expr) {
  * To guarantee correctness, analysis of "fences" in the instruction lists is used to determine
  * which optimizations are safe to perform.
  */
-function phaseVariableOptimization(job) {
+function optimizeVariables(job) {
     for (const unit of job.units) {
         inlineAlwaysInlineVariables(unit.create);
         inlineAlwaysInlineVariables(unit.update);
@@ -22490,7 +22660,7 @@ function allowConservativeInlining(decl, target) {
 /**
  * Wraps ICUs that do not already belong to an i18n block in a new i18n block.
  */
-function phaseWrapIcus(job) {
+function wrapI18nIcus(job) {
     for (const unit of job.units) {
         let currentI18nOp = null;
         for (const op of unit.create) {
@@ -22513,102 +22683,6 @@ function phaseWrapIcus(job) {
     }
 }
 
-function phaseDeferResolveTargets(job) {
-    const scopes = new Map();
-    function getScopeForView(view) {
-        if (scopes.has(view.xref)) {
-            return scopes.get(view.xref);
-        }
-        const scope = new Scope$1();
-        for (const op of view.create) {
-            // add everything that can be referenced.
-            if (!isElementOrContainerOp(op) || op.localRefs === null) {
-                continue;
-            }
-            if (!Array.isArray(op.localRefs)) {
-                throw new Error('LocalRefs were already processed, but were needed to resolve defer targets.');
-            }
-            for (const ref of op.localRefs) {
-                if (ref.target !== '') {
-                    continue;
-                }
-                scope.targets.set(ref.name, { xref: op.xref, slot: op.slot });
-            }
-        }
-        scopes.set(view.xref, scope);
-        return scope;
-    }
-    function resolveTrigger(deferOwnerView, op, placeholderView) {
-        switch (op.trigger.kind) {
-            case DeferTriggerKind.Idle:
-            case DeferTriggerKind.Immediate:
-            case DeferTriggerKind.Timer:
-                return;
-            case DeferTriggerKind.Hover:
-            case DeferTriggerKind.Interaction:
-            case DeferTriggerKind.Viewport:
-                if (op.trigger.targetName === null) {
-                    return;
-                }
-                let view = placeholderView !== null ? job.views.get(placeholderView) : deferOwnerView;
-                let step = placeholderView !== null ? -1 : 0;
-                while (view !== null) {
-                    const scope = getScopeForView(view);
-                    if (scope.targets.has(op.trigger.targetName)) {
-                        const { xref, slot } = scope.targets.get(op.trigger.targetName);
-                        op.trigger.targetXref = xref;
-                        op.trigger.targetView = view.xref;
-                        op.trigger.targetSlotViewSteps = step;
-                        op.trigger.targetSlot = slot;
-                        return;
-                    }
-                    view = view.parent !== null ? job.views.get(view.parent) : null;
-                    step++;
-                }
-                break;
-            default:
-                throw new Error(`Trigger kind ${op.trigger.kind} not handled`);
-        }
-    }
-    // Find the defer ops, and assign the data about their targets.
-    for (const unit of job.units) {
-        const defers = new Map();
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.Defer:
-                    defers.set(op.xref, op);
-                    break;
-                case OpKind.DeferOn:
-                    const deferOp = defers.get(op.defer);
-                    resolveTrigger(unit, op, deferOp.placeholderView);
-                    break;
-            }
-        }
-    }
-}
-class Scope$1 {
-    constructor() {
-        this.targets = new Map();
-    }
-}
-
-function phaseDeferConfigs(job) {
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind !== OpKind.Defer) {
-                continue;
-            }
-            if (op.placeholderMinimumTime !== null) {
-                op.placeholderConfig =
-                    new ConstCollectedExpr(literalOrArrayLiteral([op.placeholderMinimumTime]));
-            }
-            if (op.loadingMinimumTime !== null || op.loadingAfterTime !== null) {
-                op.loadingConfig = new ConstCollectedExpr(literalOrArrayLiteral([op.loadingMinimumTime, op.loadingAfterTime]));
-            }
-        }
-    }
-}
-
 /**
  *
  * @license
@@ -22618,64 +22692,64 @@ function phaseDeferConfigs(job) {
  * found in the LICENSE file at https://angular.io/license
  */
 const phases = [
-    { kind: CompilationJobKind.Tmpl, fn: phaseRemoveContentSelectors },
-    { kind: CompilationJobKind.Host, fn: phaseHostStylePropertyParsing },
-    { kind: CompilationJobKind.Tmpl, fn: phaseNamespace },
-    { kind: CompilationJobKind.Both, fn: phaseStyleBindingSpecialization },
-    { kind: CompilationJobKind.Both, fn: phaseBindingSpecialization },
-    { kind: CompilationJobKind.Tmpl, fn: phasePropagateI18nBlocks },
-    { kind: CompilationJobKind.Tmpl, fn: phaseWrapIcus },
-    { kind: CompilationJobKind.Both, fn: phaseAttributeExtraction },
-    { kind: CompilationJobKind.Both, fn: phaseParseExtractedStyles },
-    { kind: CompilationJobKind.Tmpl, fn: phaseRemoveEmptyBindings },
-    { kind: CompilationJobKind.Both, fn: phaseCollapseSingletonInterpolations },
-    { kind: CompilationJobKind.Both, fn: phaseOrdering },
-    { kind: CompilationJobKind.Tmpl, fn: phaseConditionals },
-    { kind: CompilationJobKind.Tmpl, fn: phasePipeCreation },
-    { kind: CompilationJobKind.Tmpl, fn: phaseDeferConfigs },
-    { kind: CompilationJobKind.Tmpl, fn: phaseI18nTextExtraction },
-    { kind: CompilationJobKind.Tmpl, fn: phaseIcuExtraction },
-    { kind: CompilationJobKind.Tmpl, fn: phaseApplyI18nExpressions },
-    { kind: CompilationJobKind.Tmpl, fn: phasePipeVariadic },
-    { kind: CompilationJobKind.Both, fn: phasePureLiteralStructures },
-    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateProjectionDef },
-    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateVariables },
-    { kind: CompilationJobKind.Tmpl, fn: phaseSaveRestoreView },
-    { kind: CompilationJobKind.Tmpl, fn: phaseFindAnyCasts },
-    { kind: CompilationJobKind.Both, fn: phaseResolveDollarEvent },
-    { kind: CompilationJobKind.Tmpl, fn: phaseRepeaterDerivedVars },
-    { kind: CompilationJobKind.Tmpl, fn: phaseTrackVariables },
-    { kind: CompilationJobKind.Both, fn: phaseResolveNames },
-    { kind: CompilationJobKind.Tmpl, fn: phaseDeferResolveTargets },
-    { kind: CompilationJobKind.Tmpl, fn: phaseTrackFnOptimization },
-    { kind: CompilationJobKind.Both, fn: phaseResolveContexts },
-    { kind: CompilationJobKind.Tmpl, fn: phaseResolveSanitizers },
-    { kind: CompilationJobKind.Tmpl, fn: phaseLocalRefs },
-    { kind: CompilationJobKind.Both, fn: phaseNullishCoalescing },
-    { kind: CompilationJobKind.Both, fn: phaseExpandSafeReads },
-    { kind: CompilationJobKind.Both, fn: phaseTemporaryVariables },
-    { kind: CompilationJobKind.Tmpl, fn: phaseSlotAllocation },
-    { kind: CompilationJobKind.Tmpl, fn: phaseI18nMessageExtraction },
-    { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nElementPlaceholders },
-    { kind: CompilationJobKind.Tmpl, fn: phaseResolveI18nExpressionPlaceholders },
-    { kind: CompilationJobKind.Tmpl, fn: phasePropagateI18nPlaceholders },
-    { kind: CompilationJobKind.Tmpl, fn: phaseFormatI18nParams },
-    { kind: CompilationJobKind.Tmpl, fn: phaseTrackFnGeneration },
-    { kind: CompilationJobKind.Tmpl, fn: phaseI18nConstCollection },
-    { kind: CompilationJobKind.Tmpl, fn: phaseConstExpressionCollection },
-    { kind: CompilationJobKind.Both, fn: phaseConstCollection },
-    { kind: CompilationJobKind.Tmpl, fn: phaseAssignI18nSlotDependencies },
-    { kind: CompilationJobKind.Both, fn: phaseVarCounting },
-    { kind: CompilationJobKind.Tmpl, fn: phaseGenerateAdvance },
-    { kind: CompilationJobKind.Both, fn: phaseVariableOptimization },
-    { kind: CompilationJobKind.Both, fn: phaseNaming },
-    { kind: CompilationJobKind.Tmpl, fn: phaseMergeNextContext },
-    { kind: CompilationJobKind.Tmpl, fn: phaseNgContainer },
-    { kind: CompilationJobKind.Tmpl, fn: phaseEmptyElements },
-    { kind: CompilationJobKind.Tmpl, fn: phaseNonbindable },
-    { kind: CompilationJobKind.Both, fn: phasePureFunctionExtraction },
-    { kind: CompilationJobKind.Both, fn: phaseReify },
-    { kind: CompilationJobKind.Both, fn: phaseChaining },
+    { kind: CompilationJobKind.Tmpl, fn: removeContentSelectors },
+    { kind: CompilationJobKind.Host, fn: parseHostStyleProperties },
+    { kind: CompilationJobKind.Tmpl, fn: emitNamespaceChanges },
+    { kind: CompilationJobKind.Both, fn: specializeStyleBindings },
+    { kind: CompilationJobKind.Both, fn: specializeBindings },
+    { kind: CompilationJobKind.Tmpl, fn: propagateI18nBlocks },
+    { kind: CompilationJobKind.Tmpl, fn: wrapI18nIcus },
+    { kind: CompilationJobKind.Both, fn: extractAttributes },
+    { kind: CompilationJobKind.Both, fn: parseExtractedStyles },
+    { kind: CompilationJobKind.Tmpl, fn: removeEmptyBindings },
+    { kind: CompilationJobKind.Both, fn: collapseSingletonInterpolations },
+    { kind: CompilationJobKind.Both, fn: orderOps },
+    { kind: CompilationJobKind.Tmpl, fn: generateConditionalExpressions },
+    { kind: CompilationJobKind.Tmpl, fn: createPipes },
+    { kind: CompilationJobKind.Tmpl, fn: configureDeferInstructions },
+    { kind: CompilationJobKind.Tmpl, fn: extractI18nText },
+    { kind: CompilationJobKind.Tmpl, fn: extractI18nICUs },
+    { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
+    { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
+    { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
+    { kind: CompilationJobKind.Tmpl, fn: generateProjectionDefs },
+    { kind: CompilationJobKind.Tmpl, fn: generateVariables },
+    { kind: CompilationJobKind.Tmpl, fn: saveAndRestoreView },
+    { kind: CompilationJobKind.Tmpl, fn: deleteAnyCasts },
+    { kind: CompilationJobKind.Both, fn: resolveDollarEvent },
+    { kind: CompilationJobKind.Tmpl, fn: generateRepeaterDerivedVars },
+    { kind: CompilationJobKind.Tmpl, fn: generateTrackVariables },
+    { kind: CompilationJobKind.Both, fn: resolveNames },
+    { kind: CompilationJobKind.Tmpl, fn: resolveDeferTargetNames },
+    { kind: CompilationJobKind.Tmpl, fn: optimizeTrackFns },
+    { kind: CompilationJobKind.Both, fn: resolveContexts },
+    { kind: CompilationJobKind.Tmpl, fn: resolveSanitizers },
+    { kind: CompilationJobKind.Tmpl, fn: liftLocalRefs },
+    { kind: CompilationJobKind.Both, fn: generateNullishCoalesceExpressions },
+    { kind: CompilationJobKind.Both, fn: expandSafeReads },
+    { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
+    { kind: CompilationJobKind.Tmpl, fn: allocateSlots },
+    { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
+    { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: propogateI18nPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: formatI18nParams },
+    { kind: CompilationJobKind.Tmpl, fn: generateTrackFns },
+    { kind: CompilationJobKind.Tmpl, fn: collectI18nConsts },
+    { kind: CompilationJobKind.Tmpl, fn: collectConstExpressions },
+    { kind: CompilationJobKind.Both, fn: collectElementConsts },
+    { kind: CompilationJobKind.Tmpl, fn: assignI18nSlotDependencies },
+    { kind: CompilationJobKind.Both, fn: countVariables },
+    { kind: CompilationJobKind.Tmpl, fn: generateAdvance },
+    { kind: CompilationJobKind.Both, fn: optimizeVariables },
+    { kind: CompilationJobKind.Both, fn: nameFunctionsAndVariables },
+    { kind: CompilationJobKind.Tmpl, fn: mergeNextContextExpressions },
+    { kind: CompilationJobKind.Tmpl, fn: generateNgContainerOps },
+    { kind: CompilationJobKind.Tmpl, fn: collapseEmptyInstructions },
+    { kind: CompilationJobKind.Tmpl, fn: disableBindings$1 },
+    { kind: CompilationJobKind.Both, fn: extractPureFunctions },
+    { kind: CompilationJobKind.Both, fn: reify },
+    { kind: CompilationJobKind.Both, fn: chain },
 ];
 /**
  * Run all transformation phases in the correct order against a compilation job. After this
@@ -22791,9 +22865,9 @@ const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
  * TODO: Refactor more of the ingestion code into phases.
  */
 function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds) {
-    const cpl = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds);
-    ingestNodes(cpl.root, template);
-    return cpl;
+    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds);
+    ingestNodes(job.root, template);
+    return job;
 }
 /**
  * Process a host binding AST and convert it into a `HostBindingCompilationJob` in the intermediate
@@ -23010,10 +23084,10 @@ function ingestIfBlock(unit, ifBlock) {
         unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
-            firstSlotHandle = tmplOp.slot;
+            firstSlotHandle = tmplOp.handle;
         }
         const caseExpr = ifCase.expression ? convertAst(ifCase.expression, unit.job, null) : null;
-        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.slot, ifCase.expressionAlias);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.handle, ifCase.expressionAlias);
         conditions.push(conditionalCaseExpr);
         ingestNodes(cView, ifCase.children);
     }
@@ -23033,12 +23107,12 @@ function ingestSwitchBlock(unit, switchBlock) {
         unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
-            firstSlotHandle = tmplOp.slot;
+            firstSlotHandle = tmplOp.handle;
         }
         const caseExpr = switchCase.expression ?
             convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) :
             null;
-        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.slot);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.handle);
         conditions.push(conditionalCaseExpr);
         ingestNodes(cView, switchCase.children);
     }
@@ -23063,11 +23137,11 @@ function ingestDeferBlock(unit, deferBlock) {
     const error = ingestDeferView(unit, 'Error', deferBlock.error?.children, deferBlock.error?.sourceSpan);
     // Create the main defer op, and ops for all secondary views.
     const deferXref = unit.job.allocateXrefId();
-    const deferOp = createDeferOp(deferXref, main.xref, main.slot, deferBlock.sourceSpan);
+    const deferOp = createDeferOp(deferXref, main.xref, main.handle, deferBlock.sourceSpan);
     deferOp.placeholderView = placeholder?.xref ?? null;
-    deferOp.placeholderSlot = placeholder?.slot ?? null;
-    deferOp.loadingSlot = loading?.slot ?? null;
-    deferOp.errorSlot = error?.slot ?? null;
+    deferOp.placeholderSlot = placeholder?.handle ?? null;
+    deferOp.loadingSlot = loading?.handle ?? null;
+    deferOp.errorSlot = error?.handle ?? null;
     deferOp.placeholderMinimumTime = deferBlock.placeholder?.minimumTime ?? null;
     deferOp.loadingMinimumTime = deferBlock.loading?.minimumTime ?? null;
     deferOp.loadingAfterTime = deferBlock.loading?.afterTime ?? null;
@@ -23183,7 +23257,7 @@ function ingestForBlock(unit, forBlock) {
     const repeaterCreate = createRepeaterCreateOp(repeaterView.xref, emptyView?.xref ?? null, tagName, track, varNames, forBlock.sourceSpan);
     unit.create.push(repeaterCreate);
     const expression = convertAst(forBlock.expression, unit.job, convertSourceSpan(forBlock.expression.span, forBlock.sourceSpan));
-    const repeater = createRepeaterOp(repeaterCreate.xref, repeaterCreate.slot, expression, forBlock.sourceSpan);
+    const repeater = createRepeaterOp(repeaterCreate.xref, repeaterCreate.handle, expression, forBlock.sourceSpan);
     unit.update.push(repeater);
 }
 /**
@@ -23341,7 +23415,7 @@ function ingestBindings(unit, op, element) {
             unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null));
             continue;
         }
-        listenerOp = createListenerOp(op.xref, op.slot, output.name, op.tag, output.phase, false, output.sourceSpan);
+        listenerOp = createListenerOp(op.xref, op.handle, output.name, op.tag, output.phase, false, output.sourceSpan);
         // if output.handler is a chain, then push each statement from the chain separately, and
         // return the last one?
         let handlerExprs;
@@ -30638,7 +30712,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-rc.1+sha-cc13d6f');
+const VERSION = new Version('17.0.0-rc.1+sha-0d88e25');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32168,7 +32242,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32276,7 +32350,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32553,7 +32627,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32588,7 +32662,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32639,7 +32713,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32672,7 +32746,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32723,7 +32797,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-rc.1+sha-cc13d6f'));
+    definitionMap.set('version', literal('17.0.0-rc.1+sha-0d88e25'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
