@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.0-rc.2+sha-c267f54
+ * @license Angular v17.0.0-rc.2+sha-91dbcb5
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8800,7 +8800,7 @@ var OpKind;
     /**
      * An i18n message that has been extracted for inclusion in the consts array.
      */
-    OpKind[OpKind["ExtractedMessage"] = 28] = "ExtractedMessage";
+    OpKind[OpKind["I18nMessage"] = 28] = "I18nMessage";
     /**
      * A host binding property.
      */
@@ -8853,6 +8853,10 @@ var OpKind;
      * An instruction to update an ICU expression.
      */
     OpKind[OpKind["IcuUpdate"] = 41] = "IcuUpdate";
+    /**
+     * An i18n context containing information needed to generate an i18n message.
+     */
+    OpKind[OpKind["I18nContext"] = 42] = "I18nContext";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9407,12 +9411,12 @@ function createRepeaterOp(repeaterCreate, targetSlot, collection, sourceSpan) {
 /**
  * Create an i18n expression op.
  */
-function createI18nExpressionOp(owner, ownerSlot, expression, i18nPlaceholder, resolutionTime, sourceSpan) {
+function createI18nExpressionOp(context, target, handle, expression, i18nPlaceholder, resolutionTime, sourceSpan) {
     return {
         kind: OpKind.I18nExpression,
-        owner,
-        ownerSlot,
-        target: owner,
+        context,
+        target,
+        handle,
         expression,
         i18nPlaceholder,
         resolutionTime,
@@ -9425,11 +9429,11 @@ function createI18nExpressionOp(owner, ownerSlot, expression, i18nPlaceholder, r
 /**
  *Creates an op to apply i18n expression ops
  */
-function createI18nApplyOp(target, targetSlot, sourceSpan) {
+function createI18nApplyOp(target, handle, sourceSpan) {
     return {
         kind: OpKind.I18nApply,
         target,
-        targetSlot,
+        handle,
         sourceSpan,
         ...NEW_OP,
     };
@@ -10209,6 +10213,14 @@ function transformExpressionsInOp(op, transform, flags) {
                     transformExpressionsInExpression(op.placeholderConfig, transform, flags);
             }
             break;
+        case OpKind.I18nMessage:
+            for (const [placeholder, expr] of op.params) {
+                op.params.set(placeholder, transformExpressionsInExpression(expr, transform, flags));
+            }
+            for (const [placeholder, expr] of op.postprocessingParams) {
+                op.postprocessingParams.set(placeholder, transformExpressionsInExpression(expr, transform, flags));
+            }
+            break;
         case OpKind.Advance:
         case OpKind.Container:
         case OpKind.ContainerEnd:
@@ -10219,9 +10231,9 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.ElementEnd:
         case OpKind.ElementStart:
         case OpKind.EnableBindings:
-        case OpKind.ExtractedMessage:
         case OpKind.I18n:
         case OpKind.I18nApply:
+        case OpKind.I18nContext:
         case OpKind.I18nEnd:
         case OpKind.I18nStart:
         case OpKind.Icu:
@@ -10834,17 +10846,17 @@ function createDeferOnOp(defer, trigger, prefetch, sourceSpan) {
 /**
  * Create an `ExtractedMessageOp`.
  */
-function createExtractedMessageOp(owner, message, isRoot) {
+function createI18nMessageOp(xref, i18nBlock, message, messagePlaceholder, params, postprocessingParams, needsPostprocessing) {
     return {
-        kind: OpKind.ExtractedMessage,
-        owner,
+        kind: OpKind.I18nMessage,
+        xref,
+        i18nBlock,
         message,
-        isRoot,
-        params: new Map(),
-        postprocessingParams: new Map(),
-        needsPostprocessing: false,
-        formattedParams: null,
-        formattedPostprocessingParams: null,
+        messagePlaceholder,
+        params,
+        postprocessingParams,
+        needsPostprocessing,
+        subMessages: [],
         ...NEW_OP,
     };
 }
@@ -10860,6 +10872,7 @@ function createI18nStartOp(xref, message, root) {
         message,
         messageIndex: null,
         subTemplateIndex: null,
+        context: null,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
     };
@@ -10877,12 +10890,27 @@ function createI18nEndOp(xref) {
 /**
  * Creates an op to create an ICU expression.
  */
-function createIcuOp(xref, message, sourceSpan) {
+function createIcuOp(xref, message, icu, messagePlaceholder, sourceSpan) {
     return {
         kind: OpKind.Icu,
         xref,
         message,
+        icu,
+        messagePlaceholder,
+        context: null,
         sourceSpan,
+        ...NEW_OP,
+    };
+}
+function createI18nContextOp(xref, i18nBlock, message, sourceSpan) {
+    return {
+        kind: OpKind.I18nContext,
+        xref,
+        i18nBlock,
+        message,
+        sourceSpan,
+        params: new Map(),
+        postprocessingParams: new Map(),
         ...NEW_OP,
     };
 }
@@ -11126,7 +11154,7 @@ function applyI18nExpressions(job) {
             // Only add apply after expressions that are not followed by more expressions.
             if (op.kind === OpKind.I18nExpression && needsApplication(op)) {
                 // TODO: what should be the source span for the apply op?
-                OpList.insertAfter(createI18nApplyOp(op.owner, op.ownerSlot, null), op);
+                OpList.insertAfter(createI18nApplyOp(op.target, op.handle, null), op);
             }
         }
     }
@@ -11139,8 +11167,8 @@ function needsApplication(op) {
     if (op.next?.kind !== OpKind.I18nExpression) {
         return true;
     }
-    // If the next op is an expression targeting a different i18n block, we need to apply.
-    if (op.next.owner !== op.owner) {
+    // If the next op is an expression targeting a different i18n context, we need to apply.
+    if (op.next.context !== op.context) {
         return true;
     }
     return false;
@@ -11151,21 +11179,33 @@ function needsApplication(op) {
  */
 function assignI18nSlotDependencies(job) {
     const i18nLastSlotConsumers = new Map();
+    const i18nContexts = new Map();
     let lastSlotConsumer = null;
+    let currentI18nOp = null;
     for (const unit of job.units) {
         // Record the last consumed slot before each i18n end instruction.
         for (const op of unit.create) {
-            if (op.kind === OpKind.I18nEnd) {
-                i18nLastSlotConsumers.set(op.xref, lastSlotConsumer);
-            }
             if (hasConsumesSlotTrait(op)) {
                 lastSlotConsumer = op.xref;
+            }
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    currentI18nOp = op;
+                    break;
+                case OpKind.I18nEnd:
+                    i18nLastSlotConsumers.set(currentI18nOp.xref, lastSlotConsumer);
+                    currentI18nOp = null;
+                    break;
+                case OpKind.I18nContext:
+                    i18nContexts.set(op.xref, op);
+                    break;
             }
         }
         // Assign i18n expressions to target the last slot in its owning block.
         for (const op of unit.update) {
             if (op.kind === OpKind.I18nExpression) {
-                op.target = i18nLastSlotConsumers.get(op.owner);
+                const i18nContext = i18nContexts.get(op.context);
+                op.target = i18nLastSlotConsumers.get(i18nContext.i18nBlock);
             }
         }
     }
@@ -11730,6 +11770,99 @@ function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, s
 }
 
 /**
+ * Create one helper context op per i18n block (including generate descending blocks).
+ *
+ * Also, if an ICU exists inside an i18n block that also contains other localizable content (such as
+ * string), create an additional helper context op for the ICU.
+ *
+ * These context ops are later used for generating i18n messages. (Although we generate at least one
+ * context op per nested view, we will collect them up the tree later, to generate a top-level
+ * message.)
+ */
+function createI18nContexts(job) {
+    let currentI18nOp = null;
+    let xref;
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    // Each i18n block gets its own context.
+                    xref = job.allocateXrefId();
+                    unit.create.push(createI18nContextOp(xref, op.xref, op.message, null));
+                    op.context = xref;
+                    currentI18nOp = op;
+                    break;
+                case OpKind.I18nEnd:
+                    currentI18nOp = null;
+                    break;
+                case OpKind.Icu:
+                    // If an ICU represents a different message than its containing block, we give it its own
+                    // i18n context.
+                    if (currentI18nOp === null) {
+                        throw Error('Unexpected ICU outside of an i18n block.');
+                    }
+                    if (op.message.id !== currentI18nOp.message.id) {
+                        // There was an enclosing i18n block around this ICU somewhere.
+                        xref = job.allocateXrefId();
+                        unit.create.push(createI18nContextOp(xref, currentI18nOp.xref, op.message, null));
+                        op.context = xref;
+                    }
+                    else {
+                        // The i18n block was generated because of this ICU, OR it was explicit, but the ICU is
+                        // the only localizable content inside of it.
+                        op.context = currentI18nOp.context;
+                    }
+                    break;
+            }
+        }
+    }
+}
+
+/**
+ * Replace the ICU update ops with i18n expression ops.
+ */
+function createI18nIcuExpressions(job) {
+    const icus = new Map();
+    const i18nContexts = new Map();
+    const i18nBlocks = new Map();
+    // Collect maps of ops that need to be referenced to create the I18nExpressionOps.
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.Icu:
+                    icus.set(op.xref, op);
+                    break;
+                case OpKind.I18nContext:
+                    i18nContexts.set(op.xref, op);
+                    break;
+                case OpKind.I18nStart:
+                    i18nBlocks.set(op.xref, op);
+                    break;
+            }
+        }
+        // Replace each IcuUpdateOp with an I18nExpressionOp.
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.IcuUpdate:
+                    const icuOp = icus.get(op.xref);
+                    if (icuOp?.icu.expressionPlaceholder === undefined) {
+                        throw Error('ICU should have an i18n placeholder');
+                    }
+                    if (icuOp.context === null) {
+                        throw Error('ICU should have its i18n context set');
+                    }
+                    const i18nContext = i18nContexts.get(icuOp.context);
+                    const i18nBlock = i18nBlocks.get(i18nContext.i18nBlock);
+                    OpList.replace(op, createI18nExpressionOp(i18nContext.xref, i18nBlock.xref, i18nBlock.handle, new LexicalReadExpr(icuOp.icu.expression), icuOp.icu.expressionPlaceholder, 
+                    // ICU-based i18n Expressions are resolved during post-processing.
+                    I18nParamResolutionTime.Postproccessing, null));
+                    break;
+            }
+        }
+    }
+}
+
+/**
  * Defer instructions take a configuration array, which should be collected into the component
  * consts. This phase finds the config options, and creates the corresponding const array.
  */
@@ -12088,25 +12221,68 @@ const LIST_DELIMITER = '|';
  * Formats the param maps on extracted message ops into a maps of `Expression` objects that can be
  * used in the final output.
  */
-function formatI18nParams(job) {
+function extractI18nMessages(job) {
+    // Save the i18n context ops for later use.
+    const i18nContexts = new Map();
+    // Record which contexts represent i18n blocks (any other contexts are assumed to have been
+    // created from ICUs).
+    const i18nBlockContexts = new Set();
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedMessage) {
-                if (op.isRoot) {
-                    op.formattedParams = formatParams(op.params);
-                    op.formattedPostprocessingParams = formatParams(op.postprocessingParams);
-                    // The message will need post-processing if there are any post-processing params, or if
-                    // there are any normal params that have multiple values
-                    op.needsPostprocessing = op.postprocessingParams.size > 0;
-                    for (const [param, values] of op.params) {
-                        if (values.length > 1) {
-                            op.needsPostprocessing = true;
-                        }
-                    }
-                }
+            switch (op.kind) {
+                case OpKind.I18nContext:
+                    i18nContexts.set(op.xref, op);
+                    break;
+                case OpKind.I18nStart:
+                    i18nBlockContexts.add(op.context);
+                    break;
             }
         }
     }
+    // Extract messages from root i18n blocks.
+    const i18nBlockMessages = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.I18nStart && op.xref === op.root) {
+                if (!op.context) {
+                    throw Error('I18n start op should have its context set.');
+                }
+                const i18nMessageOp = createI18nMessage(job, i18nContexts.get(op.context));
+                i18nBlockMessages.set(op.xref, i18nMessageOp);
+                unit.create.push(i18nMessageOp);
+            }
+        }
+    }
+    // Extract messages from ICUs with their own sub-context.
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.Icu) {
+                if (!op.context) {
+                    throw Error('ICU op should have its context set.');
+                }
+                if (!i18nBlockContexts.has(op.context)) {
+                    const i18nContext = i18nContexts.get(op.context);
+                    const subMessage = createI18nMessage(job, i18nContext, op.messagePlaceholder);
+                    unit.create.push(subMessage);
+                    const parentMessage = i18nBlockMessages.get(i18nContext.i18nBlock);
+                    parentMessage?.subMessages.push(subMessage.xref);
+                }
+                OpList.remove(op);
+            }
+        }
+    }
+}
+/**
+ * Create an i18n message op from an i18n context op.
+ */
+function createI18nMessage(job, context, messagePlaceholder) {
+    let needsPostprocessing = context.postprocessingParams.size > 0;
+    for (const values of context.params.values()) {
+        if (values.length > 1) {
+            needsPostprocessing = true;
+        }
+    }
+    return createI18nMessageOp(job.allocateXrefId(), context.i18nBlock, context.message, messagePlaceholder ?? null, formatParams(context.params), formatParams(context.postprocessingParams), needsPostprocessing);
 }
 /**
  * Formats a map of `I18nParamValue[]` values into a map of `Expression` values.
@@ -19348,33 +19524,21 @@ const TRANSLATION_VAR_PREFIX = 'i18n_';
 function collectI18nConsts(job) {
     const fileBasedI18nSuffix = job.relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_').toUpperCase() + '_';
     const messageConstIndices = new Map();
+    // Remove all of the i18n message ops into a map.
+    const messages = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedMessage) {
-                // Serialize the extracted root messages into the const array.
-                if (op.isRoot) {
-                    assertAllParamsResolved(op);
-                    const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
-                    // Closure Compiler requires const names to start with `MSG_` but disallows any other
-                    // const to start with `MSG_`. We define a variable starting with `MSG_` just for the
-                    // `goog.getMsg` call
-                    const closureVar = i18nGenerateClosureVar(job.pool, op.message.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
-                    let transformFn = undefined;
-                    // If nescessary, add a post-processing step and resolve any placeholder params that are
-                    // set in post-processing.
-                    if (op.needsPostprocessing) {
-                        const extraTransformFnParams = [];
-                        if (op.formattedPostprocessingParams.size > 0) {
-                            extraTransformFnParams.push(literalMap([...op.formattedPostprocessingParams].map(([key, value]) => ({ key, value, quoted: true }))));
-                        }
-                        transformFn = (expr) => importExpr(Identifiers.i18nPostprocess).callFn([expr, ...extraTransformFnParams]);
-                    }
-                    const statements = getTranslationDeclStmts$1(op.message, mainVar, closureVar, op.formattedParams, transformFn);
-                    messageConstIndices.set(op.owner, job.addConst(mainVar, statements));
-                }
-                // Remove the extracted messages from the IR now that they have been collected.
+            if (op.kind === OpKind.I18nMessage) {
+                messages.set(op.xref, op);
                 OpList.remove(op);
             }
+        }
+    }
+    // Serialize the extracted messages for root i18n blocks into the const array.
+    for (const op of messages.values()) {
+        if (op.kind === OpKind.I18nMessage && op.messagePlaceholder === null) {
+            const { mainVar, statements } = collectMessage(job, fileBasedI18nSuffix, messages, op);
+            messageConstIndices.set(op.i18nBlock, job.addConst(mainVar, statements));
         }
     }
     // Assign const index to i18n ops that messages were extracted from.
@@ -19385,6 +19549,40 @@ function collectI18nConsts(job) {
             }
         }
     }
+}
+/**
+ * Collects the given message into a set of statements that can be added to the const array.
+ * This will recursively collect any sub-messages referenced from the parent message as well.
+ */
+function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
+    // Recursively collect any sub-messages, and fill in their placeholders in this message.
+    const statements = [];
+    for (const subMessageId of messageOp.subMessages) {
+        const subMessage = messages.get(subMessageId);
+        const { mainVar: subMessageVar, statements: subMessageStatements } = collectMessage(job, fileBasedI18nSuffix, messages, subMessage);
+        statements.push(...subMessageStatements);
+        messageOp.params.set(subMessage.messagePlaceholder, subMessageVar);
+    }
+    // Check that the message has all of its parameters filled out.
+    assertAllParamsResolved(messageOp);
+    const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
+    // Closure Compiler requires const names to start with `MSG_` but disallows any other
+    // const to start with `MSG_`. We define a variable starting with `MSG_` just for the
+    // `goog.getMsg` call
+    const closureVar = i18nGenerateClosureVar(job.pool, messageOp.message.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
+    let transformFn = undefined;
+    // If nescessary, add a post-processing step and resolve any placeholder params that are
+    // set in post-processing.
+    if (messageOp.needsPostprocessing) {
+        const extraTransformFnParams = [];
+        if (messageOp.postprocessingParams.size > 0) {
+            extraTransformFnParams.push(literalMap([...messageOp.postprocessingParams].map(([key, value]) => ({ key, value, quoted: true }))));
+        }
+        transformFn = (expr) => importExpr(Identifiers.i18nPostprocess).callFn([expr, ...extraTransformFnParams]);
+    }
+    // Add the message's statements
+    statements.push(...getTranslationDeclStmts$1(messageOp.message, mainVar, closureVar, messageOp.params, transformFn));
+    return { mainVar, statements };
 }
 /**
  * Generate statements that define a given translation message.
@@ -19457,32 +19655,14 @@ function i18nGenerateClosureVar(pool, messageId, fileBasedI18nSuffix, useExterna
  * Asserts that all of the message's placeholders have values.
  */
 function assertAllParamsResolved(op) {
-    if (op.formattedParams === null || op.formattedPostprocessingParams === null) {
-        throw Error('Params should have been formatted.');
-    }
     for (const placeholder in op.message.placeholders) {
-        if (!op.formattedParams.has(placeholder) &&
-            !op.formattedPostprocessingParams.has(placeholder)) {
+        if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
             throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
         }
     }
     for (const placeholder in op.message.placeholderToMessage) {
-        if (!op.formattedParams.has(placeholder) &&
-            !op.formattedPostprocessingParams.has(placeholder)) {
+        if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
             throw Error(`Failed to resolve i18n message placeholder: ${placeholder}`);
-        }
-    }
-}
-
-/**
- * Extracts i18n messages into their own op.
- */
-function extractI18nMessages(job) {
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart) {
-                unit.create.push(createExtractedMessageOp(op.xref, op.message, op.xref === op.root));
-            }
         }
     }
 }
@@ -19494,22 +19674,22 @@ function extractI18nText(job) {
     for (const unit of job.units) {
         // Remove all text nodes within i18n blocks, their content is already captured in the i18n
         // message.
-        let currentI18nId = null;
-        let currentI18nSlot = null;
-        const textNodes = new Map();
+        let currentI18n = null;
+        const textNodeI18nBlocks = new Map();
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
-                    currentI18nId = op.xref;
-                    currentI18nSlot = op.handle;
+                    if (op.context === null) {
+                        throw Error('I18n op should have its context set.');
+                    }
+                    currentI18n = op;
                     break;
                 case OpKind.I18nEnd:
-                    currentI18nId = null;
-                    currentI18nSlot = null;
+                    currentI18n = null;
                     break;
                 case OpKind.Text:
-                    if (currentI18nId !== null && currentI18nSlot !== null) {
-                        textNodes.set(op.xref, { xref: currentI18nId, slot: currentI18nSlot });
+                    if (currentI18n !== null) {
+                        textNodeI18nBlocks.set(op.xref, currentI18n);
                         OpList.remove(op);
                     }
                     break;
@@ -19520,67 +19700,19 @@ function extractI18nText(job) {
         for (const op of unit.update) {
             switch (op.kind) {
                 case OpKind.InterpolateText:
-                    if (!textNodes.has(op.target)) {
+                    if (!textNodeI18nBlocks.has(op.target)) {
                         continue;
                     }
-                    const i18nBlock = textNodes.get(op.target);
+                    const i18nOp = textNodeI18nBlocks.get(op.target);
                     const ops = [];
                     for (let i = 0; i < op.interpolation.expressions.length; i++) {
                         const expr = op.interpolation.expressions[i];
                         const placeholder = op.i18nPlaceholders[i];
-                        ops.push(createI18nExpressionOp(i18nBlock.xref, i18nBlock.slot, expr, placeholder.name, I18nParamResolutionTime.Creation, expr.sourceSpan ?? op.sourceSpan));
-                    }
-                    if (ops.length > 0) {
-                        // ops.push(ir.createI18nApplyOp(i18nBlockId, op.i18nPlaceholders, op.sourceSpan));
+                        // For now, this i18nExpression depends on the slot context of the enclosing i18n block.
+                        // Later, we will modify this, and advance to a different point.
+                        ops.push(createI18nExpressionOp(i18nOp.context, i18nOp.xref, i18nOp.handle, expr, placeholder.name, I18nParamResolutionTime.Creation, expr.sourceSpan ?? op.sourceSpan));
                     }
                     OpList.replaceWithMany(op, ops);
-                    break;
-            }
-        }
-    }
-}
-
-/**
- * Extracts ICUs into i18n expressions.
- */
-function extractI18nICUs(job) {
-    for (const unit of job.units) {
-        // Build a map of ICU to the i18n block they belong to, then remove the `Icu` ops.
-        const icus = new Map();
-        let currentI18nId = null;
-        let currentI18nSlot = null;
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.I18nStart:
-                    currentI18nId = op.xref;
-                    currentI18nSlot = op.handle;
-                    break;
-                case OpKind.I18nEnd:
-                    currentI18nId = null;
-                    currentI18nSlot = null;
-                    break;
-                case OpKind.Icu:
-                    if (currentI18nId === null) {
-                        throw Error('Unexpected ICU outside of an i18n block.');
-                    }
-                    icus.set(op.xref, { message: op.message, i18nBlockId: currentI18nId, i18nBlockSlot: currentI18nSlot });
-                    OpList.remove(op);
-                    break;
-            }
-        }
-        // Replace the `IcuUpdate` ops with `i18nExpr` ops.
-        for (const op of unit.update) {
-            switch (op.kind) {
-                case OpKind.IcuUpdate:
-                    const { message, i18nBlockId, i18nBlockSlot } = icus.get(op.xref);
-                    const icuNode = message.nodes.find((n) => n instanceof Icu);
-                    if (icuNode === undefined) {
-                        throw Error('Could not find ICU in i18n AST');
-                    }
-                    if (icuNode.expressionPlaceholder === undefined) {
-                        throw Error('ICU is missing an i18n placeholder');
-                    }
-                    OpList.replace(op, createI18nExpressionOp(i18nBlockId, i18nBlockSlot, new LexicalReadExpr(icuNode.expression), icuNode.expressionPlaceholder, I18nParamResolutionTime.Postproccessing, null));
                     break;
             }
         }
@@ -19619,6 +19751,57 @@ function serializeLocalRefs(refs) {
         constRefs.push(literal(ref.name), literal(ref.target));
     }
     return literalArr(constRefs);
+}
+
+/**
+ * Merge i18n contexts for child i18n blocks into their ancestor root contexts.
+ */
+function mergeI18nContexts(job) {
+    // Record all of the i18n and extracted message ops for use later.
+    const i18nOps = new Map();
+    const i18nContexts = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    if (!op.context) {
+                        throw Error('I18n op should have its context set.');
+                    }
+                    i18nOps.set(op.xref, op);
+                    break;
+                case OpKind.I18nContext:
+                    i18nContexts.set(op.xref, op);
+                    break;
+            }
+        }
+    }
+    // For each non-root i18n op, merge its context into the root i18n op's context.
+    for (const childI18nOp of i18nOps.values()) {
+        if (childI18nOp.xref !== childI18nOp.root) {
+            const childContext = i18nContexts.get(childI18nOp.context);
+            const rootI18nOp = i18nOps.get(childI18nOp.root);
+            const rootContext = i18nContexts.get(rootI18nOp.context);
+            mergeParams(rootContext.params, childContext.params);
+            mergeParams(rootContext.postprocessingParams, childContext.postprocessingParams);
+        }
+    }
+}
+/**
+ * Merges the params in the `from` map to into the `to` map.
+ */
+function mergeParams(to, from) {
+    for (const [placeholder, fromValues] of from) {
+        const toValues = to.get(placeholder) || [];
+        // TODO(mmalerba): Child element close tag params should be prepended to maintain the same order
+        // as TemplateDefinitionBuilder. Can be cleaned up when compatibility is no longer required.
+        const flags = fromValues[0].flags;
+        if ((flags & I18nParamValueFlags.CloseTag) && !(flags & I18nParamValueFlags.OpenTag)) {
+            to.set(placeholder, [...fromValues, ...toValues]);
+        }
+        else {
+            to.set(placeholder, [...toValues, ...fromValues]);
+        }
+    }
 }
 
 /**
@@ -20251,7 +20434,9 @@ function createVariadicPipes(job) {
 
 /**
  * Propagate i18n blocks down through child templates that act as placeholders in the root i18n
- * message.
+ * message. Specifically, perform an in-order traversal of all the views, and add i18nStart/i18nEnd
+ * op pairs into descending views. Also, assign an increasing sub-template index to each
+ * descending view.
  */
 function propagateI18nBlocks(job) {
     propagateI18nBlocksToTemplates(job.root, 0);
@@ -20295,59 +20480,6 @@ function wrapTemplateWithI18n(unit, parentI18n) {
         const id = unit.job.allocateXrefId();
         OpList.insertAfter(createI18nStartOp(id, parentI18n.message, parentI18n.root), unit.create.head);
         OpList.insertBefore(createI18nEndOp(id), unit.create.tail);
-    }
-}
-
-/**
- * Propagate extractd message placeholders up to their root extracted message op.
- */
-function propogateI18nPlaceholders(job) {
-    // Record all of the i18n and extracted message ops for use later.
-    const i18nOps = new Map();
-    const extractedMessageOps = new Map();
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.I18nStart:
-                    i18nOps.set(op.xref, op);
-                    break;
-                case OpKind.ExtractedMessage:
-                    extractedMessageOps.set(op.owner, op);
-                    break;
-            }
-        }
-    }
-    // For each non-root message, merge its params into the root message's params.
-    for (const [xref, childExtractedMessageOp] of extractedMessageOps) {
-        if (!childExtractedMessageOp.isRoot) {
-            const i18nOp = i18nOps.get(xref);
-            if (i18nOp === undefined) {
-                throw Error('Could not find owner i18n block for extracted message.');
-            }
-            const rootExtractedMessageOp = extractedMessageOps.get(i18nOp.root);
-            if (rootExtractedMessageOp === undefined) {
-                throw Error('Could not find extracted message op for root i18n block.');
-            }
-            mergeParams(rootExtractedMessageOp.params, childExtractedMessageOp.params);
-            mergeParams(rootExtractedMessageOp.postprocessingParams, childExtractedMessageOp.postprocessingParams);
-        }
-    }
-}
-/**
- * Merges the params in the `from` map to into the `to` map.
- */
-function mergeParams(to, from) {
-    for (const [placeholder, fromValues] of from) {
-        const toValues = to.get(placeholder) || [];
-        // TODO(mmalerba): Child element close tag params should be prepended to maintain the same order
-        // as TemplateDefinitionBuilder. Can be cleaned up when compatibility is no longer required.
-        const flags = fromValues[0].flags;
-        if ((flags & I18nParamValueFlags.CloseTag) && !(flags & I18nParamValueFlags.OpenTag)) {
-            to.set(placeholder, [...fromValues, ...toValues]);
-        }
-        else {
-            to.set(placeholder, [...toValues, ...fromValues]);
-        }
     }
 }
 
@@ -21198,7 +21330,7 @@ function reifyUpdateOperations(_unit, ops) {
                 OpList.replace(op, i18nExp(op.expression, op.sourceSpan));
                 break;
             case OpKind.I18nApply:
-                OpList.replace(op, i18nApply(op.targetSlot.slot, op.sourceSpan));
+                OpList.replace(op, i18nApply(op.handle.slot, op.sourceSpan));
                 break;
             case OpKind.InterpolateText:
                 OpList.replace(op, textInterpolate(op.interpolation.strings, op.interpolation.expressions, op.sourceSpan));
@@ -21353,6 +21485,25 @@ function removeEmptyBindings(job) {
 }
 
 /**
+ * Remove the i18n context ops after they are no longer needed, and null out references to them to
+ * be safe.
+ */
+function removeI18nContexts(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nContext:
+                    OpList.remove(op);
+                    break;
+                case OpKind.I18nStart:
+                    op.context = null;
+                    break;
+            }
+        }
+    }
+}
+
+/**
  * Inside the body of a repeater, certain context variables (such as `$first`) are ambiently
  * available. This phase finds those variable usages, and replaces them with the appropriate
  * expression.
@@ -21466,14 +21617,14 @@ function transformDollarEvent(unit, ops) {
  * Resolve the element placeholders in i18n messages.
  */
 function resolveI18nElementPlaceholders(job) {
-    // Record all of the element and extracted message ops for use later.
-    const extractedMessageOps = new Map();
+    // Record all of the element and i18n context ops for use later.
+    const i18nContexts = new Map();
     const elements = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
-                case OpKind.ExtractedMessage:
-                    extractedMessageOps.set(op.owner, op);
+                case OpKind.I18nContext:
+                    i18nContexts.set(op.xref, op);
                     break;
                 case OpKind.ElementStart:
                     elements.set(op.xref, op);
@@ -21482,16 +21633,16 @@ function resolveI18nElementPlaceholders(job) {
         }
     }
     for (const unit of job.units) {
-        // Track the current i18n op and corresponding extracted message op as we step through the
-        // creation IR.
+        // Track the current i18n op and corresponding i18n context op as we step through the creation
+        // IR.
         let currentOps = null;
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
-                    if (!extractedMessageOps.has(op.xref)) {
-                        throw Error('Could not find extracted message for i18n op');
+                    if (!op.context) {
+                        throw Error('Could not find i18n context for i18n op');
                     }
-                    currentOps = { i18n: op, extractedMessage: extractedMessageOps.get(op.xref) };
+                    currentOps = { i18nBlock: op, i18nContext: i18nContexts.get(op.context) };
                     break;
                 case OpKind.I18nEnd:
                     currentOps = null;
@@ -21510,7 +21661,7 @@ function resolveI18nElementPlaceholders(job) {
                         if (closeName === '') {
                             flags |= I18nParamValueFlags.CloseTag;
                         }
-                        addParam(currentOps.extractedMessage.params, startName, op.handle.slot, currentOps.i18n.subTemplateIndex, flags);
+                        addParam(currentOps.i18nContext.params, startName, op.handle.slot, currentOps.i18nBlock.subTemplateIndex, flags);
                     }
                     break;
                 case OpKind.ElementEnd:
@@ -21524,7 +21675,7 @@ function resolveI18nElementPlaceholders(job) {
                         const { closeName } = startOp.i18nPlaceholder;
                         // Self-closing tags don't have a closing tag placeholder.
                         if (closeName !== '') {
-                            addParam(currentOps.extractedMessage.params, closeName, startOp.handle.slot, currentOps.i18n.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
+                            addParam(currentOps.i18nContext.params, closeName, startOp.handle.slot, currentOps.i18nBlock.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
                         }
                     }
                     break;
@@ -21535,9 +21686,9 @@ function resolveI18nElementPlaceholders(job) {
                         if (currentOps === null) {
                             throw Error('i18n tag placeholder should only occur inside an i18n block');
                         }
-                        const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentOps.i18n, op);
-                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.startName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
-                        addParam(currentOps.extractedMessage.params, op.i18nPlaceholder.closeName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
+                        const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentOps.i18nBlock, op);
+                        addParam(currentOps.i18nContext.params, op.i18nPlaceholder.startName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag);
+                        addParam(currentOps.i18nContext.params, op.i18nPlaceholder.closeName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
                     }
                     break;
             }
@@ -21567,47 +21718,37 @@ function addParam(params, placeholder, value, subTemplateIndex, flags = I18nPara
  * Resolve the i18n expression placeholders in i18n messages.
  */
 function resolveI18nExpressionPlaceholders(job) {
-    // Record all of the i18n and extracted message ops for use later.
-    const i18nOps = new Map();
-    const extractedMessageOps = new Map();
+    // Record all of the i18n context ops, and the sub-template index for each i18n op.
+    const subTemplateIndicies = new Map();
+    const i18nContexts = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
-                    i18nOps.set(op.xref, op);
+                    subTemplateIndicies.set(op.xref, op.subTemplateIndex);
                     break;
-                case OpKind.ExtractedMessage:
-                    extractedMessageOps.set(op.owner, op);
+                case OpKind.I18nContext:
+                    i18nContexts.set(op.xref, op);
                     break;
             }
         }
     }
-    // Keep track of the next available expression index per i18n block.
+    // Keep track of the next available expression index per i18n context.
     const expressionIndices = new Map();
     for (const unit of job.units) {
         for (const op of unit.update) {
             if (op.kind === OpKind.I18nExpression) {
-                const i18nOp = i18nOps.get(op.owner);
-                let index = expressionIndices.get(op.owner) || 0;
-                if (!i18nOp) {
-                    throw Error('Cannot find corresponding i18n block for i18nExpr');
-                }
-                const extractedMessageOp = extractedMessageOps.get(i18nOp.xref);
-                if (!extractedMessageOp) {
-                    throw Error('Cannot find extracted message for i18n block');
-                }
+                const index = expressionIndices.get(op.context) || 0;
+                const i18nContext = i18nContexts.get(op.context);
+                const subTemplateIndex = subTemplateIndicies.get(i18nContext.i18nBlock);
                 // Add the expression index in the appropriate params map.
                 const params = op.resolutionTime === I18nParamResolutionTime.Creation ?
-                    extractedMessageOp.params :
-                    extractedMessageOp.postprocessingParams;
+                    i18nContext.params :
+                    i18nContext.postprocessingParams;
                 const values = params.get(op.i18nPlaceholder) || [];
-                values.push({
-                    value: index,
-                    subTemplateIndex: i18nOp.subTemplateIndex,
-                    flags: I18nParamValueFlags.None
-                });
+                values.push({ value: index, subTemplateIndex: subTemplateIndex, flags: I18nParamValueFlags.None });
                 params.set(op.i18nPlaceholder, values);
-                expressionIndices.set(op.owner, index + 1);
+                expressionIndices.set(op.context, index + 1);
             }
         }
     }
@@ -22699,6 +22840,7 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: specializeBindings },
     { kind: CompilationJobKind.Tmpl, fn: propagateI18nBlocks },
     { kind: CompilationJobKind.Tmpl, fn: wrapI18nIcus },
+    { kind: CompilationJobKind.Tmpl, fn: createI18nContexts },
     { kind: CompilationJobKind.Both, fn: extractAttributes },
     { kind: CompilationJobKind.Both, fn: parseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: removeEmptyBindings },
@@ -22708,7 +22850,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: createPipes },
     { kind: CompilationJobKind.Tmpl, fn: configureDeferInstructions },
     { kind: CompilationJobKind.Tmpl, fn: extractI18nText },
-    { kind: CompilationJobKind.Tmpl, fn: extractI18nICUs },
+    { kind: CompilationJobKind.Tmpl, fn: createI18nIcuExpressions },
     { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
     { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
@@ -22729,16 +22871,16 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: expandSafeReads },
     { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
     { kind: CompilationJobKind.Tmpl, fn: allocateSlots },
-    { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
-    { kind: CompilationJobKind.Tmpl, fn: propogateI18nPlaceholders },
-    { kind: CompilationJobKind.Tmpl, fn: formatI18nParams },
+    { kind: CompilationJobKind.Tmpl, fn: mergeI18nContexts },
+    { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackFns },
     { kind: CompilationJobKind.Tmpl, fn: collectI18nConsts },
     { kind: CompilationJobKind.Tmpl, fn: collectConstExpressions },
     { kind: CompilationJobKind.Both, fn: collectElementConsts },
     { kind: CompilationJobKind.Tmpl, fn: assignI18nSlotDependencies },
+    { kind: CompilationJobKind.Tmpl, fn: removeI18nContexts },
     { kind: CompilationJobKind.Both, fn: countVariables },
     { kind: CompilationJobKind.Tmpl, fn: generateAdvance },
     { kind: CompilationJobKind.Both, fn: optimizeVariables },
@@ -23206,9 +23348,9 @@ function ingestDeferBlock(unit, deferBlock) {
     unit.create.push(deferOnOps);
 }
 function ingestIcu(unit, icu) {
-    if (icu.i18n instanceof Message) {
+    if (icu.i18n instanceof Message && isSingleI18nIcu(icu.i18n)) {
         const xref = unit.job.allocateXrefId();
-        unit.create.push(createIcuOp(xref, icu.i18n, null));
+        unit.create.push(createIcuOp(xref, icu.i18n, icu.i18n.nodes[0], icuFromI18nMessage(icu.i18n).name, null));
         unit.update.push(createIcuUpdateOp(xref, null));
     }
     else {
@@ -30716,7 +30858,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.0-rc.2+sha-c267f54');
+const VERSION = new Version('17.0.0-rc.2+sha-91dbcb5');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32246,7 +32388,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32354,7 +32496,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32631,7 +32773,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32666,7 +32808,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32717,7 +32859,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32750,7 +32892,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32801,7 +32943,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.0-rc.2+sha-c267f54'));
+    definitionMap.set('version', literal('17.0.0-rc.2+sha-91dbcb5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
