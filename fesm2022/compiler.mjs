@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-94096c6
+ * @license Angular v17.1.0-next.0+sha-70fe5e6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8852,11 +8852,11 @@ var OpKind;
     /**
      * An instruction to create an ICU expression.
      */
-    OpKind[OpKind["Icu"] = 41] = "Icu";
+    OpKind[OpKind["IcuStart"] = 41] = "IcuStart";
     /**
      * An instruction to update an ICU expression.
      */
-    OpKind[OpKind["IcuUpdate"] = 42] = "IcuUpdate";
+    OpKind[OpKind["IcuEnd"] = 42] = "IcuEnd";
     /**
      * An i18n context containing information needed to generate an i18n message.
      */
@@ -9105,6 +9105,10 @@ var I18nParamValueFlags;
      * This value represents the closing of a tag.
      */
     I18nParamValueFlags[I18nParamValueFlags["CloseTag"] = 8] = "CloseTag";
+    /**
+     * This value represents an i18n expression index.
+     */
+    I18nParamValueFlags[I18nParamValueFlags["ExpressionIndex"] = 16] = "ExpressionIndex";
 })(I18nParamValueFlags || (I18nParamValueFlags = {}));
 /**
  * Whether the active namespace is HTML, MathML, or SVG mode.
@@ -9449,17 +9453,6 @@ function createI18nApplyOp(target, handle, sourceSpan) {
         kind: OpKind.I18nApply,
         target,
         handle,
-        sourceSpan,
-        ...NEW_OP,
-    };
-}
-/**
- * Creates an op to update an ICU expression.
- */
-function createIcuUpdateOp(xref, sourceSpan) {
-    return {
-        kind: OpKind.IcuUpdate,
-        xref,
         sourceSpan,
         ...NEW_OP,
     };
@@ -10254,8 +10247,8 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.I18nContext:
         case OpKind.I18nEnd:
         case OpKind.I18nStart:
-        case OpKind.Icu:
-        case OpKind.IcuUpdate:
+        case OpKind.IcuEnd:
+        case OpKind.IcuStart:
         case OpKind.Namespace:
         case OpKind.Pipe:
         case OpKind.Projection:
@@ -10908,17 +10901,26 @@ function createI18nEndOp(xref) {
     };
 }
 /**
- * Creates an op to create an ICU expression.
+ * Creates an ICU start op.
  */
-function createIcuOp(xref, message, icu, messagePlaceholder, sourceSpan) {
+function createIcuStartOp(xref, message, messagePlaceholder, sourceSpan) {
     return {
-        kind: OpKind.Icu,
+        kind: OpKind.IcuStart,
         xref,
         message,
-        icu,
         messagePlaceholder,
         context: null,
         sourceSpan,
+        ...NEW_OP,
+    };
+}
+/**
+ * Creates an ICU end op.
+ */
+function createIcuEndOp(xref) {
+    return {
+        kind: OpKind.IcuEnd,
+        xref,
         ...NEW_OP,
     };
 }
@@ -11170,10 +11172,18 @@ function removeAnys(e) {
  * Adds apply operations after i18n expressions.
  */
 function applyI18nExpressions(job) {
+    const i18nContexts = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.I18nContext) {
+                i18nContexts.set(op.xref, op);
+            }
+        }
+    }
     for (const unit of job.units) {
         for (const op of unit.update) {
             // Only add apply after expressions that are not followed by more expressions.
-            if (op.kind === OpKind.I18nExpression && needsApplication(op)) {
+            if (op.kind === OpKind.I18nExpression && needsApplication(i18nContexts, op)) {
                 // TODO: what should be the source span for the apply op?
                 OpList.insertAfter(createI18nApplyOp(op.target, op.handle, null), op);
             }
@@ -11183,13 +11193,15 @@ function applyI18nExpressions(job) {
 /**
  * Checks whether the given expression op needs to be followed with an apply op.
  */
-function needsApplication(op) {
+function needsApplication(i18nContexts, op) {
     // If the next op is not another expression, we need to apply.
     if (op.next?.kind !== OpKind.I18nExpression) {
         return true;
     }
-    // If the next op is an expression targeting a different i18n context, we need to apply.
-    if (op.next.context !== op.context) {
+    // If the next op is an expression targeting a different i18n block, we need to apply.
+    const context = i18nContexts.get(op.context);
+    const nextContext = i18nContexts.get(op.next.context);
+    if (context.i18nBlock !== nextContext.i18nBlock) {
         return true;
     }
     return false;
@@ -11850,7 +11862,7 @@ function createI18nContexts(job) {
                 case OpKind.I18nEnd:
                     currentI18nOp = null;
                     break;
-                case OpKind.Icu:
+                case OpKind.IcuStart:
                     // If an ICU represents a different message than its containing block, we give it its own
                     // i18n context.
                     if (currentI18nOp === null) {
@@ -11867,50 +11879,6 @@ function createI18nContexts(job) {
                         // the only localizable content inside of it.
                         op.context = currentI18nOp.context;
                     }
-                    break;
-            }
-        }
-    }
-}
-
-/**
- * Replace the ICU update ops with i18n expression ops.
- */
-function createI18nIcuExpressions(job) {
-    const icus = new Map();
-    const i18nContexts = new Map();
-    const i18nBlocks = new Map();
-    // Collect maps of ops that need to be referenced to create the I18nExpressionOps.
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.Icu:
-                    icus.set(op.xref, op);
-                    break;
-                case OpKind.I18nContext:
-                    i18nContexts.set(op.xref, op);
-                    break;
-                case OpKind.I18nStart:
-                    i18nBlocks.set(op.xref, op);
-                    break;
-            }
-        }
-        // Replace each IcuUpdateOp with an I18nExpressionOp.
-        for (const op of unit.update) {
-            switch (op.kind) {
-                case OpKind.IcuUpdate:
-                    const icuOp = icus.get(op.xref);
-                    if (icuOp?.icu.expressionPlaceholder === undefined) {
-                        throw Error('ICU should have an i18n placeholder');
-                    }
-                    if (icuOp.context === null) {
-                        throw Error('ICU should have its i18n context set');
-                    }
-                    const i18nContext = i18nContexts.get(icuOp.context);
-                    const i18nBlock = i18nBlocks.get(i18nContext.i18nBlock);
-                    OpList.replace(op, createI18nExpressionOp(i18nContext.xref, i18nBlock.xref, i18nBlock.handle, new LexicalReadExpr(icuOp.icu.expression), icuOp.icu.expressionPlaceholder, 
-                    // ICU-based i18n Expressions are resolved during post-processing.
-                    I18nParamResolutionTime.Postproccessing, null));
                     break;
             }
         }
@@ -12331,18 +12299,23 @@ function extractI18nMessages(job) {
     // Extract messages from ICUs with their own sub-context.
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.Icu) {
-                if (!op.context) {
-                    throw Error('ICU op should have its context set.');
-                }
-                if (!i18nBlockContexts.has(op.context)) {
-                    const i18nContext = i18nContexts.get(op.context);
-                    const subMessage = createI18nMessage(job, i18nContext, op.messagePlaceholder);
-                    unit.create.push(subMessage);
-                    const parentMessage = i18nBlockMessages.get(i18nContext.i18nBlock);
-                    parentMessage?.subMessages.push(subMessage.xref);
-                }
-                OpList.remove(op);
+            switch (op.kind) {
+                case OpKind.IcuStart:
+                    if (!op.context) {
+                        throw Error('ICU op should have its context set.');
+                    }
+                    if (!i18nBlockContexts.has(op.context)) {
+                        const i18nContext = i18nContexts.get(op.context);
+                        const subMessage = createI18nMessage(job, i18nContext, op.messagePlaceholder);
+                        unit.create.push(subMessage);
+                        const parentMessage = i18nBlockMessages.get(i18nContext.i18nBlock);
+                        parentMessage?.subMessages.push(subMessage.xref);
+                    }
+                    OpList.remove(op);
+                    break;
+                case OpKind.IcuEnd:
+                    OpList.remove(op);
+                    break;
             }
         }
     }
@@ -12364,7 +12337,7 @@ function createI18nMessage(job, context, messagePlaceholder) {
  */
 function formatParams(params) {
     const result = new Map();
-    for (const [placeholder, placeholderValues] of [...params].sort()) {
+    for (const [placeholder, placeholderValues] of params) {
         const serializedValues = formatParamValues(placeholderValues);
         if (serializedValues !== null) {
             result.set(placeholder, literal(formatParamValues(placeholderValues)));
@@ -12388,6 +12361,10 @@ function formatParamValues(values) {
  * Formats a single `I18nParamValue` into a string
  */
 function formatValue(value) {
+    // If there are no special flags, just return the raw value.
+    if (value.flags === I18nParamValueFlags.None) {
+        return `${value.value}`;
+    }
     let tagMarker = '';
     let closeMarker = '';
     if (value.flags & I18nParamValueFlags.ElementTag) {
@@ -19638,6 +19615,8 @@ function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
         statements.push(...subMessageStatements);
         messageOp.params.set(subMessage.messagePlaceholder, subMessageVar);
     }
+    // Sort the params for consistency with TemaplateDefinitionBuilder output.
+    messageOp.params = new Map([...messageOp.params.entries()].sort());
     // Check that the message has all of its parameters filled out.
     assertAllParamsResolved(messageOp);
     const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
@@ -19649,6 +19628,8 @@ function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
     // If nescessary, add a post-processing step and resolve any placeholder params that are
     // set in post-processing.
     if (messageOp.needsPostprocessing) {
+        // Sort the post-processing params for consistency with TemaplateDefinitionBuilder output.
+        messageOp.postprocessingParams = new Map([...messageOp.postprocessingParams.entries()].sort());
         const extraTransformFnParams = [];
         if (messageOp.postprocessingParams.size > 0) {
             extraTransformFnParams.push(literalMap([...messageOp.postprocessingParams].map(([key, value]) => ({ key, value, quoted: true }))));
@@ -19730,12 +19711,14 @@ function i18nGenerateClosureVar(pool, messageId, fileBasedI18nSuffix, useExterna
  * Asserts that all of the message's placeholders have values.
  */
 function assertAllParamsResolved(op) {
-    for (const placeholder in op.message.placeholders) {
+    for (let placeholder in op.message.placeholders) {
+        placeholder = placeholder.trimEnd();
         if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
             throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
         }
     }
-    for (const placeholder in op.message.placeholderToMessage) {
+    for (let placeholder in op.message.placeholderToMessage) {
+        placeholder = placeholder.trimEnd();
         if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
             throw Error(`Failed to resolve i18n message placeholder: ${placeholder}`);
         }
@@ -19750,7 +19733,9 @@ function extractI18nText(job) {
         // Remove all text nodes within i18n blocks, their content is already captured in the i18n
         // message.
         let currentI18n = null;
+        let currentIcu = null;
         const textNodeI18nBlocks = new Map();
+        const textNodeIcus = new Map();
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
@@ -19762,9 +19747,19 @@ function extractI18nText(job) {
                 case OpKind.I18nEnd:
                     currentI18n = null;
                     break;
+                case OpKind.IcuStart:
+                    if (op.context === null) {
+                        throw Error('Icu op should have its context set.');
+                    }
+                    currentIcu = op;
+                    break;
+                case OpKind.IcuEnd:
+                    currentIcu = null;
+                    break;
                 case OpKind.Text:
                     if (currentI18n !== null) {
                         textNodeI18nBlocks.set(op.xref, currentI18n);
+                        textNodeIcus.set(op.xref, currentIcu);
                         OpList.remove(op);
                     }
                     break;
@@ -19779,13 +19774,16 @@ function extractI18nText(job) {
                         continue;
                     }
                     const i18nOp = textNodeI18nBlocks.get(op.target);
+                    const icuOp = textNodeIcus.get(op.target);
+                    const contextId = icuOp ? icuOp.context : i18nOp.context;
+                    const resolutionTime = icuOp ? I18nParamResolutionTime.Postproccessing :
+                        I18nParamResolutionTime.Creation;
                     const ops = [];
                     for (let i = 0; i < op.interpolation.expressions.length; i++) {
                         const expr = op.interpolation.expressions[i];
-                        const placeholder = op.i18nPlaceholders[i];
                         // For now, this i18nExpression depends on the slot context of the enclosing i18n block.
                         // Later, we will modify this, and advance to a different point.
-                        ops.push(createI18nExpressionOp(i18nOp.context, i18nOp.xref, i18nOp.handle, expr, placeholder.name, I18nParamResolutionTime.Creation, expr.sourceSpan ?? op.sourceSpan));
+                        ops.push(createI18nExpressionOp(contextId, i18nOp.xref, i18nOp.handle, expr, op.i18nPlaceholders[i], resolutionTime, expr.sourceSpan ?? op.sourceSpan));
                     }
                     OpList.replaceWithMany(op, ops);
                     break;
@@ -21800,7 +21798,7 @@ function getSubTemplateIndexForTemplateTag(job, i18nOp, op) {
     return i18nOp.subTemplateIndex;
 }
 /** Add a param value to the given params map. */
-function addParam(params, placeholder, value, subTemplateIndex, flags = I18nParamValueFlags.None) {
+function addParam(params, placeholder, value, subTemplateIndex, flags) {
     const values = params.get(placeholder) ?? [];
     values.push({ value, subTemplateIndex, flags });
     params.set(placeholder, values);
@@ -21825,23 +21823,89 @@ function resolveI18nExpressionPlaceholders(job) {
             }
         }
     }
-    // Keep track of the next available expression index per i18n context.
+    // Keep track of the next available expression index per i18n block.
     const expressionIndices = new Map();
     for (const unit of job.units) {
         for (const op of unit.update) {
             if (op.kind === OpKind.I18nExpression) {
-                const index = expressionIndices.get(op.context) || 0;
                 const i18nContext = i18nContexts.get(op.context);
+                const index = expressionIndices.get(i18nContext.i18nBlock) || 0;
                 const subTemplateIndex = subTemplateIndicies.get(i18nContext.i18nBlock);
                 // Add the expression index in the appropriate params map.
                 const params = op.resolutionTime === I18nParamResolutionTime.Creation ?
                     i18nContext.params :
                     i18nContext.postprocessingParams;
                 const values = params.get(op.i18nPlaceholder) || [];
-                values.push({ value: index, subTemplateIndex: subTemplateIndex, flags: I18nParamValueFlags.None });
+                values.push({
+                    value: index,
+                    subTemplateIndex: subTemplateIndex,
+                    flags: I18nParamValueFlags.ExpressionIndex
+                });
                 params.set(op.i18nPlaceholder, values);
-                expressionIndices.set(op.context, index + 1);
+                expressionIndices.set(i18nContext.i18nBlock, index + 1);
             }
+        }
+    }
+}
+
+/**
+ * Resolves placeholders for element tags inside of an ICU.
+ */
+function resolveI18nIcuPlaceholders(job) {
+    const contextOps = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nContext:
+                    contextOps.set(op.xref, op);
+                    break;
+            }
+        }
+    }
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.IcuStart:
+                    if (op.context === null) {
+                        throw Error('Icu should have its i18n context set.');
+                    }
+                    const i18nContext = contextOps.get(op.context);
+                    for (const node of op.message.nodes) {
+                        node.visit(new ResolveIcuPlaceholdersVisitor(i18nContext.postprocessingParams));
+                    }
+                    break;
+            }
+        }
+    }
+}
+/**
+ * Visitor for i18n AST that resolves ICU params into the given map.
+ */
+class ResolveIcuPlaceholdersVisitor extends RecurseVisitor {
+    constructor(params) {
+        super();
+        this.params = params;
+    }
+    visitTagPlaceholder(placeholder) {
+        super.visitTagPlaceholder(placeholder);
+        // Add the start and end source span for tag placeholders. These need to be recorded for
+        // elements inside ICUs. The slots for the elements were recorded separately under the i18n
+        // block's context as part of the `resolveI18nElementPlaceholders` phase.
+        if (placeholder.startName && placeholder.startSourceSpan &&
+            !this.params.has(placeholder.startName)) {
+            this.params.set(placeholder.startName, [{
+                    value: placeholder.startSourceSpan?.toString(),
+                    subTemplateIndex: null,
+                    flags: I18nParamValueFlags.None
+                }]);
+        }
+        if (placeholder.closeName && placeholder.endSourceSpan &&
+            !this.params.has(placeholder.closeName)) {
+            this.params.set(placeholder.closeName, [{
+                    value: placeholder.endSourceSpan?.toString(),
+                    subTemplateIndex: null,
+                    flags: I18nParamValueFlags.None
+                }]);
         }
     }
 }
@@ -22896,6 +22960,7 @@ function allowConservativeInlining(decl, target) {
 function wrapI18nIcus(job) {
     for (const unit of job.units) {
         let currentI18nOp = null;
+        let addedI18nId = null;
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
@@ -22904,11 +22969,16 @@ function wrapI18nIcus(job) {
                 case OpKind.I18nEnd:
                     currentI18nOp = null;
                     break;
-                case OpKind.Icu:
+                case OpKind.IcuStart:
                     if (currentI18nOp === null) {
-                        const id = job.allocateXrefId();
-                        OpList.insertBefore(createI18nStartOp(id, op.message), op);
-                        OpList.insertAfter(createI18nEndOp(id), op);
+                        addedI18nId = job.allocateXrefId();
+                        OpList.insertBefore(createI18nStartOp(addedI18nId, op.message), op);
+                    }
+                    break;
+                case OpKind.IcuEnd:
+                    if (addedI18nId !== null) {
+                        OpList.insertAfter(createI18nEndOp(addedI18nId), op);
+                        addedI18nId = null;
                     }
                     break;
             }
@@ -22942,7 +23012,6 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: createPipes },
     { kind: CompilationJobKind.Tmpl, fn: configureDeferInstructions },
     { kind: CompilationJobKind.Tmpl, fn: extractI18nText },
-    { kind: CompilationJobKind.Tmpl, fn: createI18nIcuExpressions },
     { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
     { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
@@ -22966,6 +23035,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: createDeferDepsFns },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
+    { kind: CompilationJobKind.Tmpl, fn: resolveI18nIcuPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: mergeI18nContexts },
     { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackFns },
@@ -23279,7 +23349,7 @@ function ingestText(unit, text) {
 /**
  * Ingest an interpolated text node from the AST into the given `ViewCompilation`.
  */
-function ingestBoundText(unit, text) {
+function ingestBoundText(unit, text, i18nPlaceholders) {
     let value = text.value;
     if (value instanceof ASTWithSource) {
         value = value.ast;
@@ -23290,9 +23360,16 @@ function ingestBoundText(unit, text) {
     if (text.i18n !== undefined && !(text.i18n instanceof Container)) {
         throw Error(`Unhandled i18n metadata type for text interpolation: ${text.i18n?.constructor.name}`);
     }
-    const i18nPlaceholders = text.i18n instanceof Container ?
-        text.i18n.children.filter((node) => node instanceof Placeholder) :
-        [];
+    if (i18nPlaceholders === undefined) {
+        i18nPlaceholders = text.i18n instanceof Container ?
+            text.i18n.children
+                .filter((node) => node instanceof Placeholder)
+                .map(placeholder => placeholder.name) :
+            [];
+    }
+    if (i18nPlaceholders.length > 0 && i18nPlaceholders.length !== value.expressions.length) {
+        throw Error(`Unexpected number of i18n placeholders (${value.expressions.length}) for BoundText with ${value.expressions.length} expressions`);
+    }
     const textXref = unit.job.allocateXrefId();
     unit.create.push(createTextOp(textXref, '', text.sourceSpan));
     // TemplateDefinitionBuilder does not generate source maps for sub-expressions inside an
@@ -23458,8 +23535,22 @@ function ingestDeferBlock(unit, deferBlock) {
 function ingestIcu(unit, icu) {
     if (icu.i18n instanceof Message && isSingleI18nIcu(icu.i18n)) {
         const xref = unit.job.allocateXrefId();
-        unit.create.push(createIcuOp(xref, icu.i18n, icu.i18n.nodes[0], icuFromI18nMessage(icu.i18n).name, null));
-        unit.update.push(createIcuUpdateOp(xref, null));
+        const icuNode = icu.i18n.nodes[0];
+        unit.create.push(createIcuStartOp(xref, icu.i18n, icuFromI18nMessage(icu.i18n).name, null));
+        const expressionPlaceholder = icuNode.expressionPlaceholder?.trimEnd();
+        if (expressionPlaceholder === undefined || icu.vars[expressionPlaceholder] === undefined) {
+            throw Error('ICU should have a text binding');
+        }
+        ingestBoundText(unit, icu.vars[expressionPlaceholder], [expressionPlaceholder]);
+        for (const [placeholder, text] of Object.entries(icu.placeholders)) {
+            if (text instanceof BoundText) {
+                ingestBoundText(unit, text, [placeholder]);
+            }
+            else {
+                ingestText(unit, text);
+            }
+        }
+        unit.create.push(createIcuEndOp(xref));
     }
     else {
         throw Error(`Unhandled i18n metadata type for ICU: ${icu.i18n?.constructor.name}`);
@@ -27380,7 +27471,9 @@ class TemplateDefinitionBuilder {
         // inside ICUs)
         // - all ICU vars (such as `VAR_SELECT` or `VAR_PLURAL`) are replaced with correct values
         const transformFn = (raw) => {
-            const params = { ...vars, ...placeholders };
+            // Sort the map entries in the compiled output. This makes it easy to acheive identical output
+            // in the template pipeline compiler.
+            const params = Object.fromEntries(Object.entries({ ...vars, ...placeholders }).sort());
             const formatted = formatI18nPlaceholderNamesInMap(params, /* useCamelCase */ false);
             return invokeInstruction(null, Identifiers.i18nPostprocess, [raw, mapLiteral(formatted, true)]);
         };
@@ -30971,7 +31064,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-94096c6');
+const VERSION = new Version('17.1.0-next.0+sha-70fe5e6');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32501,7 +32594,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32609,7 +32702,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32886,7 +32979,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32921,7 +33014,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32972,7 +33065,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33005,7 +33098,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33056,7 +33149,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-94096c6'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-70fe5e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
