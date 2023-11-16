@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.3+sha-98376f2
+ * @license Angular v17.0.3+sha-f763d26
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -26786,13 +26786,19 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(null, Identifiers.pipe, [literal(slot), literal(name)]);
         });
     }
-    buildTemplateFunction(nodes, variables, ngContentSelectorsOffset = 0, i18n) {
+    buildTemplateFunction(nodes, variables, ngContentSelectorsOffset = 0, i18n, variableAliases) {
         this._ngContentSelectorsOffset = ngContentSelectorsOffset;
         if (this._namespace !== Identifiers.namespaceHTML) {
             this.creationInstruction(null, this._namespace);
         }
         // Create variable bindings
-        variables.forEach(v => this.registerContextVariables(v));
+        variables.forEach(v => {
+            const alias = variableAliases?.[v.name];
+            this.registerContextVariables(v.name, v.value);
+            if (alias) {
+                this.registerContextVariables(alias, v.value);
+            }
+        });
         // Initiate i18n context in case:
         // - this template has parent i18n context
         // - or the template has i18n meta associated with it,
@@ -26886,12 +26892,12 @@ class TemplateDefinitionBuilder {
         this._constants.prepareStatements.push(...statements);
         return _ref;
     }
-    registerContextVariables(variable$1) {
+    registerContextVariables(name, value) {
         const scopedName = this._bindingScope.freshReferenceName();
         const retrievalLevel = this.level;
-        const isDirect = variable$1.value === DIRECT_CONTEXT_REFERENCE;
-        const lhs = variable(variable$1.name + scopedName);
-        this._bindingScope.set(retrievalLevel, variable$1.name, scope => {
+        const isDirect = value === DIRECT_CONTEXT_REFERENCE;
+        const lhs = variable(name + scopedName);
+        this._bindingScope.set(retrievalLevel, name, scope => {
             // If we're at the top level and we're referring to the context variable directly, we
             // can do so through the implicit receiver, instead of renaming it. Note that this does
             // not apply to listeners, because they need to restore the context.
@@ -26927,7 +26933,7 @@ class TemplateDefinitionBuilder {
             return [
                 // e.g. const $items$ = x(2) for direct context references and
                 // const $item$ = x(2).$implicit for indirect ones.
-                lhs.set(isDirect ? rhs : rhs.prop(variable$1.value || IMPLICIT_REFERENCE)).toConstDecl()
+                lhs.set(isDirect ? rhs : rhs.prop(value || IMPLICIT_REFERENCE)).toConstDecl()
             ];
         });
     }
@@ -27350,7 +27356,7 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(span, isNgContainer$1 ? Identifiers.elementContainerEnd : Identifiers.elementEnd);
         }
     }
-    prepareEmbeddedTemplateFn(children, contextNameSuffix, variables = [], i18n) {
+    prepareEmbeddedTemplateFn(children, contextNameSuffix, variables = [], i18n, variableAliases) {
         const index = this.allocateDataSlot();
         if (this.i18n && i18n) {
             this.i18n.appendTemplate(i18n, index);
@@ -27364,7 +27370,7 @@ class TemplateDefinitionBuilder {
         // be able to support bindings in nested templates to local refs that occur after the
         // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = visitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18n);
+            const templateFunctionExpr = visitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18n, variableAliases);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(name));
             if (visitor._ngContentReservedSlots.length) {
                 this._ngContentReservedSlots.push(...visitor._ngContentReservedSlots);
@@ -27790,7 +27796,14 @@ class TemplateDefinitionBuilder {
         // are implicitly inferred by the runtime to index + 1 and index + 2.
         const blockIndex = this.allocateDataSlot();
         const { tagName, attrsExprs } = this.inferProjectionDataFromInsertionPoint(block);
-        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [block.item, block.contextVariables.$index, block.contextVariables.$count]);
+        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [block.item, block.contextVariables.$index, block.contextVariables.$count], undefined, {
+            // We need to provide level-specific versions of `$index` and `$count`, because
+            // they're used when deriving the remaining variables (`$odd`, `$even` etc.) while at the
+            // same time being available implicitly. Without these aliases, we wouldn't be able to
+            // access the `$index` of a parent loop from inside of a nested loop.
+            [block.contextVariables.$index.name]: this.getLevelSpecificVariableName('$index', this.level + 1),
+            [block.contextVariables.$count.name]: this.getLevelSpecificVariableName('$count', this.level + 1),
+        });
         const { expression: trackByExpression, usesComponentInstance: trackByUsesComponentInstance } = this.createTrackByFunction(block);
         let emptyData = null;
         if (block.empty !== null) {
@@ -27828,13 +27841,40 @@ class TemplateDefinitionBuilder {
         this.updateInstructionWithAdvance(blockIndex, block.sourceSpan, Identifiers.repeater, () => [this.convertPropertyBinding(value)]);
     }
     registerComputedLoopVariables(block, bindingScope) {
-        const indexLocalName = block.contextVariables.$index.name;
-        const countLocalName = block.contextVariables.$count.name;
         const level = bindingScope.bindingLevel;
-        bindingScope.set(level, block.contextVariables.$odd.name, scope => scope.get(indexLocalName).modulo(literal(2)).notIdentical(literal(0)));
-        bindingScope.set(level, block.contextVariables.$even.name, scope => scope.get(indexLocalName).modulo(literal(2)).identical(literal(0)));
-        bindingScope.set(level, block.contextVariables.$first.name, scope => scope.get(indexLocalName).identical(literal(0)));
-        bindingScope.set(level, block.contextVariables.$last.name, scope => scope.get(indexLocalName).identical(scope.get(countLocalName).minus(literal(1))));
+        bindingScope.set(level, block.contextVariables.$odd.name, (scope, retrievalLevel) => {
+            return this.getLevelSpecificForLoopVariable(block, scope, retrievalLevel, '$index')
+                .modulo(literal(2))
+                .notIdentical(literal(0));
+        });
+        bindingScope.set(level, block.contextVariables.$even.name, (scope, retrievalLevel) => {
+            return this.getLevelSpecificForLoopVariable(block, scope, retrievalLevel, '$index')
+                .modulo(literal(2))
+                .identical(literal(0));
+        });
+        bindingScope.set(level, block.contextVariables.$first.name, (scope, retrievalLevel) => {
+            return this.getLevelSpecificForLoopVariable(block, scope, retrievalLevel, '$index')
+                .identical(literal(0));
+        });
+        bindingScope.set(level, block.contextVariables.$last.name, (scope, retrievalLevel) => {
+            const index = this.getLevelSpecificForLoopVariable(block, scope, retrievalLevel, '$index');
+            const count = this.getLevelSpecificForLoopVariable(block, scope, retrievalLevel, '$count');
+            return index.identical(count.minus(literal(1)));
+        });
+    }
+    getLevelSpecificVariableName(name, level) {
+        // We use the `ɵ` here to ensure that there are no name conflicts with user-defined variables.
+        return `ɵ${name}_${level}`;
+    }
+    /**
+     * Gets the name of a for loop variable at a specific binding level. This allows us to look
+     * up implicitly shadowed variables like `$index` and `$count` at a specific level.
+     */
+    getLevelSpecificForLoopVariable(block, scope, retrievalLevel, name) {
+        const scopeName = scope.bindingLevel === retrievalLevel ?
+            block.contextVariables[name].name :
+            this.getLevelSpecificVariableName(name, retrievalLevel);
+        return scope.get(scopeName);
     }
     optimizeTrackByFunction(block) {
         const indexLocalName = block.contextVariables.$index.name;
@@ -28372,7 +28412,7 @@ class BindingScope {
                 if (value.declareLocalCallback && !value.declare) {
                     value.declare = true;
                 }
-                return typeof value.lhs === 'function' ? value.lhs(this) : value.lhs;
+                return typeof value.lhs === 'function' ? value.lhs(this, value.retrievalLevel) : value.lhs;
             }
             current = current.parent;
         }
@@ -28480,7 +28520,9 @@ class BindingScope {
         const componentValue = this.map.get(SHARED_CONTEXT_KEY + 0);
         componentValue.declare = true;
         this.maybeRestoreView();
-        const lhs = typeof componentValue.lhs === 'function' ? componentValue.lhs(this) : componentValue.lhs;
+        const lhs = typeof componentValue.lhs === 'function' ?
+            componentValue.lhs(this, componentValue.retrievalLevel) :
+            componentValue.lhs;
         return name === DIRECT_CONTEXT_REFERENCE ? lhs : lhs.prop(name);
     }
     maybeRestoreView() {
@@ -31065,7 +31107,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.3+sha-98376f2');
+const VERSION = new Version('17.0.3+sha-f763d26');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32595,7 +32637,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32703,7 +32745,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32980,7 +33022,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33015,7 +33057,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33066,7 +33108,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33099,7 +33141,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33150,7 +33192,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.3+sha-98376f2'));
+    definitionMap.set('version', literal('17.0.3+sha-f763d26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
