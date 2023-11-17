@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.3+sha-f3b8a35
+ * @license Angular v17.0.3+sha-31a047f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -847,6 +847,11 @@ declare namespace core {
 }
 export { core }
 
+/**
+ * Creates a `CssSelector` from an AST node.
+ */
+export declare function createCssSelectorFromNode(node: t.Element | t.Template): CssSelector;
+
 export declare function createInjectableType(meta: R3InjectableMetadata): outputAst.ExpressionType;
 
 export declare function createMayBeForwardRefExpression<T extends outputAst.Expression>(expression: T, forwardRef: ForwardRefHandling): MaybeForwardRefExpression<T>;
@@ -1032,7 +1037,18 @@ export declare interface DirectiveMeta {
      * Null otherwise
      */
     exportAs: string[] | null;
+    /**
+     * Whether the directive is a structural directive (e.g. `<div *ngIf></div>`).
+     */
     isStructural: boolean;
+    /**
+     * If the directive is a component, includes the selectors of its `ng-content` elements.
+     */
+    ngContentSelectors: string[] | null;
+    /**
+     * Whether the template of the component preserves whitespaces.
+     */
+    preserveWhitespaces: boolean;
     /**
      * The name of animations that the user defines in the component.
      * Only includes the animation names.
@@ -2925,6 +2941,10 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
          * element without selector is present.
          */
         ngContentSelectors: string[];
+        /**
+         * Whether the template preserves whitespaces from the user's code.
+         */
+        preserveWhitespaces?: boolean;
     };
     declarations: DeclarationT[];
     /**
