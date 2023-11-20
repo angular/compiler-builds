@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-060ea83
+ * @license Angular v17.1.0-next.0+sha-406049b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -538,6 +538,9 @@ class _SerializerVisitor {
     }
     visitIcuPlaceholder(ph, context) {
         return `<ph icu name="${ph.name}">${ph.value.visit(this)}</ph>`;
+    }
+    visitBlockPlaceholder(ph, context) {
+        return `<ph block name="${ph.startName}">${ph.children.map(child => child.visit(this)).join(', ')}</ph name="${ph.closeName}">`;
     }
 }
 const serializerVisitor$1 = new _SerializerVisitor();
@@ -3847,43 +3850,47 @@ class BlockNode {
     }
 }
 class DeferredBlockPlaceholder extends BlockNode {
-    constructor(children, minimumTime, nameSpan, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(children, minimumTime, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
         this.minimumTime = minimumTime;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitDeferredBlockPlaceholder(this);
     }
 }
 class DeferredBlockLoading extends BlockNode {
-    constructor(children, afterTime, minimumTime, nameSpan, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(children, afterTime, minimumTime, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
         this.afterTime = afterTime;
         this.minimumTime = minimumTime;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitDeferredBlockLoading(this);
     }
 }
 class DeferredBlockError extends BlockNode {
-    constructor(children, nameSpan, sourceSpan, startSourceSpan, endSourceSpan) {
+    constructor(children, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitDeferredBlockError(this);
     }
 }
 class DeferredBlock extends BlockNode {
-    constructor(children, triggers, prefetchTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan) {
+    constructor(children, triggers, prefetchTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
         this.placeholder = placeholder;
         this.loading = loading;
         this.error = error;
         this.mainBlockSpan = mainBlockSpan;
+        this.i18n = i18n;
         this.triggers = triggers;
         this.prefetchTriggers = prefetchTriggers;
         // We cache the keys since we know that they won't change and we
@@ -3922,17 +3929,18 @@ class SwitchBlock extends BlockNode {
     }
 }
 class SwitchBlockCase extends BlockNode {
-    constructor(expression, children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
+    constructor(expression, children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.expression = expression;
         this.children = children;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitSwitchBlockCase(this);
     }
 }
 class ForLoopBlock extends BlockNode {
-    constructor(item, expression, trackBy, trackKeywordSpan, contextVariables, children, empty, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, nameSpan) {
+    constructor(item, expression, trackBy, trackKeywordSpan, contextVariables, children, empty, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.item = item;
         this.expression = expression;
@@ -3942,15 +3950,17 @@ class ForLoopBlock extends BlockNode {
         this.children = children;
         this.empty = empty;
         this.mainBlockSpan = mainBlockSpan;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitForLoopBlock(this);
     }
 }
 class ForLoopBlockEmpty extends BlockNode {
-    constructor(children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
+    constructor(children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitForLoopBlockEmpty(this);
@@ -3966,11 +3976,12 @@ class IfBlock extends BlockNode {
     }
 }
 class IfBlockBranch extends BlockNode {
-    constructor(expression, children, expressionAlias, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
+    constructor(expression, children, expressionAlias, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.expression = expression;
         this.children = children;
         this.expressionAlias = expressionAlias;
+        this.i18n = i18n;
     }
     visit(visitor) {
         return visitor.visitIfBlockBranch(this);
@@ -4240,6 +4251,21 @@ class IcuPlaceholder {
         return visitor.visitIcuPlaceholder(this, context);
     }
 }
+class BlockPlaceholder {
+    constructor(name, parameters, startName, closeName, children, sourceSpan, startSourceSpan, endSourceSpan) {
+        this.name = name;
+        this.parameters = parameters;
+        this.startName = startName;
+        this.closeName = closeName;
+        this.children = children;
+        this.sourceSpan = sourceSpan;
+        this.startSourceSpan = startSourceSpan;
+        this.endSourceSpan = endSourceSpan;
+    }
+    visit(visitor, context) {
+        return visitor.visitBlockPlaceholder(this, context);
+    }
+}
 // Clone the AST
 class CloneVisitor {
     visitText(text, context) {
@@ -4265,6 +4291,10 @@ class CloneVisitor {
     visitIcuPlaceholder(ph, context) {
         return new IcuPlaceholder(ph.value, ph.name, ph.sourceSpan);
     }
+    visitBlockPlaceholder(ph, context) {
+        const children = ph.children.map(n => n.visit(this, context));
+        return new BlockPlaceholder(ph.name, ph.parameters, ph.startName, ph.closeName, children, ph.sourceSpan, ph.startSourceSpan, ph.endSourceSpan);
+    }
 }
 // Visit all the nodes recursively
 class RecurseVisitor {
@@ -4282,6 +4312,9 @@ class RecurseVisitor {
     }
     visitPlaceholder(ph, context) { }
     visitIcuPlaceholder(ph, context) { }
+    visitBlockPlaceholder(ph, context) {
+        ph.children.forEach(child => child.visit(this));
+    }
 }
 /**
  * Serialize the message to the Localize backtick string format that would appear in compiled code.
@@ -4311,6 +4344,10 @@ class LocalizeMessageStringVisitor {
     }
     visitIcuPlaceholder(ph) {
         return `{$${ph.name}}`;
+    }
+    visitBlockPlaceholder(ph) {
+        const children = ph.children.map(child => child.visit(this)).join('');
+        return `{$${ph.startName}}${children}{$${ph.closeName}}`;
     }
 }
 
@@ -4353,6 +4390,11 @@ class SimplePlaceholderMapper extends RecurseVisitor {
     }
     visitPlaceholder(ph, context) {
         this.visitPlaceholderName(ph.name);
+    }
+    visitBlockPlaceholder(ph, context) {
+        this.visitPlaceholderName(ph.startName);
+        super.visitBlockPlaceholder(ph, context);
+        this.visitPlaceholderName(ph.closeName);
     }
     visitIcuPlaceholder(ph, context) {
         this.visitPlaceholderName(ph.name);
@@ -4565,6 +4607,17 @@ class _Visitor$1 {
             // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
             new Tag(_PLACEHOLDER_TAG$3, { name: ph.name }, [exTag, interpolationAsText])
         ];
+    }
+    visitBlockPlaceholder(ph, context) {
+        const startAsText = new Text$1(`@${ph.name}`);
+        const startEx = new Tag(_EXAMPLE_TAG, {}, [startAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        const startTagPh = new Tag(_PLACEHOLDER_TAG$3, { name: ph.startName }, [startEx, startAsText]);
+        const closeAsText = new Text$1(`}`);
+        const closeEx = new Tag(_EXAMPLE_TAG, {}, [closeAsText]);
+        // TC requires PH to have a non empty EX, and uses the text node to show the "original" value.
+        const closeTagPh = new Tag(_PLACEHOLDER_TAG$3, { name: ph.closeName }, [closeEx, closeAsText]);
+        return [startTagPh, ...this.serialize(ph.children), closeTagPh];
     }
     visitIcuPlaceholder(ph, context) {
         const icuExpression = ph.value.expression;
@@ -5211,6 +5264,7 @@ class InterpolationConfig {
     }
 }
 const DEFAULT_INTERPOLATION_CONFIG = new InterpolationConfig('{{', '}}');
+const DEFAULT_CONTAINER_BLOCKS = new Set(['switch']);
 
 const $EOF = 0;
 const $BSPACE = 8;
@@ -12724,6 +12778,9 @@ class IcuSerializerVisitor {
     visitPlaceholder(ph) {
         return this.formatPh(ph.name);
     }
+    visitBlockPlaceholder(ph) {
+        return `${this.formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${this.formatPh(ph.closeName)}`;
+    }
     visitIcuPlaceholder(ph, context) {
         return this.formatPh(ph.name);
     }
@@ -14447,12 +14504,12 @@ class Comment {
         return visitor.visitComment(this, context);
     }
 }
-class Block {
-    constructor(name, parameters, children, sourceSpan, nameSpan, startSourceSpan, endSourceSpan = null) {
+class Block extends NodeWithI18n {
+    constructor(name, parameters, children, sourceSpan, nameSpan, startSourceSpan, endSourceSpan = null, i18n) {
+        super(sourceSpan, i18n);
         this.name = name;
         this.parameters = parameters;
         this.children = children;
-        this.sourceSpan = sourceSpan;
         this.nameSpan = nameSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
@@ -15138,6 +15195,24 @@ class PlaceholderRegistry {
     getUniquePlaceholder(name) {
         return this._generateUniqueName(name.toUpperCase());
     }
+    getStartBlockPlaceholderName(name, parameters) {
+        const signature = this._hashBlock(name, parameters);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const placeholder = this._generateUniqueName(`START_BLOCK_${this._toSnakeCase(name)}`);
+        this._signatureToName[signature] = placeholder;
+        return placeholder;
+    }
+    getCloseBlockPlaceholderName(name) {
+        const signature = this._hashClosingBlock(name);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const placeholder = this._generateUniqueName(`CLOSE_BLOCK_${this._toSnakeCase(name)}`);
+        this._signatureToName[signature] = placeholder;
+        return placeholder;
+    }
     // Generate a hash for a tag - does not take attribute order into account
     _hashTag(tag, attrs, isVoid) {
         const start = `<${tag}`;
@@ -15147,6 +15222,16 @@ class PlaceholderRegistry {
     }
     _hashClosingTag(tag) {
         return this._hashTag(`/${tag}`, {}, false);
+    }
+    _hashBlock(name, parameters) {
+        const params = parameters.length === 0 ? '' : ` (${parameters.sort().join('; ')})`;
+        return `@${name}${params} {}`;
+    }
+    _hashClosingBlock(name) {
+        return this._hashBlock(`close_${name}`, []);
+    }
+    _toSnakeCase(name) {
+        return name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
     }
     _generateUniqueName(base) {
         const seen = this._placeHolderNameCounts.hasOwnProperty(base);
@@ -15164,17 +15249,18 @@ const _expParser = new Parser$1(new Lexer());
 /**
  * Returns a function converting html nodes to an i18n Message given an interpolationConfig
  */
-function createI18nMessageFactory(interpolationConfig) {
-    const visitor = new _I18nVisitor(_expParser, interpolationConfig);
+function createI18nMessageFactory(interpolationConfig, containerBlocks) {
+    const visitor = new _I18nVisitor(_expParser, interpolationConfig, containerBlocks);
     return (nodes, meaning, description, customId, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
 }
 function noopVisitNodeFn(_html, i18n) {
     return i18n;
 }
 class _I18nVisitor {
-    constructor(_expressionParser, _interpolationConfig) {
+    constructor(_expressionParser, _interpolationConfig, _containerBlocks) {
         this._expressionParser = _expressionParser;
         this._interpolationConfig = _interpolationConfig;
+        this._containerBlocks = _containerBlocks;
     }
     toI18nMessage(nodes, meaning = '', description = '', customId = '', visitNodeFn) {
         const context = {
@@ -15261,10 +15347,26 @@ class _I18nVisitor {
     }
     visitBlock(block, context) {
         const children = visitAll(this, block.children, context);
-        const node = new Container(children, block.sourceSpan);
+        if (this._containerBlocks.has(block.name)) {
+            return new Container(children, block.sourceSpan);
+        }
+        const parameters = block.parameters.map(param => param.expression);
+        const startPhName = context.placeholderRegistry.getStartBlockPlaceholderName(block.name, parameters);
+        const closePhName = context.placeholderRegistry.getCloseBlockPlaceholderName(block.name);
+        context.placeholderToContent[startPhName] = {
+            text: block.startSourceSpan.toString(),
+            sourceSpan: block.startSourceSpan,
+        };
+        context.placeholderToContent[closePhName] = {
+            text: block.endSourceSpan ? block.endSourceSpan.toString() : '}',
+            sourceSpan: block.endSourceSpan ?? block.sourceSpan,
+        };
+        const node = new BlockPlaceholder(block.name, parameters, startPhName, closePhName, children, block.sourceSpan, block.startSourceSpan, block.endSourceSpan);
         return context.visitNodeFn(block, node);
     }
-    visitBlockParameter(_parameter, _context) { }
+    visitBlockParameter(_parameter, _context) {
+        throw new Error('Unreachable code');
+    }
     /**
      * Convert, text and interpolated tokens up into text and placeholder pieces.
      *
@@ -19133,17 +19235,18 @@ const setI18nRefs = (htmlNode, i18nNode) => {
  * stored with other element's and attribute's information.
  */
 class I18nMetaVisitor {
-    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, enableI18nLegacyMessageIdFormat = false) {
+    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, enableI18nLegacyMessageIdFormat = false, containerBlocks = DEFAULT_CONTAINER_BLOCKS) {
         this.interpolationConfig = interpolationConfig;
         this.keepI18nAttrs = keepI18nAttrs;
         this.enableI18nLegacyMessageIdFormat = enableI18nLegacyMessageIdFormat;
+        this.containerBlocks = containerBlocks;
         // whether visited nodes contain i18n information
         this.hasI18nMeta = false;
         this._errors = [];
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const { meaning, description, customId } = this._parseMetadata(meta);
-        const createI18nMessage = createI18nMessageFactory(this.interpolationConfig);
+        const createI18nMessage = createI18nMessageFactory(this.interpolationConfig, this.containerBlocks);
         const message = createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
         this._setMessageId(message, meta);
         this._setLegacyIds(message, meta);
@@ -19444,6 +19547,9 @@ class GetMsgSerializerVisitor {
     visitPlaceholder(ph) {
         return this.formatPh(ph.name);
     }
+    visitBlockPlaceholder(ph) {
+        return `${this.formatPh(ph.startName)}${ph.children.map(child => child.visit(this)).join('')}${this.formatPh(ph.closeName)}`;
+    }
     visitIcuPlaceholder(ph, context) {
         return this.formatPh(ph.name);
     }
@@ -19496,6 +19602,11 @@ class LocalizeSerializerVisitor {
     }
     visitPlaceholder(ph) {
         this.pieces.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan));
+    }
+    visitBlockPlaceholder(ph) {
+        this.pieces.push(this.createPlaceholderPiece(ph.startName, ph.startSourceSpan ?? ph.sourceSpan));
+        ph.children.forEach(child => child.visit(this));
+        this.pieces.push(this.createPlaceholderPiece(ph.closeName, ph.endSourceSpan ?? ph.sourceSpan));
     }
     visitIcuPlaceholder(ph) {
         this.pieces.push(this.createPlaceholderPiece(ph.name, ph.sourceSpan, this.placeholderToMessage[ph.name]));
@@ -21887,10 +21998,9 @@ class ResolveIcuPlaceholdersVisitor extends RecurseVisitor {
         super();
         this.params = params;
     }
-    visitTagPlaceholder(placeholder) {
-        super.visitTagPlaceholder(placeholder);
-        // Add the start and end source span for tag placeholders. These need to be recorded for
-        // elements inside ICUs. The slots for the elements were recorded separately under the i18n
+    visitContainerPlaceholder(placeholder) {
+        // Add the start and end source span for container placeholders. These need to be recorded for
+        // elements inside ICUs. The slots for the nodes were recorded separately under the i18n
         // block's context as part of the `resolveI18nElementPlaceholders` phase.
         if (placeholder.startName && placeholder.startSourceSpan &&
             !this.params.has(placeholder.startName)) {
@@ -21908,6 +22018,14 @@ class ResolveIcuPlaceholdersVisitor extends RecurseVisitor {
                     flags: I18nParamValueFlags.None
                 }]);
         }
+    }
+    visitTagPlaceholder(placeholder) {
+        super.visitTagPlaceholder(placeholder);
+        this.visitContainerPlaceholder(placeholder);
+    }
+    visitBlockPlaceholder(placeholder) {
+        super.visitBlockPlaceholder(placeholder);
+        this.visitContainerPlaceholder(placeholder);
     }
 }
 
@@ -25103,19 +25221,19 @@ function createIfBlock(ast, connectedBlocks, visitor, bindingParser) {
     const branches = [];
     const mainBlockParams = parseConditionalBlockParameters(ast, errors, bindingParser);
     if (mainBlockParams !== null) {
-        branches.push(new IfBlockBranch(mainBlockParams.expression, visitAll(visitor, ast.children, ast.children), mainBlockParams.expressionAlias, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.nameSpan));
+        branches.push(new IfBlockBranch(mainBlockParams.expression, visitAll(visitor, ast.children, ast.children), mainBlockParams.expressionAlias, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.nameSpan, ast.i18n));
     }
     for (const block of connectedBlocks) {
         if (ELSE_IF_PATTERN.test(block.name)) {
             const params = parseConditionalBlockParameters(block, errors, bindingParser);
             if (params !== null) {
                 const children = visitAll(visitor, block.children, block.children);
-                branches.push(new IfBlockBranch(params.expression, children, params.expressionAlias, block.sourceSpan, block.startSourceSpan, block.endSourceSpan, block.nameSpan));
+                branches.push(new IfBlockBranch(params.expression, children, params.expressionAlias, block.sourceSpan, block.startSourceSpan, block.endSourceSpan, block.nameSpan, block.i18n));
             }
         }
         else if (block.name === 'else') {
             const children = visitAll(visitor, block.children, block.children);
-            branches.push(new IfBlockBranch(null, children, null, block.sourceSpan, block.startSourceSpan, block.endSourceSpan, block.nameSpan));
+            branches.push(new IfBlockBranch(null, children, null, block.sourceSpan, block.startSourceSpan, block.endSourceSpan, block.nameSpan, block.i18n));
         }
     }
     // The outer IfBlock should have a span that encapsulates all branches.
@@ -25146,7 +25264,7 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
                 errors.push(new ParseError(block.sourceSpan, '@empty block cannot have parameters'));
             }
             else {
-                empty = new ForLoopBlockEmpty(visitAll(visitor, block.children, block.children), block.sourceSpan, block.startSourceSpan, block.endSourceSpan, block.nameSpan);
+                empty = new ForLoopBlockEmpty(visitAll(visitor, block.children, block.children), block.sourceSpan, block.startSourceSpan, block.endSourceSpan, block.nameSpan, block.i18n);
             }
         }
         else {
@@ -25164,7 +25282,7 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
             // main `for` body, use `mainSourceSpan`.
             const endSpan = empty?.endSourceSpan ?? ast.endSourceSpan;
             const sourceSpan = new ParseSourceSpan(ast.sourceSpan.start, endSpan?.end ?? ast.sourceSpan.end);
-            node = new ForLoopBlock(params.itemName, params.expression, params.trackBy.expression, params.trackBy.keywordSpan, params.context, visitAll(visitor, ast.children, ast.children), empty, sourceSpan, ast.sourceSpan, ast.startSourceSpan, endSpan, ast.nameSpan);
+            node = new ForLoopBlock(params.itemName, params.expression, params.trackBy.expression, params.trackBy.keywordSpan, params.context, visitAll(visitor, ast.children, ast.children), empty, sourceSpan, ast.sourceSpan, ast.startSourceSpan, endSpan, ast.nameSpan, ast.i18n);
         }
     }
     return { node, errors };
@@ -25190,7 +25308,7 @@ function createSwitchBlock(ast, visitor, bindingParser) {
         const expression = node.name === 'case' ?
             parseBlockParameterToBinding(node.parameters[0], bindingParser) :
             null;
-        const ast = new SwitchBlockCase(expression, visitAll(visitor, node.children, node.children), node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan);
+        const ast = new SwitchBlockCase(expression, visitAll(visitor, node.children, node.children), node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan, node.i18n);
         if (expression === null) {
             defaultCase = ast;
         }
@@ -25777,7 +25895,7 @@ function createDeferredBlock(ast, connectedBlocks, visitor, bindingParser) {
         endOfLastSourceSpan = lastConnectedBlock.sourceSpan.end;
     }
     const sourceSpanWithConnectedBlocks = new ParseSourceSpan(ast.sourceSpan.start, endOfLastSourceSpan);
-    const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, placeholder, loading, error, ast.nameSpan, sourceSpanWithConnectedBlocks, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan);
+    const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, placeholder, loading, error, ast.nameSpan, sourceSpanWithConnectedBlocks, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan, ast.i18n);
     return { node, errors };
 }
 function parseConnectedBlocks(connectedBlocks, errors, visitor) {
@@ -25840,7 +25958,7 @@ function parsePlaceholderBlock(ast, visitor) {
             throw new Error(`Unrecognized parameter in @placeholder block: "${param.expression}"`);
         }
     }
-    return new DeferredBlockPlaceholder(visitAll(visitor, ast.children, ast.children), minimumTime, ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+    return new DeferredBlockPlaceholder(visitAll(visitor, ast.children, ast.children), minimumTime, ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.i18n);
 }
 function parseLoadingBlock(ast, visitor) {
     let afterTime = null;
@@ -25870,13 +25988,13 @@ function parseLoadingBlock(ast, visitor) {
             throw new Error(`Unrecognized parameter in @loading block: "${param.expression}"`);
         }
     }
-    return new DeferredBlockLoading(visitAll(visitor, ast.children, ast.children), afterTime, minimumTime, ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+    return new DeferredBlockLoading(visitAll(visitor, ast.children, ast.children), afterTime, minimumTime, ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.i18n);
 }
 function parseErrorBlock(ast, visitor) {
     if (ast.parameters.length > 0) {
         throw new Error(`@error block cannot have parameters`);
     }
-    return new DeferredBlockError(visitAll(visitor, ast.children, ast.children), ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+    return new DeferredBlockError(visitAll(visitor, ast.children, ast.children), ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.i18n);
 }
 function parsePrimaryTriggers(params, bindingParser, errors, placeholder) {
     const triggers = {};
@@ -26476,6 +26594,11 @@ class I18nContext {
         const content = { type, index, ctx: this.id, isVoid: node.isVoid, closed };
         updatePlaceholderMap(this.placeholders, ph, content);
     }
+    appendBlockPart(node, index, closed) {
+        const ph = closed ? node.closeName : node.startName;
+        const content = { type: TagType.TEMPLATE, index, ctx: this.id, closed };
+        updatePlaceholderMap(this.placeholders, ph, content);
+    }
     get icus() {
         return this._registry.icus;
     }
@@ -26506,6 +26629,13 @@ class I18nContext {
         // since we process nested templates separately
         this.appendTag(TagType.TEMPLATE, node, index, false);
         this.appendTag(TagType.TEMPLATE, node, index, true);
+        this._unresolvedCtxCount++;
+    }
+    appendBlock(node, index) {
+        // add open and close tags at the same time,
+        // since we process nested templates separately
+        this.appendBlockPart(node, index, false);
+        this.appendBlockPart(node, index, true);
         this._unresolvedCtxCount++;
     }
     appendElement(node, index, closed) {
@@ -27356,10 +27486,15 @@ class TemplateDefinitionBuilder {
             this.creationInstruction(span, isNgContainer$1 ? Identifiers.elementContainerEnd : Identifiers.elementEnd);
         }
     }
-    prepareEmbeddedTemplateFn(children, contextNameSuffix, variables = [], i18n, variableAliases) {
+    prepareEmbeddedTemplateFn(children, contextNameSuffix, variables = [], i18nMeta, variableAliases) {
         const index = this.allocateDataSlot();
-        if (this.i18n && i18n) {
-            this.i18n.appendTemplate(i18n, index);
+        if (this.i18n && i18nMeta) {
+            if (i18nMeta instanceof BlockPlaceholder) {
+                this.i18n.appendBlock(i18nMeta, index);
+            }
+            else {
+                this.i18n.appendTemplate(i18nMeta, index);
+            }
         }
         const contextName = `${this.contextName}${contextNameSuffix}_${index}`;
         const name = `${contextName}_Template`;
@@ -27370,7 +27505,7 @@ class TemplateDefinitionBuilder {
         // be able to support bindings in nested templates to local refs that occur after the
         // template definition. e.g. <div *ngIf="showing">{{ foo }}</div>  <div #foo></div>
         this._nestedTemplateFns.push(() => {
-            const templateFunctionExpr = visitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18n, variableAliases);
+            const templateFunctionExpr = visitor.buildTemplateFunction(children, variables, this._ngContentReservedSlots.length + this._ngContentSelectorsOffset, i18nMeta, variableAliases);
             this.constantPool.statements.push(templateFunctionExpr.toDeclStmt(name));
             if (visitor._ngContentReservedSlots.length) {
                 this._ngContentReservedSlots.push(...visitor._ngContentReservedSlots);
@@ -27527,7 +27662,7 @@ class TemplateDefinitionBuilder {
             }
             // Note: the template needs to be created *before* we process the expression,
             // otherwise pipes injecting some symbols won't work (see #52102).
-            const templateIndex = this.createEmbeddedTemplateFn(tagName, children, '_Conditional', sourceSpan, variables, attrsExprs);
+            const templateIndex = this.createEmbeddedTemplateFn(tagName, children, '_Conditional', sourceSpan, variables, attrsExprs, undefined, branch.i18n);
             const processedExpression = expression === null ? null : expression.visit(this._valueConverter);
             return { index: templateIndex, expression: processedExpression, alias: expressionAlias };
         });
@@ -27578,7 +27713,7 @@ class TemplateDefinitionBuilder {
         // We have to process the block in two steps: once here and again in the update instruction
         // callback in order to generate the correct expressions when pipes or pure functions are used.
         const caseData = block.cases.map(currentCase => {
-            const index = this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan);
+            const index = this.createEmbeddedTemplateFn(null, currentCase.children, '_Case', currentCase.sourceSpan, undefined, undefined, undefined, currentCase.i18n);
             const expression = currentCase.expression === null ?
                 null :
                 currentCase.expression.visit(this._valueConverter);
@@ -27626,23 +27761,21 @@ class TemplateDefinitionBuilder {
         if (!metadata) {
             throw new Error('Could not resolve `defer` block metadata. Block may need to be analyzed.');
         }
-        const primaryTemplateIndex = this.createEmbeddedTemplateFn(null, deferred.children, '_Defer', deferred.sourceSpan);
-        const loadingIndex = loading ?
-            this.createEmbeddedTemplateFn(null, loading.children, '_DeferLoading', loading.sourceSpan) :
+        const primaryTemplateIndex = this.createEmbeddedTemplateFn(null, deferred.children, '_Defer', deferred.sourceSpan, undefined, undefined, undefined, deferred.i18n);
+        const loadingIndex = loading ? this.createEmbeddedTemplateFn(null, loading.children, '_DeferLoading', loading.sourceSpan, undefined, undefined, undefined, loading.i18n) :
             null;
         const loadingConsts = loading ?
             trimTrailingNulls([literal(loading.minimumTime), literal(loading.afterTime)]) :
             null;
         const placeholderIndex = placeholder ?
-            this.createEmbeddedTemplateFn(null, placeholder.children, '_DeferPlaceholder', placeholder.sourceSpan) :
+            this.createEmbeddedTemplateFn(null, placeholder.children, '_DeferPlaceholder', placeholder.sourceSpan, undefined, undefined, undefined, placeholder.i18n) :
             null;
         const placeholderConsts = placeholder && placeholder.minimumTime !== null ?
             // TODO(crisbeto): potentially pass the time directly instead of storing it in the `consts`
             // since the placeholder block can only have one parameter?
             literalArr([literal(placeholder.minimumTime)]) :
             null;
-        const errorIndex = error ?
-            this.createEmbeddedTemplateFn(null, error.children, '_DeferError', error.sourceSpan) :
+        const errorIndex = error ? this.createEmbeddedTemplateFn(null, error.children, '_DeferError', error.sourceSpan, undefined, undefined, undefined, error.i18n) :
             null;
         // Note: we generate this last so the index matches the instruction order.
         const deferredIndex = this.allocateDataSlot();
@@ -27796,7 +27929,7 @@ class TemplateDefinitionBuilder {
         // are implicitly inferred by the runtime to index + 1 and index + 2.
         const blockIndex = this.allocateDataSlot();
         const { tagName, attrsExprs } = this.inferProjectionDataFromInsertionPoint(block);
-        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [block.item, block.contextVariables.$index, block.contextVariables.$count], undefined, {
+        const primaryData = this.prepareEmbeddedTemplateFn(block.children, '_For', [block.item, block.contextVariables.$index, block.contextVariables.$count], block.i18n, {
             // We need to provide level-specific versions of `$index` and `$count`, because
             // they're used when deriving the remaining variables (`$odd`, `$even` etc.) while at the
             // same time being available implicitly. Without these aliases, we wouldn't be able to
@@ -27807,7 +27940,7 @@ class TemplateDefinitionBuilder {
         const { expression: trackByExpression, usesComponentInstance: trackByUsesComponentInstance } = this.createTrackByFunction(block);
         let emptyData = null;
         if (block.empty !== null) {
-            emptyData = this.prepareEmbeddedTemplateFn(block.empty.children, '_ForEmpty');
+            emptyData = this.prepareEmbeddedTemplateFn(block.empty.children, '_ForEmpty', undefined, block.empty.i18n);
             // Allocate an extra slot for the empty block tracking.
             this.allocateBindingSlots(null);
         }
@@ -31107,7 +31240,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.0+sha-060ea83');
+const VERSION = new Version('17.1.0-next.0+sha-406049b');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -31340,7 +31473,8 @@ class _Visitor {
         this._errors = [];
         this._messages = [];
         this._inImplicitNode = false;
-        this._createI18nMessage = createI18nMessageFactory(interpolationConfig);
+        this._createI18nMessage =
+            createI18nMessageFactory(interpolationConfig, DEFAULT_CONTAINER_BLOCKS);
     }
     // looks for translatable attributes
     _visitAttributesOf(el) {
@@ -31648,6 +31782,12 @@ class _WriteVisitor$1 {
     visitPlaceholder(ph, context) {
         return [new Tag(_PLACEHOLDER_TAG$2, { id: ph.name, 'equiv-text': `{{${ph.value}}}` })];
     }
+    visitBlockPlaceholder(ph, context) {
+        const ctype = `x-${ph.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+        const startTagPh = new Tag(_PLACEHOLDER_TAG$2, { id: ph.startName, ctype, 'equiv-text': `@${ph.name}` });
+        const closeTagPh = new Tag(_PLACEHOLDER_TAG$2, { id: ph.closeName, ctype, 'equiv-text': `}` });
+        return [startTagPh, ...this.serialize(ph.children), closeTagPh];
+    }
     visitIcuPlaceholder(ph, context) {
         const equivText = `{${ph.value.expression}, ${ph.value.type}, ${Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ')}}`;
         return [new Tag(_PLACEHOLDER_TAG$2, { id: ph.name, 'equiv-text': equivText })];
@@ -31918,6 +32058,24 @@ class _WriteVisitor {
                 equiv: ph.name,
                 disp: `{{${ph.value}}}`,
             })];
+    }
+    visitBlockPlaceholder(ph, context) {
+        const tagPc = new Tag(_PLACEHOLDER_SPANNING_TAG, {
+            id: (this._nextPlaceholderId++).toString(),
+            equivStart: ph.startName,
+            equivEnd: ph.closeName,
+            type: 'other',
+            dispStart: `@${ph.name}`,
+            dispEnd: `}`,
+        });
+        const nodes = [].concat(...ph.children.map(node => node.visit(this)));
+        if (nodes.length) {
+            nodes.forEach((node) => tagPc.children.push(node));
+        }
+        else {
+            tagPc.children.push(new Text$1(''));
+        }
+        return [tagPc];
     }
     visitIcuPlaceholder(ph, context) {
         const cases = Object.keys(ph.value.cases).map((value) => value + ' {...}').join(' ');
@@ -32367,6 +32525,11 @@ class I18nToHtmlVisitor {
         // An ICU placeholder references the source message to be serialized
         return this._convertToText(this._srcMsg.placeholderToMessage[ph.name]);
     }
+    visitBlockPlaceholder(ph, context) {
+        const params = ph.parameters.length === 0 ? '' : ` (${ph.parameters.join('; ')})`;
+        const children = ph.children.map((c) => c.visit(this)).join('');
+        return `@${ph.name}${params} {${children}}`;
+    }
     /**
      * Convert a source message to a translated text string:
      * - text nodes are replaced with their translation,
@@ -32519,6 +32682,12 @@ class MapPlaceholderNames extends CloneVisitor {
         const children = ph.children.map(n => n.visit(this, mapper));
         return new TagPlaceholder(ph.tag, ph.attrs, startName, closeName, children, ph.isVoid, ph.sourceSpan, ph.startSourceSpan, ph.endSourceSpan);
     }
+    visitBlockPlaceholder(ph, mapper) {
+        const startName = mapper.toPublicName(ph.startName);
+        const closeName = ph.closeName ? mapper.toPublicName(ph.closeName) : ph.closeName;
+        const children = ph.children.map(n => n.visit(this, mapper));
+        return new BlockPlaceholder(ph.name, ph.parameters, startName, closeName, children, ph.sourceSpan, ph.startSourceSpan, ph.endSourceSpan);
+    }
     visitPlaceholder(ph, mapper) {
         return new Placeholder(ph.value, mapper.toPublicName(ph.name), ph.sourceSpan);
     }
@@ -32637,7 +32806,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32745,7 +32914,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33022,7 +33191,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33057,7 +33226,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33108,7 +33277,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33141,7 +33310,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33192,7 +33361,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.0+sha-060ea83'));
+    definitionMap.set('version', literal('17.1.0-next.0+sha-406049b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

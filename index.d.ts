@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.0+sha-060ea83
+ * @license Angular v17.1.0-next.0+sha-406049b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -437,15 +437,14 @@ export declare const enum BindingType {
     Animation = 4
 }
 
-export declare class Block implements BaseNode {
+export declare class Block extends NodeWithI18n {
     name: string;
     parameters: BlockParameter[];
     children: Node_2[];
-    sourceSpan: ParseSourceSpan;
     nameSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, parameters: BlockParameter[], children: Node_2[], sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null);
+    constructor(name: string, parameters: BlockParameter[], children: Node_2[], sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta_2);
     visit(visitor: Visitor, context: any): any;
 }
 
@@ -462,6 +461,19 @@ export declare class BlockParameter implements BaseNode {
     sourceSpan: ParseSourceSpan;
     constructor(expression: string, sourceSpan: ParseSourceSpan);
     visit(visitor: Visitor, context: any): any;
+}
+
+declare class BlockPlaceholder implements Node_3 {
+    name: string;
+    parameters: string[];
+    startName: string;
+    closeName: string;
+    children: Node_3[];
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan | null;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(name: string, parameters: string[], startName: string, closeName: string, children: Node_3[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan | null, endSourceSpan: ParseSourceSpan | null);
+    visit(visitor: Visitor_2, context?: any): any;
 }
 
 declare const BOOL_TYPE: BuiltinType;
@@ -614,6 +626,7 @@ declare class CloneVisitor implements Visitor_2 {
     visitTagPlaceholder(ph: TagPlaceholder, context?: any): TagPlaceholder;
     visitPlaceholder(ph: Placeholder, context?: any): Placeholder;
     visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): IcuPlaceholder;
+    visitBlockPlaceholder(ph: BlockPlaceholder, context?: any): BlockPlaceholder;
 }
 
 export declare class CommaExpr extends Expression {
@@ -1442,6 +1455,7 @@ declare namespace i18n {
         TagPlaceholder,
         Placeholder,
         IcuPlaceholder,
+        BlockPlaceholder,
         I18nMeta_2 as I18nMeta,
         Visitor_2 as Visitor,
         CloneVisitor,
@@ -4301,6 +4315,7 @@ declare class RecurseVisitor implements Visitor_2 {
     visitTagPlaceholder(ph: TagPlaceholder, context?: any): any;
     visitPlaceholder(ph: Placeholder, context?: any): any;
     visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
+    visitBlockPlaceholder(ph: BlockPlaceholder, context?: any): any;
 }
 
 export declare class RecursiveAstVisitor implements AstVisitor {
@@ -4851,11 +4866,12 @@ export declare class TmplAstDeferredBlock extends BlockNode implements TmplAstNo
     loading: TmplAstDeferredBlockLoading | null;
     error: TmplAstDeferredBlockError | null;
     mainBlockSpan: ParseSourceSpan;
+    i18n?: I18nMeta_2 | undefined;
     readonly triggers: Readonly<TmplAstDeferredBlockTriggers>;
     readonly prefetchTriggers: Readonly<TmplAstDeferredBlockTriggers>;
     private readonly definedTriggers;
     private readonly definedPrefetchTriggers;
-    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
     visitAll(visitor: Visitor_3<unknown>): void;
     private visitTriggers;
@@ -4863,7 +4879,8 @@ export declare class TmplAstDeferredBlock extends BlockNode implements TmplAstNo
 
 export declare class TmplAstDeferredBlockError extends BlockNode implements TmplAstNode {
     children: TmplAstNode[];
-    constructor(children: TmplAstNode[], nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(children: TmplAstNode[], nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -4871,14 +4888,16 @@ export declare class TmplAstDeferredBlockLoading extends BlockNode implements Tm
     children: TmplAstNode[];
     afterTime: number | null;
     minimumTime: number | null;
-    constructor(children: TmplAstNode[], afterTime: number | null, minimumTime: number | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(children: TmplAstNode[], afterTime: number | null, minimumTime: number | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
 export declare class TmplAstDeferredBlockPlaceholder extends BlockNode implements TmplAstNode {
     children: TmplAstNode[];
     minimumTime: number | null;
-    constructor(children: TmplAstNode[], minimumTime: number | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(children: TmplAstNode[], minimumTime: number | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -4925,13 +4944,15 @@ export declare class TmplAstForLoopBlock extends BlockNode implements TmplAstNod
     children: TmplAstNode[];
     empty: TmplAstForLoopBlockEmpty | null;
     mainBlockSpan: ParseSourceSpan;
-    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, trackKeywordSpan: ParseSourceSpan, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, trackKeywordSpan: ParseSourceSpan, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
 export declare class TmplAstForLoopBlockEmpty extends BlockNode implements TmplAstNode {
     children: TmplAstNode[];
-    constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -4970,7 +4991,8 @@ export declare class TmplAstIfBlockBranch extends BlockNode implements TmplAstNo
     expression: AST | null;
     children: TmplAstNode[];
     expressionAlias: TmplAstVariable | null;
-    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: TmplAstVariable | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: TmplAstVariable | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -5043,7 +5065,8 @@ export declare class TmplAstSwitchBlock extends BlockNode implements TmplAstNode
 export declare class TmplAstSwitchBlockCase extends BlockNode implements TmplAstNode {
     expression: AST | null;
     children: TmplAstNode[];
-    constructor(expression: AST | null, children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan);
+    i18n?: I18nMeta_2 | undefined;
+    constructor(expression: AST | null, children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: Visitor_3<Result>): Result;
 }
 
@@ -5384,6 +5407,7 @@ declare interface Visitor_2 {
     visitTagPlaceholder(ph: TagPlaceholder, context?: any): any;
     visitPlaceholder(ph: Placeholder, context?: any): any;
     visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
+    visitBlockPlaceholder(ph: BlockPlaceholder, context?: any): any;
 }
 
 declare interface Visitor_3<Result = any> {
