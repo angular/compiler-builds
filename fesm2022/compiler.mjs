@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.2+sha-1940280
+ * @license Angular v17.1.0-next.2+sha-4b23221
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -29544,6 +29544,8 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         }
         return emitHostBindingFunction(hostJob);
     }
+    let bindingId = 0;
+    const getNextBindingId = () => `${bindingId++}`;
     const bindingContext = variable(CONTEXT_NAME);
     const styleBuilder = new StylingBuilder(bindingContext);
     const { styleAttr, classAttr } = hostBindingsMetadata.specialAttributes;
@@ -29596,7 +29598,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     for (const binding of allOtherBindings) {
         // resolve literal arrays and literal objects
         const value = binding.expression.visit(getValueConverter());
-        const bindingExpr = bindingFn(bindingContext, value);
+        const bindingExpr = bindingFn(bindingContext, value, getNextBindingId);
         const { bindingName, instruction, isAttribute } = getBindingNameAndInstruction(binding);
         const securityContexts = bindingParser.calcPossibleSecurityContexts(selector, bindingName, isAttribute)
             .filter(context => context !== SecurityContext.NONE);
@@ -29675,10 +29677,12 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
                 // at the top of this method when all the input bindings were counted.
                 totalHostVarsCount +=
                     Math.max(call.allocateBindingSlots - MIN_STYLING_BINDING_SLOTS_REQUIRED, 0);
+                const { params, stmts } = convertStylingCall(call, bindingContext, bindingFn, getNextBindingId);
+                updateVariables.push(...stmts);
                 updateInstructions.push({
                     reference: instruction.reference,
-                    paramsOrFn: convertStylingCall(call, bindingContext, bindingFn),
-                    span: null
+                    paramsOrFn: params,
+                    span: null,
                 });
             }
         });
@@ -29699,11 +29703,19 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     }
     return null;
 }
-function bindingFn(implicit, value) {
-    return convertPropertyBinding(null, implicit, value, 'b');
+function bindingFn(implicit, value, getNextBindingIdFn) {
+    return convertPropertyBinding(null, implicit, value, getNextBindingIdFn());
 }
-function convertStylingCall(call, bindingContext, bindingFn) {
-    return call.params(value => bindingFn(bindingContext, value).currValExpr);
+function convertStylingCall(call, bindingContext, bindingFn, getNextBindingIdFn) {
+    const stmts = [];
+    const params = call.params(value => {
+        const result = bindingFn(bindingContext, value, getNextBindingIdFn);
+        if (Array.isArray(result.stmts) && result.stmts.length > 0) {
+            stmts.push(...result.stmts);
+        }
+        return result.currValExpr;
+    });
+    return { params, stmts };
 }
 function getBindingNameAndInstruction(binding) {
     let bindingName = binding.name;
@@ -31279,7 +31291,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.2+sha-1940280');
+const VERSION = new Version('17.1.0-next.2+sha-4b23221');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32845,7 +32857,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32953,7 +32965,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33230,7 +33242,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33265,7 +33277,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33316,7 +33328,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33349,7 +33361,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33400,7 +33412,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-1940280'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-4b23221'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
