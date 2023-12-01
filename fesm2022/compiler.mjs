@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.2+sha-9423c19
+ * @license Angular v17.1.0-next.2+sha-acd6100
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4712,7 +4712,7 @@ const I18N_ATTR_PREFIX = 'i18n-';
 /** Prefix of var expressions used in ICUs */
 const I18N_ICU_VAR_PREFIX = 'VAR_';
 /** Prefix of ICU expressions for post processing */
-const I18N_ICU_MAPPING_PREFIX = 'I18N_EXP_';
+const I18N_ICU_MAPPING_PREFIX$1 = 'I18N_EXP_';
 /** Placeholder wrapper for i18n expressions **/
 const I18N_PLACEHOLDER_SYMBOL = '�';
 function isI18nAttribute(name) {
@@ -11349,11 +11349,42 @@ function assignI18nSlotDependencies(job) {
                     break;
             }
         }
-        // Assign i18n expressions to target the last slot in its owning block.
+        // Assign i18n expressions to target the last slot in their owning block. Also move the ops
+        // below any other ops that depend on that same slot context to mimic the behavior of
+        // TemplateDefinitionBuilder.
+        // TODO(mmalerba): We may want to simplify the ordering logic once compatibility with
+        // TemplateDefinitionBuilder is no longer required. Though we likely still want *some* type of
+        // ordering to maximize opportunities for chaining.
+        let moveToTarget = null;
+        let opsToMove = [];
+        let previousTarget = null;
+        let currentTarget = null;
         for (const op of unit.update) {
+            currentTarget = hasDependsOnSlotContextTrait(op) ? op.target : null;
+            // Re-target i18n expression ops.
             if (op.kind === OpKind.I18nExpression) {
                 op.target = i18nLastSlotConsumers.get(op.target);
+                moveToTarget = op.target;
             }
+            // Pull out i18n expression and apply ops to be moved.
+            if (op.kind === OpKind.I18nExpression || op.kind === OpKind.I18nApply) {
+                opsToMove.push(op);
+                OpList.remove(op);
+                currentTarget = moveToTarget;
+            }
+            // Add back any ops that were previously pulled once we pass the point where they should be
+            // inserted.
+            if (moveToTarget !== null && previousTarget === moveToTarget &&
+                currentTarget !== previousTarget) {
+                OpList.insertBefore(opsToMove, op);
+                opsToMove = [];
+            }
+            // Update the previous target for the next pass through
+            previousTarget = currentTarget;
+        }
+        // If there are any mvoed ops that haven't been put back yet, put them back at the end.
+        if (opsToMove) {
+            unit.update.push(opsToMove);
         }
     }
 }
@@ -12324,7 +12355,7 @@ function ternaryTransform(e) {
 /**
  * The escape sequence used indicate message param values.
  */
-const ESCAPE = '\uFFFD';
+const ESCAPE$1 = '\uFFFD';
 /**
  * Marker used to indicate an element tag.
  */
@@ -12544,9 +12575,9 @@ function formatValue(value) {
     // Self-closing tags use a special form that concatenates the start and close tag values.
     if ((value.flags & I18nParamValueFlags.OpenTag) &&
         (value.flags & I18nParamValueFlags.CloseTag)) {
-        return `${ESCAPE}${tagMarker}${value.value}${context}${ESCAPE}${ESCAPE}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE}`;
+        return `${ESCAPE$1}${tagMarker}${value.value}${context}${ESCAPE$1}${ESCAPE$1}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE$1}`;
     }
-    return `${ESCAPE}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE}`;
+    return `${ESCAPE$1}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE$1}`;
 }
 
 /**
@@ -19790,6 +19821,12 @@ const NG_I18N_CLOSURE_MODE$1 = 'ngI18nClosureMode';
  * considers variables like `I18N_0` as constants and throws an error when their value changes.
  */
 const TRANSLATION_VAR_PREFIX = 'i18n_';
+/** Prefix of ICU expressions for post processing */
+const I18N_ICU_MAPPING_PREFIX = 'I18N_EXP_';
+/**
+ * The escape sequence used for message param values.
+ */
+const ESCAPE = '\uFFFD';
 /**
  * Lifts i18n properties into the consts array.
  * TODO: Can we use `ConstCollectedExpr`?
@@ -19828,18 +19865,23 @@ function collectI18nConsts(job) {
  * This will recursively collect any sub-messages referenced from the parent message as well.
  */
 function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
-    // Recursively collect any sub-messages, and fill in their placeholders in this message.
+    // Recursively collect any sub-messages, record each sub-message's main variable under its
+    // placeholder so that we can add them to the params for the parent message. It is possible that
+    // multiple sub-messages will share the same placeholder, so we need to track an array of
+    // variables for each placeholder.
     const statements = [];
+    const subMessagePlaceholders = new Map();
     for (const subMessageId of messageOp.subMessages) {
         const subMessage = messages.get(subMessageId);
         const { mainVar: subMessageVar, statements: subMessageStatements } = collectMessage(job, fileBasedI18nSuffix, messages, subMessage);
         statements.push(...subMessageStatements);
-        messageOp.params.set(subMessage.messagePlaceholder, subMessageVar);
+        const subMessages = subMessagePlaceholders.get(subMessage.messagePlaceholder) ?? [];
+        subMessages.push(subMessageVar);
+        subMessagePlaceholders.set(subMessage.messagePlaceholder, subMessages);
     }
+    addSubMessageParams(messageOp, subMessagePlaceholders);
     // Sort the params for consistency with TemaplateDefinitionBuilder output.
     messageOp.params = new Map([...messageOp.params.entries()].sort());
-    // Check that the message has all of its parameters filled out.
-    assertAllParamsResolved(messageOp);
     const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
     // Closure Compiler requires const names to start with `MSG_` but disallows any other
     // const to start with `MSG_`. We define a variable starting with `MSG_` just for the
@@ -19850,16 +19892,37 @@ function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
     // set in post-processing.
     if (messageOp.needsPostprocessing) {
         // Sort the post-processing params for consistency with TemaplateDefinitionBuilder output.
-        messageOp.postprocessingParams = new Map([...messageOp.postprocessingParams.entries()].sort());
+        const postprocessingParams = Object.fromEntries([...messageOp.postprocessingParams.entries()].sort());
+        const formattedPostprocessingParams = formatI18nPlaceholderNamesInMap(postprocessingParams, /* useCamelCase */ false);
         const extraTransformFnParams = [];
         if (messageOp.postprocessingParams.size > 0) {
-            extraTransformFnParams.push(literalMap([...messageOp.postprocessingParams].map(([key, value]) => ({ key, value, quoted: true }))));
+            extraTransformFnParams.push(mapLiteral(formattedPostprocessingParams, /* quoted */ true));
         }
         transformFn = (expr) => importExpr(Identifiers.i18nPostprocess).callFn([expr, ...extraTransformFnParams]);
     }
     // Add the message's statements
     statements.push(...getTranslationDeclStmts$1(messageOp.message, mainVar, closureVar, messageOp.params, transformFn));
     return { mainVar, statements };
+}
+/**
+ * Adds the given subMessage placeholders to the given message op.
+ *
+ * If a placeholder only corresponds to a single sub-message variable, we just set that variable as
+ * the param value. However, if the placeholder corresponds to multiple sub-message variables, we
+ * need to add a special placeholder value that is handled by the post-processing step. We then add
+ * the array of variables as a post-processing param.
+ */
+function addSubMessageParams(messageOp, subMessagePlaceholders) {
+    for (const [placeholder, subMessages] of subMessagePlaceholders) {
+        if (subMessages.length === 1) {
+            messageOp.params.set(placeholder, subMessages[0]);
+        }
+        else {
+            messageOp.params.set(placeholder, literal(`${ESCAPE}${I18N_ICU_MAPPING_PREFIX}${placeholder}${ESCAPE}`));
+            messageOp.postprocessingParams.set(placeholder, literalArr(subMessages));
+            messageOp.needsPostprocessing = true;
+        }
+    }
 }
 /**
  * Generate statements that define a given translation message.
@@ -19927,23 +19990,6 @@ function i18nGenerateClosureVar(pool, messageId, fileBasedI18nSuffix, useExterna
         name = pool.uniqueName(prefix);
     }
     return variable(name);
-}
-/**
- * Asserts that all of the message's placeholders have values.
- */
-function assertAllParamsResolved(op) {
-    for (let placeholder in op.message.placeholders) {
-        placeholder = placeholder.trimEnd();
-        if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
-            throw Error(`Failed to resolve i18n placeholder: ${placeholder}`);
-        }
-    }
-    for (let placeholder in op.message.placeholderToMessage) {
-        placeholder = placeholder.trimEnd();
-        if (!op.params.has(placeholder) && !op.postprocessingParams.has(placeholder)) {
-            throw Error(`Failed to resolve i18n message placeholder: ${placeholder}`);
-        }
-    }
 }
 
 /**
@@ -23711,12 +23757,7 @@ function ingestIcu(unit, icu) {
         const xref = unit.job.allocateXrefId();
         const icuNode = icu.i18n.nodes[0];
         unit.create.push(createIcuStartOp(xref, icu.i18n, icuFromI18nMessage(icu.i18n).name, null));
-        const expressionPlaceholder = icuNode.expressionPlaceholder?.trimEnd();
-        if (expressionPlaceholder === undefined || icu.vars[expressionPlaceholder] === undefined) {
-            throw Error('ICU should have a text binding');
-        }
-        ingestBoundText(unit, icu.vars[expressionPlaceholder], [expressionPlaceholder]);
-        for (const [placeholder, text] of Object.entries(icu.placeholders)) {
+        for (const [placeholder, text] of Object.entries({ ...icu.vars, ...icu.placeholders })) {
             if (text instanceof BoundText) {
                 ingestBoundText(unit, text, [placeholder]);
             }
@@ -27184,7 +27225,7 @@ class TemplateDefinitionBuilder {
                     else {
                         // ... otherwise we need to activate post-processing
                         // to replace ICU placeholders with proper values
-                        const placeholder = wrapI18nPlaceholder(`${I18N_ICU_MAPPING_PREFIX}${key}`);
+                        const placeholder = wrapI18nPlaceholder(`${I18N_ICU_MAPPING_PREFIX$1}${key}`);
                         params[key] = literal(placeholder);
                         icuMapping[key] = literalArr(refs);
                     }
@@ -31291,7 +31332,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.2+sha-9423c19');
+const VERSION = new Version('17.1.0-next.2+sha-acd6100');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32857,7 +32898,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32965,7 +33006,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33242,7 +33283,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33277,7 +33318,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33328,7 +33369,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33361,7 +33402,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33412,7 +33453,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-9423c19'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-acd6100'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
