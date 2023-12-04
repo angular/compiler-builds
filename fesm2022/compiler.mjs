@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.2+sha-d4b4236
+ * @license Angular v17.1.0-next.2+sha-12dfa9b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9258,6 +9258,12 @@ var I18nContextKind;
     I18nContextKind[I18nContextKind["RootI18n"] = 0] = "RootI18n";
     I18nContextKind[I18nContextKind["Icu"] = 1] = "Icu";
 })(I18nContextKind || (I18nContextKind = {}));
+var TemplateKind;
+(function (TemplateKind) {
+    TemplateKind[TemplateKind["NgTemplate"] = 0] = "NgTemplate";
+    TemplateKind[TemplateKind["Structural"] = 1] = "Structural";
+    TemplateKind[TemplateKind["Block"] = 2] = "Block";
+})(TemplateKind || (TemplateKind = {}));
 
 /**
  * Marker symbol for `ConsumesSlotOpTrait`.
@@ -10444,6 +10450,9 @@ function transformExpressionsInExpression(expr, transform, flags) {
             expr.expressions[i] = transformExpressionsInExpression(expr.expressions[i], transform, flags);
         }
     }
+    else if (expr instanceof NotExpr) {
+        expr.condition = transformExpressionsInExpression(expr.condition, transform, flags);
+    }
     else if (expr instanceof ReadVarExpr || expr instanceof ExternalExpr ||
         expr instanceof LiteralExpr) {
         // No action for these types.
@@ -10785,10 +10794,11 @@ function createElementStartOp(tag, xref, namespace, i18nPlaceholder, sourceSpan)
 /**
  * Create a `TemplateOp`.
  */
-function createTemplateOp(xref, tag, functionNameSuffix, namespace, i18nPlaceholder, sourceSpan) {
+function createTemplateOp(xref, templateKind, tag, functionNameSuffix, namespace, i18nPlaceholder, sourceSpan) {
     return {
         kind: OpKind.Template,
         xref,
+        templateKind,
         attributes: null,
         tag,
         handle: new SlotHandle(),
@@ -10911,14 +10921,15 @@ function createProjectionDefOp(def) {
         ...NEW_OP,
     };
 }
-function createProjectionOp(xref, selector, sourceSpan) {
+function createProjectionOp(xref, selector, i18nPlaceholder, attributes, sourceSpan) {
     return {
         kind: OpKind.Projection,
         xref,
         handle: new SlotHandle(),
         selector,
+        i18nPlaceholder,
         projectionSlotIndex: 0,
-        attributes: [],
+        attributes,
         localRefs: [],
         sourceSpan,
         ...NEW_OP,
@@ -12447,119 +12458,86 @@ function extractI18nMessages(job) {
  * Create an i18n message op from an i18n context op.
  */
 function createI18nMessage(job, context, messagePlaceholder) {
-    let [formattedParams, needsPostprocessing] = formatParams(context.params);
-    const [formattedPostprocessingParams] = formatParams(context.postprocessingParams);
-    needsPostprocessing ||= formattedPostprocessingParams.size > 0;
+    let formattedParams = formatParams(context.params);
+    const formattedPostprocessingParams = formatParams(context.postprocessingParams);
+    let needsPostprocessing = formattedPostprocessingParams.size > 0;
+    for (const values of context.params.values()) {
+        if (values.length > 1) {
+            needsPostprocessing = true;
+        }
+    }
     return createI18nMessageOp(job.allocateXrefId(), context.i18nBlock, context.message, messagePlaceholder ?? null, formattedParams, formattedPostprocessingParams, needsPostprocessing);
 }
 /**
  * Formats a map of `I18nParamValue[]` values into a map of `Expression` values.
- * @return A tuple of the formatted params and a boolean indicating whether postprocessing is needed
- *     for any of the params
  */
 function formatParams(params) {
     const formattedParams = new Map();
-    let needsPostprocessing = false;
     for (const [placeholder, placeholderValues] of params) {
-        const [serializedValues, paramNeedsPostprocessing] = formatParamValues(placeholderValues);
-        needsPostprocessing ||= paramNeedsPostprocessing;
+        const serializedValues = formatParamValues(placeholderValues);
         if (serializedValues !== null) {
             formattedParams.set(placeholder, literal(serializedValues));
         }
     }
-    return [formattedParams, needsPostprocessing];
+    return formattedParams;
 }
 /**
  * Formats an `I18nParamValue[]` into a string (or null for empty array).
- * @return A tuple of the formatted value and a boolean indicating whether postprocessing is needed
- *     for the value
  */
 function formatParamValues(values) {
     if (values.length === 0) {
-        return [null, false];
+        return null;
     }
-    collapseElementTemplatePairs(values);
     const serializedValues = values.map(value => formatValue(value));
     return serializedValues.length === 1 ?
-        [serializedValues[0], false] :
-        [`${LIST_START_MARKER}${serializedValues.join(LIST_DELIMITER)}${LIST_END_MARKER}`, true];
-}
-/**
- * Collapses element/template pairs that refer to the same subTemplateIndex, i.e. elements and
- * templates that refer to the same element instance.
- *
- * This accounts for the case of a structural directive inside an i18n block, e.g.:
- * ```
- * <div i18n>
- *   <div *ngIf="condition">
- * </div>
- * ```
- *
- * In this case, both the element start and template start placeholders are the same,
- * and we collapse them down into a single compound placeholder value. Rather than produce
- * `[\uFFFD#1:1\uFFFD|\uFFFD*2:1\uFFFD]`, we want to produce `\uFFFD#1:1\uFFFD\uFFFD*2:1\uFFFD`,
- * likewise for the closing of the element/template.
- */
-function collapseElementTemplatePairs(values) {
-    // Record the indicies of element and template values in the values array by subTemplateIndex.
-    const valueIndiciesBySubTemplateIndex = new Map();
-    for (let i = 0; i < values.length; i++) {
-        const value = values[i];
-        if (value.subTemplateIndex !== null &&
-            (value.flags & (I18nParamValueFlags.ElementTag | I18nParamValueFlags.TemplateTag))) {
-            const valueIndicies = valueIndiciesBySubTemplateIndex.get(value.subTemplateIndex) ?? [];
-            valueIndicies.push(i);
-            valueIndiciesBySubTemplateIndex.set(value.subTemplateIndex, valueIndicies);
-        }
-    }
-    // For each subTemplateIndex, check if any values can be collapsed.
-    for (const [subTemplateIndex, valueIndicies] of valueIndiciesBySubTemplateIndex) {
-        if (valueIndicies.length > 1) {
-            const elementIndex = valueIndicies.find(index => values[index].flags & I18nParamValueFlags.ElementTag);
-            const templateIndex = valueIndicies.find(index => values[index].flags & I18nParamValueFlags.TemplateTag);
-            // If the values list contains both an element and template value, we can collapse.
-            if (elementIndex !== undefined && templateIndex !== undefined) {
-                const elementValue = values[elementIndex];
-                const templateValue = values[templateIndex];
-                // To match the TemplateDefinitionBuilder output, flip the order depending on whether the
-                // values represent a closing or opening tag (or both).
-                // TODO(mmalerba): Figure out if this makes a difference in terms of either functionality,
-                // or the resulting message ID. If not, we can remove the special-casing in the future.
-                let compundValue;
-                if ((elementValue.flags & I18nParamValueFlags.OpenTag) &&
-                    (elementValue.flags & I18nParamValueFlags.CloseTag)) {
-                    // TODO(mmalerba): Is this a TDB bug? I don't understand why it would put the template
-                    // value twice.
-                    compundValue = `${formatValue(templateValue)}${formatValue(elementValue)}${formatValue(templateValue)}`;
-                }
-                else if (elementValue.flags & I18nParamValueFlags.OpenTag) {
-                    compundValue = `${formatValue(templateValue)}${formatValue(elementValue)}`;
-                }
-                else {
-                    compundValue = `${formatValue(elementValue)}${formatValue(templateValue)}`;
-                }
-                // Replace the element value with the combined value.
-                values.splice(elementIndex, 1, { value: compundValue, subTemplateIndex, flags: I18nParamValueFlags.None });
-                // Replace the template value with null to preserve the indicies we calculated earlier.
-                values.splice(templateIndex, 1, null);
-            }
-        }
-    }
-    // Strip out any nulled out values we introduced above.
-    for (let i = values.length - 1; i >= 0; i--) {
-        if (values[i] === null) {
-            values.splice(i, 1);
-        }
-    }
+        serializedValues[0] :
+        `${LIST_START_MARKER}${serializedValues.join(LIST_DELIMITER)}${LIST_END_MARKER}`;
 }
 /**
  * Formats a single `I18nParamValue` into a string
  */
 function formatValue(value) {
+    // Element tags with a structural directive use a special form that concatenates the element and
+    // template values.
+    if ((value.flags & I18nParamValueFlags.ElementTag) &&
+        (value.flags & I18nParamValueFlags.TemplateTag)) {
+        if (typeof value.value !== 'object') {
+            throw Error('AssertionError: Expected i18n param value to have an element and template slot');
+        }
+        const elementValue = formatValue({
+            ...value,
+            value: value.value.element,
+            flags: value.flags & ~I18nParamValueFlags.TemplateTag
+        });
+        const templateValue = formatValue({
+            ...value,
+            value: value.value.template,
+            flags: value.flags & ~I18nParamValueFlags.ElementTag
+        });
+        // TODO(mmalerba): This is likely a bug in TemplateDefinitionBuilder, we should not need to
+        // record the template value twice. For now I'm re-implementing the behavior here to keep the
+        // output consistent with TemplateDefinitionBuilder.
+        if ((value.flags & I18nParamValueFlags.OpenTag) &&
+            (value.flags & I18nParamValueFlags.CloseTag)) {
+            return `${templateValue}${elementValue}${templateValue}`;
+        }
+        // To match the TemplateDefinitionBuilder output, flip the order depending on whether the
+        // values represent a closing or opening tag (or both).
+        // TODO(mmalerba): Figure out if this makes a difference in terms of either functionality,
+        // or the resulting message ID. If not, we can remove the special-casing in the future.
+        return value.flags & I18nParamValueFlags.CloseTag ? `${elementValue}${templateValue}` :
+            `${templateValue}${elementValue}`;
+    }
+    // Self-closing tags use a special form that concatenates the start and close tag values.
+    if ((value.flags & I18nParamValueFlags.OpenTag) &&
+        (value.flags & I18nParamValueFlags.CloseTag)) {
+        return `${formatValue({ ...value, flags: value.flags & ~I18nParamValueFlags.CloseTag })}${formatValue({ ...value, flags: value.flags & ~I18nParamValueFlags.OpenTag })}`;
+    }
     // If there are no special flags, just return the raw value.
     if (value.flags === I18nParamValueFlags.None) {
         return `${value.value}`;
     }
+    // Encode the remaining flags as part of the value.
     let tagMarker = '';
     let closeMarker = '';
     if (value.flags & I18nParamValueFlags.ElementTag) {
@@ -12572,11 +12550,6 @@ function formatValue(value) {
         closeMarker = value.flags & I18nParamValueFlags.CloseTag ? TAG_CLOSE_MARKER : '';
     }
     const context = value.subTemplateIndex === null ? '' : `${CONTEXT_MARKER}${value.subTemplateIndex}`;
-    // Self-closing tags use a special form that concatenates the start and close tag values.
-    if ((value.flags & I18nParamValueFlags.OpenTag) &&
-        (value.flags & I18nParamValueFlags.CloseTag)) {
-        return `${ESCAPE$1}${tagMarker}${value.value}${context}${ESCAPE$1}${ESCAPE$1}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE$1}`;
-    }
     return `${ESCAPE$1}${closeMarker}${tagMarker}${value.value}${context}${ESCAPE$1}`;
 }
 
@@ -20611,17 +20584,29 @@ function parseExtractedStyles(job) {
 function removeContentSelectors(job) {
     for (const unit of job.units) {
         const elements = createOpXrefMap(unit);
-        for (const op of unit.update) {
+        for (const op of unit.ops()) {
             switch (op.kind) {
                 case OpKind.Binding:
                     const target = lookupInXrefMap(elements, op.target);
-                    if (op.name.toLowerCase() === 'select' && target.kind === OpKind.Projection) {
+                    if (isSelectAttribute(op.name) && target.kind === OpKind.Projection) {
                         OpList.remove(op);
+                    }
+                    break;
+                case OpKind.Projection:
+                    // op.attributes is an array of [attr1-name, attr1-value, attr2-name, attr2-value, ...],
+                    // find the "select" attribute and remove its name and corresponding value.
+                    for (let i = op.attributes.length - 2; i >= 0; i -= 2) {
+                        if (isSelectAttribute(op.attributes[i])) {
+                            op.attributes.splice(i, 2);
+                        }
                     }
                     break;
             }
         }
     }
+}
+function isSelectAttribute(name) {
+    return name.toLowerCase() === 'select';
 }
 /**
  * Looks up an element in the given map by xref ID.
@@ -20742,6 +20727,10 @@ function propagateI18nBlocksToTemplates(unit, subTemplateIndex) {
                 i18nBlock = op;
                 break;
             case OpKind.I18nEnd:
+                // When we exit a root-level i18n block, reset the sub-template index counter.
+                if (i18nBlock.subTemplateIndex === null) {
+                    subTemplateIndex = 0;
+                }
                 i18nBlock = null;
                 break;
             case OpKind.Template:
@@ -21941,10 +21930,14 @@ function resolveI18nElementPlaceholders(job) {
     }
     resolvePlaceholdersForView(job, job.root, i18nContexts, elements);
 }
-function resolvePlaceholdersForView(job, unit, i18nContexts, elements) {
+/**
+ * Recursively resolves element and template tag placeholders in the given view.
+ */
+function resolvePlaceholdersForView(job, unit, i18nContexts, elements, pendingStructuralDirective) {
     // Track the current i18n op and corresponding i18n context op as we step through the creation
     // IR.
     let currentOps = null;
+    let pendingStructuralDirectiveCloses = new Map();
     for (const op of unit.create) {
         switch (op.kind) {
             case OpKind.I18nStart:
@@ -21963,14 +21956,14 @@ function resolvePlaceholdersForView(job, unit, i18nContexts, elements) {
                     if (currentOps === null) {
                         throw Error('i18n tag placeholder should only occur inside an i18n block');
                     }
-                    const { startName, closeName } = op.i18nPlaceholder;
-                    let flags = I18nParamValueFlags.ElementTag | I18nParamValueFlags.OpenTag;
-                    // For self-closing tags, there is no close tag placeholder. Instead, the start tag
-                    // placeholder accounts for the start and close of the element.
-                    if (closeName === '') {
-                        flags |= I18nParamValueFlags.CloseTag;
+                    recordElementStart(op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                    // If there is a separate close tag placeholder for this element, save the pending
+                    // structural directive so we can pass it to the closing tag as well.
+                    if (pendingStructuralDirective && op.i18nPlaceholder.closeName) {
+                        pendingStructuralDirectiveCloses.set(op.xref, pendingStructuralDirective);
                     }
-                    addParam(currentOps.i18nContext.params, startName, op.handle.slot, currentOps.i18nBlock.subTemplateIndex, flags);
+                    // Clear out the pending structural directive now that its been accounted for.
+                    pendingStructuralDirective = undefined;
                 }
                 break;
             case OpKind.ElementEnd:
@@ -21979,39 +21972,131 @@ function resolvePlaceholdersForView(job, unit, i18nContexts, elements) {
                 const startOp = elements.get(op.xref);
                 if (startOp && startOp.i18nPlaceholder !== undefined) {
                     if (currentOps === null) {
-                        throw Error('i18n tag placeholder should only occur inside an i18n block');
+                        throw Error('AssertionError: i18n tag placeholder should only occur inside an i18n block');
                     }
-                    const { closeName } = startOp.i18nPlaceholder;
-                    // Self-closing tags don't have a closing tag placeholder.
-                    if (closeName !== '') {
-                        addParam(currentOps.i18nContext.params, closeName, startOp.handle.slot, currentOps.i18nBlock.subTemplateIndex, I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag);
-                    }
+                    recordElementClose(startOp, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirectiveCloses.get(op.xref));
+                    // Clear out the pending structural directive close that was accounted for.
+                    pendingStructuralDirectiveCloses.delete(op.xref);
                 }
                 break;
-            case OpKind.Template:
-                // For templates with i18n placeholders, record its slot value in the params map under the
-                // corresponding template start and close placeholders.
+            case OpKind.Projection:
+                // For content projections with i18n placeholders, record its slot value in the params map
+                // under the corresponding tag start and close placeholders.
                 if (op.i18nPlaceholder !== undefined) {
                     if (currentOps === null) {
                         throw Error('i18n tag placeholder should only occur inside an i18n block');
                     }
-                    let startFlags = I18nParamValueFlags.TemplateTag | I18nParamValueFlags.OpenTag;
-                    const subTemplateIndex = getSubTemplateIndexForTemplateTag(job, currentOps.i18nBlock, op);
-                    const { startName, closeName } = op.i18nPlaceholder;
-                    const isSelfClosing = closeName === '';
-                    if (isSelfClosing) {
-                        startFlags |= I18nParamValueFlags.CloseTag;
-                    }
-                    addParam(currentOps.i18nContext.params, startName, op.handle.slot, subTemplateIndex, startFlags);
-                    resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements);
-                    if (!isSelfClosing) {
-                        addParam(currentOps.i18nContext.params, closeName, op.handle.slot, subTemplateIndex, I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag);
-                    }
-                }
-                else {
-                    resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements);
+                    recordElementStart(op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                    recordElementClose(op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                    // Clear out the pending structural directive now that its been accounted for.
+                    pendingStructuralDirective = undefined;
                 }
                 break;
+            case OpKind.Template:
+                if (op.i18nPlaceholder === undefined) {
+                    // If there is no i18n placeholder, just recurse into the view in case it contains i18n
+                    // blocks.
+                    resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements);
+                }
+                else {
+                    if (currentOps === null) {
+                        throw Error('i18n tag placeholder should only occur inside an i18n block');
+                    }
+                    if (op.templateKind === TemplateKind.Structural) {
+                        // If this is a structural directive template, don't record anything yet. Instead pass
+                        // the current template as a pending structural directive to be recorded when we find
+                        // the element, content, or template it belongs to. This allows us to create combined
+                        // values that represent, e.g. the start of a template and element at the same time.
+                        resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements, op);
+                    }
+                    else {
+                        // If this is some other kind of template, we can record its start, recurse into its
+                        // view, and then record its end.
+                        recordTemplateStart(job, op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements);
+                        recordTemplateClose(job, op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        pendingStructuralDirective = undefined;
+                    }
+                }
+                break;
+        }
+    }
+}
+/**
+ * Records an i18n param value for the start of an element.
+ */
+function recordElementStart(op, i18nContext, i18nBlock, structuralDirective) {
+    const { startName, closeName } = op.i18nPlaceholder;
+    let flags = I18nParamValueFlags.ElementTag | I18nParamValueFlags.OpenTag;
+    let value = op.handle.slot;
+    // If the element is associated with a structural directive, start it as well.
+    if (structuralDirective !== undefined) {
+        flags |= I18nParamValueFlags.TemplateTag;
+        value = { element: value, template: structuralDirective.handle.slot };
+    }
+    // For self-closing tags, there is no close tag placeholder. Instead, the start tag
+    // placeholder accounts for the start and close of the element.
+    if (!closeName) {
+        flags |= I18nParamValueFlags.CloseTag;
+    }
+    addParam(i18nContext.params, startName, value, i18nBlock.subTemplateIndex, flags);
+}
+/**
+ * Records an i18n param value for the closing of an element.
+ */
+function recordElementClose(op, i18nContext, i18nBlock, structuralDirective) {
+    const { closeName } = op.i18nPlaceholder;
+    // Self-closing tags don't have a closing tag placeholder, instead the element closing is
+    // recorded via an additional flag on the element start value.
+    if (closeName) {
+        let flags = I18nParamValueFlags.ElementTag | I18nParamValueFlags.CloseTag;
+        let value = op.handle.slot;
+        // If the element is associated with a structural directive, close it as well.
+        if (structuralDirective !== undefined) {
+            flags |= I18nParamValueFlags.TemplateTag;
+            value = { element: value, template: structuralDirective.handle.slot };
+        }
+        addParam(i18nContext.params, closeName, value, i18nBlock.subTemplateIndex, flags);
+    }
+}
+/**
+ * Records an i18n param value for the start of a template.
+ */
+function recordTemplateStart(job, op, i18nContext, i18nBlock, structuralDirective) {
+    let { startName, closeName } = op.i18nPlaceholder;
+    let flags = I18nParamValueFlags.TemplateTag | I18nParamValueFlags.OpenTag;
+    // For self-closing tags, there is no close tag placeholder. Instead, the start tag
+    // placeholder accounts for the start and close of the element.
+    if (!closeName) {
+        flags |= I18nParamValueFlags.CloseTag;
+    }
+    // If the template is associated with a structural directive, record the structural directive's
+    // start first. Since this template must be in the structural directive's view, we can just
+    // directly use the current i18n block's sub-template index.
+    if (structuralDirective !== undefined) {
+        addParam(i18nContext.params, startName, structuralDirective.handle.slot, i18nBlock.subTemplateIndex, flags);
+    }
+    // Record the start of the template. For the sub-template index, pass the index for the template's
+    // view, rather than the current i18n block's index.
+    addParam(i18nContext.params, startName, op.handle.slot, getSubTemplateIndexForTemplateTag(job, i18nBlock, op), flags);
+}
+/**
+ * Records an i18n param value for the closing of a template.
+ */
+function recordTemplateClose(job, op, i18nContext, i18nBlock, structuralDirective) {
+    const { startName, closeName } = op.i18nPlaceholder;
+    const flags = I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag;
+    // Self-closing tags don't have a closing tag placeholder, instead the template's closing is
+    // recorded via an additional flag on the template start value.
+    if (closeName) {
+        // Record the closing of the template. For the sub-template index, pass the index for the
+        // template's view, rather than the current i18n block's index.
+        addParam(i18nContext.params, closeName, op.handle.slot, getSubTemplateIndexForTemplateTag(job, i18nBlock, op), flags);
+        // If the template is associated with a structural directive, record the structural directive's
+        // closing after. Since this template must be in the structural directive's view, we can just
+        // directly use the current i18n block's sub-template index.
+        if (structuralDirective !== undefined) {
+            addParam(i18nContext.params, closeName, structuralDirective.handle.slot, i18nBlock.subTemplateIndex, flags);
         }
     }
 }
@@ -22027,7 +22112,9 @@ function getSubTemplateIndexForTemplateTag(job, i18nOp, op) {
     }
     return i18nOp.subTemplateIndex;
 }
-/** Add a param value to the given params map. */
+/**
+ * Add a param value to the given params map.
+ */
 function addParam(params, placeholder, value, subTemplateIndex, flags) {
     const values = params.get(placeholder) ?? [];
     values.push({ value, subTemplateIndex, flags });
@@ -23533,7 +23620,8 @@ function ingestTemplate(unit, tmpl) {
     const functionNameSuffix = tagNameWithoutNamespace === null ?
         '' :
         prefixWithNamespace(tagNameWithoutNamespace, namespace);
-    const tplOp = createTemplateOp(childView.xref, tagNameWithoutNamespace, functionNameSuffix, namespace, i18nPlaceholder, tmpl.startSourceSpan);
+    const templateKind = isPlainTemplate(tmpl) ? TemplateKind.NgTemplate : TemplateKind.Structural;
+    const tplOp = createTemplateOp(childView.xref, templateKind, tagNameWithoutNamespace, functionNameSuffix, namespace, i18nPlaceholder, tmpl.startSourceSpan);
     unit.create.push(tplOp);
     ingestBindings(unit, tplOp, tmpl);
     ingestReferences(tplOp, tmpl);
@@ -23544,7 +23632,7 @@ function ingestTemplate(unit, tmpl) {
     // If this is a plain template and there is an i18n message associated with it, insert i18n start
     // and end ops. For structural directive templates, the i18n ops will be added when ingesting the
     // element/template the directive is placed on.
-    if (isPlainTemplate(tmpl) && tmpl.i18n instanceof Message) {
+    if (templateKind === TemplateKind.NgTemplate && tmpl.i18n instanceof Message) {
         const id = unit.job.allocateXrefId();
         OpList.insertAfter(createI18nStartOp(id, tmpl.i18n), childView.create.head);
         OpList.insertBefore(createI18nEndOp(id), childView.create.tail);
@@ -23554,7 +23642,11 @@ function ingestTemplate(unit, tmpl) {
  * Ingest a literal text node from the AST into the given `ViewCompilation`.
  */
 function ingestContent(unit, content) {
-    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.sourceSpan);
+    if (content.i18n !== undefined && !(content.i18n instanceof TagPlaceholder)) {
+        throw Error(`Unhandled i18n metadata type for element: ${content.i18n.constructor.name}`);
+    }
+    const attrs = content.attributes.flatMap(a => [a.name, a.value]);
+    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, attrs, content.sourceSpan);
     for (const attr of content.attributes) {
         ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
     }
@@ -23617,7 +23709,7 @@ function ingestIfBlock(unit, ifBlock) {
         if (ifCase.expressionAlias !== null) {
             cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
         }
-        const tmplOp = createTemplateOp(cView.xref, tagName, 'Conditional', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan);
+        const tmplOp = createTemplateOp(cView.xref, TemplateKind.Block, tagName, 'Conditional', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan);
         unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
@@ -23640,7 +23732,7 @@ function ingestSwitchBlock(unit, switchBlock) {
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
-        const tmplOp = createTemplateOp(cView.xref, null, 'Case', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan);
+        const tmplOp = createTemplateOp(cView.xref, TemplateKind.Block, null, 'Case', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan);
         unit.create.push(tmplOp);
         if (firstXref === null) {
             firstXref = cView.xref;
@@ -23662,7 +23754,7 @@ function ingestDeferView(unit, suffix, children, sourceSpan) {
     }
     const secondaryView = unit.job.allocateView(unit.xref);
     ingestNodes(secondaryView, children);
-    const templateOp = createTemplateOp(secondaryView.xref, null, `Defer${suffix}`, Namespace.HTML, undefined, sourceSpan);
+    const templateOp = createTemplateOp(secondaryView.xref, TemplateKind.Block, null, `Defer${suffix}`, Namespace.HTML, undefined, sourceSpan);
     unit.create.push(templateOp);
     return templateOp;
 }
@@ -23910,6 +24002,9 @@ function convertAst(ast, job, baseSourceSpan) {
     }
     else if (ast instanceof EmptyExpr$1) {
         return new EmptyExpr(convertSourceSpan(ast.span, baseSourceSpan));
+    }
+    else if (ast instanceof PrefixNot) {
+        return not(convertAst(ast.expression, job, baseSourceSpan), convertSourceSpan(ast.span, baseSourceSpan));
     }
     else {
         throw new Error(`Unhandled expression type "${ast.constructor.name}" in file "${baseSourceSpan?.start.file.url}"`);
@@ -31332,7 +31427,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.2+sha-d4b4236');
+const VERSION = new Version('17.1.0-next.2+sha-12dfa9b');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32898,7 +32993,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33006,7 +33101,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33283,7 +33378,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33318,7 +33413,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33369,7 +33464,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33402,7 +33497,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33453,7 +33548,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-d4b4236'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-12dfa9b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
