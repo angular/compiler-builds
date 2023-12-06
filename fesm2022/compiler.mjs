@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.2+sha-6cd91c6
+ * @license Angular v17.1.0-next.2+sha-05f9c7b
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8970,6 +8970,10 @@ var OpKind;
      * An i18n context containing information needed to generate an i18n message.
      */
     OpKind[OpKind["I18nContext"] = 43] = "I18nContext";
+    /**
+     * A creation op that corresponds to i18n attributes on an element.
+     */
+    OpKind[OpKind["I18nAttributes"] = 44] = "I18nAttributes";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9192,6 +9196,20 @@ var I18nParamResolutionTime;
     I18nParamResolutionTime[I18nParamResolutionTime["Postproccessing"] = 1] = "Postproccessing";
 })(I18nParamResolutionTime || (I18nParamResolutionTime = {}));
 /**
+ * The contexts in which an i18n expression can be used.
+ */
+var I18nExpressionContext;
+(function (I18nExpressionContext) {
+    /**
+     * This expression is used as a value (i.e. inside an i18n block).
+     */
+    I18nExpressionContext[I18nExpressionContext["Normal"] = 0] = "Normal";
+    /**
+     * This expression is used in a binding.
+     */
+    I18nExpressionContext[I18nExpressionContext["Binding"] = 1] = "Binding";
+})(I18nExpressionContext || (I18nExpressionContext = {}));
+/**
  * Flags that describe what an i18n param value. These determine how the value is serialized into
  * the final map.
  */
@@ -9257,6 +9275,7 @@ var I18nContextKind;
 (function (I18nContextKind) {
     I18nContextKind[I18nContextKind["RootI18n"] = 0] = "RootI18n";
     I18nContextKind[I18nContextKind["Icu"] = 1] = "Icu";
+    I18nContextKind[I18nContextKind["Attr"] = 2] = "Attr";
 })(I18nContextKind || (I18nContextKind = {}));
 var TemplateKind;
 (function (TemplateKind) {
@@ -9371,12 +9390,11 @@ const NEW_OP = {
 /**
  * Create an `InterpolationTextOp`.
  */
-function createInterpolateTextOp(xref, interpolation, i18nPlaceholders, sourceSpan) {
+function createInterpolateTextOp(xref, interpolation, sourceSpan) {
     return {
         kind: OpKind.InterpolateText,
         target: xref,
         interpolation,
-        i18nPlaceholders,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
@@ -9384,15 +9402,19 @@ function createInterpolateTextOp(xref, interpolation, i18nPlaceholders, sourceSp
     };
 }
 class Interpolation {
-    constructor(strings, expressions) {
+    constructor(strings, expressions, i18nPlaceholders) {
         this.strings = strings;
         this.expressions = expressions;
+        this.i18nPlaceholders = i18nPlaceholders;
+        if (i18nPlaceholders.length !== 0 && i18nPlaceholders.length !== expressions.length) {
+            throw new Error(`Expected ${expressions.length} placeholders to match interpolation expression count, but got ${i18nPlaceholders.length}`);
+        }
     }
 }
 /**
  * Create a `BindingOp`, not yet transformed into a particular type of binding.
  */
-function createBindingOp(target, kind, name, expression, unit, securityContext, isTextAttribute, isTemplate, sourceSpan) {
+function createBindingOp(target, kind, name, expression, unit, securityContext, isTextAttribute, isStructuralTemplate, i18nContext, sourceSpan) {
     return {
         kind: OpKind.Binding,
         bindingKind: kind,
@@ -9402,7 +9424,8 @@ function createBindingOp(target, kind, name, expression, unit, securityContext, 
         unit,
         securityContext,
         isTextAttribute,
-        isTemplate,
+        isStructuralTemplate: isStructuralTemplate,
+        i18nContext,
         sourceSpan,
         ...NEW_OP,
     };
@@ -9410,7 +9433,7 @@ function createBindingOp(target, kind, name, expression, unit, securityContext, 
 /**
  * Create a `PropertyOp`.
  */
-function createPropertyOp(target, name, expression, isAnimationTrigger, securityContext, isTemplate, sourceSpan) {
+function createPropertyOp(target, name, expression, isAnimationTrigger, securityContext, isStructuralTemplate, i18nContext, sourceSpan) {
     return {
         kind: OpKind.Property,
         target,
@@ -9419,7 +9442,8 @@ function createPropertyOp(target, name, expression, isAnimationTrigger, security
         isAnimationTrigger,
         securityContext,
         sanitizer: null,
-        isTemplate,
+        isStructuralTemplate,
+        i18nContext,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
@@ -9484,7 +9508,7 @@ function createClassMapOp(xref, expression, sourceSpan) {
 /**
  * Create an `AttributeOp`.
  */
-function createAttributeOp(target, name, expression, securityContext, isTextAttribute, isTemplate, sourceSpan) {
+function createAttributeOp(target, name, expression, securityContext, isTextAttribute, isStructuralTemplate, i18nContext, sourceSpan) {
     return {
         kind: OpKind.Attribute,
         target,
@@ -9493,7 +9517,8 @@ function createAttributeOp(target, name, expression, securityContext, isTextAttr
         securityContext,
         sanitizer: null,
         isTextAttribute,
-        isTemplate,
+        isStructuralTemplate,
+        i18nContext,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
@@ -9554,7 +9579,7 @@ function createDeferWhenOp(target, expr, prefetch, sourceSpan) {
 /**
  * Create an i18n expression op.
  */
-function createI18nExpressionOp(context, target, handle, expression, i18nPlaceholder, resolutionTime, sourceSpan) {
+function createI18nExpressionOp(context, target, handle, expression, i18nPlaceholder, resolutionTime, usage, name, sourceSpan) {
     return {
         kind: OpKind.I18nExpression,
         context,
@@ -9563,6 +9588,8 @@ function createI18nExpressionOp(context, target, handle, expression, i18nPlaceho
         expression,
         i18nPlaceholder,
         resolutionTime,
+        usage,
+        name,
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_VARS,
@@ -9570,7 +9597,7 @@ function createI18nExpressionOp(context, target, handle, expression, i18nPlaceho
     };
 }
 /**
- *Creates an op to apply i18n expression ops
+ * Creates an op to apply i18n expression ops.
  */
 function createI18nApplyOp(target, handle, sourceSpan) {
     return {
@@ -10379,6 +10406,7 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.ProjectionDef:
         case OpKind.Template:
         case OpKind.Text:
+        case OpKind.I18nAttributes:
             // These operations contain no expressions.
             break;
         default:
@@ -10939,13 +10967,14 @@ function createProjectionOp(xref, selector, i18nPlaceholder, attributes, sourceS
 /**
  * Create an `ExtractedAttributeOp`.
  */
-function createExtractedAttributeOp(target, bindingKind, name, expression) {
+function createExtractedAttributeOp(target, bindingKind, name, expression, i18nContext) {
     return {
         kind: OpKind.ExtractedAttribute,
         target,
         bindingKind,
         name,
         expression,
+        i18nContext,
         ...NEW_OP,
     };
 }
@@ -10988,10 +11017,11 @@ function createDeferOnOp(defer, trigger, prefetch, sourceSpan) {
 /**
  * Create an `ExtractedMessageOp`.
  */
-function createI18nMessageOp(xref, i18nBlock, message, messagePlaceholder, params, postprocessingParams, needsPostprocessing) {
+function createI18nMessageOp(xref, i18nContext, i18nBlock, message, messagePlaceholder, params, postprocessingParams, needsPostprocessing) {
     return {
         kind: OpKind.I18nMessage,
         xref,
+        i18nContext,
         i18nBlock,
         message,
         messagePlaceholder,
@@ -11054,6 +11084,9 @@ function createIcuEndOp(xref) {
     };
 }
 function createI18nContextOp(contextKind, xref, i18nBlock, message, sourceSpan) {
+    if (i18nBlock === null && contextKind !== I18nContextKind.Attr) {
+        throw new Error('AssertionError: i18nBlock must be provided for non-attribute contexts.');
+    }
     return {
         kind: OpKind.I18nContext,
         contextKind,
@@ -11066,6 +11099,17 @@ function createI18nContextOp(contextKind, xref, i18nBlock, message, sourceSpan) 
         ...NEW_OP,
     };
 }
+function createI18nAttributesOp(xref, handle, target) {
+    return {
+        kind: OpKind.I18nAttributes,
+        xref,
+        handle,
+        target,
+        i18nAttributesConfig: null,
+        ...NEW_OP,
+        ...TRAIT_CONSUMES_SLOT,
+    };
+}
 function literalOrArrayLiteral$1(value) {
     if (Array.isArray(value)) {
         return literalArr(value.map(literalOrArrayLiteral$1));
@@ -11073,12 +11117,13 @@ function literalOrArrayLiteral$1(value) {
     return literal(value, INFERRED_TYPE);
 }
 
-function createHostPropertyOp(name, expression, isAnimationTrigger, sourceSpan) {
+function createHostPropertyOp(name, expression, isAnimationTrigger, i18nContext, sourceSpan) {
     return {
         kind: OpKind.HostProperty,
         name,
         expression,
         isAnimationTrigger,
+        i18nContext,
         sourceSpan,
         ...TRAIT_CONSUMES_VARS,
         ...NEW_OP,
@@ -11328,10 +11373,26 @@ function needsApplication(i18nContexts, op) {
     if (op.next?.kind !== OpKind.I18nExpression) {
         return true;
     }
-    // If the next op is an expression targeting a different i18n block, we need to apply.
     const context = i18nContexts.get(op.context);
     const nextContext = i18nContexts.get(op.next.context);
-    if (context.i18nBlock !== nextContext.i18nBlock) {
+    if (context === undefined) {
+        throw new Error('AssertionError: expected an I18nContextOp to exist for the I18nExpressionOp\'s context');
+    }
+    if (nextContext === undefined) {
+        throw new Error('AssertionError: expected an I18nContextOp to exist for the next I18nExpressionOp\'s context');
+    }
+    // If the next op is an expression targeting a different i18n block (or different element, in the
+    // case of i18n attributes), we need to apply.
+    // First, handle the case of i18n blocks.
+    if (context.i18nBlock !== null) {
+        // This is a block context. Compare the blocks.
+        if (context.i18nBlock !== nextContext.i18nBlock) {
+            return true;
+        }
+        return false;
+    }
+    // Second, handle the case of i18n attributes.
+    if (op.target !== op.next.target) {
         return true;
     }
     return false;
@@ -11355,6 +11416,9 @@ function assignI18nSlotDependencies(job) {
                     currentI18nOp = op;
                     break;
                 case OpKind.I18nEnd:
+                    if (currentI18nOp === null) {
+                        throw new Error('AssertionError: Expected an active I18n block while calculating last slot consumers');
+                    }
                     i18nLastSlotConsumers.set(currentI18nOp.xref, lastSlotConsumer);
                     currentI18nOp = null;
                     break;
@@ -11374,7 +11438,13 @@ function assignI18nSlotDependencies(job) {
             currentTarget = hasDependsOnSlotContextTrait(op) ? op.target : null;
             // Re-target i18n expression ops.
             if (op.kind === OpKind.I18nExpression) {
-                op.target = i18nLastSlotConsumers.get(op.target);
+                // TODO: Is this handling of i18n bindings correct?
+                op.target = op.usage === I18nExpressionContext.Normal ?
+                    i18nLastSlotConsumers.get(op.target) :
+                    op.target;
+                if (op.target === undefined) {
+                    throw new Error('AssertionError: Expected every I18nExpressionOp to have a valid reordering target');
+                }
                 moveToTarget = op.target;
             }
             // Pull out i18n expression and apply ops to be moved.
@@ -11393,7 +11463,7 @@ function assignI18nSlotDependencies(job) {
             // Update the previous target for the next pass through
             previousTarget = currentTarget;
         }
-        // If there are any mvoed ops that haven't been put back yet, put them back at the end.
+        // If there are any moved ops that haven't been put back yet, put them back at the end.
         if (opsToMove) {
             unit.update.push(opsToMove);
         }
@@ -11428,22 +11498,36 @@ function extractAttributes(job) {
                     break;
                 case OpKind.Property:
                     if (!op.isAnimationTrigger) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                        let bindingKind;
+                        if (op.i18nContext !== null) {
+                            // If the binding has an i18n context, it is an i18n attribute, and should have that
+                            // kind in the consts array.
+                            bindingKind = BindingKind.I18n;
+                        }
+                        else if (op.isStructuralTemplate) {
+                            // TODO: How do i18n attributes on templates work?!
+                            bindingKind = BindingKind.Template;
+                        }
+                        else {
+                            bindingKind = BindingKind.Property;
+                        }
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, bindingKind, op.name, null, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.StyleProp:
                 case OpKind.ClassProp:
+                    // TODO: Can style or class bindings be i18n attributes?
                     // The old compiler treated empty style bindings as regular bindings for the purpose of
                     // directive matching. That behavior is incorrect, but we emulate it in compatibility
                     // mode.
                     if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
                         op.expression instanceof EmptyExpr) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null), lookupElement$2(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
                     if (!op.isAnimationListener) {
-                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null);
+                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null);
                         if (job.kind === CompilationJobKind.Host) {
                             // This attribute will apply to the enclosing host binding compilation unit, so order
                             // doesn't matter.
@@ -11492,7 +11576,7 @@ function extractAttributeOp(unit, op, elements) {
         }
     }
     if (extractable) {
-        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression);
+        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isStructuralTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression, op.i18nContext);
         if (unit.job.kind === CompilationJobKind.Host) {
             // This attribute will apply to the enclosing host binding compilation unit, so order doesn't
             // matter.
@@ -11539,16 +11623,16 @@ function specializeBindings(job) {
                         target.nonBindable = true;
                     }
                     else {
-                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTextAttribute, op.isTemplate, op.sourceSpan));
+                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTextAttribute, op.isStructuralTemplate, op.i18nContext, op.sourceSpan));
                     }
                     break;
                 case BindingKind.Property:
                 case BindingKind.Animation:
                     if (job.kind === CompilationJobKind.Host) {
-                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.sourceSpan));
+                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.i18nContext, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isTemplate, op.sourceSpan));
+                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isStructuralTemplate, op.i18nContext, op.sourceSpan));
                     }
                     break;
                 case BindingKind.I18n:
@@ -11869,7 +11953,7 @@ class ElementAttributes {
         array.push(...getAttributeNameLiterals$1(name));
         if (kind === BindingKind.Attribute || kind === BindingKind.StyleProperty) {
             if (value === null) {
-                throw Error('Attribute & style element attributes must have a value');
+                throw Error('Attribute, i18n attribute, & style element attributes must have a value');
             }
             array.push(value);
         }
@@ -11921,6 +12005,50 @@ function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, s
         attrArray.push(literal(6 /* core.AttributeMarker.I18n */), ...i18n);
     }
     return literalArr(attrArray);
+}
+
+/**
+ * Some binding instructions in the update block may actually correspond to i18n bindings. In that
+ * case, they should be replaced with i18nExp instructions for the dynamic portions.
+ */
+function convertI18nBindings(job) {
+    const i18nAttributesByElem = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.I18nAttributes) {
+                i18nAttributesByElem.set(op.target, op);
+            }
+        }
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.Property:
+                case OpKind.Attribute:
+                    if (op.i18nContext === null) {
+                        continue;
+                    }
+                    if (!(op.expression instanceof Interpolation)) {
+                        continue;
+                    }
+                    const i18nAttributesForElem = i18nAttributesByElem.get(op.target);
+                    if (i18nAttributesForElem === undefined) {
+                        throw new Error('AssertionError: An i18n attribute binding instruction requires the owning element to have an I18nAttributes create instruction');
+                    }
+                    if (i18nAttributesForElem.target !== op.target) {
+                        throw new Error('AssertionError: Expected i18nAttributes target element to match binding target element');
+                    }
+                    const ops = [];
+                    for (let i = 0; i < op.expression.expressions.length; i++) {
+                        const expr = op.expression.expressions[i];
+                        if (op.expression.i18nPlaceholders.length !== op.expression.expressions.length) {
+                            throw new Error(`AssertionError: An i18n attribute binding instruction requires the same number of expressions and placeholders, but found ${op.expression.i18nPlaceholders.length} placeholders and ${op.expression.expressions.length} expressions`);
+                        }
+                        ops.push(createI18nExpressionOp(op.i18nContext, i18nAttributesForElem.target, i18nAttributesForElem.handle, expr, op.expression.i18nPlaceholders[i], I18nParamResolutionTime.Creation, I18nExpressionContext.Binding, op.name, op.sourceSpan));
+                    }
+                    OpList.replaceWithMany(op, ops);
+                    break;
+            }
+        }
+    }
 }
 
 /**
@@ -12415,6 +12543,18 @@ function extractI18nMessages(job) {
             }
         }
     }
+    // TODO: Miles and I think that contexts have a 1-to-1 correspondence with extracted messages, so
+    // this phase can probably be simplified.
+    // Extract messages from contexts of i18n attributes.
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind !== OpKind.I18nContext || op.contextKind !== I18nContextKind.Attr) {
+                continue;
+            }
+            const i18nMessageOp = createI18nMessage(job, op);
+            unit.create.push(i18nMessageOp);
+        }
+    }
     // Extract messages from root i18n blocks.
     const i18nBlockMessages = new Map();
     for (const unit of job.units) {
@@ -12439,6 +12579,9 @@ function extractI18nMessages(job) {
                     }
                     const i18nContext = i18nContexts.get(op.context);
                     if (i18nContext.contextKind === I18nContextKind.Icu) {
+                        if (i18nContext.i18nBlock === null) {
+                            throw Error('ICU context should have its i18n block set.');
+                        }
                         const subMessage = createI18nMessage(job, i18nContext, op.messagePlaceholder);
                         unit.create.push(subMessage);
                         const rootI18nId = i18nBlocks.get(i18nContext.i18nBlock).root;
@@ -12466,7 +12609,7 @@ function createI18nMessage(job, context, messagePlaceholder) {
             needsPostprocessing = true;
         }
     }
-    return createI18nMessageOp(job.allocateXrefId(), context.i18nBlock, context.message, messagePlaceholder ?? null, formattedParams, formattedPostprocessingParams, needsPostprocessing);
+    return createI18nMessageOp(job.allocateXrefId(), context.xref, context.i18nBlock, context.message, messagePlaceholder ?? null, formattedParams, formattedPostprocessingParams, needsPostprocessing);
 }
 /**
  * Formats a map of `I18nParamValue[]` values into a map of `Expression` values.
@@ -19803,32 +19946,124 @@ const ESCAPE = '\uFFFD';
 /**
  * Lifts i18n properties into the consts array.
  * TODO: Can we use `ConstCollectedExpr`?
+ * TODO: The way the various attributes are linked together is very complex. Perhaps we could
+ * simplify the process, maybe by combining the context and message ops?
  */
 function collectI18nConsts(job) {
     const fileBasedI18nSuffix = job.relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_').toUpperCase() + '_';
-    const messageConstIndices = new Map();
-    // Remove all of the i18n message ops into a map.
+    // Step One: Build up various lookup maps we need to collect all the consts.
+    // Context Xref -> Extracted Attribute Op
+    const extractedAttributesByI18nContext = new Map();
+    // Target Xref (element for i18n attributes, last item in i18n block for i18n values) -> I18n
+    // Attributes config op
+    const i18nAttributesByTarget = new Map();
+    // Target Element Xref -> All I18n Expression ops for that target
+    const i18nExpressionsByTarget = new Map();
+    // I18n Message Xref -> I18n Message Op (TODO: use a central op map)
     const messages = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            if (op.kind === OpKind.ExtractedAttribute && op.i18nContext !== null) {
+                extractedAttributesByI18nContext.set(op.i18nContext, op);
+            }
+            else if (op.kind === OpKind.I18nAttributes) {
+                i18nAttributesByTarget.set(op.target, op);
+            }
+            else if (op.kind === OpKind.I18nExpression) {
+                const expressions = i18nExpressionsByTarget.get(op.target) ?? [];
+                expressions.push(op);
+                i18nExpressionsByTarget.set(op.target, expressions);
+            }
+            else if (op.kind === OpKind.I18nMessage) {
+                messages.set(op.xref, op);
+            }
+        }
+    }
+    // Step Two: Serialize the extracted i18n messages for root i18n blocks and i18n attributes into
+    // the const array.
+    //
+    // Also, each i18n message will have a variable expression that can refer to its
+    // value. Store these expressions in the appropriate place:
+    // 1. For normal i18n content, it also goes in the const array. We save the const index to use
+    // later.
+    // 2. For extracted attributes, it becomes the value of the extracted attribute instruction.
+    // 3. For i18n bindings, it will go in a separate const array instruction below; for now, we just
+    // save it.
+    const i18nValuesByContext = new Map();
+    const messageConstIndices = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.I18nMessage) {
-                messages.set(op.xref, op);
+                if (op.messagePlaceholder === null) {
+                    const { mainVar, statements } = collectMessage(job, fileBasedI18nSuffix, messages, op);
+                    if (op.i18nBlock !== null) {
+                        // This is a regular i18n message with a corresponding i18n block. Collect it into the
+                        // const array.
+                        const i18nConst = job.addConst(mainVar, statements);
+                        messageConstIndices.set(op.i18nBlock, i18nConst);
+                    }
+                    else {
+                        // This is an i18n attribute. Extract the initializers into the const pool.
+                        job.constsInitializers.push(...statements);
+                        // Save the i18n variable value for later.
+                        i18nValuesByContext.set(op.i18nContext, mainVar);
+                        // This i18n message may correspond to an individual extracted attribute. If so, The
+                        // value of that attribute is updated to read the extracted i18n variable.
+                        const attributeForMessage = extractedAttributesByI18nContext.get(op.i18nContext);
+                        if (attributeForMessage !== undefined) {
+                            attributeForMessage.expression = mainVar;
+                        }
+                    }
+                }
                 OpList.remove(op);
             }
         }
     }
-    // Serialize the extracted messages for root i18n blocks into the const array.
-    for (const op of messages.values()) {
-        if (op.kind === OpKind.I18nMessage && op.messagePlaceholder === null) {
-            const { mainVar, statements } = collectMessage(job, fileBasedI18nSuffix, messages, op);
-            messageConstIndices.set(op.i18nBlock, job.addConst(mainVar, statements));
+    // Step Three: Serialize I18nAttributes configurations into the const array. Each I18nAttributes
+    // instruction has a config array, which contains k-v pairs describing each binding name, and the
+    // i18n variable that provides the value.
+    for (const unit of job.units) {
+        for (const elem of unit.create) {
+            if (isElementOrContainerOp(elem)) {
+                const i18nAttributes = i18nAttributesByTarget.get(elem.xref);
+                if (i18nAttributes === undefined) {
+                    // This element is not associated with an i18n attributes configuration instruction.
+                    continue;
+                }
+                let i18nExpressions = i18nExpressionsByTarget.get(elem.xref);
+                if (i18nExpressions === undefined) {
+                    // Unused i18nAttributes should have already been removed.
+                    // TODO: Should the removal of those dead instructions be merged with this phase?
+                    throw new Error('AssertionError: Could not find any i18n expressions associated with an I18nAttributes instruction');
+                }
+                // Find expressions for all the unique property names, removing duplicates.
+                const seenPropertyNames = new Set();
+                i18nExpressions = i18nExpressions.filter(i18nExpr => {
+                    const seen = (seenPropertyNames.has(i18nExpr.name));
+                    seenPropertyNames.add(i18nExpr.name);
+                    return !seen;
+                });
+                const i18nAttributeConfig = i18nExpressions.flatMap(i18nExpr => {
+                    const i18nExprValue = i18nValuesByContext.get(i18nExpr.context);
+                    if (i18nExprValue === undefined) {
+                        throw new Error('AssertionError: Could not find i18n expression\'s value');
+                    }
+                    return [literal(i18nExpr.name), i18nExprValue];
+                });
+                i18nAttributes.i18nAttributesConfig =
+                    job.addConst(new LiteralArrayExpr(i18nAttributeConfig));
+            }
         }
     }
-    // Assign const index to i18n ops that messages were extracted from.
+    // Step Four: Propagate the extracted const index into i18n ops that messages were extracted from.
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.I18nStart) {
-                op.messageIndex = messageConstIndices.get(op.root);
+                const msgIndex = messageConstIndices.get(op.root);
+                if (msgIndex === undefined) {
+                    throw new Error('AssertionError: Could not find corresponding i18n block index for an i18n message op; was an i18n message incorrectly assumed to correspond to an attribute?');
+                }
+                op.messageIndex = msgIndex;
             }
         }
     }
@@ -19839,8 +20074,8 @@ function collectI18nConsts(job) {
  */
 function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
     // Recursively collect any sub-messages, record each sub-message's main variable under its
-    // placeholder so that we can add them to the params for the parent message. It is possible that
-    // multiple sub-messages will share the same placeholder, so we need to track an array of
+    // placeholder so that we can add them to the params for the parent message. It is possible
+    // that multiple sub-messages will share the same placeholder, so we need to track an array of
     // variables for each placeholder.
     const statements = [];
     const subMessagePlaceholders = new Map();
@@ -19880,10 +20115,10 @@ function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
 /**
  * Adds the given subMessage placeholders to the given message op.
  *
- * If a placeholder only corresponds to a single sub-message variable, we just set that variable as
- * the param value. However, if the placeholder corresponds to multiple sub-message variables, we
- * need to add a special placeholder value that is handled by the post-processing step. We then add
- * the array of variables as a post-processing param.
+ * If a placeholder only corresponds to a single sub-message variable, we just set that variable
+ * as the param value. However, if the placeholder corresponds to multiple sub-message
+ * variables, we need to add a special placeholder value that is handled by the post-processing
+ * step. We then add the array of variables as a post-processing param.
  */
 function addSubMessageParams(messageOp, subMessagePlaceholders) {
     for (const [placeholder, subMessages] of subMessagePlaceholders) {
@@ -19919,7 +20154,8 @@ function addSubMessageParams(messageOp, subMessagePlaceholders) {
  * @param closureVar The variable for Closure `goog.getMsg` calls, e.g. `MSG_EXTERNAL_XXX`.
  * @param params Object mapping placeholder names to their values (e.g.
  * `{ "interpolation": "\uFFFD0\uFFFD" }`).
- * @param transformFn Optional transformation function that will be applied to the translation (e.g.
+ * @param transformFn Optional transformation function that will be applied to the translation
+ *     (e.g.
  * post-processing).
  * @returns An array of statements that defined a given translation.
  */
@@ -19967,8 +20203,10 @@ function i18nGenerateClosureVar(pool, messageId, fileBasedI18nSuffix, useExterna
 
 /**
  * Removes text nodes within i18n blocks since they are already hardcoded into the i18n message.
+ * Also, replaces interpolations on these text nodes with i18n expressions of the non-text portions,
+ * which will be applied later.
  */
-function extractI18nText(job) {
+function convertI18nText(job) {
     for (const unit of job.units) {
         // Remove all text nodes within i18n blocks, their content is already captured in the i18n
         // message.
@@ -20023,7 +20261,7 @@ function extractI18nText(job) {
                         const expr = op.interpolation.expressions[i];
                         // For now, this i18nExpression depends on the slot context of the enclosing i18n block.
                         // Later, we will modify this, and advance to a different point.
-                        ops.push(createI18nExpressionOp(contextId, i18nOp.xref, i18nOp.handle, expr, op.i18nPlaceholders[i], resolutionTime, expr.sourceSpan ?? op.sourceSpan));
+                        ops.push(createI18nExpressionOp(contextId, i18nOp.xref, i18nOp.handle, expr, op.interpolation.i18nPlaceholders[i], resolutionTime, I18nExpressionContext.Normal, '', expr.sourceSpan ?? op.sourceSpan));
                     }
                     OpList.replaceWithMany(op, ops);
                     break;
@@ -20561,14 +20799,14 @@ function parseExtractedStyles(job) {
                 if (op.name === 'style') {
                     const parsedStyles = parse(op.expression.value);
                     for (let i = 0; i < parsedStyles.length - 1; i += 2) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1])), op);
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]), null), op);
                     }
                     OpList.remove(op);
                 }
                 else if (op.name === 'class') {
                     const parsedClasses = op.expression.value.trim().split(/\s+/g);
                     for (const parsedClass of parsedClasses) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null), op);
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null, null), op);
                     }
                     OpList.remove(op);
                 }
@@ -21072,6 +21310,10 @@ function i18n(slot, constIndex, subTemplateIndex) {
 function i18nEnd() {
     return call(Identifiers.i18nEnd, [], null);
 }
+function i18nAttributes(slot, i18nAttributesConfig) {
+    const args = [literal(slot), literal(i18nAttributesConfig)];
+    return call(Identifiers.i18nAttributes, args, null);
+}
 function property(name, expression, sanitizer, sourceSpan) {
     const args = [literal(name), expression];
     if (sanitizer !== null) {
@@ -21458,6 +21700,12 @@ function reifyCreateOperations(unit, ops) {
             case OpKind.I18n:
                 OpList.replace(op, i18n(op.handle.slot, op.messageIndex, op.subTemplateIndex));
                 break;
+            case OpKind.I18nAttributes:
+                if (op.i18nAttributesConfig === null) {
+                    throw new Error(`AssertionError: i18nAttributesConfig was not set`);
+                }
+                OpList.replace(op, i18nAttributes(op.handle.slot, op.i18nAttributesConfig));
+                break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
@@ -21794,6 +22042,31 @@ function removeI18nContexts(job) {
                 case OpKind.I18nStart:
                     op.context = null;
                     break;
+            }
+        }
+    }
+}
+
+/**
+ * i18nAttributes ops will be generated for each i18n attribute. However, not all i18n attribues
+ * will contain dynamic content, and so some of these i18nAttributes ops may be unnecessary.
+ */
+function removeUnusedI18nAttributesOps(job) {
+    for (const unit of job.units) {
+        const targetsWithI18nApply = new Set();
+        for (const op of unit.update) {
+            switch (op.kind) {
+                case OpKind.I18nApply:
+                    targetsWithI18nApply.add(op.target);
+            }
+        }
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nAttributes:
+                    if (targetsWithI18nApply.has(op.target)) {
+                        continue;
+                    }
+                    OpList.remove(op);
             }
         }
     }
@@ -22140,14 +22413,19 @@ function resolveI18nExpressionPlaceholders(job) {
             }
         }
     }
-    // Keep track of the next available expression index per i18n block.
+    // Keep track of the next available expression index for each i18n message.
     const expressionIndices = new Map();
+    // Keep track of a reference index for each expression.
+    // We use different references for normal i18n expressio and attribute i18n expressions. This is
+    // because child i18n blocks in templates don't get their own context, since they're rolled into
+    // the translated message of the parent, but they may target a different slot.
+    const referenceIndex = (op) => op.usage === I18nExpressionContext.Normal ? op.target : op.context;
     for (const unit of job.units) {
         for (const op of unit.update) {
             if (op.kind === OpKind.I18nExpression) {
                 const i18nContext = i18nContexts.get(op.context);
-                const index = expressionIndices.get(op.target) || 0;
-                const subTemplateIndex = subTemplateIndicies.get(op.target);
+                const index = expressionIndices.get(referenceIndex(op)) || 0;
+                const subTemplateIndex = subTemplateIndicies.get(op.target) ?? null;
                 // Add the expression index in the appropriate params map.
                 const params = op.resolutionTime === I18nParamResolutionTime.Creation ?
                     i18nContext.params :
@@ -22159,7 +22437,7 @@ function resolveI18nExpressionPlaceholders(job) {
                     flags: I18nParamValueFlags.ExpressionIndex
                 });
                 params.set(op.i18nPlaceholder, values);
-                expressionIndices.set(op.target, index + 1);
+                expressionIndices.set(referenceIndex(op), index + 1);
             }
         }
     }
@@ -23306,11 +23584,11 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: removeContentSelectors },
     { kind: CompilationJobKind.Host, fn: parseHostStyleProperties },
     { kind: CompilationJobKind.Tmpl, fn: emitNamespaceChanges },
-    { kind: CompilationJobKind.Both, fn: specializeStyleBindings },
-    { kind: CompilationJobKind.Both, fn: specializeBindings },
     { kind: CompilationJobKind.Tmpl, fn: propagateI18nBlocks },
     { kind: CompilationJobKind.Tmpl, fn: wrapI18nIcus },
     { kind: CompilationJobKind.Tmpl, fn: createI18nContexts },
+    { kind: CompilationJobKind.Both, fn: specializeStyleBindings },
+    { kind: CompilationJobKind.Both, fn: specializeBindings },
     { kind: CompilationJobKind.Both, fn: extractAttributes },
     { kind: CompilationJobKind.Both, fn: parseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: removeEmptyBindings },
@@ -23319,7 +23597,8 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: generateConditionalExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createPipes },
     { kind: CompilationJobKind.Tmpl, fn: configureDeferInstructions },
-    { kind: CompilationJobKind.Tmpl, fn: extractI18nText },
+    { kind: CompilationJobKind.Tmpl, fn: convertI18nText },
+    { kind: CompilationJobKind.Tmpl, fn: convertI18nBindings },
     { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
     { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
@@ -23346,6 +23625,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nIcuPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackFns },
+    { kind: CompilationJobKind.Tmpl, fn: removeUnusedI18nAttributesOps },
     { kind: CompilationJobKind.Tmpl, fn: collectI18nConsts },
     { kind: CompilationJobKind.Tmpl, fn: collectConstExpressions },
     { kind: CompilationJobKind.Both, fn: collectElementConsts },
@@ -23504,7 +23784,7 @@ function ingestHostProperty(job, property, isTextAttribute) {
     let expression;
     const ast = property.expression.ast;
     if (ast instanceof Interpolation$1) {
-        expression = new Interpolation(ast.strings, ast.expressions.map(expr => convertAst(expr, job, property.sourceSpan)));
+        expression = new Interpolation(ast.strings, ast.expressions.map(expr => convertAst(expr, job, property.sourceSpan)), []);
     }
     else {
         expression = convertAst(ast, job, property.sourceSpan);
@@ -23519,10 +23799,11 @@ function ingestHostProperty(job, property, isTextAttribute) {
         bindingKind = BindingKind.Animation;
     }
     job.root.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
-        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, property.sourceSpan));
+        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, /* TODO: How do Host bindings handle i18n attrs? */ null, property.sourceSpan));
 }
 function ingestHostAttribute(job, name, value) {
     const attrBinding = createBindingOp(job.root.xref, BindingKind.Attribute, name, value, null, SecurityContext.NONE, true, false, 
+    /* TODO */ null, 
     /* TODO: host attribute source spans */ null);
     job.root.update.push(attrBinding);
 }
@@ -23648,7 +23929,7 @@ function ingestContent(unit, content) {
     const attrs = content.attributes.flatMap(a => [a.name, a.value]);
     const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, attrs, content.sourceSpan);
     for (const attr of content.attributes) {
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue, attr.i18n);
     }
     unit.create.push(op);
 }
@@ -23673,6 +23954,7 @@ function ingestBoundText(unit, text, i18nPlaceholders) {
         throw Error(`Unhandled i18n metadata type for text interpolation: ${text.i18n?.constructor.name}`);
     }
     if (i18nPlaceholders === undefined) {
+        // TODO: We probably can just use the placeholders field, instead of walking the AST.
         i18nPlaceholders = text.i18n instanceof Container ?
             text.i18n.children
                 .filter((node) => node instanceof Placeholder)
@@ -23688,7 +23970,7 @@ function ingestBoundText(unit, text, i18nPlaceholders) {
     // interpolation. We copy that behavior in compatibility mode.
     // TODO: is it actually correct to generate these extra maps in modern mode?
     const baseSourceSpan = unit.job.compatibility ? null : text.sourceSpan;
-    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan))), i18nPlaceholders, text.sourceSpan));
+    unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan)), i18nPlaceholders), text.sourceSpan));
 }
 /**
  * Ingest an `@if` block into the given `ViewCompilation`.
@@ -23945,6 +24227,9 @@ function convertAst(ast, job, baseSourceSpan) {
     else if (ast instanceof LiteralPrimitive) {
         return literal(ast.value, undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
+    else if (ast instanceof Unary) {
+        throw new Error('TODO: Support unary operations, which extend binary ops');
+    }
     else if (ast instanceof Binary) {
         const operator = BINARY_OPERATORS.get(ast.operation);
         if (operator === undefined) {
@@ -24036,6 +24321,7 @@ function isPlainTemplate(tmpl) {
  */
 function ingestBindings(unit, op, element) {
     let flags = BindingFlags.None;
+    let hasI18nAttributes = false;
     if (element instanceof Template) {
         flags |= BindingFlags.OnNgTemplateElement;
         if (element instanceof Template && isPlainTemplate(element)) {
@@ -24044,10 +24330,12 @@ function ingestBindings(unit, op, element) {
         const templateAttrFlags = flags | BindingFlags.BindingTargetsTemplate | BindingFlags.IsStructuralTemplateAttribute;
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, templateAttrFlags | BindingFlags.TextValue);
+                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, templateAttrFlags | BindingFlags.TextValue, attr.i18n);
+                hasI18nAttributes ||= attr.i18n !== undefined;
             }
             else {
-                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, templateAttrFlags);
+                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, templateAttrFlags, attr.i18n);
+                hasI18nAttributes ||= attr.i18n !== undefined;
             }
         }
     }
@@ -24055,10 +24343,12 @@ function ingestBindings(unit, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, flags | BindingFlags.TextValue);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, flags | BindingFlags.TextValue, attr.i18n);
+        hasI18nAttributes ||= attr.i18n !== undefined;
     }
     for (const input of element.inputs) {
-        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, flags);
+        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, flags, input.i18n);
+        hasI18nAttributes ||= input.i18n !== undefined;
     }
     for (const output of element.outputs) {
         let listenerOp;
@@ -24068,7 +24358,7 @@ function ingestBindings(unit, op, element) {
             }
         }
         if (element instanceof Template && !isPlainTemplate(element)) {
-            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null));
+            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null, null));
             continue;
         }
         listenerOp = createListenerOp(op.xref, op.handle, output.name, op.tag, output.phase, false, output.sourceSpan);
@@ -24096,6 +24386,10 @@ function ingestBindings(unit, op, element) {
         }
         listenerOp.handlerOps.push(createStatementOp(new ReturnStatement(returnExpr, returnExpr.sourceSpan)));
         unit.create.push(listenerOp);
+    }
+    // TODO: Perhaps we could do this in a phase? (It likely wouldn't change the slot indices.)
+    if (hasI18nAttributes) {
+        unit.create.push(createI18nAttributesOp(unit.job.allocateXrefId(), new SlotHandle(), op.xref));
     }
 }
 const BINDING_KINDS = new Map([
@@ -24125,22 +24419,34 @@ var BindingFlags;
      */
     BindingFlags[BindingFlags["OnNgTemplateElement"] = 8] = "OnNgTemplateElement";
 })(BindingFlags || (BindingFlags = {}));
-function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, flags) {
+function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, flags, i18nMeta) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
+    }
+    let i18nContext = null;
+    if (i18nMeta !== undefined) {
+        if (!(i18nMeta instanceof Message)) {
+            throw Error(`Unhandled i18n metadata type for binding: ${i18nMeta.constructor.name}`);
+        }
+        i18nContext = view.job.allocateXrefId();
+        view.create.push(createI18nContextOp(I18nContextKind.Attr, i18nContext, null, i18nMeta, null));
     }
     if (flags & BindingFlags.OnNgTemplateElement && !(flags & BindingFlags.BindingTargetsTemplate) &&
         type === 0 /* e.BindingType.Property */) {
         // This binding only exists for later const extraction, and is not an actual binding to be
         // created.
-        view.create.push(createExtractedAttributeOp(xref, BindingKind.Property, name, null));
+        view.create.push(createExtractedAttributeOp(xref, BindingKind.Property, name, null, i18nContext));
         return;
     }
     let expression;
     // TODO: We could easily generate source maps for subexpressions in these cases, but
     // TemplateDefinitionBuilder does not. Should we do so?
     if (value instanceof Interpolation$1) {
-        expression = new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, view.job, null)));
+        let i18nPlaceholders = [];
+        if (i18nMeta !== undefined) {
+            i18nPlaceholders = Object.keys(i18nMeta.placeholders);
+        }
+        expression = new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, view.job, null)), i18nPlaceholders);
     }
     else if (value instanceof AST) {
         expression = convertAst(value, view.job, null);
@@ -24149,7 +24455,7 @@ function ingestBinding(view, xref, name, value, type, unit, securityContext, sou
         expression = value;
     }
     const kind = BINDING_KINDS.get(type);
-    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, !!(flags & BindingFlags.TextValue), !!(flags & BindingFlags.IsStructuralTemplateAttribute), sourceSpan));
+    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, !!(flags & BindingFlags.TextValue), !!(flags & BindingFlags.IsStructuralTemplateAttribute), i18nContext, sourceSpan));
 }
 /**
  * Process all of the local references on an element-like structure in the template AST and
@@ -24237,7 +24543,7 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
     // and they can be used in directive matching (in the case of `Template.templateAttrs`).
     if (root !== null) {
         for (const attr of root.attributes) {
-            ingestBinding(unit, xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue);
+            ingestBinding(unit, xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue, attr.i18n);
         }
         const tagName = root instanceof Element$1 ? root.name : root.tagName;
         // Don't pass along `ng-template` tag name since it enables directive matching.
@@ -31427,7 +31733,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.2+sha-6cd91c6');
+const VERSION = new Version('17.1.0-next.2+sha-05f9c7b');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -32993,7 +33299,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33101,7 +33407,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33378,7 +33684,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33413,7 +33719,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33464,7 +33770,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33497,7 +33803,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33548,7 +33854,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.2+sha-6cd91c6'));
+    definitionMap.set('version', literal('17.1.0-next.2+sha-05f9c7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
