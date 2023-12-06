@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.5+sha-d4fdba5
+ * @license Angular v17.0.5+sha-e8d01f9
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3679,6 +3679,41 @@ function getInjectFn(target) {
     }
 }
 
+var TagContentType;
+(function (TagContentType) {
+    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
+    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
+    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
+})(TagContentType || (TagContentType = {}));
+function splitNsName(elementName) {
+    if (elementName[0] != ':') {
+        return [null, elementName];
+    }
+    const colonIndex = elementName.indexOf(':', 1);
+    if (colonIndex === -1) {
+        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
+    }
+    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
+}
+// `<ng-container>` tags work the same regardless the namespace
+function isNgContainer(tagName) {
+    return splitNsName(tagName)[1] === 'ng-container';
+}
+// `<ng-content>` tags work the same regardless the namespace
+function isNgContent(tagName) {
+    return splitNsName(tagName)[1] === 'ng-content';
+}
+// `<ng-template>` tags work the same regardless the namespace
+function isNgTemplate(tagName) {
+    return splitNsName(tagName)[1] === 'ng-template';
+}
+function getNsPrefix(fullName) {
+    return fullName === null ? null : splitNsName(fullName)[0];
+}
+function mergeNsAndName(prefix, localName) {
+    return prefix ? `:${prefix}:${localName}` : localName;
+}
+
 /**
  * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
  * require the implementation of a visitor for Comments as they are only collected at
@@ -5018,6 +5053,26 @@ class DefinitionMap {
     toLiteralMap() {
         return literalMap(this.values);
     }
+}
+/**
+ * Creates a `CssSelector` from an AST node.
+ */
+function createCssSelectorFromNode(node) {
+    const elementName = node instanceof Element$1 ? node.name : 'ng-template';
+    const attributes = getAttrsForDirectiveMatching(node);
+    const cssSelector = new CssSelector();
+    const elementNameNoNs = splitNsName(elementName)[1];
+    cssSelector.setElement(elementNameNoNs);
+    Object.getOwnPropertyNames(attributes).forEach((name) => {
+        const nameNoNs = splitNsName(name)[1];
+        const value = attributes[name];
+        cssSelector.addAttribute(nameNoNs, value);
+        if (name.toLowerCase() === 'class') {
+            const classes = value.trim().split(/\s+/);
+            classes.forEach(className => cssSelector.addClassName(className));
+        }
+    });
+    return cssSelector;
 }
 /**
  * Extract a map of properties to values for a given element or template node, which can be used
@@ -9143,17 +9198,17 @@ var I18nParamResolutionTime;
 /**
  * The contexts in which an i18n expression can be used.
  */
-var I18nExpressionContext;
-(function (I18nExpressionContext) {
+var I18nExpressionFor;
+(function (I18nExpressionFor) {
     /**
      * This expression is used as a value (i.e. inside an i18n block).
      */
-    I18nExpressionContext[I18nExpressionContext["Normal"] = 0] = "Normal";
+    I18nExpressionFor[I18nExpressionFor["I18nText"] = 0] = "I18nText";
     /**
      * This expression is used in a binding.
      */
-    I18nExpressionContext[I18nExpressionContext["Binding"] = 1] = "Binding";
-})(I18nExpressionContext || (I18nExpressionContext = {}));
+    I18nExpressionFor[I18nExpressionFor["I18nAttribute"] = 1] = "I18nAttribute";
+})(I18nExpressionFor || (I18nExpressionFor = {}));
 /**
  * Flags that describe what an i18n param value. These determine how the value is serialized into
  * the final map.
@@ -9524,11 +9579,12 @@ function createDeferWhenOp(target, expr, prefetch, sourceSpan) {
 /**
  * Create an i18n expression op.
  */
-function createI18nExpressionOp(context, target, handle, expression, i18nPlaceholder, resolutionTime, usage, name, sourceSpan) {
+function createI18nExpressionOp(context, target, i18nOwner, handle, expression, i18nPlaceholder, resolutionTime, usage, name, sourceSpan) {
     return {
         kind: OpKind.I18nExpression,
         context,
         target,
+        i18nOwner,
         handle,
         expression,
         i18nPlaceholder,
@@ -9544,10 +9600,10 @@ function createI18nExpressionOp(context, target, handle, expression, i18nPlaceho
 /**
  * Creates an op to apply i18n expression ops.
  */
-function createI18nApplyOp(target, handle, sourceSpan) {
+function createI18nApplyOp(owner, handle, sourceSpan) {
     return {
         kind: OpKind.I18nApply,
-        target,
+        owner,
         handle,
         sourceSpan,
         ...NEW_OP,
@@ -10371,6 +10427,9 @@ function transformExpressionsInExpression(expr, transform, flags) {
     else if (expr instanceof BinaryOperatorExpr) {
         expr.lhs = transformExpressionsInExpression(expr.lhs, transform, flags);
         expr.rhs = transformExpressionsInExpression(expr.rhs, transform, flags);
+    }
+    else if (expr instanceof UnaryOperatorExpr) {
+        expr.expr = transformExpressionsInExpression(expr.expr, transform, flags);
     }
     else if (expr instanceof ReadPropExpr) {
         expr.receiver = transformExpressionsInExpression(expr.receiver, transform, flags);
@@ -11305,7 +11364,7 @@ function applyI18nExpressions(job) {
             // Only add apply after expressions that are not followed by more expressions.
             if (op.kind === OpKind.I18nExpression && needsApplication(i18nContexts, op)) {
                 // TODO: what should be the source span for the apply op?
-                OpList.insertAfter(createI18nApplyOp(op.target, op.handle, null), op);
+                OpList.insertAfter(createI18nApplyOp(op.i18nOwner, op.handle, null), op);
             }
         }
     }
@@ -11337,14 +11396,15 @@ function needsApplication(i18nContexts, op) {
         return false;
     }
     // Second, handle the case of i18n attributes.
-    if (op.target !== op.next.target) {
+    if (op.i18nOwner !== op.next.i18nOwner) {
         return true;
     }
     return false;
 }
 
 /**
- * Updates i18n expression ops to depend on the last slot in their owning i18n block.
+ * Updates i18n expression ops to target the last slot in their owning i18n block, and moves them
+ * after the last update instruction that depends on that slot.
  */
 function assignI18nSlotDependencies(job) {
     const i18nLastSlotConsumers = new Map();
@@ -11364,52 +11424,49 @@ function assignI18nSlotDependencies(job) {
                     if (currentI18nOp === null) {
                         throw new Error('AssertionError: Expected an active I18n block while calculating last slot consumers');
                     }
+                    if (lastSlotConsumer === null) {
+                        throw new Error('AssertionError: Expected a last slot consumer while calculating last slot consumers');
+                    }
                     i18nLastSlotConsumers.set(currentI18nOp.xref, lastSlotConsumer);
                     currentI18nOp = null;
                     break;
             }
         }
-        // Assign i18n expressions to target the last slot in their owning block. Also move the ops
-        // below any other ops that depend on that same slot context to mimic the behavior of
-        // TemplateDefinitionBuilder.
-        // TODO(mmalerba): We may want to simplify the ordering logic once compatibility with
-        // TemplateDefinitionBuilder is no longer required. Though we likely still want *some* type of
-        // ordering to maximize opportunities for chaining.
-        let moveToTarget = null;
+        // Expresions that are currently being moved.
         let opsToMove = [];
+        // Previously we found the last slot-consuming create mode op in the i18n block. That op will be
+        // the new target for any moved i18n expresion inside the i18n block, and that op's slot is
+        // stored here.
+        let moveAfterTarget = null;
+        // This is the last target in the create IR that we saw during iteration. Eventally, it will be
+        // equal to moveAfterTarget. But wait! We need to find the *last* such op whose target is equal
+        // to `moveAfterTarget`.
         let previousTarget = null;
-        let currentTarget = null;
         for (const op of unit.update) {
-            currentTarget = hasDependsOnSlotContextTrait(op) ? op.target : null;
-            // Re-target i18n expression ops.
-            if (op.kind === OpKind.I18nExpression) {
-                // TODO: Is this handling of i18n bindings correct?
-                op.target = op.usage === I18nExpressionContext.Normal ?
-                    i18nLastSlotConsumers.get(op.target) :
-                    op.target;
-                if (op.target === undefined) {
-                    throw new Error('AssertionError: Expected every I18nExpressionOp to have a valid reordering target');
+            if (hasDependsOnSlotContextTrait(op)) {
+                // We've found an op that depends on another slot other than the one that we want to move
+                // the expressions to, after previously having seen the one we want to move to.
+                if (moveAfterTarget !== null && previousTarget === moveAfterTarget &&
+                    op.target !== previousTarget) {
+                    OpList.insertBefore(opsToMove, op);
+                    moveAfterTarget = null;
+                    opsToMove = [];
                 }
-                moveToTarget = op.target;
+                previousTarget = op.target;
             }
-            // Pull out i18n expression and apply ops to be moved.
-            if (op.kind === OpKind.I18nExpression || op.kind === OpKind.I18nApply) {
-                opsToMove.push(op);
+            if (op.kind === OpKind.I18nExpression && op.usage === I18nExpressionFor.I18nText) {
+                // This is an I18nExpressionOps that is used for text (not attributes).
                 OpList.remove(op);
-                currentTarget = moveToTarget;
+                opsToMove.push(op);
+                const target = i18nLastSlotConsumers.get(op.i18nOwner);
+                if (target === undefined) {
+                    throw new Error('AssertionError: Expected to find a last slot consumer for an I18nExpressionOp');
+                }
+                op.target = target;
+                moveAfterTarget = op.target;
             }
-            // Add back any ops that were previously pulled once we pass the point where they should be
-            // inserted.
-            if (moveToTarget !== null && previousTarget === moveToTarget &&
-                currentTarget !== previousTarget) {
-                OpList.insertBefore(opsToMove, op);
-                opsToMove = [];
-            }
-            // Update the previous target for the next pass through
-            previousTarget = currentTarget;
         }
-        // If there are any moved ops that haven't been put back yet, put them back at the end.
-        if (opsToMove) {
+        if (moveAfterTarget !== null) {
             unit.update.push(opsToMove);
         }
     }
@@ -11754,41 +11811,6 @@ function generateConditionalExpressions(job) {
     }
 }
 
-var TagContentType;
-(function (TagContentType) {
-    TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
-    TagContentType[TagContentType["ESCAPABLE_RAW_TEXT"] = 1] = "ESCAPABLE_RAW_TEXT";
-    TagContentType[TagContentType["PARSABLE_DATA"] = 2] = "PARSABLE_DATA";
-})(TagContentType || (TagContentType = {}));
-function splitNsName(elementName) {
-    if (elementName[0] != ':') {
-        return [null, elementName];
-    }
-    const colonIndex = elementName.indexOf(':', 1);
-    if (colonIndex === -1) {
-        throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
-    }
-    return [elementName.slice(1, colonIndex), elementName.slice(colonIndex + 1)];
-}
-// `<ng-container>` tags work the same regardless the namespace
-function isNgContainer(tagName) {
-    return splitNsName(tagName)[1] === 'ng-container';
-}
-// `<ng-content>` tags work the same regardless the namespace
-function isNgContent(tagName) {
-    return splitNsName(tagName)[1] === 'ng-content';
-}
-// `<ng-template>` tags work the same regardless the namespace
-function isNgTemplate(tagName) {
-    return splitNsName(tagName)[1] === 'ng-template';
-}
-function getNsPrefix(fullName) {
-    return fullName === null ? null : splitNsName(fullName)[0];
-}
-function mergeNsAndName(prefix, localName) {
-    return prefix ? `:${prefix}:${localName}` : localName;
-}
-
 const BINARY_OPERATORS = new Map([
     ['&&', BinaryOperator.And],
     ['>', BinaryOperator.Bigger],
@@ -12022,7 +12044,7 @@ function convertI18nBindings(job) {
                         if (op.expression.i18nPlaceholders.length !== op.expression.expressions.length) {
                             throw new Error(`AssertionError: An i18n attribute binding instruction requires the same number of expressions and placeholders, but found ${op.expression.i18nPlaceholders.length} placeholders and ${op.expression.expressions.length} expressions`);
                         }
-                        ops.push(createI18nExpressionOp(op.i18nContext, i18nAttributesForElem.target, i18nAttributesForElem.handle, expr, op.expression.i18nPlaceholders[i], I18nParamResolutionTime.Creation, I18nExpressionContext.Binding, op.name, op.sourceSpan));
+                        ops.push(createI18nExpressionOp(op.i18nContext, i18nAttributesForElem.target, i18nAttributesForElem.xref, i18nAttributesForElem.handle, expr, op.expression.i18nPlaceholders[i], I18nParamResolutionTime.Creation, I18nExpressionFor.I18nAttribute, op.name, op.sourceSpan));
                     }
                     OpList.replaceWithMany(op, ops);
                     break;
@@ -12707,7 +12729,7 @@ function generateAdvance(job) {
             else if (!slotMap.has(op.target)) {
                 // We expect ops that _do_ depend on the slot counter to point at declarations that exist in
                 // the `slotMap`.
-                throw new Error(`AssertionError: reference to unknown slot for var ${op.target}`);
+                throw new Error(`AssertionError: reference to unknown slot for target ${op.target}`);
             }
             const slot = slotMap.get(op.target);
             // Does the slot counter need to be adjusted?
@@ -19934,11 +19956,10 @@ function collectI18nConsts(job) {
     // Step One: Build up various lookup maps we need to collect all the consts.
     // Context Xref -> Extracted Attribute Op
     const extractedAttributesByI18nContext = new Map();
-    // Target Xref (element for i18n attributes, last item in i18n block for i18n values) -> I18n
-    // Attributes config op
-    const i18nAttributesByTarget = new Map();
-    // Target Element Xref -> All I18n Expression ops for that target
-    const i18nExpressionsByTarget = new Map();
+    // Element/ElementStart Xref -> I18n Attributes config op
+    const i18nAttributesByElement = new Map();
+    // Element/ElementStart Xref -> All I18n Expression ops for attrs on that target
+    const i18nExpressionsByElement = new Map();
     // I18n Message Xref -> I18n Message Op (TODO: use a central op map)
     const messages = new Map();
     for (const unit of job.units) {
@@ -19947,12 +19968,12 @@ function collectI18nConsts(job) {
                 extractedAttributesByI18nContext.set(op.i18nContext, op);
             }
             else if (op.kind === OpKind.I18nAttributes) {
-                i18nAttributesByTarget.set(op.target, op);
+                i18nAttributesByElement.set(op.target, op);
             }
-            else if (op.kind === OpKind.I18nExpression) {
-                const expressions = i18nExpressionsByTarget.get(op.target) ?? [];
+            else if (op.kind === OpKind.I18nExpression && op.usage === I18nExpressionFor.I18nAttribute) {
+                const expressions = i18nExpressionsByElement.get(op.target) ?? [];
                 expressions.push(op);
-                i18nExpressionsByTarget.set(op.target, expressions);
+                i18nExpressionsByElement.set(op.target, expressions);
             }
             else if (op.kind === OpKind.I18nMessage) {
                 messages.set(op.xref, op);
@@ -20005,12 +20026,12 @@ function collectI18nConsts(job) {
     for (const unit of job.units) {
         for (const elem of unit.create) {
             if (isElementOrContainerOp(elem)) {
-                const i18nAttributes = i18nAttributesByTarget.get(elem.xref);
+                const i18nAttributes = i18nAttributesByElement.get(elem.xref);
                 if (i18nAttributes === undefined) {
                     // This element is not associated with an i18n attributes configuration instruction.
                     continue;
                 }
-                let i18nExpressions = i18nExpressionsByTarget.get(elem.xref);
+                let i18nExpressions = i18nExpressionsByElement.get(elem.xref);
                 if (i18nExpressions === undefined) {
                     // Unused i18nAttributes should have already been removed.
                     // TODO: Should the removal of those dead instructions be merged with this phase?
@@ -20241,7 +20262,7 @@ function convertI18nText(job) {
                         const expr = op.interpolation.expressions[i];
                         // For now, this i18nExpression depends on the slot context of the enclosing i18n block.
                         // Later, we will modify this, and advance to a different point.
-                        ops.push(createI18nExpressionOp(contextId, i18nOp.xref, i18nOp.handle, expr, op.interpolation.i18nPlaceholders[i], resolutionTime, I18nExpressionContext.Normal, '', expr.sourceSpan ?? op.sourceSpan));
+                        ops.push(createI18nExpressionOp(contextId, i18nOp.xref, i18nOp.xref, i18nOp.handle, expr, op.interpolation.i18nPlaceholders[i], resolutionTime, I18nExpressionFor.I18nText, '', expr.sourceSpan ?? op.sourceSpan));
                     }
                     OpList.replaceWithMany(op, ops);
                     break;
@@ -22033,17 +22054,17 @@ function removeI18nContexts(job) {
  */
 function removeUnusedI18nAttributesOps(job) {
     for (const unit of job.units) {
-        const targetsWithI18nApply = new Set();
+        const ownersWithI18nExpressions = new Set();
         for (const op of unit.update) {
             switch (op.kind) {
-                case OpKind.I18nApply:
-                    targetsWithI18nApply.add(op.target);
+                case OpKind.I18nExpression:
+                    ownersWithI18nExpressions.add(op.i18nOwner);
             }
         }
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nAttributes:
-                    if (targetsWithI18nApply.has(op.target)) {
+                    if (ownersWithI18nExpressions.has(op.xref)) {
                         continue;
                     }
                     OpList.remove(op);
@@ -22399,13 +22420,13 @@ function resolveI18nExpressionPlaceholders(job) {
     // We use different references for normal i18n expressio and attribute i18n expressions. This is
     // because child i18n blocks in templates don't get their own context, since they're rolled into
     // the translated message of the parent, but they may target a different slot.
-    const referenceIndex = (op) => op.usage === I18nExpressionContext.Normal ? op.target : op.context;
+    const referenceIndex = (op) => op.usage === I18nExpressionFor.I18nText ? op.i18nOwner : op.context;
     for (const unit of job.units) {
         for (const op of unit.update) {
             if (op.kind === OpKind.I18nExpression) {
                 const i18nContext = i18nContexts.get(op.context);
                 const index = expressionIndices.get(referenceIndex(op)) || 0;
-                const subTemplateIndex = subTemplateIndicies.get(op.target) ?? null;
+                const subTemplateIndex = subTemplateIndicies.get(op.i18nOwner) ?? null;
                 // Add the expression index in the appropriate params map.
                 const params = op.resolutionTime === I18nParamResolutionTime.Creation ?
                     i18nContext.params :
@@ -23579,6 +23600,8 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: configureDeferInstructions },
     { kind: CompilationJobKind.Tmpl, fn: convertI18nText },
     { kind: CompilationJobKind.Tmpl, fn: convertI18nBindings },
+    { kind: CompilationJobKind.Tmpl, fn: removeUnusedI18nAttributesOps },
+    { kind: CompilationJobKind.Tmpl, fn: assignI18nSlotDependencies },
     { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
     { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
@@ -23605,11 +23628,9 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nIcuPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackFns },
-    { kind: CompilationJobKind.Tmpl, fn: removeUnusedI18nAttributesOps },
     { kind: CompilationJobKind.Tmpl, fn: collectI18nConsts },
     { kind: CompilationJobKind.Tmpl, fn: collectConstExpressions },
     { kind: CompilationJobKind.Both, fn: collectElementConsts },
-    { kind: CompilationJobKind.Tmpl, fn: assignI18nSlotDependencies },
     { kind: CompilationJobKind.Tmpl, fn: removeI18nContexts },
     { kind: CompilationJobKind.Both, fn: countVariables },
     { kind: CompilationJobKind.Tmpl, fn: generateAdvance },
@@ -23882,10 +23903,10 @@ function ingestTemplate(unit, tmpl) {
         '' :
         prefixWithNamespace(tagNameWithoutNamespace, namespace);
     const templateKind = isPlainTemplate(tmpl) ? TemplateKind.NgTemplate : TemplateKind.Structural;
-    const tplOp = createTemplateOp(childView.xref, templateKind, tagNameWithoutNamespace, functionNameSuffix, namespace, i18nPlaceholder, tmpl.startSourceSpan);
-    unit.create.push(tplOp);
-    ingestBindings(unit, tplOp, tmpl);
-    ingestReferences(tplOp, tmpl);
+    const templateOp = createTemplateOp(childView.xref, templateKind, tagNameWithoutNamespace, functionNameSuffix, namespace, i18nPlaceholder, tmpl.startSourceSpan);
+    unit.create.push(templateOp);
+    ingestBindings(unit, templateOp, tmpl);
+    ingestReferences(templateOp, tmpl);
     ingestNodes(childView, tmpl.children);
     for (const { name, value } of tmpl.variables) {
         childView.contextVariables.set(name, value !== '' ? value : '$implicit');
@@ -23971,14 +23992,21 @@ function ingestIfBlock(unit, ifBlock) {
         if (ifCase.expressionAlias !== null) {
             cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
         }
-        const tmplOp = createTemplateOp(cView.xref, TemplateKind.Block, tagName, 'Conditional', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, ifCase.sourceSpan);
-        unit.create.push(tmplOp);
+        let ifCaseI18nMeta = undefined;
+        if (ifCase.i18n !== undefined) {
+            if (!(ifCase.i18n instanceof BlockPlaceholder)) {
+                throw Error(`Unhandled i18n metadata type for if block: ${ifCase.i18n?.constructor.name}`);
+            }
+            ifCaseI18nMeta = ifCase.i18n;
+        }
+        const templateOp = createTemplateOp(cView.xref, TemplateKind.Block, tagName, 'Conditional', Namespace.HTML, ifCaseI18nMeta, ifCase.sourceSpan);
+        unit.create.push(templateOp);
         if (firstXref === null) {
             firstXref = cView.xref;
-            firstSlotHandle = tmplOp.handle;
+            firstSlotHandle = templateOp.handle;
         }
         const caseExpr = ifCase.expression ? convertAst(ifCase.expression, unit.job, null) : null;
-        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.handle, ifCase.expressionAlias);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, templateOp.xref, templateOp.handle, ifCase.expressionAlias);
         conditions.push(conditionalCaseExpr);
         ingestNodes(cView, ifCase.children);
     }
@@ -23994,16 +24022,23 @@ function ingestSwitchBlock(unit, switchBlock) {
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
-        const tmplOp = createTemplateOp(cView.xref, TemplateKind.Block, null, 'Case', Namespace.HTML, undefined /* TODO: figure out how i18n works with new control flow */, switchCase.sourceSpan);
-        unit.create.push(tmplOp);
+        let switchCaseI18nMeta = undefined;
+        if (switchCase.i18n !== undefined) {
+            if (!(switchCase.i18n instanceof BlockPlaceholder)) {
+                throw Error(`Unhandled i18n metadata type for switch block: ${switchCase.i18n?.constructor.name}`);
+            }
+            switchCaseI18nMeta = switchCase.i18n;
+        }
+        const templateOp = createTemplateOp(cView.xref, TemplateKind.Block, null, 'Case', Namespace.HTML, switchCaseI18nMeta, switchCase.sourceSpan);
+        unit.create.push(templateOp);
         if (firstXref === null) {
             firstXref = cView.xref;
-            firstSlotHandle = tmplOp.handle;
+            firstSlotHandle = templateOp.handle;
         }
         const caseExpr = switchCase.expression ?
             convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) :
             null;
-        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, tmplOp.xref, tmplOp.handle);
+        const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, templateOp.xref, templateOp.handle);
         conditions.push(conditionalCaseExpr);
         ingestNodes(cView, switchCase.children);
     }
@@ -24208,7 +24243,14 @@ function convertAst(ast, job, baseSourceSpan) {
         return literal(ast.value, undefined, convertSourceSpan(ast.span, baseSourceSpan));
     }
     else if (ast instanceof Unary) {
-        throw new Error('TODO: Support unary operations, which extend binary ops');
+        switch (ast.operator) {
+            case '+':
+                return new UnaryOperatorExpr(UnaryOperator.Plus, convertAst(ast.expr, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
+            case '-':
+                return new UnaryOperatorExpr(UnaryOperator.Minus, convertAst(ast.expr, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
+            default:
+                throw new Error(`AssertionError: unknown unary operator ${ast.operator}`);
+        }
     }
     else if (ast instanceof Binary) {
         const operator = BINARY_OPERATORS.get(ast.operation);
@@ -29227,24 +29269,6 @@ class TrackByBindingScope extends BindingScope {
     }
 }
 /**
- * Creates a `CssSelector` given a tag name and a map of attributes
- */
-function createCssSelector(elementName, attributes) {
-    const cssSelector = new CssSelector();
-    const elementNameNoNs = splitNsName(elementName)[1];
-    cssSelector.setElement(elementNameNoNs);
-    Object.getOwnPropertyNames(attributes).forEach((name) => {
-        const nameNoNs = splitNsName(name)[1];
-        const value = attributes[name];
-        cssSelector.addAttribute(nameNoNs, value);
-        if (name.toLowerCase() === 'class') {
-            const classes = value.trim().split(/\s+/);
-            classes.forEach(className => cssSelector.addClassName(className));
-        }
-    });
-    return cssSelector;
-}
-/**
  * Creates an array of expressions out of an `ngProjectAs` attributes
  * which can be added to the instruction parameters.
  */
@@ -30594,15 +30618,15 @@ class DirectiveBinder {
         template.forEach(node => node.visit(this));
     }
     visitElement(element) {
-        this.visitElementOrTemplate(element.name, element);
+        this.visitElementOrTemplate(element);
     }
     visitTemplate(template) {
-        this.visitElementOrTemplate('ng-template', template);
+        this.visitElementOrTemplate(template);
     }
-    visitElementOrTemplate(elementName, node) {
+    visitElementOrTemplate(node) {
         // First, determine the HTML shape of the node for the purpose of directive matching.
         // Do this by building up a `CssSelector` for the node.
-        const cssSelector = createCssSelector(elementName, getAttrsForDirectiveMatching(node));
+        const cssSelector = createCssSelectorFromNode(node);
         // Next, use the `SelectorMatcher` to get the list of directives on the node.
         const directives = [];
         this.matcher.match(cssSelector, (_selector, results) => directives.push(...results));
@@ -31731,7 +31755,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.5+sha-d4fdba5');
+const VERSION = new Version('17.0.5+sha-e8d01f9');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33297,7 +33321,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33405,7 +33429,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33682,7 +33706,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33717,7 +33741,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33768,7 +33792,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33801,7 +33825,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33852,7 +33876,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.5+sha-d4fdba5'));
+    definitionMap.set('version', literal('17.0.5+sha-e8d01f9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33885,5 +33909,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
