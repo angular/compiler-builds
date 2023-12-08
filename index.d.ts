@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-44c2c26
+ * @license Angular v17.1.0-next.3+sha-f2245d1
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1177,6 +1177,16 @@ export declare class EmitterVisitorContext {
 export declare class EmptyExpr extends AST {
     visit(visitor: AstVisitor, context?: any): void;
 }
+
+/**
+ * Encapsulates a CSS stylesheet with emulated view encapsulation.
+ * This allows a stylesheet to be used with an Angular component that
+ * is using the `ViewEncapsulation.Emulated` mode.
+ *
+ * @param style The content of a CSS stylesheet.
+ * @returns The encapsulated content for the style.
+ */
+export declare function encapsulateStyle(style: string): string;
 
 declare interface EncodedEntityToken extends TokenBase {
     type: LexerTokenType.ENCODED_ENTITY;

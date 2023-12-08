@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-44c2c26
+ * @license Angular v17.1.0-next.3+sha-f2245d1
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10852,7 +10852,7 @@ function createTemplateOp(xref, templateKind, tag, functionNameSuffix, namespace
         ...NEW_OP,
     };
 }
-function createRepeaterCreateOp(primaryView, emptyView, tag, track, varNames, sourceSpan) {
+function createRepeaterCreateOp(primaryView, emptyView, tag, track, varNames, i18nPlaceholder, emptyI18nPlaceholder, sourceSpan) {
     return {
         kind: OpKind.RepeaterCreate,
         attributes: null,
@@ -10870,6 +10870,8 @@ function createRepeaterCreateOp(primaryView, emptyView, tag, track, varNames, so
         vars: null,
         varNames,
         usesComponentInstance: false,
+        i18nPlaceholder,
+        emptyI18nPlaceholder,
         sourceSpan,
         ...TRAIT_CONSUMES_SLOT,
         ...NEW_OP,
@@ -12828,9 +12830,15 @@ function recursivelyProcessView(view, parentScope) {
     for (const op of view.create) {
         switch (op.kind) {
             case OpKind.Template:
+                // Descend into child embedded views.
+                recursivelyProcessView(view.job.views.get(op.xref), scope);
+                break;
             case OpKind.RepeaterCreate:
                 // Descend into child embedded views.
                 recursivelyProcessView(view.job.views.get(op.xref), scope);
+                if (op.emptyView) {
+                    recursivelyProcessView(view.job.views.get(op.emptyView), scope);
+                }
                 break;
             case OpKind.Listener:
                 // Prepend variables to listener handler functions.
@@ -20993,21 +21001,36 @@ function propagateI18nBlocksToTemplates(unit, subTemplateIndex) {
                 i18nBlock = null;
                 break;
             case OpKind.Template:
-                const templateView = unit.job.views.get(op.xref);
-                // We found an <ng-template> inside an i18n block; increment the sub-template counter and
-                // wrap the template's view in a child i18n block.
-                if (op.i18nPlaceholder !== undefined) {
-                    if (i18nBlock === null) {
-                        throw Error('Expected template with i18n placeholder to be in an i18n block.');
-                    }
-                    subTemplateIndex++;
-                    wrapTemplateWithI18n(templateView, i18nBlock);
+                subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.xref), i18nBlock, op.i18nPlaceholder, subTemplateIndex);
+                break;
+            case OpKind.RepeaterCreate:
+                // Propagate i18n blocks to the @for template.
+                const forView = unit.job.views.get(op.xref);
+                subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.xref), i18nBlock, op.i18nPlaceholder, subTemplateIndex);
+                // Then if there's an @empty template, propagate the i18n blocks for it as well.
+                if (op.emptyView !== null) {
+                    subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.emptyView), i18nBlock, op.emptyI18nPlaceholder, subTemplateIndex);
                 }
-                // Continue traversing inside the template's view.
-                subTemplateIndex = propagateI18nBlocksToTemplates(templateView, subTemplateIndex);
+                break;
         }
     }
     return subTemplateIndex;
+}
+/**
+ * Propagate i18n blocks for a view.
+ */
+function propagateI18nBlocksForView(view, i18nBlock, i18nPlaceholder, subTemplateIndex) {
+    // We found an <ng-template> inside an i18n block; increment the sub-template counter and
+    // wrap the template's view in a child i18n block.
+    if (i18nPlaceholder !== undefined) {
+        if (i18nBlock === null) {
+            throw Error('Expected template with i18n placeholder to be in an i18n block.');
+        }
+        subTemplateIndex++;
+        wrapTemplateWithI18n(view, i18nBlock);
+    }
+    // Continue traversing inside the template's view.
+    return propagateI18nBlocksToTemplates(view, subTemplateIndex);
 }
 /**
  * Wraps a template view with i18n start and end ops.
@@ -22287,10 +22310,11 @@ function resolvePlaceholdersForView(job, unit, i18nContexts, elements, pendingSt
                 }
                 break;
             case OpKind.Template:
+                const view = job.views.get(op.xref);
                 if (op.i18nPlaceholder === undefined) {
                     // If there is no i18n placeholder, just recurse into the view in case it contains i18n
                     // blocks.
-                    resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements);
+                    resolvePlaceholdersForView(job, view, i18nContexts, elements);
                 }
                 else {
                     if (currentOps === null) {
@@ -22301,14 +22325,59 @@ function resolvePlaceholdersForView(job, unit, i18nContexts, elements, pendingSt
                         // the current template as a pending structural directive to be recorded when we find
                         // the element, content, or template it belongs to. This allows us to create combined
                         // values that represent, e.g. the start of a template and element at the same time.
-                        resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements, op);
+                        resolvePlaceholdersForView(job, view, i18nContexts, elements, op);
                     }
                     else {
                         // If this is some other kind of template, we can record its start, recurse into its
                         // view, and then record its end.
-                        recordTemplateStart(job, op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
-                        resolvePlaceholdersForView(job, job.views.get(op.xref), i18nContexts, elements);
-                        recordTemplateClose(job, op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        recordTemplateStart(job, view, op.handle.slot, op.i18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        resolvePlaceholdersForView(job, view, i18nContexts, elements);
+                        recordTemplateClose(job, view, op.handle.slot, op.i18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        pendingStructuralDirective = undefined;
+                    }
+                }
+                break;
+            case OpKind.RepeaterCreate:
+                if (pendingStructuralDirective !== undefined) {
+                    throw Error('AssertionError: Unexpected structural directive associated with @for block');
+                }
+                // RepeaterCreate has 3 slots: the first is for the op itself, the second is for the @for
+                // template and the (optional) third is for the @empty template.
+                const forSlot = op.handle.slot + 1;
+                const forView = job.views.get(op.xref);
+                // First record all of the placeholders for the @for template.
+                if (op.i18nPlaceholder === undefined) {
+                    // If there is no i18n placeholder, just recurse into the view in case it contains i18n
+                    // blocks.
+                    resolvePlaceholdersForView(job, forView, i18nContexts, elements);
+                }
+                else {
+                    if (currentOps === null) {
+                        throw Error('i18n tag placeholder should only occur inside an i18n block');
+                    }
+                    recordTemplateStart(job, forView, forSlot, op.i18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                    resolvePlaceholdersForView(job, forView, i18nContexts, elements);
+                    recordTemplateClose(job, forView, forSlot, op.i18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                    pendingStructuralDirective = undefined;
+                }
+                // Then if there's an @empty template, add its placeholders as well.
+                if (op.emptyView !== null) {
+                    // RepeaterCreate has 3 slots: the first is for the op itself, the second is for the @for
+                    // template and the (optional) third is for the @empty template.
+                    const emptySlot = op.handle.slot + 2;
+                    const emptyView = job.views.get(op.emptyView);
+                    if (op.emptyI18nPlaceholder === undefined) {
+                        // If there is no i18n placeholder, just recurse into the view in case it contains i18n
+                        // blocks.
+                        resolvePlaceholdersForView(job, emptyView, i18nContexts, elements);
+                    }
+                    else {
+                        if (currentOps === null) {
+                            throw Error('i18n tag placeholder should only occur inside an i18n block');
+                        }
+                        recordTemplateStart(job, emptyView, emptySlot, op.emptyI18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        resolvePlaceholdersForView(job, emptyView, i18nContexts, elements);
+                        recordTemplateClose(job, emptyView, emptySlot, op.emptyI18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
                         pendingStructuralDirective = undefined;
                     }
                 }
@@ -22356,8 +22425,8 @@ function recordElementClose(op, i18nContext, i18nBlock, structuralDirective) {
 /**
  * Records an i18n param value for the start of a template.
  */
-function recordTemplateStart(job, op, i18nContext, i18nBlock, structuralDirective) {
-    let { startName, closeName } = op.i18nPlaceholder;
+function recordTemplateStart(job, view, slot, i18nPlaceholder, i18nContext, i18nBlock, structuralDirective) {
+    let { startName, closeName } = i18nPlaceholder;
     let flags = I18nParamValueFlags.TemplateTag | I18nParamValueFlags.OpenTag;
     // For self-closing tags, there is no close tag placeholder. Instead, the start tag
     // placeholder accounts for the start and close of the element.
@@ -22372,20 +22441,20 @@ function recordTemplateStart(job, op, i18nContext, i18nBlock, structuralDirectiv
     }
     // Record the start of the template. For the sub-template index, pass the index for the template's
     // view, rather than the current i18n block's index.
-    addParam(i18nContext.params, startName, op.handle.slot, getSubTemplateIndexForTemplateTag(job, i18nBlock, op), flags);
+    addParam(i18nContext.params, startName, slot, getSubTemplateIndexForTemplateTag(job, i18nBlock, view), flags);
 }
 /**
  * Records an i18n param value for the closing of a template.
  */
-function recordTemplateClose(job, op, i18nContext, i18nBlock, structuralDirective) {
-    const { startName, closeName } = op.i18nPlaceholder;
+function recordTemplateClose(job, view, slot, i18nPlaceholder, i18nContext, i18nBlock, structuralDirective) {
+    const { startName, closeName } = i18nPlaceholder;
     const flags = I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag;
     // Self-closing tags don't have a closing tag placeholder, instead the template's closing is
     // recorded via an additional flag on the template start value.
     if (closeName) {
         // Record the closing of the template. For the sub-template index, pass the index for the
         // template's view, rather than the current i18n block's index.
-        addParam(i18nContext.params, closeName, op.handle.slot, getSubTemplateIndexForTemplateTag(job, i18nBlock, op), flags);
+        addParam(i18nContext.params, closeName, slot, getSubTemplateIndexForTemplateTag(job, i18nBlock, view), flags);
         // If the template is associated with a structural directive, record the structural directive's
         // closing after. Since this template must be in the structural directive's view, we can just
         // directly use the current i18n block's sub-template index.
@@ -22398,8 +22467,8 @@ function recordTemplateClose(job, op, i18nContext, i18nBlock, structuralDirectiv
  * Get the subTemplateIndex for the given template op. For template ops, use the subTemplateIndex of
  * the child i18n block inside the template.
  */
-function getSubTemplateIndexForTemplateTag(job, i18nOp, op) {
-    for (const childOp of job.views.get(op.xref).create) {
+function getSubTemplateIndexForTemplateTag(job, i18nOp, view) {
+    for (const childOp of view.create) {
         if (childOp.kind === OpKind.I18nStart) {
             return childOp.subTemplateIndex;
         }
@@ -22763,6 +22832,8 @@ function allocateSlots(job) {
                 // operation itself, so it can be emitted later.
                 const childView = job.views.get(op.xref);
                 op.decls = childView.decls;
+                // TODO: currently we handle the decls for the RepeaterCreate empty template in the reify
+                // phase. We should handle that here instead.
             }
         }
     }
@@ -23086,6 +23157,8 @@ function countVariables(job) {
                 }
                 const childView = job.views.get(op.xref);
                 op.vars = childView.vars;
+                // TODO: currently we handle the vars for the RepeaterCreate empty template in the reify
+                // phase. We should handle that here instead.
             }
         }
     }
@@ -24069,13 +24142,16 @@ function ingestSwitchBlock(unit, switchBlock) {
     const conditional = createConditionalOp(firstXref, firstSlotHandle, convertAst(switchBlock.expression, unit.job, null), conditions, switchBlock.sourceSpan);
     unit.update.push(conditional);
 }
-function ingestDeferView(unit, suffix, children, sourceSpan) {
+function ingestDeferView(unit, suffix, i18nMeta, children, sourceSpan) {
+    if (i18nMeta !== undefined && !(i18nMeta instanceof BlockPlaceholder)) {
+        throw Error('Unhandled i18n metadata type for defer block');
+    }
     if (children === undefined) {
         return null;
     }
     const secondaryView = unit.job.allocateView(unit.xref);
     ingestNodes(secondaryView, children);
-    const templateOp = createTemplateOp(secondaryView.xref, TemplateKind.Block, null, `Defer${suffix}`, Namespace.HTML, undefined, sourceSpan);
+    const templateOp = createTemplateOp(secondaryView.xref, TemplateKind.Block, null, `Defer${suffix}`, Namespace.HTML, i18nMeta, sourceSpan);
     unit.create.push(templateOp);
     return templateOp;
 }
@@ -24085,10 +24161,10 @@ function ingestDeferBlock(unit, deferBlock) {
         throw new Error(`AssertionError: unable to find metadata for deferred block`);
     }
     // Generate the defer main view and all secondary views.
-    const main = ingestDeferView(unit, '', deferBlock.children, deferBlock.sourceSpan);
-    const loading = ingestDeferView(unit, 'Loading', deferBlock.loading?.children, deferBlock.loading?.sourceSpan);
-    const placeholder = ingestDeferView(unit, 'Placeholder', deferBlock.placeholder?.children, deferBlock.placeholder?.sourceSpan);
-    const error = ingestDeferView(unit, 'Error', deferBlock.error?.children, deferBlock.error?.sourceSpan);
+    const main = ingestDeferView(unit, '', deferBlock.i18n, deferBlock.children, deferBlock.sourceSpan);
+    const loading = ingestDeferView(unit, 'Loading', deferBlock.loading?.i18n, deferBlock.loading?.children, deferBlock.loading?.sourceSpan);
+    const placeholder = ingestDeferView(unit, 'Placeholder', deferBlock.placeholder?.i18n, deferBlock.placeholder?.children, deferBlock.placeholder?.sourceSpan);
+    const error = ingestDeferView(unit, 'Error', deferBlock.error?.i18n, deferBlock.error?.children, deferBlock.error?.sourceSpan);
     // Create the main defer op, and ops for all secondary views.
     const deferXref = unit.job.allocateXrefId();
     const deferOp = createDeferOp(deferXref, main.xref, main.handle, blockMeta, deferBlock.sourceSpan);
@@ -24222,8 +24298,17 @@ function ingestForBlock(unit, forBlock) {
         $odd: forBlock.contextVariables.$odd.name,
         $implicit: forBlock.item.name,
     };
+    if (forBlock.i18n !== undefined && !(forBlock.i18n instanceof BlockPlaceholder)) {
+        throw Error('AssertionError: Unhandled i18n metadata type or @for');
+    }
+    if (forBlock.empty?.i18n !== undefined &&
+        !(forBlock.empty.i18n instanceof BlockPlaceholder)) {
+        throw Error('AssertionError: Unhandled i18n metadata type or @empty');
+    }
+    const i18nPlaceholder = forBlock.i18n;
+    const emptyI18nPlaceholder = forBlock.empty?.i18n;
     const tagName = ingestControlFlowInsertionPoint(unit, repeaterView.xref, forBlock);
-    const repeaterCreate = createRepeaterCreateOp(repeaterView.xref, emptyView?.xref ?? null, tagName, track, varNames, forBlock.sourceSpan);
+    const repeaterCreate = createRepeaterCreateOp(repeaterView.xref, emptyView?.xref ?? null, tagName, track, varNames, i18nPlaceholder, emptyI18nPlaceholder, forBlock.sourceSpan);
     unit.create.push(repeaterCreate);
     const expression = convertAst(forBlock.expression, unit.job, convertSourceSpan(forBlock.expression.span, forBlock.sourceSpan));
     const repeater = createRepeaterOp(repeaterCreate.xref, repeaterCreate.handle, expression, forBlock.sourceSpan);
@@ -30330,6 +30415,18 @@ function compileStyles(styles, selector, hostSelector) {
         return shadowCss.shimCssText(style, selector, hostSelector);
     });
 }
+/**
+ * Encapsulates a CSS stylesheet with emulated view encapsulation.
+ * This allows a stylesheet to be used with an Angular component that
+ * is using the `ViewEncapsulation.Emulated` mode.
+ *
+ * @param style The content of a CSS stylesheet.
+ * @returns The encapsulated content for the style.
+ */
+function encapsulateStyle(style) {
+    const shadowCss = new ShadowCss();
+    return shadowCss.shimCssText(style, CONTENT_ATTR, HOST_ATTR);
+}
 function createHostDirectivesType(meta) {
     if (!meta.hostDirectives?.length) {
         return NONE_TYPE;
@@ -31779,7 +31876,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.3+sha-44c2c26');
+const VERSION = new Version('17.1.0-next.3+sha-f2245d1');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33345,7 +33442,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33453,7 +33550,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33730,7 +33827,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33765,7 +33862,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33816,7 +33913,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33849,7 +33946,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33900,7 +33997,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-f2245d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33933,5 +34030,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
