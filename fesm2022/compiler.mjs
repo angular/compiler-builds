@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-42f4f70
+ * @license Angular v17.1.0-next.3+sha-44c2c26
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9414,7 +9414,7 @@ class Interpolation {
 /**
  * Create a `BindingOp`, not yet transformed into a particular type of binding.
  */
-function createBindingOp(target, kind, name, expression, unit, securityContext, isTextAttribute, isStructuralTemplate, i18nContext, sourceSpan) {
+function createBindingOp(target, kind, name, expression, unit, securityContext, isTextAttribute, isStructuralTemplateAttribute, templateKind, i18nMessage, sourceSpan) {
     return {
         kind: OpKind.Binding,
         bindingKind: kind,
@@ -9424,8 +9424,10 @@ function createBindingOp(target, kind, name, expression, unit, securityContext, 
         unit,
         securityContext,
         isTextAttribute,
-        isStructuralTemplate: isStructuralTemplate,
-        i18nContext,
+        isStructuralTemplateAttribute,
+        templateKind,
+        i18nContext: null,
+        i18nMessage,
         sourceSpan,
         ...NEW_OP,
     };
@@ -9433,7 +9435,7 @@ function createBindingOp(target, kind, name, expression, unit, securityContext, 
 /**
  * Create a `PropertyOp`.
  */
-function createPropertyOp(target, name, expression, isAnimationTrigger, securityContext, isStructuralTemplate, i18nContext, sourceSpan) {
+function createPropertyOp(target, name, expression, isAnimationTrigger, securityContext, isStructuralTemplateAttribute, templateKind, i18nContext, i18nMessage, sourceSpan) {
     return {
         kind: OpKind.Property,
         target,
@@ -9442,8 +9444,10 @@ function createPropertyOp(target, name, expression, isAnimationTrigger, security
         isAnimationTrigger,
         securityContext,
         sanitizer: null,
-        isStructuralTemplate,
+        isStructuralTemplateAttribute,
+        templateKind,
         i18nContext,
+        i18nMessage,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
@@ -9508,7 +9512,7 @@ function createClassMapOp(xref, expression, sourceSpan) {
 /**
  * Create an `AttributeOp`.
  */
-function createAttributeOp(target, name, expression, securityContext, isTextAttribute, isStructuralTemplate, i18nContext, sourceSpan) {
+function createAttributeOp(target, name, expression, securityContext, isTextAttribute, isStructuralTemplateAttribute, templateKind, i18nMessage, sourceSpan) {
     return {
         kind: OpKind.Attribute,
         target,
@@ -9517,8 +9521,10 @@ function createAttributeOp(target, name, expression, securityContext, isTextAttr
         securityContext,
         sanitizer: null,
         isTextAttribute,
-        isStructuralTemplate,
-        i18nContext,
+        isStructuralTemplateAttribute,
+        templateKind,
+        i18nContext: null,
+        i18nMessage,
         sourceSpan,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
         ...TRAIT_CONSUMES_VARS,
@@ -10971,7 +10977,7 @@ function createProjectionOp(xref, selector, i18nPlaceholder, attributes, sourceS
 /**
  * Create an `ExtractedAttributeOp`.
  */
-function createExtractedAttributeOp(target, bindingKind, name, expression, i18nContext) {
+function createExtractedAttributeOp(target, bindingKind, name, expression, i18nContext, i18nMessage) {
     return {
         kind: OpKind.ExtractedAttribute,
         target,
@@ -10979,6 +10985,7 @@ function createExtractedAttributeOp(target, bindingKind, name, expression, i18nC
         name,
         expression,
         i18nContext,
+        i18nMessage,
         ...NEW_OP,
     };
 }
@@ -11407,67 +11414,51 @@ function needsApplication(i18nContexts, op) {
  * after the last update instruction that depends on that slot.
  */
 function assignI18nSlotDependencies(job) {
-    const i18nLastSlotConsumers = new Map();
-    let lastSlotConsumer = null;
-    let currentI18nOp = null;
     for (const unit of job.units) {
-        // Record the last consumed slot before each i18n end instruction.
-        for (const op of unit.create) {
-            if (hasConsumesSlotTrait(op)) {
-                lastSlotConsumer = op.xref;
+        // The first update op.
+        let updateOp = unit.update.head;
+        // I18n expressions currently being moved during the iteration.
+        let i18nExpressionsInProgress = [];
+        // Non-null  while we are iterating through an i18nStart/i18nEnd pair
+        let state = null;
+        for (const createOp of unit.create) {
+            if (createOp.kind === OpKind.I18nStart) {
+                state = {
+                    blockXref: createOp.xref,
+                    lastSlotConsumer: createOp.xref,
+                };
             }
-            switch (op.kind) {
-                case OpKind.I18nStart:
-                    currentI18nOp = op;
-                    break;
-                case OpKind.I18nEnd:
-                    if (currentI18nOp === null) {
-                        throw new Error('AssertionError: Expected an active I18n block while calculating last slot consumers');
-                    }
-                    if (lastSlotConsumer === null) {
-                        throw new Error('AssertionError: Expected a last slot consumer while calculating last slot consumers');
-                    }
-                    i18nLastSlotConsumers.set(currentI18nOp.xref, lastSlotConsumer);
-                    currentI18nOp = null;
-                    break;
-            }
-        }
-        // Expresions that are currently being moved.
-        let opsToMove = [];
-        // Previously we found the last slot-consuming create mode op in the i18n block. That op will be
-        // the new target for any moved i18n expresion inside the i18n block, and that op's slot is
-        // stored here.
-        let moveAfterTarget = null;
-        // This is the last target in the create IR that we saw during iteration. Eventally, it will be
-        // equal to moveAfterTarget. But wait! We need to find the *last* such op whose target is equal
-        // to `moveAfterTarget`.
-        let previousTarget = null;
-        for (const op of unit.update) {
-            if (hasDependsOnSlotContextTrait(op)) {
-                // We've found an op that depends on another slot other than the one that we want to move
-                // the expressions to, after previously having seen the one we want to move to.
-                if (moveAfterTarget !== null && previousTarget === moveAfterTarget &&
-                    op.target !== previousTarget) {
-                    OpList.insertBefore(opsToMove, op);
-                    moveAfterTarget = null;
-                    opsToMove = [];
+            else if (createOp.kind === OpKind.I18nEnd) {
+                for (const op of i18nExpressionsInProgress) {
+                    op.target = state.lastSlotConsumer;
+                    OpList.insertBefore(op, updateOp);
                 }
-                previousTarget = op.target;
+                i18nExpressionsInProgress.length = 0;
+                state = null;
             }
-            if (op.kind === OpKind.I18nExpression && op.usage === I18nExpressionFor.I18nText) {
-                // This is an I18nExpressionOps that is used for text (not attributes).
-                OpList.remove(op);
-                opsToMove.push(op);
-                const target = i18nLastSlotConsumers.get(op.i18nOwner);
-                if (target === undefined) {
-                    throw new Error('AssertionError: Expected to find a last slot consumer for an I18nExpressionOp');
+            if (hasConsumesSlotTrait(createOp)) {
+                if (state !== null) {
+                    state.lastSlotConsumer = createOp.xref;
                 }
-                op.target = target;
-                moveAfterTarget = op.target;
+                while (true) {
+                    if (updateOp.next === null) {
+                        break;
+                    }
+                    if (state !== null && updateOp.kind === OpKind.I18nExpression &&
+                        updateOp.usage === I18nExpressionFor.I18nText &&
+                        updateOp.i18nOwner === state.blockXref) {
+                        const opToRemove = updateOp;
+                        updateOp = updateOp.next;
+                        OpList.remove(opToRemove);
+                        i18nExpressionsInProgress.push(opToRemove);
+                        continue;
+                    }
+                    if (hasDependsOnSlotContextTrait(updateOp) && updateOp.target !== createOp.xref) {
+                        break;
+                    }
+                    updateOp = updateOp.next;
+                }
             }
-        }
-        if (moveAfterTarget !== null) {
-            unit.update.push(opsToMove);
         }
     }
 }
@@ -11501,19 +11492,21 @@ function extractAttributes(job) {
                 case OpKind.Property:
                     if (!op.isAnimationTrigger) {
                         let bindingKind;
-                        if (op.i18nContext !== null) {
+                        if (op.i18nMessage !== null && op.templateKind === null) {
                             // If the binding has an i18n context, it is an i18n attribute, and should have that
                             // kind in the consts array.
                             bindingKind = BindingKind.I18n;
                         }
-                        else if (op.isStructuralTemplate) {
+                        else if (op.isStructuralTemplateAttribute) {
                             // TODO: How do i18n attributes on templates work?!
                             bindingKind = BindingKind.Template;
                         }
                         else {
                             bindingKind = BindingKind.Property;
                         }
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, bindingKind, op.name, null, null), lookupElement$2(elements, op.target));
+                        OpList.insertBefore(
+                        // Deliberaly null i18nMessage value
+                        createExtractedAttributeOp(op.target, bindingKind, op.name, null, null, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.StyleProp:
@@ -11524,12 +11517,12 @@ function extractAttributes(job) {
                     // mode.
                     if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
                         op.expression instanceof EmptyExpr) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null), lookupElement$2(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null, null), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
                     if (!op.isAnimationListener) {
-                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null);
+                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null, null);
                         if (job.kind === CompilationJobKind.Host) {
                             // This attribute will apply to the enclosing host binding compilation unit, so order
                             // doesn't matter.
@@ -11578,7 +11571,7 @@ function extractAttributeOp(unit, op, elements) {
         }
     }
     if (extractable) {
-        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isStructuralTemplate ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression, op.i18nContext);
+        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isStructuralTemplateAttribute ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression, op.i18nContext, op.i18nMessage);
         if (unit.job.kind === CompilationJobKind.Host) {
             // This attribute will apply to the enclosing host binding compilation unit, so order doesn't
             // matter.
@@ -11625,7 +11618,7 @@ function specializeBindings(job) {
                         target.nonBindable = true;
                     }
                     else {
-                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTextAttribute, op.isStructuralTemplate, op.i18nContext, op.sourceSpan));
+                        OpList.replace(op, createAttributeOp(op.target, op.name, op.expression, op.securityContext, op.isTextAttribute, op.isStructuralTemplateAttribute, op.templateKind, op.i18nMessage, op.sourceSpan));
                     }
                     break;
                 case BindingKind.Property:
@@ -11634,7 +11627,7 @@ function specializeBindings(job) {
                         OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.i18nContext, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isStructuralTemplate, op.i18nContext, op.sourceSpan));
+                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
                     }
                     break;
                 case BindingKind.I18n:
@@ -11942,6 +11935,7 @@ class ElementAttributes {
             return;
         }
         this.known.add(name);
+        // TODO: Can this be its own phase
         if (name === 'ngProjectAs') {
             if (value === null || !(value instanceof LiteralExpr) || (value.value == null) ||
                 (typeof value.value?.toString() !== 'string')) {
@@ -12101,6 +12095,9 @@ function createI18nContexts(job) {
     const rootContexts = new Map();
     let currentI18nOp = null;
     let xref;
+    // We use the message instead of the message ID, because placeholder values might differ even
+    // when IDs are the same.
+    const messageToContext = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
@@ -12135,6 +12132,25 @@ function createI18nContexts(job) {
                         // the only localizable content inside of it.
                         op.context = currentI18nOp.context;
                     }
+                    break;
+            }
+        }
+        for (const op of unit.ops()) {
+            switch (op.kind) {
+                case OpKind.Binding:
+                case OpKind.Property:
+                case OpKind.Attribute:
+                case OpKind.ExtractedAttribute:
+                    if (!op.i18nMessage) {
+                        continue;
+                    }
+                    if (!messageToContext.has(op.i18nMessage)) {
+                        // create the context
+                        const i18nContext = job.allocateXrefId();
+                        unit.create.push(createI18nContextOp(I18nContextKind.Attr, i18nContext, null, op.i18nMessage, null));
+                        messageToContext.set(op.i18nMessage, i18nContext);
+                    }
+                    op.i18nContext = messageToContext.get(op.i18nMessage);
                     break;
             }
         }
@@ -19954,7 +19970,7 @@ const ESCAPE = '\uFFFD';
 function collectI18nConsts(job) {
     const fileBasedI18nSuffix = job.relativeContextFilePath.replace(/[^A-Za-z0-9]/g, '_').toUpperCase() + '_';
     // Step One: Build up various lookup maps we need to collect all the consts.
-    // Context Xref -> Extracted Attribute Op
+    // Context Xref -> Extracted Attribute Ops
     const extractedAttributesByI18nContext = new Map();
     // Element/ElementStart Xref -> I18n Attributes config op
     const i18nAttributesByElement = new Map();
@@ -19965,7 +19981,9 @@ function collectI18nConsts(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             if (op.kind === OpKind.ExtractedAttribute && op.i18nContext !== null) {
-                extractedAttributesByI18nContext.set(op.i18nContext, op);
+                const attributes = extractedAttributesByI18nContext.get(op.i18nContext) ?? [];
+                attributes.push(op);
+                extractedAttributesByI18nContext.set(op.i18nContext, attributes);
             }
             else if (op.kind === OpKind.I18nAttributes) {
                 i18nAttributesByElement.set(op.target, op);
@@ -20010,9 +20028,11 @@ function collectI18nConsts(job) {
                         i18nValuesByContext.set(op.i18nContext, mainVar);
                         // This i18n message may correspond to an individual extracted attribute. If so, The
                         // value of that attribute is updated to read the extracted i18n variable.
-                        const attributeForMessage = extractedAttributesByI18nContext.get(op.i18nContext);
-                        if (attributeForMessage !== undefined) {
-                            attributeForMessage.expression = mainVar;
+                        const attributesForMessage = extractedAttributesByI18nContext.get(op.i18nContext);
+                        if (attributesForMessage !== undefined) {
+                            for (const attr of attributesForMessage) {
+                                attr.expression = mainVar.clone();
+                            }
                         }
                     }
                 }
@@ -20800,14 +20820,14 @@ function parseExtractedStyles(job) {
                 if (op.name === 'style') {
                     const parsedStyles = parse(op.expression.value);
                     for (let i = 0; i < parsedStyles.length - 1; i += 2) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]), null), op);
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]), null, null), op);
                     }
                     OpList.remove(op);
                 }
                 else if (op.name === 'class') {
                     const parsedClasses = op.expression.value.trim().split(/\s+/g);
                     for (const parsedClass of parsedClasses) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null, null), op);
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null, null, null), op);
                     }
                     OpList.remove(op);
                 }
@@ -23587,10 +23607,10 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: emitNamespaceChanges },
     { kind: CompilationJobKind.Tmpl, fn: propagateI18nBlocks },
     { kind: CompilationJobKind.Tmpl, fn: wrapI18nIcus },
-    { kind: CompilationJobKind.Tmpl, fn: createI18nContexts },
     { kind: CompilationJobKind.Both, fn: specializeStyleBindings },
     { kind: CompilationJobKind.Both, fn: specializeBindings },
     { kind: CompilationJobKind.Both, fn: extractAttributes },
+    { kind: CompilationJobKind.Tmpl, fn: createI18nContexts },
     { kind: CompilationJobKind.Both, fn: parseExtractedStyles },
     { kind: CompilationJobKind.Tmpl, fn: removeEmptyBindings },
     { kind: CompilationJobKind.Both, fn: collapseSingletonInterpolations },
@@ -23800,10 +23820,10 @@ function ingestHostProperty(job, property, isTextAttribute) {
         bindingKind = BindingKind.Animation;
     }
     job.root.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
-        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, /* TODO: How do Host bindings handle i18n attrs? */ null, property.sourceSpan));
+        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, null, /* TODO: How do Host bindings handle i18n attrs? */ null, property.sourceSpan));
 }
 function ingestHostAttribute(job, name, value) {
-    const attrBinding = createBindingOp(job.root.xref, BindingKind.Attribute, name, value, null, SecurityContext.NONE, true, false, 
+    const attrBinding = createBindingOp(job.root.xref, BindingKind.Attribute, name, value, null, SecurityContext.NONE, true, false, null, 
     /* TODO */ null, 
     /* TODO: host attribute source spans */ null);
     job.root.update.push(attrBinding);
@@ -23866,8 +23886,14 @@ function ingestElement(unit, element) {
     const [namespaceKey, elementName] = splitNsName(element.name);
     const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.i18n instanceof TagPlaceholder ? element.i18n : undefined, element.startSourceSpan);
     unit.create.push(startOp);
-    ingestBindings(unit, startOp, element);
+    ingestBindings(unit, startOp, element, null);
     ingestReferences(startOp, element);
+    // Start i18n, if needed, goes after the element create and bindings, but before the nodes
+    let i18nBlockId = null;
+    if (element.i18n instanceof Message) {
+        i18nBlockId = unit.job.allocateXrefId();
+        unit.create.push(createI18nStartOp(i18nBlockId, element.i18n));
+    }
     ingestNodes(unit, element.children);
     // The source span for the end op is typically the element closing tag. However, if no closing tag
     // exists, such as in `<input>`, we use the start source span instead. Usually the start and end
@@ -23877,9 +23903,7 @@ function ingestElement(unit, element) {
     const endOp = createElementEndOp(id, element.endSourceSpan ?? element.startSourceSpan);
     unit.create.push(endOp);
     // If there is an i18n message associated with this element, insert i18n start and end ops.
-    if (element.i18n instanceof Message) {
-        const i18nBlockId = unit.job.allocateXrefId();
-        OpList.insertAfter(createI18nStartOp(i18nBlockId, element.i18n), startOp);
+    if (i18nBlockId !== null) {
         OpList.insertBefore(createI18nEndOp(i18nBlockId), endOp);
     }
 }
@@ -23905,7 +23929,7 @@ function ingestTemplate(unit, tmpl) {
     const templateKind = isPlainTemplate(tmpl) ? TemplateKind.NgTemplate : TemplateKind.Structural;
     const templateOp = createTemplateOp(childView.xref, templateKind, tagNameWithoutNamespace, functionNameSuffix, namespace, i18nPlaceholder, tmpl.startSourceSpan);
     unit.create.push(templateOp);
-    ingestBindings(unit, templateOp, tmpl);
+    ingestBindings(unit, templateOp, tmpl, templateKind);
     ingestReferences(templateOp, tmpl);
     ingestNodes(childView, tmpl.children);
     for (const { name, value } of tmpl.variables) {
@@ -23930,7 +23954,7 @@ function ingestContent(unit, content) {
     const attrs = content.attributes.flatMap(a => [a.name, a.value]);
     const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, attrs, content.sourceSpan);
     for (const attr of content.attributes) {
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue, attr.i18n);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue, null, attr.i18n);
     }
     unit.create.push(op);
 }
@@ -24341,22 +24365,22 @@ function isPlainTemplate(tmpl) {
  * Process all of the bindings on an element-like structure in the template AST and convert them
  * to their IR representation.
  */
-function ingestBindings(unit, op, element) {
+function ingestBindings(unit, op, element, templateKind) {
     let flags = BindingFlags.None;
     let hasI18nAttributes = false;
     if (element instanceof Template) {
         flags |= BindingFlags.OnNgTemplateElement;
-        if (element instanceof Template && isPlainTemplate(element)) {
+        if (isPlainTemplate(element)) {
             flags |= BindingFlags.BindingTargetsTemplate;
         }
         const templateAttrFlags = flags | BindingFlags.BindingTargetsTemplate | BindingFlags.IsStructuralTemplateAttribute;
         for (const attr of element.templateAttrs) {
             if (attr instanceof TextAttribute) {
-                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, templateAttrFlags | BindingFlags.TextValue, attr.i18n);
+                ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, templateAttrFlags | BindingFlags.TextValue, templateKind, attr.i18n);
                 hasI18nAttributes ||= attr.i18n !== undefined;
             }
             else {
-                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, templateAttrFlags, attr.i18n);
+                ingestBinding(unit, op.xref, attr.name, attr.value, attr.type, attr.unit, attr.securityContext, attr.sourceSpan, templateAttrFlags, templateKind, attr.i18n);
                 hasI18nAttributes ||= attr.i18n !== undefined;
             }
         }
@@ -24365,11 +24389,11 @@ function ingestBindings(unit, op, element) {
         // This is only attribute TextLiteral bindings, such as `attr.foo="bar"`. This can never be
         // `[attr.foo]="bar"` or `attr.foo="{{bar}}"`, both of which will be handled as inputs with
         // `BindingType.Attribute`.
-        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, flags | BindingFlags.TextValue, attr.i18n);
+        ingestBinding(unit, op.xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, flags | BindingFlags.TextValue, templateKind, attr.i18n);
         hasI18nAttributes ||= attr.i18n !== undefined;
     }
     for (const input of element.inputs) {
-        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, flags, input.i18n);
+        ingestBinding(unit, op.xref, input.name, input.value, input.type, input.unit, input.securityContext, input.sourceSpan, flags, templateKind, input.i18n);
         hasI18nAttributes ||= input.i18n !== undefined;
     }
     for (const output of element.outputs) {
@@ -24380,7 +24404,7 @@ function ingestBindings(unit, op, element) {
             }
         }
         if (element instanceof Template && !isPlainTemplate(element)) {
-            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null, null));
+            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null, null, null));
             continue;
         }
         listenerOp = createListenerOp(op.xref, op.handle, output.name, op.tag, output.phase, false, output.sourceSpan);
@@ -24441,23 +24465,18 @@ var BindingFlags;
      */
     BindingFlags[BindingFlags["OnNgTemplateElement"] = 8] = "OnNgTemplateElement";
 })(BindingFlags || (BindingFlags = {}));
-function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, flags, i18nMeta) {
+function ingestBinding(view, xref, name, value, type, unit, securityContext, sourceSpan, flags, templateKind, i18nMeta) {
     if (value instanceof ASTWithSource) {
         value = value.ast;
     }
-    let i18nContext = null;
-    if (i18nMeta !== undefined) {
-        if (!(i18nMeta instanceof Message)) {
-            throw Error(`Unhandled i18n metadata type for binding: ${i18nMeta.constructor.name}`);
-        }
-        i18nContext = view.job.allocateXrefId();
-        view.create.push(createI18nContextOp(I18nContextKind.Attr, i18nContext, null, i18nMeta, null));
+    if (i18nMeta !== undefined && !(i18nMeta instanceof Message)) {
+        throw Error(`Unhandled i18n metadata type for binding: ${i18nMeta.constructor.name}`);
     }
     if (flags & BindingFlags.OnNgTemplateElement && !(flags & BindingFlags.BindingTargetsTemplate) &&
         type === 0 /* e.BindingType.Property */) {
         // This binding only exists for later const extraction, and is not an actual binding to be
         // created.
-        view.create.push(createExtractedAttributeOp(xref, BindingKind.Property, name, null, i18nContext));
+        view.create.push(createExtractedAttributeOp(xref, BindingKind.Property, name, null, null, i18nMeta ?? null));
         return;
     }
     let expression;
@@ -24476,8 +24495,13 @@ function ingestBinding(view, xref, name, value, type, unit, securityContext, sou
     else {
         expression = value;
     }
+    if (type === 1 /* e.BindingType.Attribute */ && !(flags & BindingFlags.TextValue) &&
+        templateKind === TemplateKind.Structural) {
+        // TODO: big comment about why this is stupid.
+        return;
+    }
     const kind = BINDING_KINDS.get(type);
-    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, !!(flags & BindingFlags.TextValue), !!(flags & BindingFlags.IsStructuralTemplateAttribute), i18nContext, sourceSpan));
+    view.update.push(createBindingOp(xref, kind, name, expression, unit, securityContext, !!(flags & BindingFlags.TextValue), !!(flags & BindingFlags.IsStructuralTemplateAttribute), templateKind, i18nMeta ?? null, sourceSpan));
 }
 /**
  * Process all of the local references on an element-like structure in the template AST and
@@ -24565,7 +24589,7 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
     // and they can be used in directive matching (in the case of `Template.templateAttrs`).
     if (root !== null) {
         for (const attr of root.attributes) {
-            ingestBinding(unit, xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue, attr.i18n);
+            ingestBinding(unit, xref, attr.name, literal(attr.value), 1 /* e.BindingType.Attribute */, null, SecurityContext.NONE, attr.sourceSpan, BindingFlags.TextValue, TemplateKind.Block, attr.i18n);
         }
         const tagName = root instanceof Element$1 ? root.name : root.tagName;
         // Don't pass along `ng-template` tag name since it enables directive matching.
@@ -31755,7 +31779,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.3+sha-42f4f70');
+const VERSION = new Version('17.1.0-next.3+sha-44c2c26');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33321,7 +33345,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33429,7 +33453,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33706,7 +33730,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33741,7 +33765,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33792,7 +33816,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33825,7 +33849,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33876,7 +33900,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-42f4f70'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44c2c26'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
