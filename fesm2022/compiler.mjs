@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-44f9f01
+ * @license Angular v17.1.0-next.3+sha-63fd649
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10280,7 +10280,6 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.ClassProp:
         case OpKind.ClassMap:
         case OpKind.Binding:
-        case OpKind.HostProperty:
             if (op.expression instanceof Interpolation) {
                 transformExpressionsInInterpolation(op.expression, transform, flags);
             }
@@ -10289,6 +10288,7 @@ function transformExpressionsInOp(op, transform, flags) {
             }
             break;
         case OpKind.Property:
+        case OpKind.HostProperty:
         case OpKind.Attribute:
             if (op.expression instanceof Interpolation) {
                 transformExpressionsInInterpolation(op.expression, transform, flags);
@@ -11115,13 +11115,15 @@ function literalOrArrayLiteral$1(value) {
     return literal(value, INFERRED_TYPE);
 }
 
-function createHostPropertyOp(name, expression, isAnimationTrigger, i18nContext, sourceSpan) {
+function createHostPropertyOp(name, expression, isAnimationTrigger, i18nContext, securityContext, sourceSpan) {
     return {
         kind: OpKind.HostProperty,
         name,
         expression,
         isAnimationTrigger,
         i18nContext,
+        securityContext,
+        sanitizer: null,
         sourceSpan,
         ...TRAIT_CONSUMES_VARS,
         ...NEW_OP,
@@ -11615,7 +11617,7 @@ function specializeBindings(job) {
                 case BindingKind.Property:
                 case BindingKind.Animation:
                     if (job.kind === CompilationJobKind.Host) {
-                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.i18nContext, op.sourceSpan));
+                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.i18nContext, op.securityContext, op.sourceSpan));
                     }
                     else {
                         OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
@@ -21465,8 +21467,12 @@ function classMapInterpolate(strings, expressions, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     return callVariadicInstruction(CLASS_MAP_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
 }
-function hostProperty(name, expression, sourceSpan) {
-    return call(Identifiers.hostProperty, [literal(name), expression], sourceSpan);
+function hostProperty(name, expression, sanitizer, sourceSpan) {
+    const args = [literal(name), expression];
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    return call(Identifiers.hostProperty, args, sourceSpan);
 }
 function syntheticHostProperty(name, expression, sourceSpan) {
     return call(Identifiers.syntheticHostProperty, [literal(name), expression], sourceSpan);
@@ -21924,7 +21930,7 @@ function reifyUpdateOperations(_unit, ops) {
                         OpList.replace(op, syntheticHostProperty(op.name, op.expression, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, hostProperty(op.name, op.expression, op.sourceSpan));
+                        OpList.replace(op, hostProperty(op.name, op.expression, op.sanitizer, op.sourceSpan));
                     }
                 }
                 break;
@@ -22691,28 +22697,60 @@ const trustedValueFns = new Map([
 function resolveSanitizers(job) {
     for (const unit of job.units) {
         const elements = createOpXrefMap(unit);
-        for (const op of unit.create) {
-            if (op.kind === OpKind.ExtractedAttribute) {
-                const trustedValueFn = trustedValueFns.get(op.securityContext) ?? null;
-                op.trustedValueFn = trustedValueFn !== null ? importExpr(trustedValueFn) : null;
+        // For normal element bindings we create trusted values for security sensitive constant
+        // attributes. However, for host bindings we skip this step (this matches what
+        // TemplateDefinitionBuilder does).
+        // TODO: Is the TDB behavior correct here?
+        if (job.kind !== CompilationJobKind.Host) {
+            for (const op of unit.create) {
+                if (op.kind === OpKind.ExtractedAttribute) {
+                    const trustedValueFn = trustedValueFns.get(getOnlySecurityContext(op.securityContext)) ?? null;
+                    op.trustedValueFn = trustedValueFn !== null ? importExpr(trustedValueFn) : null;
+                }
             }
         }
         for (const op of unit.update) {
             switch (op.kind) {
                 case OpKind.Property:
                 case OpKind.Attribute:
-                    const sanitizerFn = sanitizerFns.get(op.securityContext) ?? null;
+                case OpKind.HostProperty:
+                    let sanitizerFn = null;
+                    if (Array.isArray(op.securityContext) && op.securityContext.length === 2 &&
+                        op.securityContext.indexOf(SecurityContext.URL) > -1 &&
+                        op.securityContext.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+                        // When the host element isn't known, some URL attributes (such as "src" and "href") may
+                        // be part of multiple different security contexts. In this case we use special
+                        // sanitization function and select the actual sanitizer at runtime based on a tag name
+                        // that is provided while invoking sanitization function.
+                        sanitizerFn = Identifiers.sanitizeUrlOrResourceUrl;
+                    }
+                    else {
+                        sanitizerFn = sanitizerFns.get(getOnlySecurityContext(op.securityContext)) ?? null;
+                    }
                     op.sanitizer = sanitizerFn !== null ? importExpr(sanitizerFn) : null;
                     // If there was no sanitization function found based on the security context of an
                     // attribute/property, check whether this attribute/property is one of the
                     // security-sensitive <iframe> attributes (and that the current element is actually an
                     // <iframe>).
                     if (op.sanitizer === null) {
-                        const ownerOp = elements.get(op.target);
-                        if (ownerOp === undefined || !isElementOrContainerOp(ownerOp)) {
-                            throw Error('Property should have an element-like owner');
+                        let isIframe = false;
+                        if (job.kind === CompilationJobKind.Host || op.kind === OpKind.HostProperty) {
+                            // Note: for host bindings defined on a directive, we do not try to find all
+                            // possible places where it can be matched, so we can not determine whether
+                            // the host element is an <iframe>. In this case, we just assume it is and append a
+                            // validation function, which is invoked at runtime and would have access to the
+                            // underlying DOM element to check if it's an <iframe> and if so - run extra checks.
+                            isIframe = true;
                         }
-                        if (isIframeElement$1(ownerOp) && isIframeSecuritySensitiveAttr(op.name)) {
+                        else {
+                            // For a normal binding we can just check if the element its on is an iframe.
+                            const ownerOp = elements.get(op.target);
+                            if (ownerOp === undefined || !isElementOrContainerOp(ownerOp)) {
+                                throw Error('Property should have an element-like owner');
+                            }
+                            isIframe = isIframeElement$1(ownerOp);
+                        }
+                        if (isIframe && isIframeSecuritySensitiveAttr(op.name)) {
                             op.sanitizer = importExpr(Identifiers.validateIframeAttribute);
                         }
                     }
@@ -22726,6 +22764,22 @@ function resolveSanitizers(job) {
  */
 function isIframeElement$1(op) {
     return op.kind === OpKind.ElementStart && op.tag?.toLowerCase() === 'iframe';
+}
+/**
+ * Asserts that there is only a single security context and returns it.
+ */
+function getOnlySecurityContext(securityContext) {
+    if (Array.isArray(securityContext)) {
+        if (securityContext.length > 1) {
+            // TODO: What should we do here? TDB just took the first one, but this feels like something we
+            // would want to know about and create a special case for like we did for Url/ResourceUrl. My
+            // guess is that, outside of the Url/ResourceUrl case, this never actually happens. If there
+            // do turn out to be other cases, throwing an error until we can address it feels safer.
+            throw Error(`AssertionError: Ambiguous security context`);
+        }
+        return securityContext[0] || SecurityContext.NONE;
+    }
+    return securityContext;
 }
 
 /**
@@ -23707,7 +23761,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: resolveDeferTargetNames },
     { kind: CompilationJobKind.Tmpl, fn: optimizeTrackFns },
     { kind: CompilationJobKind.Both, fn: resolveContexts },
-    { kind: CompilationJobKind.Tmpl, fn: resolveSanitizers }, // TODO: run in both
+    { kind: CompilationJobKind.Both, fn: resolveSanitizers },
     { kind: CompilationJobKind.Tmpl, fn: liftLocalRefs },
     { kind: CompilationJobKind.Both, fn: generateNullishCoalesceExpressions },
     { kind: CompilationJobKind.Both, fn: expandSafeReads },
@@ -23861,13 +23915,27 @@ function ingestComponent(componentName, template, constantPool, relativeContextF
  * Process a host binding AST and convert it into a `HostBindingCompilationJob` in the intermediate
  * representation.
  */
-function ingestHostBinding(input, constantPool) {
+function ingestHostBinding(input, bindingParser, constantPool) {
     const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode);
     for (const property of input.properties ?? []) {
-        ingestHostProperty(job, property, false);
+        let bindingKind = BindingKind.Property;
+        // TODO: this should really be handled in the parser.
+        if (property.name.startsWith('attr.')) {
+            property.name = property.name.substring('attr.'.length);
+            bindingKind = BindingKind.Attribute;
+        }
+        if (property.isAnimation) {
+            bindingKind = BindingKind.Animation;
+        }
+        const securityContexts = bindingParser
+            .calcPossibleSecurityContexts(input.componentSelector, property.name, bindingKind === BindingKind.Attribute)
+            .filter(context => context !== SecurityContext.NONE);
+        ingestHostProperty(job, property, bindingKind, false, securityContexts);
     }
     for (const [name, expr] of Object.entries(input.attributes) ?? []) {
-        ingestHostAttribute(job, name, expr);
+        const securityContexts = bindingParser.calcPossibleSecurityContexts(input.componentSelector, name, true)
+            .filter(context => context !== SecurityContext.NONE);
+        ingestHostAttribute(job, name, expr, securityContexts);
     }
     for (const event of input.events ?? []) {
         ingestHostEvent(job, event);
@@ -23876,7 +23944,7 @@ function ingestHostBinding(input, constantPool) {
 }
 // TODO: We should refactor the parser to use the same types and structures for host bindings as
 // with ordinary components. This would allow us to share a lot more ingestion code.
-function ingestHostProperty(job, property, isTextAttribute) {
+function ingestHostProperty(job, property, bindingKind, isTextAttribute, securityContexts) {
     let expression;
     const ast = property.expression.ast;
     if (ast instanceof Interpolation$1) {
@@ -23885,20 +23953,10 @@ function ingestHostProperty(job, property, isTextAttribute) {
     else {
         expression = convertAst(ast, job, property.sourceSpan);
     }
-    let bindingKind = BindingKind.Property;
-    // TODO: this should really be handled in the parser.
-    if (property.name.startsWith('attr.')) {
-        property.name = property.name.substring('attr.'.length);
-        bindingKind = BindingKind.Attribute;
-    }
-    if (property.isAnimation) {
-        bindingKind = BindingKind.Animation;
-    }
-    job.root.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, SecurityContext
-        .NONE /* TODO: what should we pass as security context? Passing NONE for now. */, isTextAttribute, false, null, /* TODO: How do Host bindings handle i18n attrs? */ null, property.sourceSpan));
+    job.root.update.push(createBindingOp(job.root.xref, bindingKind, property.name, expression, null, securityContexts, isTextAttribute, false, null, /* TODO: How do Host bindings handle i18n attrs? */ null, property.sourceSpan));
 }
-function ingestHostAttribute(job, name, value) {
-    const attrBinding = createBindingOp(job.root.xref, BindingKind.Attribute, name, value, null, SecurityContext.NONE, true, false, null, 
+function ingestHostAttribute(job, name, value, securityContexts) {
+    const attrBinding = createBindingOp(job.root.xref, BindingKind.Attribute, name, value, null, securityContexts, true, false, null, 
     /* TODO */ null, 
     /* TODO: host attribute source spans */ null);
     job.root.update.push(attrBinding);
@@ -24547,7 +24605,7 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
         if (templateKind === TemplateKind.Structural &&
             output.type !== 1 /* e.ParsedEventType.Animation */) {
             // Animation bindings are excluded from the structural template's const array.
-            const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, output.name, true);
+            const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, output.name, false);
             unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null, null, null, securityContext));
         }
     }
@@ -30165,10 +30223,11 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
         }
         const hostJob = ingestHostBinding({
             componentName: name,
+            componentSelector: selector,
             properties: bindings,
             events: eventBindings,
             attributes: hostBindingsMetadata.attributes,
-        }, constantPool);
+        }, bindingParser, constantPool);
         transform(hostJob, CompilationJobKind.Host);
         definitionMap.set('hostAttrs', hostJob.root.attributes);
         const varCount = hostJob.root.vars;
@@ -31936,7 +31995,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.3+sha-44f9f01');
+const VERSION = new Version('17.1.0-next.3+sha-63fd649');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33502,7 +33561,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33610,7 +33669,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33887,7 +33946,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33922,7 +33981,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33973,7 +34032,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34006,7 +34065,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34057,7 +34116,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-63fd649'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
