@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-f9731ee
+ * @license Angular v17.1.0-next.3+sha-44f9f01
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9065,22 +9065,26 @@ var ExpressionKind;
      */
     ExpressionKind[ExpressionKind["SanitizerExpr"] = 20] = "SanitizerExpr";
     /**
+     * An expression representing a function to create trusted values.
+     */
+    ExpressionKind[ExpressionKind["TrustedValueFnExpr"] = 21] = "TrustedValueFnExpr";
+    /**
      * An expression that will cause a literal slot index to be emitted.
      */
-    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 21] = "SlotLiteralExpr";
+    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 22] = "SlotLiteralExpr";
     /**
      * A test expression for a conditional op.
      */
-    ExpressionKind[ExpressionKind["ConditionalCase"] = 22] = "ConditionalCase";
+    ExpressionKind[ExpressionKind["ConditionalCase"] = 23] = "ConditionalCase";
     /**
      * A variable for use inside a repeater, providing one of the ambiently-available context
      * properties ($even, $first, etc.).
      */
-    ExpressionKind[ExpressionKind["DerivedRepeaterVar"] = 23] = "DerivedRepeaterVar";
+    ExpressionKind[ExpressionKind["DerivedRepeaterVar"] = 24] = "DerivedRepeaterVar";
     /**
      * An expression that will be automatically extracted to the component const array.
      */
-    ExpressionKind[ExpressionKind["ConstCollected"] = 24] = "ConstCollected";
+    ExpressionKind[ExpressionKind["ConstCollected"] = 25] = "ConstCollected";
 })(ExpressionKind || (ExpressionKind = {}));
 var VariableFlags;
 (function (VariableFlags) {
@@ -9124,18 +9128,6 @@ var CompatibilityMode;
     CompatibilityMode[CompatibilityMode["Normal"] = 0] = "Normal";
     CompatibilityMode[CompatibilityMode["TemplateDefinitionBuilder"] = 1] = "TemplateDefinitionBuilder";
 })(CompatibilityMode || (CompatibilityMode = {}));
-/**
- * Represents functions used to sanitize different pieces of a template.
- */
-var SanitizerFn;
-(function (SanitizerFn) {
-    SanitizerFn[SanitizerFn["Html"] = 0] = "Html";
-    SanitizerFn[SanitizerFn["Script"] = 1] = "Script";
-    SanitizerFn[SanitizerFn["Style"] = 2] = "Style";
-    SanitizerFn[SanitizerFn["Url"] = 3] = "Url";
-    SanitizerFn[SanitizerFn["ResourceUrl"] = 4] = "ResourceUrl";
-    SanitizerFn[SanitizerFn["IframeAttribute"] = 5] = "IframeAttribute";
-})(SanitizerFn || (SanitizerFn = {}));
 /**
  * Enumeration of the different kinds of `@defer` secondary blocks.
  */
@@ -10158,24 +10150,6 @@ class ReadTemporaryExpr extends ExpressionBase {
         return r;
     }
 }
-class SanitizerExpr extends ExpressionBase {
-    constructor(fn) {
-        super();
-        this.fn = fn;
-        this.kind = ExpressionKind.SanitizerExpr;
-    }
-    visitExpression(visitor, context) { }
-    isEquivalent(e) {
-        return e instanceof SanitizerExpr && e.fn === this.fn;
-    }
-    isConstant() {
-        return true;
-    }
-    clone() {
-        return new SanitizerExpr(this.fn);
-    }
-    transformInternalExpressions() { }
-}
 class SlotLiteralExpr extends ExpressionBase {
     constructor(slot) {
         super();
@@ -10360,6 +10334,8 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.ExtractedAttribute:
             op.expression =
                 op.expression && transformExpressionsInExpression(op.expression, transform, flags);
+            op.trustedValueFn = op.trustedValueFn &&
+                transformExpressionsInExpression(op.trustedValueFn, transform, flags);
             break;
         case OpKind.RepeaterCreate:
             op.track = transformExpressionsInExpression(op.track, transform, flags);
@@ -10490,6 +10466,11 @@ function transformExpressionsInExpression(expr, transform, flags) {
     }
     else if (expr instanceof NotExpr) {
         expr.condition = transformExpressionsInExpression(expr.condition, transform, flags);
+    }
+    else if (expr instanceof TaggedTemplateExpr) {
+        expr.tag = transformExpressionsInExpression(expr.tag, transform, flags);
+        expr.template.expressions =
+            expr.template.expressions.map(e => transformExpressionsInExpression(e, transform, flags));
     }
     else if (expr instanceof ReadVarExpr || expr instanceof ExternalExpr ||
         expr instanceof LiteralExpr) {
@@ -10981,7 +10962,7 @@ function createProjectionOp(xref, selector, i18nPlaceholder, attributes, sourceS
 /**
  * Create an `ExtractedAttributeOp`.
  */
-function createExtractedAttributeOp(target, bindingKind, name, expression, i18nContext, i18nMessage) {
+function createExtractedAttributeOp(target, bindingKind, name, expression, i18nContext, i18nMessage, securityContext) {
     return {
         kind: OpKind.ExtractedAttribute,
         target,
@@ -10990,6 +10971,8 @@ function createExtractedAttributeOp(target, bindingKind, name, expression, i18nC
         expression,
         i18nContext,
         i18nMessage,
+        securityContext,
+        trustedValueFn: null,
         ...NEW_OP,
     };
 }
@@ -11509,7 +11492,8 @@ function extractAttributes(job) {
                         }
                         OpList.insertBefore(
                         // Deliberaly null i18nMessage value
-                        createExtractedAttributeOp(op.target, bindingKind, op.name, null, null, null), lookupElement$2(elements, op.target));
+                        createExtractedAttributeOp(op.target, bindingKind, op.name, /* expression */ null, /* i18nContext */ null, 
+                        /* i18nMessage */ null, op.securityContext), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.StyleProp:
@@ -11520,12 +11504,16 @@ function extractAttributes(job) {
                     // mode.
                     if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
                         op.expression instanceof EmptyExpr) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null, null), lookupElement$2(elements, op.target));
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, op.name, /* expression */ null, 
+                        /* i18nContext */ null, 
+                        /* i18nMessage */ null, SecurityContext.STYLE), lookupElement$2(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
                     if (!op.isAnimationListener) {
-                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, null, null, null);
+                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, op.name, /* expression */ null, 
+                        /* i18nContext */ null, 
+                        /* i18nMessage */ null, SecurityContext.NONE);
                         if (job.kind === CompilationJobKind.Host) {
                             // This attribute will apply to the enclosing host binding compilation unit, so order
                             // doesn't matter.
@@ -11574,7 +11562,7 @@ function extractAttributeOp(unit, op, elements) {
         }
     }
     if (extractable) {
-        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isStructuralTemplateAttribute ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression, op.i18nContext, op.i18nMessage);
+        const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isStructuralTemplateAttribute ? BindingKind.Template : BindingKind.Attribute, op.name, op.expression, op.i18nContext, op.i18nMessage, op.securityContext);
         if (unit.job.kind === CompilationJobKind.Host) {
             // This attribute will apply to the enclosing host binding compilation unit, so order doesn't
             // matter.
@@ -11867,7 +11855,7 @@ function collectElementConsts(job) {
             if (op.kind === OpKind.ExtractedAttribute) {
                 const attributes = allElementAttributes.get(op.target) || new ElementAttributes();
                 allElementAttributes.set(op.target, attributes);
-                attributes.add(op.bindingKind, op.name, op.expression);
+                attributes.add(op.bindingKind, op.name, op.expression, op.trustedValueFn);
                 OpList.remove(op);
             }
         }
@@ -11933,7 +11921,7 @@ class ElementAttributes {
     get i18n() {
         return this.byKind.get(BindingKind.I18n) ?? FLYWEIGHT_ARRAY;
     }
-    add(kind, name, value) {
+    add(kind, name, value, trustedValueFn) {
         if (this.known.has(name)) {
             return;
         }
@@ -11954,7 +11942,15 @@ class ElementAttributes {
             if (value === null) {
                 throw Error('Attribute, i18n attribute, & style element attributes must have a value');
             }
-            array.push(value);
+            if (trustedValueFn !== null) {
+                if (!isStringLiteral(value)) {
+                    throw Error('AssertionError: extracted attribute value should be string literal');
+                }
+                array.push(taggedTemplate(trustedValueFn, new TemplateLiteral([new TemplateLiteralElement(value.value)], []), undefined, value.sourceSpan));
+            }
+            else {
+                array.push(value);
+            }
         }
     }
     arrayFor(kind) {
@@ -20829,14 +20825,14 @@ function parseExtractedStyles(job) {
                 if (op.name === 'style') {
                     const parsedStyles = parse(op.expression.value);
                     for (let i = 0; i < parsedStyles.length - 1; i += 2) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]), null, null), op);
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.StyleProperty, parsedStyles[i], literal(parsedStyles[i + 1]), null, null, SecurityContext.STYLE), op);
                     }
                     OpList.remove(op);
                 }
                 else if (op.name === 'class') {
                     const parsedClasses = op.expression.value.trim().split(/\s+/g);
                     for (const parsedClass of parsedClasses) {
-                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null, null, null), op);
+                        OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.ClassName, parsedClass, null, null, null, SecurityContext.NONE), op);
                     }
                     OpList.remove(op);
                 }
@@ -21688,16 +21684,6 @@ function callVariadicInstruction(config, baseArgs, interpolationArgs, extraArgs,
 }
 
 /**
- * Map of sanitizers to their identifier.
- */
-const sanitizerIdentifierMap = new Map([
-    [SanitizerFn.Html, Identifiers.sanitizeHtml],
-    [SanitizerFn.IframeAttribute, Identifiers.validateIframeAttribute],
-    [SanitizerFn.ResourceUrl, Identifiers.sanitizeResourceUrl],
-    [SanitizerFn.Script, Identifiers.sanitizeScript],
-    [SanitizerFn.Style, Identifiers.sanitizeStyle], [SanitizerFn.Url, Identifiers.sanitizeUrl]
-]);
-/**
  * Compiles semantic operations across all views and generates output `o.Statement`s with actual
  * runtime calls in their place.
  *
@@ -22017,8 +22003,6 @@ function reifyIrExpression(expr) {
             return pipeBind(expr.targetSlot.slot, expr.varOffset, expr.args);
         case ExpressionKind.PipeBindingVariadic:
             return pipeBindV(expr.targetSlot.slot, expr.varOffset, expr.args);
-        case ExpressionKind.SanitizerExpr:
-            return importExpr(sanitizerIdentifierMap.get(expr.fn));
         case ExpressionKind.SlotLiteralExpr:
             return literal(expr.slot.slot);
         default:
@@ -22686,12 +22670,20 @@ function processLexicalScope(unit, ops, savedView) {
 }
 
 /**
- * Mapping of security contexts to sanitizer function for that context.
+ * Map of security contexts to their sanitizer function.
  */
-const sanitizers = new Map([
-    [SecurityContext.HTML, SanitizerFn.Html], [SecurityContext.SCRIPT, SanitizerFn.Script],
-    [SecurityContext.STYLE, SanitizerFn.Style], [SecurityContext.URL, SanitizerFn.Url],
-    [SecurityContext.RESOURCE_URL, SanitizerFn.ResourceUrl]
+const sanitizerFns = new Map([
+    [SecurityContext.HTML, Identifiers.sanitizeHtml],
+    [SecurityContext.RESOURCE_URL, Identifiers.sanitizeResourceUrl],
+    [SecurityContext.SCRIPT, Identifiers.sanitizeScript],
+    [SecurityContext.STYLE, Identifiers.sanitizeStyle], [SecurityContext.URL, Identifiers.sanitizeUrl]
+]);
+/**
+ * Map of security contexts to their trusted value function.
+ */
+const trustedValueFns = new Map([
+    [SecurityContext.HTML, Identifiers.trustConstantHtml],
+    [SecurityContext.RESOURCE_URL, Identifiers.trustConstantResourceUrl],
 ]);
 /**
  * Resolves sanitization functions for ops that need them.
@@ -22699,13 +22691,18 @@ const sanitizers = new Map([
 function resolveSanitizers(job) {
     for (const unit of job.units) {
         const elements = createOpXrefMap(unit);
-        let sanitizerFn;
+        for (const op of unit.create) {
+            if (op.kind === OpKind.ExtractedAttribute) {
+                const trustedValueFn = trustedValueFns.get(op.securityContext) ?? null;
+                op.trustedValueFn = trustedValueFn !== null ? importExpr(trustedValueFn) : null;
+            }
+        }
         for (const op of unit.update) {
             switch (op.kind) {
                 case OpKind.Property:
                 case OpKind.Attribute:
-                    sanitizerFn = sanitizers.get(op.securityContext) || null;
-                    op.sanitizer = sanitizerFn ? new SanitizerExpr(sanitizerFn) : null;
+                    const sanitizerFn = sanitizerFns.get(op.securityContext) ?? null;
+                    op.sanitizer = sanitizerFn !== null ? importExpr(sanitizerFn) : null;
                     // If there was no sanitization function found based on the security context of an
                     // attribute/property, check whether this attribute/property is one of the
                     // security-sensitive <iframe> attributes (and that the current element is actually an
@@ -22716,7 +22713,7 @@ function resolveSanitizers(job) {
                             throw Error('Property should have an element-like owner');
                         }
                         if (isIframeElement$1(ownerOp) && isIframeSecuritySensitiveAttr(op.name)) {
-                            op.sanitizer = new SanitizerExpr(SanitizerFn.IframeAttribute);
+                            op.sanitizer = importExpr(Identifiers.validateIframeAttribute);
                         }
                     }
                     break;
@@ -23846,6 +23843,10 @@ function emitHostBindingFunction(job) {
 }
 
 const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
+// Schema containing DOM elements and their properties.
+const domSchema = new DomElementSchemaRegistry();
+// Tag name of the `ng-template` element.
+const NG_TEMPLATE_TAG_NAME$1 = 'ng-template';
 /**
  * Process a template AST and convert it into a `ComponentCompilation` in the intermediate
  * representation.
@@ -23860,7 +23861,7 @@ function ingestComponent(componentName, template, constantPool, relativeContextF
  * Process a host binding AST and convert it into a `HostBindingCompilationJob` in the intermediate
  * representation.
  */
-function ingestHostBinding(input, bindingParser, constantPool) {
+function ingestHostBinding(input, constantPool) {
     const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode);
     for (const property of input.properties ?? []) {
         ingestHostProperty(job, property, false);
@@ -24028,7 +24029,8 @@ function ingestContent(unit, content) {
     const attrs = content.attributes.flatMap(a => [a.name, a.value]);
     const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, attrs, content.sourceSpan);
     for (const attr of content.attributes) {
-        unit.update.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, literal(attr.value), null, SecurityContext.NONE, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+        const securityContext = domSchema.securityContext(content.name, attr.name, true);
+        unit.update.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
     }
     unit.create.push(op);
 }
@@ -24466,7 +24468,7 @@ const BINDING_KINDS = new Map([
  * | `<ng-template *ngIf>` (structural) | null               |
  */
 function isPlainTemplate(tmpl) {
-    return splitNsName(tmpl.tagName ?? '')[1] === 'ng-template';
+    return splitNsName(tmpl.tagName ?? '')[1] === NG_TEMPLATE_TAG_NAME$1;
 }
 /**
  * Ensures that the i18nMeta, if provided, is an i18n.Message.
@@ -24488,7 +24490,8 @@ function ingestElementBindings(unit, op, element) {
     let bindings = new Array();
     for (const attr of element.attributes) {
         // Attribute literal bindings, such as `attr.foo="bar"`.
-        bindings.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, convertAstWithInterpolation(unit.job, attr.value, attr.i18n), null, SecurityContext.NONE, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+        const securityContext = domSchema.securityContext(element.name, attr.name, true);
+        bindings.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, convertAstWithInterpolation(unit.job, attr.value, attr.i18n), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
     }
     for (const input of element.inputs) {
         // All dynamic bindings (both attribute and property bindings).
@@ -24516,7 +24519,8 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
     let bindings = new Array();
     for (const attr of template.templateAttrs) {
         if (attr instanceof TextAttribute) {
-            bindings.push(createTemplateBinding(unit, op.xref, 1 /* e.BindingType.Attribute */, attr.name, attr.value, null, SecurityContext.NONE, true, templateKind, asMessage(attr.i18n), attr.sourceSpan));
+            const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, attr.name, true);
+            bindings.push(createTemplateBinding(unit, op.xref, 1 /* e.BindingType.Attribute */, attr.name, attr.value, null, securityContext, true, templateKind, asMessage(attr.i18n), attr.sourceSpan));
         }
         else {
             bindings.push(createTemplateBinding(unit, op.xref, attr.type, attr.name, astOf(attr.value), attr.unit, attr.securityContext, true, templateKind, asMessage(attr.i18n), attr.sourceSpan));
@@ -24524,7 +24528,8 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
     }
     for (const attr of template.attributes) {
         // Attribute literal bindings, such as `attr.foo="bar"`.
-        bindings.push(createTemplateBinding(unit, op.xref, 1 /* e.BindingType.Attribute */, attr.name, attr.value, null, SecurityContext.NONE, false, templateKind, asMessage(attr.i18n), attr.sourceSpan));
+        const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, attr.name, true);
+        bindings.push(createTemplateBinding(unit, op.xref, 1 /* e.BindingType.Attribute */, attr.name, attr.value, null, securityContext, false, templateKind, asMessage(attr.i18n), attr.sourceSpan));
     }
     for (const input of template.inputs) {
         // Dynamic bindings (both attribute and property bindings).
@@ -24542,7 +24547,8 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
         if (templateKind === TemplateKind.Structural &&
             output.type !== 1 /* e.ParsedEventType.Animation */) {
             // Animation bindings are excluded from the structural template's const array.
-            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null, null, null));
+            const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, output.name, true);
+            unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, output.name, null, null, null, securityContext));
         }
     }
     // TODO: Perhaps we could do this in a phase? (It likely wouldn't change the slot indices.)
@@ -24590,7 +24596,7 @@ function createTemplateBinding(view, xref, type, name, value, unit, securityCont
             // inner node of a structural template. We can't skip it entirely, because we still need it on
             // the ng-template's consts (e.g. for the purposes of directive matching). However, we should
             // not generate an update instruction for it.
-            return createExtractedAttributeOp(xref, BindingKind.Property, name, null, null, i18nMessage);
+            return createExtractedAttributeOp(xref, BindingKind.Property, name, null, null, i18nMessage, securityContext);
         }
         if (!isTextBinding && (type === 1 /* e.BindingType.Attribute */ || type === 4 /* e.BindingType.Animation */)) {
             // Again, this binding doesn't really target the ng-template; it actually targets the element
@@ -24727,11 +24733,12 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
     // and they can be used in directive matching (in the case of `Template.templateAttrs`).
     if (root !== null) {
         for (const attr of root.attributes) {
-            unit.update.push(createBindingOp(xref, BindingKind.Attribute, attr.name, literal(attr.value), null, SecurityContext.NONE, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+            const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, attr.name, true);
+            unit.update.push(createBindingOp(xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
         }
         const tagName = root instanceof Element$1 ? root.name : root.tagName;
         // Don't pass along `ng-template` tag name since it enables directive matching.
-        return tagName === 'ng-template' ? null : tagName;
+        return tagName === NG_TEMPLATE_TAG_NAME$1 ? null : tagName;
     }
     return null;
 }
@@ -30161,7 +30168,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
             properties: bindings,
             events: eventBindings,
             attributes: hostBindingsMetadata.attributes,
-        }, bindingParser, constantPool);
+        }, constantPool);
         transform(hostJob, CompilationJobKind.Host);
         definitionMap.set('hostAttrs', hostJob.root.attributes);
         const varCount = hostJob.root.vars;
@@ -31929,7 +31936,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.3+sha-f9731ee');
+const VERSION = new Version('17.1.0-next.3+sha-44f9f01');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33495,7 +33502,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33603,7 +33610,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33880,7 +33887,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33915,7 +33922,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33966,7 +33973,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33999,7 +34006,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34050,7 +34057,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-f9731ee'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-44f9f01'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
