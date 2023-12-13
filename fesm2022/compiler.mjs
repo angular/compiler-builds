@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.6+sha-57ac806
+ * @license Angular v17.0.6+sha-1c55c49
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10472,6 +10472,9 @@ function transformExpressionsInExpression(expr, transform, flags) {
         expr.template.expressions =
             expr.template.expressions.map(e => transformExpressionsInExpression(e, transform, flags));
     }
+    else if (expr instanceof WrappedNodeExpr) {
+        // TODO: Do we need to transform any TS nodes nested inside of this expression?
+    }
     else if (expr instanceof ReadVarExpr || expr instanceof ExternalExpr ||
         expr instanceof LiteralExpr) {
         // No action for these types.
@@ -10901,7 +10904,7 @@ function createTextOp(xref, initialValue, sourceSpan) {
 /**
  * Create a `ListenerOp`. Host bindings reuse all the listener logic.
  */
-function createListenerOp(target, targetSlot, name, tag, handlerOps, animationPhase, hostListener, sourceSpan) {
+function createListenerOp(target, targetSlot, name, tag, handlerOps, animationPhase, eventTarget, hostListener, sourceSpan) {
     const handlerList = new OpList();
     handlerList.push(handlerOps);
     return {
@@ -10915,7 +10918,8 @@ function createListenerOp(target, targetSlot, name, tag, handlerOps, animationPh
         handlerFnName: null,
         consumesDollarEvent: false,
         isAnimationListener: animationPhase !== null,
-        animationPhase: animationPhase,
+        animationPhase,
+        eventTarget,
         sourceSpan,
         ...NEW_OP,
     };
@@ -21196,17 +21200,13 @@ function disableBindings() {
 function enableBindings() {
     return call(Identifiers.enableBindings, [], null);
 }
-function listener(name, handlerFn, sourceSpan) {
-    return call(Identifiers.listener, [
-        literal(name),
-        handlerFn,
-    ], sourceSpan);
-}
-function syntheticHostListener(name, handlerFn, sourceSpan) {
-    return call(Identifiers.syntheticHostListener, [
-        literal(name),
-        handlerFn,
-    ], sourceSpan);
+function listener(name, handlerFn, eventTargetResolver, syntheticHost, sourceSpan) {
+    const args = [literal(name), handlerFn];
+    if (eventTargetResolver !== null) {
+        args.push(literal(false)); // `useCapture` flag, defaults to `false`
+        args.push(importExpr(eventTargetResolver));
+    }
+    return call(syntheticHost ? Identifiers.syntheticHostListener : Identifiers.listener, args, sourceSpan);
 }
 function pipe(slot, name) {
     return call(Identifiers.pipe, [
@@ -21690,6 +21690,14 @@ function callVariadicInstruction(config, baseArgs, interpolationArgs, extraArgs,
 }
 
 /**
+ * Map of target resolvers for event listeners.
+ */
+const GLOBAL_TARGET_RESOLVERS$1 = new Map([
+    ['window', Identifiers.resolveWindow],
+    ['document', Identifiers.resolveDocument],
+    ['body', Identifiers.resolveBody],
+]);
+/**
  * Compiles semantic operations across all views and generates output `o.Statement`s with actual
  * runtime calls in their place.
  *
@@ -21764,10 +21772,11 @@ function reifyCreateOperations(unit, ops) {
                 break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
-                const reified = op.hostListener && op.isAnimationListener ?
-                    syntheticHostListener(op.name, listenerFn, op.sourceSpan) :
-                    listener(op.name, listenerFn, op.sourceSpan);
-                OpList.replace(op, reified);
+                const eventTargetResolver = op.eventTarget ? GLOBAL_TARGET_RESOLVERS$1.get(op.eventTarget) : null;
+                if (eventTargetResolver === undefined) {
+                    throw new Error(`AssertionError: unknown event target ${op.eventTarget}`);
+                }
+                OpList.replace(op, listener(op.name, listenerFn, eventTargetResolver, op.hostListener && op.isAnimationListener, op.sourceSpan));
                 break;
             case OpKind.Variable:
                 if (op.variable.name === null) {
@@ -23753,7 +23762,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: generateProjectionDefs },
     { kind: CompilationJobKind.Tmpl, fn: generateVariables },
     { kind: CompilationJobKind.Tmpl, fn: saveAndRestoreView },
-    { kind: CompilationJobKind.Tmpl, fn: deleteAnyCasts },
+    { kind: CompilationJobKind.Both, fn: deleteAnyCasts },
     { kind: CompilationJobKind.Both, fn: resolveDollarEvent },
     { kind: CompilationJobKind.Tmpl, fn: generateRepeaterDerivedVars },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackVariables },
@@ -23962,7 +23971,9 @@ function ingestHostAttribute(job, name, value, securityContexts) {
     job.root.update.push(attrBinding);
 }
 function ingestHostEvent(job, event) {
-    const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, [], event.targetOrPhase, true, event.sourceSpan);
+    const [phase, target] = event.type === 0 /* e.ParsedEventType.Regular */ ? [null, event.targetOrPhase] :
+        [event.targetOrPhase, null];
+    const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, [], phase, target, true, event.sourceSpan);
     // TODO: Can this be a chain?
     eventBinding.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(event.handler.ast, job, event.sourceSpan), event.handlerSpan)));
     job.root.create.push(eventBinding);
@@ -24561,7 +24572,7 @@ function ingestElementBindings(unit, op, element) {
         if (output.type === 1 /* e.ParsedEventType.Animation */ && output.phase === null) {
             throw Error('Animation listener should have a phase');
         }
-        unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, false, output.sourceSpan));
+        unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
     }
     // If any of the bindings on this element have an i18n message, then an i18n attrs configuration
     // op is also required.
@@ -24600,7 +24611,7 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
             throw Error('Animation listener should have a phase');
         }
         if (templateKind === TemplateKind.NgTemplate) {
-            unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, false, output.sourceSpan));
+            unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
         }
         if (templateKind === TemplateKind.Structural &&
             output.type !== 1 /* e.ParsedEventType.Animation */) {
@@ -31983,7 +31994,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.6+sha-57ac806');
+const VERSION = new Version('17.0.6+sha-1c55c49');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33549,7 +33560,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33657,7 +33668,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33934,7 +33945,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33969,7 +33980,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34020,7 +34031,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34053,7 +34064,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34104,7 +34115,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.6+sha-57ac806'));
+    definitionMap.set('version', literal('17.0.6+sha-1c55c49'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
