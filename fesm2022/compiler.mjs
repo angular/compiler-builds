@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-629343f
+ * @license Angular v17.1.0-next.3+sha-4866fce
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2636,6 +2636,9 @@ class Identifiers {
     static { this.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE }; }
     static { this.trustConstantResourceUrl = { name: 'ɵɵtrustConstantResourceUrl', moduleName: CORE }; }
     static { this.validateIframeAttribute = { name: 'ɵɵvalidateIframeAttribute', moduleName: CORE }; }
+    // type-checking
+    static { this.InputSignalBrandWriteType = { name: 'ɵINPUT_SIGNAL_BRAND_WRITE_TYPE', moduleName: CORE }; }
+    static { this.UnwrapDirectiveSignalInputs = { name: 'ɵUnwrapDirectiveSignalInputs', moduleName: CORE }; }
 }
 
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
@@ -4957,6 +4960,12 @@ function asLiteral(value) {
     }
     return literal(value, INFERRED_TYPE);
 }
+/**
+ * Serializes inputs and outputs for `defineDirective` and `defineComponent`.
+ *
+ * This will attempt to generate optimized data structures to minimize memory or
+ * file size of fully compiled applications.
+ */
 function conditionallyCreateDirectiveBindingLiteral(map, keepDeclared) {
     const keys = Object.getOwnPropertyNames(map);
     if (keys.length === 0) {
@@ -30161,14 +30170,16 @@ function createBaseDirectiveTypeParams(meta) {
 function getInputsTypeExpression(meta) {
     return literalMap(Object.keys(meta.inputs).map(key => {
         const value = meta.inputs[key];
-        return {
-            key,
-            value: literalMap([
-                { key: 'alias', value: literal(value.bindingPropertyName), quoted: true },
-                { key: 'required', value: literal(value.required), quoted: true }
-            ]),
-            quoted: true
-        };
+        const values = [
+            { key: 'alias', value: literal(value.bindingPropertyName), quoted: true },
+            { key: 'required', value: literal(value.required), quoted: true },
+        ];
+        // TODO(legacy-partial-output-inputs): Consider always emitting this information,
+        // or leaving it as is.
+        if (value.isSignal) {
+            values.push({ key: 'isSignal', value: literal(value.isSignal), quoted: true });
+        }
+        return { key, value: literalMap(values), quoted: true };
     }));
 }
 /**
@@ -31622,6 +31633,8 @@ function convertDirectiveFacadeToMetadata(facade) {
                         bindingPropertyName: ann.alias || field,
                         classPropertyName: field,
                         required: ann.required || false,
+                        // TODO(signals): Support JIT signal inputs via decorator transform.
+                        isSignal: false,
                         transformFunction: ann.transform != null ? new WrappedNodeExpr(ann.transform) : null,
                     };
                 }
@@ -31653,7 +31666,7 @@ function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
         type: wrapReference(declaration.type),
         typeSourceSpan,
         selector: declaration.selector ?? null,
-        inputs: declaration.inputs ? inputsMappingToInputMetadata(declaration.inputs) : {},
+        inputs: declaration.inputs ? inputsPartialMetadataToInputMetadata(declaration.inputs) : {},
         outputs: declaration.outputs ?? {},
         host: convertHostDeclarationToMetadata(declaration.host),
         queries: (declaration.queries ?? []).map(convertQueryDeclarationToMetadata),
@@ -31916,27 +31929,50 @@ function isInput(value) {
 function isOutput(value) {
     return value.ngMetadataName === 'Output';
 }
-function inputsMappingToInputMetadata(inputs) {
-    return Object.keys(inputs).reduce((result, key) => {
-        const value = inputs[key];
-        if (typeof value === 'string') {
-            result[key] = {
-                bindingPropertyName: value,
-                classPropertyName: value,
-                transformFunction: null,
-                required: false,
-            };
+function inputsPartialMetadataToInputMetadata(inputs) {
+    return Object.keys(inputs).reduce((result, minifiedClassName) => {
+        const value = inputs[minifiedClassName];
+        // Handle legacy partial input output.
+        if (typeof value === 'string' || Array.isArray(value)) {
+            result[minifiedClassName] = parseLegacyInputPartialOutput(value);
         }
         else {
-            result[key] = {
-                bindingPropertyName: value[0],
-                classPropertyName: value[1],
-                transformFunction: value[2] ? new WrappedNodeExpr(value[2]) : null,
-                required: false,
+            result[minifiedClassName] = {
+                bindingPropertyName: value.publicName,
+                classPropertyName: minifiedClassName,
+                transformFunction: value.transformFunction !== null ?
+                    new WrappedNodeExpr(value.transformFunction) :
+                    null,
+                required: value.isRequired,
+                isSignal: value.isSignal,
             };
         }
         return result;
     }, {});
+}
+/**
+ * Parses the legacy input partial output. For more details see `partial/directive.ts`.
+ * TODO(legacy-partial-output-inputs): Remove in v18.
+ */
+function parseLegacyInputPartialOutput(value) {
+    if (typeof value === 'string') {
+        return {
+            bindingPropertyName: value,
+            classPropertyName: value,
+            transformFunction: null,
+            required: false,
+            // legacy partial output does not capture signal inputs.
+            isSignal: false,
+        };
+    }
+    return {
+        bindingPropertyName: value[0],
+        classPropertyName: value[1],
+        transformFunction: value[2] ? new WrappedNodeExpr(value[2]) : null,
+        required: false,
+        // legacy partial output does not capture signal inputs.
+        isSignal: false,
+    };
 }
 function parseInputsArray(values) {
     return values.reduce((results, value) => {
@@ -31946,6 +31982,8 @@ function parseInputsArray(values) {
                 bindingPropertyName,
                 classPropertyName,
                 required: false,
+                // Signal inputs not supported for the inputs array.
+                isSignal: false,
                 transformFunction: null,
             };
         }
@@ -31954,6 +31992,8 @@ function parseInputsArray(values) {
                 bindingPropertyName: value.alias || value.name,
                 classPropertyName: value.name,
                 required: value.required || false,
+                // Signal inputs not supported for the inputs array.
+                isSignal: false,
                 transformFunction: value.transform != null ? new WrappedNodeExpr(value.transform) : null,
             };
         }
@@ -32006,7 +32046,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.3+sha-629343f');
+const VERSION = new Version('17.1.0-next.3+sha-4866fce');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33568,11 +33608,11 @@ function compileClassDebugInfo(debugInfo) {
  *
  * Do not include any prerelease in these versions as they are ignored.
  */
-const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
-    definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33652,14 +33692,6 @@ function compileDependency(dep) {
 }
 
 /**
- * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
- * must update this constant to prevent old partial-linkers from incorrectly processing the
- * declaration.
- *
- * Do not include any prerelease in these versions as they are ignored.
- */
-const MINIMUM_PARTIAL_LINKER_VERSION$5 = '16.1.0';
-/**
  * Compile a directive declaration defined by the `R3DirectiveMetadata`.
  */
 function compileDeclareDirectiveFromMetadata(meta) {
@@ -33674,13 +33706,9 @@ function compileDeclareDirectiveFromMetadata(meta) {
  */
 function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
-    const hasTransformFunctions = Object.values(meta.inputs).some(input => input.transformFunction !== null);
-    // Note: in order to allow consuming Angular libraries that have been compiled with 16.1+ in
-    // Angular 16.0, we only force a minimum version of 16.1 if input transform feature as introduced
-    // in 16.1 is actually used.
-    const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
+    const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33693,7 +33721,8 @@ function createDirectiveDefinitionMap(meta) {
     if (meta.selector !== null) {
         definitionMap.set('selector', literal(meta.selector));
     }
-    definitionMap.set('inputs', conditionallyCreateDirectiveBindingLiteral(meta.inputs, true));
+    definitionMap.set('inputs', needsNewInputPartialOutput(meta) ? createInputsPartialMetadata(meta.inputs) :
+        legacyInputsPartialMetadata(meta.inputs));
     definitionMap.set('outputs', conditionallyCreateDirectiveBindingLiteral(meta.outputs));
     definitionMap.set('host', compileHostMetadata(meta.host));
     definitionMap.set('providers', meta.providers);
@@ -33717,6 +33746,44 @@ function createDirectiveDefinitionMap(meta) {
     }
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     return definitionMap;
+}
+/**
+ * Determines the minimum linker version for the partial output
+ * generated for this directive.
+ *
+ * Every time we make a breaking change to the declaration interface or partial-linker
+ * behavior, we must update the minimum versions to prevent old partial-linkers from
+ * incorrectly processing the declaration.
+ *
+ * NOTE: Do not include any prerelease in these versions as they are ignored.
+ */
+function getMinimumVersionForPartialOutput(meta) {
+    // We are starting with the oldest minimum version that can work for common
+    // directive partial compilation output. As we discover usages of new features
+    // that require a newer partial output emit, we bump the `minVersion`. Our goal
+    // is to keep libraries as much compatible with older linker versions as possible.
+    let minVersion = '14.0.0';
+    // Note: in order to allow consuming Angular libraries that have been compiled with 16.1+ in
+    // Angular 16.0, we only force a minimum version of 16.1 if input transform feature as introduced
+    // in 16.1 is actually used.
+    const hasTransformFunctions = Object.values(meta.inputs).some(input => input.transformFunction !== null);
+    if (hasTransformFunctions) {
+        minVersion = '16.1.0';
+    }
+    // If there are input flags and we need the new emit, use the actual minimum version,
+    // where this was introduced. i.e. in 17.1.0
+    // TODO(legacy-partial-output-inputs): Remove in v18.
+    if (needsNewInputPartialOutput(meta)) {
+        minVersion = '17.1.0';
+    }
+    return minVersion;
+}
+/**
+ * Gets whether the given directive needs the new input partial output structure
+ * that can hold additional metadata like `isRequired`, `isSignal` etc.
+ */
+function needsNewInputPartialOutput(meta) {
+    return Object.values(meta.inputs).some(input => input.isSignal);
 }
 /**
  * Compiles the metadata of a single query into its partial declaration form as declared
@@ -33790,6 +33857,74 @@ function createHostDirectives(hostDirectives) {
     // If there's a forward reference, we generate a `function() { return [{directive: HostDir}] }`,
     // otherwise we can save some bytes by using a plain array, e.g. `[{directive: HostDir}]`.
     return literalArr(expressions);
+}
+/**
+ * Generates partial output metadata for inputs of a directive.
+ *
+ * The generated structure is expected to match `R3DeclareDirectiveFacade['inputs']`.
+ */
+function createInputsPartialMetadata(inputs) {
+    const keys = Object.getOwnPropertyNames(inputs);
+    if (keys.length === 0) {
+        return null;
+    }
+    return literalMap(keys.map(declaredName => {
+        const value = inputs[declaredName];
+        return {
+            key: declaredName,
+            // put quotes around keys that contain potentially unsafe characters
+            quoted: UNSAFE_OBJECT_KEY_NAME_REGEXP.test(declaredName),
+            value: literalMap([
+                { key: 'classPropertyName', quoted: false, value: asLiteral(value.classPropertyName) },
+                { key: 'publicName', quoted: false, value: asLiteral(value.bindingPropertyName) },
+                { key: 'isSignal', quoted: false, value: asLiteral(value.isSignal) },
+                { key: 'isRequired', quoted: false, value: asLiteral(value.required) },
+                { key: 'transformFunction', quoted: false, value: value.transformFunction ?? NULL_EXPR },
+            ])
+        };
+    }));
+}
+/**
+ * Pre v18 legacy partial output for inputs.
+ *
+ * Previously, inputs did not capture metadata like `isSignal` in the partial compilation output.
+ * To enable capturing such metadata, we restructured how input metadata is communicated in the
+ * partial output. This would make libraries incompatible with older Angular FW versions where the
+ * linker would not know how to handle this new "format". For this reason, if we know this metadata
+ * does not need to be captured- we fall back to the old format. This is what this function
+ * generates.
+ *
+ * See:
+ * https://github.com/angular/angular/blob/d4b423690210872b5c32a322a6090beda30b05a3/packages/core/src/compiler/compiler_facade_interface.ts#L197-L199
+ */
+function legacyInputsPartialMetadata(inputs) {
+    // TODO(legacy-partial-output-inputs): Remove function in v18.
+    const keys = Object.getOwnPropertyNames(inputs);
+    if (keys.length === 0) {
+        return null;
+    }
+    return literalMap(keys.map(declaredName => {
+        const value = inputs[declaredName];
+        const publicName = value.bindingPropertyName;
+        const differentDeclaringName = publicName !== declaredName;
+        let result;
+        if (differentDeclaringName || value.transformFunction !== null) {
+            const values = [asLiteral(publicName), asLiteral(declaredName)];
+            if (value.transformFunction !== null) {
+                values.push(value.transformFunction);
+            }
+            result = literalArr(values);
+        }
+        else {
+            result = asLiteral(publicName);
+        }
+        return {
+            key: declaredName,
+            // put quotes around keys that contain potentially unsafe characters
+            quoted: UNSAFE_OBJECT_KEY_NAME_REGEXP.test(declaredName),
+            value: result,
+        };
+    }));
 }
 
 /**
@@ -33957,7 +34092,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33992,7 +34127,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34043,7 +34178,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34076,7 +34211,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34127,7 +34262,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.3+sha-629343f'));
+    definitionMap.set('version', literal('17.1.0-next.3+sha-4866fce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

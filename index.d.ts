@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.3+sha-629343f
+ * @license Angular v17.1.0-next.3+sha-4866fce
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1751,6 +1751,12 @@ export declare class LeadingComment {
 
 export declare function leadingComment(text: string, multiline?: boolean, trailingNewline?: boolean): LeadingComment;
 
+export declare type LegacyInputPartialMapping = string | [
+bindingPropertyName: string,
+classPropertyName: string,
+transformFunction?: outputAst.Expression
+];
+
 export declare class Lexer {
     tokenize(text: string): Token[];
 }
@@ -3246,11 +3252,13 @@ export declare interface R3DeclareDirectiveMetadata extends R3PartialDeclaration
      * binding property name and class property name if the names are different.
      */
     inputs?: {
-        [classPropertyName: string]: string | [
-        bindingPropertyName: string,
-        classPropertyName: string,
-        transformFunction?: outputAst.Expression
-        ];
+        [fieldName: string]: {
+            classPropertyName: string;
+            publicName: string;
+            isSignal: boolean;
+            isRequired: boolean;
+            transformFunction: outputAst.Expression | null;
+        } | LegacyInputPartialMapping;
     };
     /**
      * A mapping of outputs from class property names to binding property names.
@@ -3985,6 +3993,14 @@ export declare class R3Identifiers {
     static trustConstantHtml: outputAst.ExternalReference;
     static trustConstantResourceUrl: outputAst.ExternalReference;
     static validateIframeAttribute: outputAst.ExternalReference;
+    static InputSignalBrandWriteType: {
+        name: string;
+        moduleName: string;
+    };
+    static UnwrapDirectiveSignalInputs: {
+        name: string;
+        moduleName: string;
+    };
 }
 
 export declare interface R3InjectableMetadata {
@@ -4013,6 +4029,13 @@ export declare interface R3InputMetadata {
     classPropertyName: string;
     bindingPropertyName: string;
     required: boolean;
+    isSignal: boolean;
+    /**
+     * Transform function for the input.
+     *
+     * Null if there is no transform, or if this is a signal input.
+     * Signal inputs capture their transform as part of the `InputSignal`.
+     */
     transformFunction: outputAst.Expression | null;
 }
 
