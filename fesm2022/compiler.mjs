@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.4+sha-606de51
+ * @license Angular v17.1.0-next.4+sha-e8f0042
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12106,75 +12106,87 @@ function createDeferDepsFns(job) {
  * message.)
  */
 function createI18nContexts(job) {
-    const rootContexts = new Map();
-    let currentI18nOp = null;
-    let xref;
-    // We use the message instead of the message ID, because placeholder values might differ even
-    // when IDs are the same.
-    const messageToContext = new Map();
+    // Create i18n context ops for i18n attrs.
+    const attrContextByMessage = new Map();
     for (const unit of job.units) {
-        for (const op of unit.create) {
-            switch (op.kind) {
-                case OpKind.I18nStart:
-                    currentI18nOp = op;
-                    // Each root i18n block gets its own context, child ones refer to the context for their
-                    // root block.
-                    if (op.xref === op.root) {
-                        xref = job.allocateXrefId();
-                        unit.create.push(createI18nContextOp(I18nContextKind.RootI18n, xref, op.xref, op.message, null));
-                        op.context = xref;
-                        rootContexts.set(op.xref, xref);
-                    }
-                    break;
-                case OpKind.I18nEnd:
-                    currentI18nOp = null;
-                    break;
-                case OpKind.IcuStart:
-                    // If an ICU represents a different message than its containing block, we give it its own
-                    // i18n context.
-                    if (currentI18nOp === null) {
-                        throw Error('Unexpected ICU outside of an i18n block.');
-                    }
-                    if (op.message.id !== currentI18nOp.message.id) {
-                        // There was an enclosing i18n block around this ICU somewhere.
-                        xref = job.allocateXrefId();
-                        unit.create.push(createI18nContextOp(I18nContextKind.Icu, xref, currentI18nOp.xref, op.message, null));
-                        op.context = xref;
-                    }
-                    else {
-                        // The i18n block was generated because of this ICU, OR it was explicit, but the ICU is
-                        // the only localizable content inside of it.
-                        op.context = currentI18nOp.context;
-                    }
-                    break;
-            }
-        }
         for (const op of unit.ops()) {
             switch (op.kind) {
                 case OpKind.Binding:
                 case OpKind.Property:
                 case OpKind.Attribute:
                 case OpKind.ExtractedAttribute:
-                    if (!op.i18nMessage) {
+                    if (op.i18nMessage === null) {
                         continue;
                     }
-                    if (!messageToContext.has(op.i18nMessage)) {
-                        // create the context
-                        const i18nContext = job.allocateXrefId();
-                        unit.create.push(createI18nContextOp(I18nContextKind.Attr, i18nContext, null, op.i18nMessage, null));
-                        messageToContext.set(op.i18nMessage, i18nContext);
+                    if (!attrContextByMessage.has(op.i18nMessage)) {
+                        const i18nContext = createI18nContextOp(I18nContextKind.Attr, job.allocateXrefId(), null, op.i18nMessage, null);
+                        unit.create.push(i18nContext);
+                        attrContextByMessage.set(op.i18nMessage, i18nContext.xref);
                     }
-                    op.i18nContext = messageToContext.get(op.i18nMessage);
+                    op.i18nContext = attrContextByMessage.get(op.i18nMessage);
                     break;
             }
         }
     }
-    // Assign contexts to child i18n blocks, now that all root i18n blocks have their context
-    // assigned.
+    // Create i18n context ops for root i18n blocks.
+    const blockContextByI18nBlock = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    if (op.xref === op.root) {
+                        const contextOp = createI18nContextOp(I18nContextKind.RootI18n, job.allocateXrefId(), op.xref, op.message, null);
+                        unit.create.push(contextOp);
+                        op.context = contextOp.xref;
+                        blockContextByI18nBlock.set(op.xref, contextOp);
+                    }
+                    break;
+            }
+        }
+    }
+    // Assign i18n contexts for child i18n blocks. These don't need their own conext, instead they
+    // should inherit from their root i18n block.
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.I18nStart && op.xref !== op.root) {
-                op.context = rootContexts.get(op.root);
+                const rootContext = blockContextByI18nBlock.get(op.root);
+                if (rootContext === undefined) {
+                    throw Error('AssertionError: Root i18n block i18n context should have been created.');
+                }
+                op.context = rootContext.xref;
+                blockContextByI18nBlock.set(op.xref, rootContext);
+            }
+        }
+    }
+    // Create or assign i18n contexts for ICUs.
+    let currentI18nOp = null;
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            switch (op.kind) {
+                case OpKind.I18nStart:
+                    currentI18nOp = op;
+                    break;
+                case OpKind.I18nEnd:
+                    currentI18nOp = null;
+                    break;
+                case OpKind.IcuStart:
+                    if (currentI18nOp === null) {
+                        throw Error('AssertionError: Unexpected ICU outside of an i18n block.');
+                    }
+                    if (op.message.id !== currentI18nOp.message.id) {
+                        // This ICU is a sub-message inside its parent i18n block message. We need to give it
+                        // its own context.
+                        const contextOp = createI18nContextOp(I18nContextKind.Icu, job.allocateXrefId(), currentI18nOp.xref, op.message, null);
+                        unit.create.push(contextOp);
+                        op.context = contextOp.xref;
+                    }
+                    else {
+                        // This ICU is the only translatable content in its parent i18n block. We need to
+                        // convert the parent's context into an ICU context.
+                        op.context = currentI18nOp.context;
+                        blockContextByI18nBlock.get(currentI18nOp.xref).contextKind = I18nContextKind.Icu;
+                    }
+                    break;
             }
         }
     }
@@ -12560,13 +12572,18 @@ const LIST_DELIMITER = '|';
  * used in the final output.
  */
 function extractI18nMessages(job) {
-    // Save the i18n start and i18n context ops for later use.
-    const i18nContexts = new Map();
+    // Create an i18n message for each context.
+    // TODO: Merge the context op with the message op since they're 1:1 anyways.
+    const i18nMessagesByContext = new Map();
     const i18nBlocks = new Map();
+    const i18nContexts = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nContext:
+                    const i18nMessageOp = createI18nMessage(job, op);
+                    unit.create.push(i18nMessageOp);
+                    i18nMessagesByContext.set(op.xref, i18nMessageOp);
                     i18nContexts.set(op.xref, op);
                     break;
                 case OpKind.I18nStart:
@@ -12575,52 +12592,33 @@ function extractI18nMessages(job) {
             }
         }
     }
-    // TODO: Miles and I think that contexts have a 1-to-1 correspondence with extracted messages, so
-    // this phase can probably be simplified.
-    // Extract messages from contexts of i18n attributes.
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind !== OpKind.I18nContext || op.contextKind !== I18nContextKind.Attr) {
-                continue;
-            }
-            const i18nMessageOp = createI18nMessage(job, op);
-            unit.create.push(i18nMessageOp);
-        }
-    }
-    // Extract messages from root i18n blocks.
-    const i18nBlockMessages = new Map();
-    for (const unit of job.units) {
-        for (const op of unit.create) {
-            if (op.kind === OpKind.I18nStart && op.xref === op.root) {
-                if (!op.context) {
-                    throw Error('I18n start op should have its context set.');
-                }
-                const i18nMessageOp = createI18nMessage(job, i18nContexts.get(op.context));
-                i18nBlockMessages.set(op.xref, i18nMessageOp);
-                unit.create.push(i18nMessageOp);
-            }
-        }
-    }
-    // Extract messages from ICUs with their own sub-context.
+    // Associate sub-messages for ICUs with their root message. At this point we can also remove the
+    // ICU start/end ops, as they are no longer needed.
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.IcuStart:
-                    if (!op.context) {
-                        throw Error('ICU op should have its context set.');
-                    }
-                    const i18nContext = i18nContexts.get(op.context);
-                    if (i18nContext.contextKind === I18nContextKind.Icu) {
-                        if (i18nContext.i18nBlock === null) {
-                            throw Error('ICU context should have its i18n block set.');
-                        }
-                        const subMessage = createI18nMessage(job, i18nContext, op.messagePlaceholder);
-                        unit.create.push(subMessage);
-                        const rootI18nId = i18nBlocks.get(i18nContext.i18nBlock).root;
-                        const parentMessage = i18nBlockMessages.get(rootI18nId);
-                        parentMessage?.subMessages.push(subMessage.xref);
-                    }
                     OpList.remove(op);
+                    // Skip any contexts not associated with an ICU.
+                    const icuContext = i18nContexts.get(op.context);
+                    if (icuContext.contextKind !== I18nContextKind.Icu) {
+                        continue;
+                    }
+                    // Skip ICUs that share a context with their i18n message. These represent root-level
+                    // ICUs, not sub-messages.
+                    const i18nBlock = i18nBlocks.get(icuContext.i18nBlock);
+                    if (i18nBlock.context === icuContext.xref) {
+                        continue;
+                    }
+                    // Find the root message and push this ICUs message as a sub-message.
+                    const rootI18nBlock = i18nBlocks.get(i18nBlock.root);
+                    const rootMessage = i18nMessagesByContext.get(rootI18nBlock.context);
+                    if (rootMessage === undefined) {
+                        throw Error('AssertionError: ICU sub-message should belong to a root message.');
+                    }
+                    const subMessage = i18nMessagesByContext.get(icuContext.xref);
+                    subMessage.messagePlaceholder = op.messagePlaceholder;
+                    rootMessage.subMessages.push(subMessage.xref);
                     break;
                 case OpKind.IcuEnd:
                     OpList.remove(op);
@@ -32046,7 +32044,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.4+sha-606de51');
+const VERSION = new Version('17.1.0-next.4+sha-e8f0042');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33612,7 +33610,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33708,7 +33706,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34092,7 +34090,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34127,7 +34125,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34178,7 +34176,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34211,7 +34209,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34262,7 +34260,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-606de51'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-e8f0042'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
