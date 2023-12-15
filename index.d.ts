@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.7+sha-512a19b
+ * @license Angular v17.0.7+sha-e73205f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -804,7 +804,7 @@ export declare class ConstantPool {
         literalFactory: outputAst.Expression;
         literalFactoryArguments: outputAst.Expression[];
     };
-    getSharedFunctionReference(fn: outputAst.FunctionExpr | outputAst.ArrowFunctionExpr, prefix: string): outputAst.Expression;
+    getSharedFunctionReference(fn: outputAst.FunctionExpr | outputAst.ArrowFunctionExpr, prefix: string, useUniqueName?: boolean): outputAst.Expression;
     private _getLiteralFactory;
     /**
      * Produce a unique name.
@@ -4605,7 +4605,7 @@ export declare class SplitInterpolation {
     constructor(strings: InterpolationPiece[], expressions: InterpolationPiece[], offsets: number[]);
 }
 
-export declare function splitNsName(elementName: string): [string | null, string];
+export declare function splitNsName(elementName: string, fatal?: boolean): [string | null, string];
 
 export declare abstract class Statement {
     modifiers: StmtModifier;
