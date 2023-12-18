@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.7+sha-b394125
+ * @license Angular v17.0.7+sha-7ac60ba
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11864,7 +11864,7 @@ function collectElementConsts(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.ExtractedAttribute) {
-                const attributes = allElementAttributes.get(op.target) || new ElementAttributes();
+                const attributes = allElementAttributes.get(op.target) || new ElementAttributes(job.compatibility);
                 allElementAttributes.set(op.target, attributes);
                 attributes.add(op.bindingKind, op.name, op.expression, op.trustedValueFn);
                 OpList.remove(op);
@@ -11909,11 +11909,6 @@ const FLYWEIGHT_ARRAY = Object.freeze([]);
  * Container for all of the various kinds of attributes which are applied on an element.
  */
 class ElementAttributes {
-    constructor() {
-        this.known = new Map();
-        this.byKind = new Map;
-        this.projectAs = null;
-    }
     get attributes() {
         return this.byKind.get(BindingKind.Attribute) ?? FLYWEIGHT_ARRAY;
     }
@@ -11932,6 +11927,12 @@ class ElementAttributes {
     get i18n() {
         return this.byKind.get(BindingKind.I18n) ?? FLYWEIGHT_ARRAY;
     }
+    constructor(compatibility) {
+        this.compatibility = compatibility;
+        this.known = new Map();
+        this.byKind = new Map;
+        this.projectAs = null;
+    }
     isKnown(kind, name, value) {
         const nameToValue = this.known.get(kind) ?? new Set();
         this.known.set(kind, nameToValue);
@@ -11942,7 +11943,13 @@ class ElementAttributes {
         return false;
     }
     add(kind, name, value, trustedValueFn) {
-        if (this.isKnown(kind, name, value)) {
+        // TemplateDefinitionBuilder puts duplicate attribute, class, and style values into the consts
+        // array. This seems inefficient, we can probably keep just the first one or the last value
+        // (whichever actually gets applied when multiple values are listed for the same attribute).
+        const allowDuplicates = this.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
+            (kind === BindingKind.Attribute || kind === BindingKind.ClassName ||
+                kind === BindingKind.StyleProperty);
+        if (!allowDuplicates && this.isKnown(kind, name, value)) {
             return;
         }
         // TODO: Can this be its own phase
@@ -12192,6 +12199,38 @@ function createI18nContexts(job) {
                         blockContextByI18nBlock.get(currentI18nOp.xref).contextKind = I18nContextKind.Icu;
                     }
                     break;
+            }
+        }
+    }
+}
+
+/**
+ * Deduplicate text bindings, e.g. <div class="cls1" class="cls2">
+ */
+function deduplicateTextBindings(job) {
+    const seen = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.update.reversed()) {
+            if (op.kind === OpKind.Binding && op.isTextAttribute) {
+                const seenForElement = seen.get(op.target) || new Set();
+                if (seenForElement.has(op.name)) {
+                    if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
+                        // For most duplicated attributes, TemplateDefinitionBuilder lists all of the values in
+                        // the consts array. However, for style and class attributes it only keeps the last one.
+                        // We replicate that behavior here since it has actual consequences for apps with
+                        // duplicate class or style attrs.
+                        if (op.name === 'style' || op.name === 'class') {
+                            OpList.remove(op);
+                        }
+                    }
+                    else {
+                        // TODO: Determine the correct behavior. It would probably make sense to merge multiple
+                        // style and class attributes. Alternatively we could just throw an error, as HTML
+                        // doesn't permit duplicate attributes.
+                    }
+                }
+                seenForElement.add(op.name);
+                seen.set(op.target, seenForElement);
             }
         }
     }
@@ -12984,7 +13023,7 @@ const BANG_IMPORTANT = '!important';
  */
 function parseHostStyleProperties(job) {
     for (const op of job.root.update) {
-        if (op.kind !== OpKind.Binding) {
+        if (!(op.kind === OpKind.Binding && op.bindingKind === BindingKind.Property)) {
             continue;
         }
         if (op.name.endsWith(BANG_IMPORTANT)) {
@@ -23778,6 +23817,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: emitNamespaceChanges },
     { kind: CompilationJobKind.Tmpl, fn: propagateI18nBlocks },
     { kind: CompilationJobKind.Tmpl, fn: wrapI18nIcus },
+    { kind: CompilationJobKind.Both, fn: deduplicateTextBindings },
     { kind: CompilationJobKind.Both, fn: specializeStyleBindings },
     { kind: CompilationJobKind.Both, fn: specializeBindings },
     { kind: CompilationJobKind.Both, fn: extractAttributes },
@@ -24013,9 +24053,7 @@ function ingestHostAttribute(job, name, value, securityContexts) {
 function ingestHostEvent(job, event) {
     const [phase, target] = event.type === 0 /* e.ParsedEventType.Regular */ ? [null, event.targetOrPhase] :
         [event.targetOrPhase, null];
-    const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, [], phase, target, true, event.sourceSpan);
-    // TODO: Can this be a chain?
-    eventBinding.handlerOps.push(createStatementOp(new ReturnStatement(convertAst(event.handler.ast, job, event.sourceSpan), event.handlerSpan)));
+    const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, makeListenerHandlerOps(job.root, event.handler, event.handlerSpan), phase, target, true, event.sourceSpan);
     job.root.create.push(eventBinding);
 }
 /**
@@ -32039,7 +32077,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.7+sha-b394125');
+const VERSION = new Version('17.0.7+sha-7ac60ba');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33605,7 +33643,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33713,7 +33751,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33990,7 +34028,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34025,7 +34063,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34076,7 +34114,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34109,7 +34147,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34160,7 +34198,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.7+sha-b394125'));
+    definitionMap.set('version', literal('17.0.7+sha-7ac60ba'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
