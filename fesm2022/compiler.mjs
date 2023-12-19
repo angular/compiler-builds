@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.4+sha-12181b9
+ * @license Angular v17.1.0-next.4+sha-cafc3b0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10492,6 +10492,16 @@ function transformExpressionsInExpression(expr, transform, flags) {
         expr.template.expressions =
             expr.template.expressions.map(e => transformExpressionsInExpression(e, transform, flags));
     }
+    else if (expr instanceof ArrowFunctionExpr) {
+        if (Array.isArray(expr.body)) {
+            for (let i = 0; i < expr.body.length; i++) {
+                transformExpressionsInStatement(expr.body[i], transform, flags);
+            }
+        }
+        else {
+            expr.body = transformExpressionsInExpression(expr.body, transform, flags);
+        }
+    }
     else if (expr instanceof WrappedNodeExpr) {
         // TODO: Do we need to transform any TS nodes nested inside of this expression?
     }
@@ -10974,7 +10984,7 @@ function createProjectionDefOp(def) {
         ...NEW_OP,
     };
 }
-function createProjectionOp(xref, selector, i18nPlaceholder, attributes, sourceSpan) {
+function createProjectionOp(xref, selector, i18nPlaceholder, sourceSpan) {
     return {
         kind: OpKind.Projection,
         xref,
@@ -10982,7 +10992,7 @@ function createProjectionOp(xref, selector, i18nPlaceholder, attributes, sourceS
         selector,
         i18nPlaceholder,
         projectionSlotIndex: 0,
-        attributes,
+        attributes: null,
         localRefs: [],
         sourceSpan,
         ...NEW_OP,
@@ -11063,7 +11073,7 @@ function createI18nMessageOp(xref, i18nContext, i18nBlock, message, messagePlace
 /**
  * Create an `I18nStartOp`.
  */
-function createI18nStartOp(xref, message, root) {
+function createI18nStartOp(xref, message, root, sourceSpan) {
     return {
         kind: OpKind.I18nStart,
         xref,
@@ -11073,6 +11083,7 @@ function createI18nStartOp(xref, message, root) {
         messageIndex: null,
         subTemplateIndex: null,
         context: null,
+        sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
     };
@@ -11080,10 +11091,11 @@ function createI18nStartOp(xref, message, root) {
 /**
  * Create an `I18nEndOp`.
  */
-function createI18nEndOp(xref) {
+function createI18nEndOp(xref, sourceSpan) {
     return {
         kind: OpKind.I18nEnd,
         xref,
+        sourceSpan,
         ...NEW_OP,
     };
 }
@@ -11554,6 +11566,11 @@ function extractAttributes(job) {
                         /* i18nContext */ null, 
                         /* i18nMessage */ null, SecurityContext.NONE);
                         if (job.kind === CompilationJobKind.Host) {
+                            if (job.compatibility) {
+                                // TemplateDefinitionBuilder does not extract listener bindings to the const array
+                                // (which is honestly pretty inconsistent).
+                                break;
+                            }
                             // This attribute will apply to the enclosing host binding compilation unit, so order
                             // doesn't matter.
                             unit.create.push(extractedAttributeOp);
@@ -11893,7 +11910,17 @@ function collectElementConsts(job) {
     if (job instanceof ComponentCompilationJob) {
         for (const unit of job.units) {
             for (const op of unit.create) {
-                if (isElementOrContainerOp(op)) {
+                // TODO: Simplify and combine these cases.
+                if (op.kind == OpKind.Projection) {
+                    const attributes = allElementAttributes.get(op.xref);
+                    if (attributes !== undefined) {
+                        const attrArray = serializeAttributes(attributes);
+                        if (attrArray.entries.length > 0) {
+                            op.attributes = attrArray;
+                        }
+                    }
+                }
+                else if (isElementOrContainerOp(op)) {
                     op.attributes = getConstIndex(job, allElementAttributes, op.xref);
                     // TODO(dylhunn): `@for` loops with `@empty` blocks need to be special-cased here,
                     // because the slot consumer trait currently only supports one slot per consumer and we
@@ -20558,7 +20585,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
                 break;
             case OpKind.Variable:
-                varNames.set(op.xref, getVariableName(op.variable, state));
+                varNames.set(op.xref, getVariableName(unit, op.variable, state));
                 break;
             case OpKind.RepeaterCreate:
                 if (!(unit instanceof ViewCompilationUnit)) {
@@ -20613,15 +20640,23 @@ function addNamesToView(unit, baseName, state, compatibility) {
         });
     }
 }
-function getVariableName(variable, state) {
+function getVariableName(unit, variable, state) {
     if (variable.name === null) {
         switch (variable.kind) {
             case SemanticVariableKind.Context:
                 variable.name = `ctx_r${state.index++}`;
                 break;
             case SemanticVariableKind.Identifier:
-                // TODO: Prefix increment and `_r` for compatiblity only.
-                variable.name = `${variable.identifier}_r${++state.index}`;
+                if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
+                    // TODO: Prefix increment and `_r` are for compatiblity with the old naming scheme.
+                    // This has the potential to cause collisions when `ctx` is the identifier, so we need a
+                    // special check for that as well.
+                    const compatPrefix = variable.identifier === 'ctx' ? 'i' : '';
+                    variable.name = `${variable.identifier}_${compatPrefix}r${++state.index}`;
+                }
+                else {
+                    variable.name = `${variable.identifier}_i${state.index++}`;
+                }
                 break;
             default:
                 // TODO: Prefix increment for compatibility only.
@@ -20818,16 +20853,26 @@ const CREATE_ORDERING = [
  * op kinds.
  */
 const UPDATE_ORDERING = [
-    { test: kindWithInterpolationTest(OpKind.HostProperty, true) },
-    { test: kindWithInterpolationTest(OpKind.HostProperty, false) },
     { test: kindTest(OpKind.StyleMap), transform: keepLast },
     { test: kindTest(OpKind.ClassMap), transform: keepLast },
     { test: kindTest(OpKind.StyleProp) },
     { test: kindTest(OpKind.ClassProp) },
-    { test: kindWithInterpolationTest(OpKind.Property, true) },
     { test: kindWithInterpolationTest(OpKind.Attribute, true) },
+    { test: kindWithInterpolationTest(OpKind.Property, true) },
     { test: kindWithInterpolationTest(OpKind.Property, false) },
     { test: kindWithInterpolationTest(OpKind.Attribute, false) },
+];
+/**
+ * Host bindings have their own update ordering.
+ */
+const UPDATE_HOST_ORDERING = [
+    { test: kindWithInterpolationTest(OpKind.HostProperty, true) },
+    { test: kindWithInterpolationTest(OpKind.HostProperty, false) },
+    { test: kindTest(OpKind.Attribute) },
+    { test: kindTest(OpKind.StyleMap), transform: keepLast },
+    { test: kindTest(OpKind.ClassMap), transform: keepLast },
+    { test: kindTest(OpKind.StyleProp) },
+    { test: kindTest(OpKind.ClassProp) },
 ];
 /**
  * The set of all op kinds we handle in the reordering phase.
@@ -20849,7 +20894,8 @@ function orderOps(job) {
         // Create mode:
         orderWithin(unit.create, CREATE_ORDERING);
         // Update mode:
-        orderWithin(unit.update, UPDATE_ORDERING);
+        const ordering = unit.job.kind === CompilationJobKind.Host ? UPDATE_HOST_ORDERING : UPDATE_ORDERING;
+        orderWithin(unit.update, ordering);
     }
 }
 /**
@@ -20958,15 +21004,6 @@ function removeContentSelectors(job) {
                     const target = lookupInXrefMap(elements, op.target);
                     if (isSelectAttribute(op.name) && target.kind === OpKind.Projection) {
                         OpList.remove(op);
-                    }
-                    break;
-                case OpKind.Projection:
-                    // op.attributes is an array of [attr1-name, attr1-value, attr2-name, attr2-value, ...],
-                    // find the "select" attribute and remove its name and corresponding value.
-                    for (let i = op.attributes.length - 2; i >= 0; i -= 2) {
-                        if (isSelectAttribute(op.attributes[i])) {
-                            op.attributes.splice(i, 2);
-                        }
                     }
                     break;
             }
@@ -21140,8 +21177,10 @@ function wrapTemplateWithI18n(unit, parentI18n) {
     // Only add i18n ops if they have not already been propagated to this template.
     if (unit.create.head.next?.kind !== OpKind.I18nStart) {
         const id = unit.job.allocateXrefId();
-        OpList.insertAfter(createI18nStartOp(id, parentI18n.message, parentI18n.root), unit.create.head);
-        OpList.insertBefore(createI18nEndOp(id), unit.create.tail);
+        OpList.insertAfter(
+        // Nested ng-template i18n start/end ops should not recieve source spans.
+        createI18nStartOp(id, parentI18n.message, parentI18n.root, null), unit.create.head);
+        OpList.insertBefore(createI18nEndOp(id, null), unit.create.tail);
     }
 }
 
@@ -21402,20 +21441,20 @@ function projectionDef(def) {
 }
 function projection(slot, projectionSlotIndex, attributes, sourceSpan) {
     const args = [literal(slot)];
-    if (projectionSlotIndex !== 0 || attributes.length > 0) {
+    if (projectionSlotIndex !== 0 || attributes !== null) {
         args.push(literal(projectionSlotIndex));
-        if (attributes.length > 0) {
-            args.push(literalArr(attributes.map(attr => literal(attr))));
+        if (attributes !== null) {
+            args.push(attributes);
         }
     }
     return call(Identifiers.projection, args, sourceSpan);
 }
-function i18nStart(slot, constIndex, subTemplateIndex) {
+function i18nStart(slot, constIndex, subTemplateIndex, sourceSpan) {
     const args = [literal(slot), literal(constIndex)];
     if (subTemplateIndex !== null) {
         args.push(literal(subTemplateIndex));
     }
-    return call(Identifiers.i18nStart, args, null);
+    return call(Identifiers.i18nStart, args, sourceSpan);
 }
 function repeaterCreate(slot, viewFnName, decls, vars, tag, constIndex, trackByFn, trackByUsesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, emptyTag, emptyConstIndex, sourceSpan) {
     const args = [
@@ -21447,15 +21486,15 @@ function repeater(collection, sourceSpan) {
 function deferWhen(prefetch, expr, sourceSpan) {
     return call(prefetch ? Identifiers.deferPrefetchWhen : Identifiers.deferWhen, [expr], sourceSpan);
 }
-function i18n(slot, constIndex, subTemplateIndex) {
+function i18n(slot, constIndex, subTemplateIndex, sourceSpan) {
     const args = [literal(slot), literal(constIndex)];
     if (subTemplateIndex) {
         args.push(literal(subTemplateIndex));
     }
-    return call(Identifiers.i18n, args, null);
+    return call(Identifiers.i18n, args, sourceSpan);
 }
-function i18nEnd() {
-    return call(Identifiers.i18nEnd, [], null);
+function i18nEnd(endSourceSpan) {
+    return call(Identifiers.i18nEnd, [], endSourceSpan);
 }
 function i18nAttributes(slot, i18nAttributesConfig) {
     const args = [literal(slot), literal(i18nAttributesConfig)];
@@ -21815,6 +21854,31 @@ function reify(job) {
         reifyUpdateOperations(unit, unit.update);
     }
 }
+/**
+ * This function can be used a sanity check -- it walks every expression in the const pool, and
+ * every expression reachable from an op, and makes sure that there are no IR expressions
+ * left. This is nice to use for debugging mysterious failures where an IR expression cannot be
+ * output from the output AST code.
+ */
+function ensureNoIrForDebug(job) {
+    for (const stmt of job.pool.statements) {
+        transformExpressionsInStatement(stmt, expr => {
+            if (isIrExpression(expr)) {
+                throw new Error(`AssertionError: IR expression found during reify: ${ExpressionKind[expr.kind]}`);
+            }
+            return expr;
+        }, VisitorContextFlag.None);
+    }
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            visitExpressionsInOp(op, expr => {
+                if (isIrExpression(expr)) {
+                    throw new Error(`AssertionError: IR expression found during reify: ${ExpressionKind[expr.kind]}`);
+                }
+            });
+        }
+    }
+}
 function reifyCreateOperations(unit, ops) {
     for (const op of ops) {
         transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
@@ -21841,13 +21905,13 @@ function reifyCreateOperations(unit, ops) {
                 OpList.replace(op, elementContainerEnd());
                 break;
             case OpKind.I18nStart:
-                OpList.replace(op, i18nStart(op.handle.slot, op.messageIndex, op.subTemplateIndex));
+                OpList.replace(op, i18nStart(op.handle.slot, op.messageIndex, op.subTemplateIndex, op.sourceSpan));
                 break;
             case OpKind.I18nEnd:
-                OpList.replace(op, i18nEnd());
+                OpList.replace(op, i18nEnd(op.sourceSpan));
                 break;
             case OpKind.I18n:
-                OpList.replace(op, i18n(op.handle.slot, op.messageIndex, op.subTemplateIndex));
+                OpList.replace(op, i18n(op.handle.slot, op.messageIndex, op.subTemplateIndex, op.sourceSpan));
                 break;
             case OpKind.I18nAttributes:
                 if (op.i18nAttributesConfig === null) {
@@ -23138,6 +23202,9 @@ function generateTrackFns(job) {
             // Find all component context reads.
             let usesComponentContext = false;
             op.track = transformExpressionsInExpression(op.track, expr => {
+                if (expr instanceof PipeBindingExpr || expr instanceof PipeBindingVariadicExpr) {
+                    throw new Error(`Illegal State: Pipes are not allowed in this context`);
+                }
                 if (expr instanceof TrackContextExpr) {
                     usesComponentContext = true;
                     return variable('this');
@@ -23824,12 +23891,13 @@ function wrapI18nIcus(job) {
                 case OpKind.IcuStart:
                     if (currentI18nOp === null) {
                         addedI18nId = job.allocateXrefId();
-                        OpList.insertBefore(createI18nStartOp(addedI18nId, op.message), op);
+                        // ICU i18n start/end ops should not recieve source spans.
+                        OpList.insertBefore(createI18nStartOp(addedI18nId, op.message, undefined, null), op);
                     }
                     break;
                 case OpKind.IcuEnd:
                     if (addedI18nId !== null) {
-                        OpList.insertAfter(createI18nEndOp(addedI18nId), op);
+                        OpList.insertAfter(createI18nEndOp(addedI18nId, null), op);
                         addedI18nId = null;
                     }
                     break;
@@ -24149,7 +24217,7 @@ function ingestElement(unit, element) {
     let i18nBlockId = null;
     if (element.i18n instanceof Message) {
         i18nBlockId = unit.job.allocateXrefId();
-        unit.create.push(createI18nStartOp(i18nBlockId, element.i18n));
+        unit.create.push(createI18nStartOp(i18nBlockId, element.i18n, undefined, element.startSourceSpan));
     }
     ingestNodes(unit, element.children);
     // The source span for the end op is typically the element closing tag. However, if no closing tag
@@ -24161,7 +24229,7 @@ function ingestElement(unit, element) {
     unit.create.push(endOp);
     // If there is an i18n message associated with this element, insert i18n start and end ops.
     if (i18nBlockId !== null) {
-        OpList.insertBefore(createI18nEndOp(i18nBlockId), endOp);
+        OpList.insertBefore(createI18nEndOp(i18nBlockId, element.endSourceSpan ?? element.startSourceSpan), endOp);
     }
 }
 /**
@@ -24197,8 +24265,8 @@ function ingestTemplate(unit, tmpl) {
     // element/template the directive is placed on.
     if (templateKind === TemplateKind.NgTemplate && tmpl.i18n instanceof Message) {
         const id = unit.job.allocateXrefId();
-        OpList.insertAfter(createI18nStartOp(id, tmpl.i18n), childView.create.head);
-        OpList.insertBefore(createI18nEndOp(id), childView.create.tail);
+        OpList.insertAfter(createI18nStartOp(id, tmpl.i18n, undefined, tmpl.startSourceSpan), childView.create.head);
+        OpList.insertBefore(createI18nEndOp(id, tmpl.endSourceSpan ?? tmpl.startSourceSpan), childView.create.tail);
     }
 }
 /**
@@ -24208,8 +24276,7 @@ function ingestContent(unit, content) {
     if (content.i18n !== undefined && !(content.i18n instanceof TagPlaceholder)) {
         throw Error(`Unhandled i18n metadata type for element: ${content.i18n.constructor.name}`);
     }
-    const attrs = content.attributes.flatMap(a => [a.name, a.value]);
-    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, attrs, content.sourceSpan);
+    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, content.sourceSpan);
     for (const attr of content.attributes) {
         const securityContext = domSchema.securityContext(content.name, attr.name, true);
         unit.update.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
@@ -24514,7 +24581,29 @@ function convertAst(ast, job, baseSourceSpan) {
         return convertAst(ast.ast, job, baseSourceSpan);
     }
     else if (ast instanceof PropertyRead) {
-        if (ast.receiver instanceof ImplicitReceiver && !(ast.receiver instanceof ThisReceiver)) {
+        const isThisReceiver = ast.receiver instanceof ThisReceiver;
+        // Whether this is an implicit receiver, *excluding* explicit reads of `this`.
+        const isImplicitReceiver = ast.receiver instanceof ImplicitReceiver && !(ast.receiver instanceof ThisReceiver);
+        // Whether the  name of the read is a node that should be never retain its explicit this
+        // receiver.
+        const isSpecialNode = ast.name === '$any' || ast.name === '$event';
+        // TODO: The most sensible condition here would be simply `isImplicitReceiver`, to convert only
+        // actual implicit `this` reads, and not explicit ones. However, TemplateDefinitionBuilder (and
+        // the Typecheck block!) both have the same bug, in which they also consider explicit `this`
+        // reads to be implicit. This causes problems when the explicit `this` read is inside a
+        // template with a context that also provides the variable name being read:
+        // ```
+        // <ng-template let-a>{{this.a}}</ng-template>
+        // ```
+        // The whole point of the explicit `this` was to access the class property, but TDB and the
+        // current TCB treat the read as implicit, and give you the context property instead!
+        //
+        // For now, we emulate this old behvaior by aggressively converting explicit reads to to
+        // implicit reads, except for the special cases that TDB and the current TCB protect. However,
+        // it would be an improvement to fix this.
+        //
+        // See also the corresponding comment for the TCB, in `type_check_block.ts`.
+        if (isImplicitReceiver || (isThisReceiver && !isSpecialNode)) {
             return new LexicalReadExpr(ast.name);
         }
         else {
@@ -32162,7 +32251,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.4+sha-12181b9');
+const VERSION = new Version('17.1.0-next.4+sha-cafc3b0');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33728,7 +33817,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33824,7 +33913,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34208,7 +34297,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34243,7 +34332,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34294,7 +34383,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34327,7 +34416,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34378,7 +34467,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.4+sha-12181b9'));
+    definitionMap.set('version', literal('17.1.0-next.4+sha-cafc3b0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
