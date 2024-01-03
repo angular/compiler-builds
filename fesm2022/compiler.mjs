@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.0.8+sha-7c19dc2
+ * @license Angular v17.0.8+sha-7bf11ea
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9262,16 +9262,6 @@ var DeferTriggerKind;
     DeferTriggerKind[DeferTriggerKind["Viewport"] = 5] = "Viewport";
 })(DeferTriggerKind || (DeferTriggerKind = {}));
 /**
- * Repeaters implicitly define these derived variables, and child nodes may read them.
- */
-var DerivedRepeaterVarIdentity;
-(function (DerivedRepeaterVarIdentity) {
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["First"] = 0] = "First";
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Last"] = 1] = "Last";
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Even"] = 2] = "Even";
-    DerivedRepeaterVarIdentity[DerivedRepeaterVarIdentity["Odd"] = 3] = "Odd";
-})(DerivedRepeaterVarIdentity || (DerivedRepeaterVarIdentity = {}));
-/**
  * Kinds of i18n contexts. They can be created because of root i18n blocks, or ICUs.
  */
 var I18nContextKind;
@@ -10214,26 +10204,6 @@ class ConditionalCaseExpr extends ExpressionBase {
         if (this.expr !== null) {
             this.expr = transformExpressionsInExpression(this.expr, transform, flags);
         }
-    }
-}
-class DerivedRepeaterVarExpr extends ExpressionBase {
-    constructor(xref, identity) {
-        super();
-        this.xref = xref;
-        this.identity = identity;
-        this.kind = ExpressionKind.DerivedRepeaterVar;
-    }
-    transformInternalExpressions(transform, flags) { }
-    visitExpression(visitor, context) { }
-    isEquivalent(e) {
-        return e instanceof DerivedRepeaterVarExpr && e.identity === this.identity &&
-            e.xref === this.xref;
-    }
-    isConstant() {
-        return false;
-    }
-    clone() {
-        return new DerivedRepeaterVarExpr(this.xref, this.identity);
     }
 }
 class ConstCollectedExpr extends ExpressionBase {
@@ -13071,7 +13041,7 @@ function parseHostStyleProperties(job) {
         if (op.name.startsWith(STYLE_DOT)) {
             op.bindingKind = BindingKind.StyleProperty;
             op.name = op.name.substring(STYLE_DOT.length);
-            if (isCssCustomProperty$1(op.name)) {
+            if (!isCssCustomProperty$1(op.name)) {
                 op.name = hyphenate$1(op.name);
             }
             const { property, suffix } = parseProperty$1(op.name);
@@ -20511,6 +20481,7 @@ function parse(value) {
                 break;
             case 58 /* Char.Colon */:
                 if (!currentProp && parenDepth === 0 && quote === 0 /* Char.QuoteNone */) {
+                    // TODO: Do not hyphenate CSS custom property names like: `--intentionallyCamelCase`
                     currentProp = hyphenate(value.substring(propStart, i - 1).trim());
                     valueStart = i;
                 }
@@ -22245,42 +22216,6 @@ function removeUnusedI18nAttributesOps(job) {
 }
 
 /**
- * Inside the body of a repeater, certain context variables (such as `$first`) are ambiently
- * available. This phase finds those variable usages, and replaces them with the appropriate
- * expression.
- */
-function generateRepeaterDerivedVars(job) {
-    const repeaters = new Map();
-    for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            if (op.kind === OpKind.RepeaterCreate) {
-                repeaters.set(op.xref, op);
-            }
-        }
-    }
-    for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            transformExpressionsInOp(op, expr => {
-                if (!(expr instanceof DerivedRepeaterVarExpr)) {
-                    return expr;
-                }
-                const repeaterOp = repeaters.get(expr.xref);
-                switch (expr.identity) {
-                    case DerivedRepeaterVarIdentity.First:
-                        return new BinaryOperatorExpr(BinaryOperator.Identical, new LexicalReadExpr(repeaterOp.varNames.$index), literal(0));
-                    case DerivedRepeaterVarIdentity.Last:
-                        return new BinaryOperatorExpr(BinaryOperator.Identical, new LexicalReadExpr(repeaterOp.varNames.$index), new BinaryOperatorExpr(BinaryOperator.Minus, new LexicalReadExpr(repeaterOp.varNames.$count), literal(1)));
-                    case DerivedRepeaterVarIdentity.Even:
-                        return new BinaryOperatorExpr(BinaryOperator.Identical, new BinaryOperatorExpr(BinaryOperator.Modulo, new LexicalReadExpr(repeaterOp.varNames.$index), literal(2)), literal(0));
-                    case DerivedRepeaterVarIdentity.Odd:
-                        return new BinaryOperatorExpr(BinaryOperator.NotIdentical, new BinaryOperatorExpr(BinaryOperator.Modulo, new LexicalReadExpr(repeaterOp.varNames.$index), literal(2)), literal(0));
-                }
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-
-/**
  * Resolves `ir.ContextExpr` expressions (which represent embedded view or component contexts) to
  * either the `ctx` parameter to component functions (for the current view context) or to variables
  * that store those contexts (for contexts accessed via the `nextContext()` instruction).
@@ -23860,7 +23795,6 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: saveAndRestoreView },
     { kind: CompilationJobKind.Both, fn: deleteAnyCasts },
     { kind: CompilationJobKind.Both, fn: resolveDollarEvent },
-    { kind: CompilationJobKind.Tmpl, fn: generateRepeaterDerivedVars },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackVariables },
     { kind: CompilationJobKind.Both, fn: resolveNames },
     { kind: CompilationJobKind.Tmpl, fn: resolveDeferTargetNames },
@@ -24439,22 +24373,43 @@ function ingestIcu(unit, icu) {
  */
 function ingestForBlock(unit, forBlock) {
     const repeaterView = unit.job.allocateView(unit.xref);
-    const createRepeaterAlias = (ident, repeaterVar) => {
-        repeaterView.aliases.add({
-            kind: SemanticVariableKind.Alias,
-            name: null,
-            identifier: ident,
-            expression: new DerivedRepeaterVarExpr(repeaterView.xref, repeaterVar),
-        });
-    };
     // Set all the context variables and aliases available in the repeater.
     repeaterView.contextVariables.set(forBlock.item.name, forBlock.item.value);
     repeaterView.contextVariables.set(forBlock.contextVariables.$index.name, forBlock.contextVariables.$index.value);
     repeaterView.contextVariables.set(forBlock.contextVariables.$count.name, forBlock.contextVariables.$count.value);
-    createRepeaterAlias(forBlock.contextVariables.$first.name, DerivedRepeaterVarIdentity.First);
-    createRepeaterAlias(forBlock.contextVariables.$last.name, DerivedRepeaterVarIdentity.Last);
-    createRepeaterAlias(forBlock.contextVariables.$even.name, DerivedRepeaterVarIdentity.Even);
-    createRepeaterAlias(forBlock.contextVariables.$odd.name, DerivedRepeaterVarIdentity.Odd);
+    // We copy TemplateDefinitionBuilder's scheme of creating names for `$count` and `$index` that are
+    // suffixed with special information, to disambiguate which level of nested loop the below aliases
+    // refer to.
+    // TODO: We should refactor Template Pipeline's variable phases to gracefully handle shadowing,
+    // and arbitrarily many levels of variables depending on each other.
+    const indexName = `ɵ${forBlock.contextVariables.$index.name}_${repeaterView.xref}`;
+    const countName = `ɵ${forBlock.contextVariables.$count.name}_${repeaterView.xref}`;
+    repeaterView.contextVariables.set(indexName, forBlock.contextVariables.$index.value);
+    repeaterView.contextVariables.set(countName, forBlock.contextVariables.$count.value);
+    repeaterView.aliases.add({
+        kind: SemanticVariableKind.Alias,
+        name: null,
+        identifier: forBlock.contextVariables.$first.name,
+        expression: new LexicalReadExpr(indexName).identical(literal(0))
+    });
+    repeaterView.aliases.add({
+        kind: SemanticVariableKind.Alias,
+        name: null,
+        identifier: forBlock.contextVariables.$last.name,
+        expression: new LexicalReadExpr(indexName).identical(new LexicalReadExpr(countName).minus(literal(1)))
+    });
+    repeaterView.aliases.add({
+        kind: SemanticVariableKind.Alias,
+        name: null,
+        identifier: forBlock.contextVariables.$even.name,
+        expression: new LexicalReadExpr(indexName).modulo(literal(2)).identical(literal(0))
+    });
+    repeaterView.aliases.add({
+        kind: SemanticVariableKind.Alias,
+        name: null,
+        identifier: forBlock.contextVariables.$odd.name,
+        expression: new LexicalReadExpr(indexName).modulo(literal(2)).notIdentical(literal(0))
+    });
     const sourceSpan = convertSourceSpan(forBlock.trackBy.span, forBlock.sourceSpan);
     const track = convertAst(forBlock.trackBy, unit.job, sourceSpan);
     ingestNodes(repeaterView, forBlock.children);
@@ -32099,7 +32054,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.0.8+sha-7c19dc2');
+const VERSION = new Version('17.0.8+sha-7bf11ea');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33665,7 +33620,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33773,7 +33728,7 @@ function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION$5 : '14.0.0';
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34050,7 +34005,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34085,7 +34040,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34136,7 +34091,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34169,7 +34124,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34220,7 +34175,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.0.8+sha-7c19dc2'));
+    definitionMap.set('version', literal('17.0.8+sha-7bf11ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
