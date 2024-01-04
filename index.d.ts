@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.5+sha-1c63edd
+ * @license Angular v17.1.0-next.5+sha-36318db
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -841,6 +841,7 @@ declare namespace core {
         ViewEncapsulation,
         ChangeDetectionStrategy,
         Input,
+        InputFlags,
         Output,
         HostBinding,
         HostListener,
@@ -1582,6 +1583,13 @@ declare interface Input {
     alias?: string;
     required?: boolean;
     transform?: (value: any) => any;
+}
+
+/** Flags describing an input for a directive. */
+declare enum InputFlags {
+    None = 0,
+    SignalBased = 1,
+    HasTransform = 2
 }
 
 /**
@@ -3984,6 +3992,7 @@ export declare class R3Identifiers {
     static InputTransformsFeatureFeature: outputAst.ExternalReference;
     static listener: outputAst.ExternalReference;
     static getInheritedFactory: outputAst.ExternalReference;
+    static InputFlags: outputAst.ExternalReference;
     static sanitizeHtml: outputAst.ExternalReference;
     static sanitizeStyle: outputAst.ExternalReference;
     static sanitizeResourceUrl: outputAst.ExternalReference;
