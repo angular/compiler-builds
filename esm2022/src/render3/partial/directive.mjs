@@ -40,7 +40,7 @@ export function createDirectiveDefinitionMap(meta) {
     // in 16.1 is actually used.
     const minVersion = hasTransformFunctions ? MINIMUM_PARTIAL_LINKER_VERSION : '14.0.0';
     definitionMap.set('minVersion', o.literal(minVersion));
-    definitionMap.set('version', o.literal('17.0.8+sha-15a973f'));
+    definitionMap.set('version', o.literal('17.0.8+sha-8e49e38'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
