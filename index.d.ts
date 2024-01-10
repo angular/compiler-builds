@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.5+sha-5978b3d
+ * @license Angular v17.1.0-next.5+sha-7862686
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -334,12 +334,13 @@ export declare enum BinaryOperator {
     Modulo = 8,
     And = 9,
     Or = 10,
-    BitwiseAnd = 11,
-    Lower = 12,
-    LowerEquals = 13,
-    Bigger = 14,
-    BiggerEquals = 15,
-    NullishCoalesce = 16
+    BitwiseOr = 11,
+    BitwiseAnd = 12,
+    Lower = 13,
+    LowerEquals = 14,
+    Bigger = 15,
+    BiggerEquals = 16,
+    NullishCoalesce = 17
 }
 
 export declare class BinaryOperatorExpr extends Expression {
@@ -1245,6 +1246,7 @@ export declare abstract class Expression {
     multiply(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     modulo(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     and(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    bitwiseOr(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
     bitwiseAnd(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
     or(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     lower(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
@@ -1583,13 +1585,14 @@ declare interface Input {
     alias?: string;
     required?: boolean;
     transform?: (value: any) => any;
+    isSignal: boolean;
 }
 
 /** Flags describing an input for a directive. */
 declare enum InputFlags {
     None = 0,
     SignalBased = 1,
-    HasTransform = 2
+    HasDecoratorInputTransform = 2
 }
 
 /**

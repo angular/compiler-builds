@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-next.5+sha-5978b3d
+ * @license Angular v17.1.0-next.5+sha-7862686
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -414,7 +414,7 @@ var InputFlags;
 (function (InputFlags) {
     InputFlags[InputFlags["None"] = 0] = "None";
     InputFlags[InputFlags["SignalBased"] = 1] = "SignalBased";
-    InputFlags[InputFlags["HasTransform"] = 2] = "HasTransform";
+    InputFlags[InputFlags["HasDecoratorInputTransform"] = 2] = "HasDecoratorInputTransform";
 })(InputFlags || (InputFlags = {}));
 const CUSTOM_ELEMENTS_SCHEMA = {
     name: 'custom-elements'
@@ -898,12 +898,13 @@ var BinaryOperator;
     BinaryOperator[BinaryOperator["Modulo"] = 8] = "Modulo";
     BinaryOperator[BinaryOperator["And"] = 9] = "And";
     BinaryOperator[BinaryOperator["Or"] = 10] = "Or";
-    BinaryOperator[BinaryOperator["BitwiseAnd"] = 11] = "BitwiseAnd";
-    BinaryOperator[BinaryOperator["Lower"] = 12] = "Lower";
-    BinaryOperator[BinaryOperator["LowerEquals"] = 13] = "LowerEquals";
-    BinaryOperator[BinaryOperator["Bigger"] = 14] = "Bigger";
-    BinaryOperator[BinaryOperator["BiggerEquals"] = 15] = "BiggerEquals";
-    BinaryOperator[BinaryOperator["NullishCoalesce"] = 16] = "NullishCoalesce";
+    BinaryOperator[BinaryOperator["BitwiseOr"] = 11] = "BitwiseOr";
+    BinaryOperator[BinaryOperator["BitwiseAnd"] = 12] = "BitwiseAnd";
+    BinaryOperator[BinaryOperator["Lower"] = 13] = "Lower";
+    BinaryOperator[BinaryOperator["LowerEquals"] = 14] = "LowerEquals";
+    BinaryOperator[BinaryOperator["Bigger"] = 15] = "Bigger";
+    BinaryOperator[BinaryOperator["BiggerEquals"] = 16] = "BiggerEquals";
+    BinaryOperator[BinaryOperator["NullishCoalesce"] = 17] = "NullishCoalesce";
 })(BinaryOperator || (BinaryOperator = {}));
 function nullSafeIsEquivalent(base, other) {
     if (base == null || other == null) {
@@ -975,6 +976,9 @@ class Expression {
     }
     and(rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
+    }
+    bitwiseOr(rhs, sourceSpan, parens = true) {
+        return new BinaryOperatorExpr(BinaryOperator.BitwiseOr, this, rhs, null, sourceSpan, parens);
     }
     bitwiseAnd(rhs, sourceSpan, parens = true) {
         return new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, this, rhs, null, sourceSpan, parens);
@@ -3281,6 +3285,9 @@ class AbstractEmitterVisitor {
             case BinaryOperator.And:
                 opStr = '&&';
                 break;
+            case BinaryOperator.BitwiseOr:
+                opStr = '|';
+                break;
             case BinaryOperator.BitwiseAnd:
                 opStr = '&';
                 break;
@@ -5008,23 +5015,23 @@ function conditionallyCreateDirectiveBindingLiteral(map, forInputs) {
             declaredName = value.classPropertyName;
             publicName = value.bindingPropertyName;
             const differentDeclaringName = publicName !== declaredName;
-            const hasTransform = value.transformFunction !== null;
+            const hasDecoratorInputTransform = value.transformFunction !== null;
             // Build up input flags
             let flags = null;
             if (value.isSignal) {
-                flags = bitwiseAndInputFlagsExpr(InputFlags.SignalBased, flags);
+                flags = bitwiseOrInputFlagsExpr(InputFlags.SignalBased, flags);
             }
-            if (value.transformFunction !== null) {
-                flags = bitwiseAndInputFlagsExpr(InputFlags.HasTransform, flags);
+            if (hasDecoratorInputTransform) {
+                flags = bitwiseOrInputFlagsExpr(InputFlags.HasDecoratorInputTransform, flags);
             }
-            // Inputs, compared to outputs, will track their declared name (for `ngOnChanges`), or support
-            // transform functions, or store flag information if there is any.
-            if (forInputs && (differentDeclaringName || hasTransform || flags !== null)) {
+            // Inputs, compared to outputs, will track their declared name (for `ngOnChanges`), support
+            // decorator input transform functions, or store flag information if there is any.
+            if (forInputs && (differentDeclaringName || hasDecoratorInputTransform || flags !== null)) {
                 const flagsExpr = flags ?? importExpr(Identifiers.InputFlags).prop(InputFlags[InputFlags.None]);
                 const result = [flagsExpr, asLiteral(publicName)];
-                if (differentDeclaringName || hasTransform) {
+                if (differentDeclaringName || hasDecoratorInputTransform) {
                     result.push(asLiteral(declaredName));
-                    if (hasTransform) {
+                    if (hasDecoratorInputTransform) {
                         result.push(value.transformFunction);
                     }
                 }
@@ -5047,11 +5054,11 @@ function getInputFlagExpr(flag) {
     return importExpr(Identifiers.InputFlags).prop(InputFlags[flag]);
 }
 /** Combines a given input flag with an existing flag expression, if present. */
-function bitwiseAndInputFlagsExpr(flag, expr) {
+function bitwiseOrInputFlagsExpr(flag, expr) {
     if (expr === null) {
         return getInputFlagExpr(flag);
     }
-    return new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, expr, getInputFlagExpr(flag));
+    return getInputFlagExpr(flag).bitwiseOr(expr);
 }
 /**
  *  Remove trailing null nodes as they are implied.
@@ -11878,6 +11885,7 @@ const BINARY_OPERATORS = new Map([
     ['&&', BinaryOperator.And],
     ['>', BinaryOperator.Bigger],
     ['>=', BinaryOperator.BiggerEquals],
+    ['|', BinaryOperator.BitwiseOr],
     ['&', BinaryOperator.BitwiseAnd],
     ['/', BinaryOperator.Divide],
     ['==', BinaryOperator.Equals],
@@ -31852,8 +31860,10 @@ function convertDirectiveFacadeToMetadata(facade) {
                         bindingPropertyName: ann.alias || field,
                         classPropertyName: field,
                         required: ann.required || false,
-                        // TODO(signals): Support JIT signal inputs via decorator transform.
-                        isSignal: false,
+                        // For JIT, decorators are used to declare signal inputs. That is because of
+                        // a technical limitation where it's not possible to statically reflect class
+                        // members of a directive/component at runtime before instantiating the class.
+                        isSignal: !!ann.isSignal,
                         transformFunction: ann.transform != null ? new WrappedNodeExpr(ann.transform) : null,
                     };
                 }
@@ -32265,7 +32275,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.1.0-next.5+sha-5978b3d');
+const VERSION = new Version('17.1.0-next.5+sha-7862686');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33831,7 +33841,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33927,7 +33937,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -33985,8 +33995,8 @@ function getMinimumVersionForPartialOutput(meta) {
     // Note: in order to allow consuming Angular libraries that have been compiled with 16.1+ in
     // Angular 16.0, we only force a minimum version of 16.1 if input transform feature as introduced
     // in 16.1 is actually used.
-    const hasTransformFunctions = Object.values(meta.inputs).some(input => input.transformFunction !== null);
-    if (hasTransformFunctions) {
+    const hasDecoratorTransformFunctions = Object.values(meta.inputs).some(input => input.transformFunction !== null);
+    if (hasDecoratorTransformFunctions) {
         minVersion = '16.1.0';
     }
     // If there are input flags and we need the new emit, use the actual minimum version,
@@ -34311,7 +34321,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34346,7 +34356,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34397,7 +34407,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34430,7 +34440,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34481,7 +34491,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.1.0-next.5+sha-5978b3d'));
+    definitionMap.set('version', literal('17.1.0-next.5+sha-7862686'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
