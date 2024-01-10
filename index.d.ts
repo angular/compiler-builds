@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-9bbc415
+ * @license Angular v17.2.0-next.0+sha-79fbc4e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -579,6 +579,10 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * @param trigger Trigger whose target is being looked up.
      */
     getDeferredTriggerTarget(block: TmplAstDeferredBlock, trigger: TmplAstDeferredTrigger): TmplAstElement | null;
+    /**
+     * Whether a given node is located in a `@defer` block.
+     */
+    isDeferred(node: TmplAstElement): boolean;
 }
 
 export declare class BuiltinType extends Type {
@@ -2870,10 +2874,11 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private usedPipes;
     private eagerPipes;
     private deferredBlocks;
+    private rootScope;
     constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
         directive: DirectiveT;
         node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferredBlocks: Set<TmplAstDeferredBlock>);
+    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferredBlocks: Set<TmplAstDeferredBlock>, rootScope: Scope);
     getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
     getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
@@ -2887,6 +2892,7 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     getEagerlyUsedPipes(): string[];
     getDeferBlocks(): TmplAstDeferredBlock[];
     getDeferredTriggerTarget(block: TmplAstDeferredBlock, trigger: TmplAstDeferredTrigger): TmplAstElement | null;
+    isDeferred(element: TmplAstElement): boolean;
     /**
      * Finds an entity with a specific name in a scope.
      * @param rootNode Root node of the scope.
@@ -2998,6 +3004,16 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      * Map of `@defer` blocks -> their corresponding metadata.
      */
     deferBlocks: Map<t.DeferredBlock, R3DeferBlockMetadata>;
+    /**
+     * Map of deferrable symbol names -> corresponding import paths.
+     *
+     * This map is populated **only** in local compilation mode and used by the
+     * TemplateDefinitionBuilder to produce a defer function that loads
+     * all dependencies. In full compilation mode this information is defined
+     * on a `@defer` block level instead and dependency function is generated
+     * on per-block level.
+     */
+    deferrableTypes: Map<string, string>;
     /**
      * Specifies how the 'directives' and/or `pipes` array, if generated, need to be emitted.
      */
@@ -4527,6 +4543,80 @@ export declare function sanitizeIdentifier(name: string): string;
 
 export declare interface SchemaMetadata {
     name: string;
+}
+
+/**
+ * Represents a binding scope within a template.
+ *
+ * Any variables, references, or other named entities declared within the template will
+ * be captured and available by name in `namedEntities`. Additionally, child templates will
+ * be analyzed and have their child `Scope`s available in `childScopes`.
+ */
+declare class Scope implements Visitor_3 {
+    readonly parentScope: Scope | null;
+    readonly rootNode: ScopedNode | null;
+    /**
+     * Named members of the `Scope`, such as `Reference`s or `Variable`s.
+     */
+    readonly namedEntities: Map<string, TmplAstVariable | TmplAstReference>;
+    /**
+     * Set of elements that belong to this scope.
+     */
+    readonly elementsInScope: Set<TmplAstElement>;
+    /**
+     * Child `Scope`s for immediately nested `ScopedNode`s.
+     */
+    readonly childScopes: Map<ScopedNode, Scope>;
+    /** Whether this scope is deferred or if any of its ancestors are deferred. */
+    readonly isDeferred: boolean;
+    private constructor();
+    static newRootScope(): Scope;
+    /**
+     * Process a template (either as a `Template` sub-template with variables, or a plain array of
+     * template `Node`s) and construct its `Scope`.
+     */
+    static apply(template: TmplAstNode[]): Scope;
+    /**
+     * Internal method to process the scoped node and populate the `Scope`.
+     */
+    private ingest;
+    visitElement(element: TmplAstElement): void;
+    visitTemplate(template: TmplAstTemplate): void;
+    visitVariable(variable: TmplAstVariable): void;
+    visitReference(reference: TmplAstReference): void;
+    visitDeferredBlock(deferred: TmplAstDeferredBlock): void;
+    visitDeferredBlockPlaceholder(block: TmplAstDeferredBlockPlaceholder): void;
+    visitDeferredBlockError(block: TmplAstDeferredBlockError): void;
+    visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): void;
+    visitSwitchBlock(block: TmplAstSwitchBlock): void;
+    visitSwitchBlockCase(block: TmplAstSwitchBlockCase): void;
+    visitForLoopBlock(block: TmplAstForLoopBlock): void;
+    visitForLoopBlockEmpty(block: TmplAstForLoopBlockEmpty): void;
+    visitIfBlock(block: TmplAstIfBlock): void;
+    visitIfBlockBranch(block: TmplAstIfBlockBranch): void;
+    visitContent(content: TmplAstContent): void;
+    visitBoundAttribute(attr: TmplAstBoundAttribute): void;
+    visitBoundEvent(event: TmplAstBoundEvent): void;
+    visitBoundText(text: TmplAstBoundText): void;
+    visitText(text: TmplAstText): void;
+    visitTextAttribute(attr: TmplAstTextAttribute): void;
+    visitIcu(icu: TmplAstIcu): void;
+    visitDeferredTrigger(trigger: TmplAstDeferredTrigger): void;
+    visitUnknownBlock(block: TmplAstUnknownBlock): void;
+    private maybeDeclare;
+    /**
+     * Look up a variable within this `Scope`.
+     *
+     * This can recurse into a parent `Scope` if it's available.
+     */
+    lookup(name: string): TmplAstReference | TmplAstVariable | null;
+    /**
+     * Get the child scope for a `ScopedNode`.
+     *
+     * This should always be defined.
+     */
+    getChildScope(node: ScopedNode): Scope;
+    private ingestScopedNode;
 }
 
 /** Node that has a `Scope` associated with it. */
