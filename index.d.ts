@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0-rc.0+sha-6616019
+ * @license Angular v17.1.0-rc.0+sha-79e8539
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -691,7 +691,7 @@ export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outp
  * Similar to the `setClassMetadata` call, it's wrapped into the `ngDevMode`
  * check to tree-shake away this code in production mode.
  */
-export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, deferrableTypes: Map<string, string>): outputAst.Expression;
+export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, deferrableTypes: Map<string, string> | null): outputAst.Expression;
 
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
@@ -1020,6 +1020,30 @@ export declare class DeclareVarStmt extends Statement {
 }
 
 export declare const DEFAULT_INTERPOLATION_CONFIG: InterpolationConfig;
+
+/**
+ * Defines how dynamic imports for deferred dependencies should be emitted in the
+ * generated output:
+ *  - either in a function on per-component basis (in case of local compilation)
+ *  - or in a function on per-block basis (in full compilation mode)
+ */
+export declare const enum DeferBlockDepsEmitMode {
+    /**
+     * Dynamic imports are grouped on per-block basis.
+     *
+     * This is used in full compilation mode, when compiler has more information
+     * about particular dependencies that belong to this block.
+     */
+    PerBlock = 0,
+    /**
+     * Dynamic imports are grouped on per-component basis.
+     *
+     * In local compilation, compiler doesn't have enough information to determine
+     * which deferred dependencies belong to which block. In this case we group all
+     * dynamic imports into a single file on per-component basis.
+     */
+    PerComponent = 1
+}
 
 export declare function devOnlyGuardedExpression(expr: outputAst.Expression): outputAst.Expression;
 
@@ -3005,13 +3029,13 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      */
     deferBlocks: Map<t.DeferredBlock, R3DeferBlockMetadata>;
     /**
+     * Defines how dynamic imports for deferred dependencies should be grouped:
+     *  - either in a function on per-component basis (in case of local compilation)
+     *  - or in a function on per-block basis (in full compilation mode)
+     */
+    deferBlockDepsEmitMode: DeferBlockDepsEmitMode;
+    /**
      * Map of deferrable symbol names -> corresponding import paths.
-     *
-     * This map is populated **only** in local compilation mode and used by the
-     * TemplateDefinitionBuilder to produce a defer function that loads
-     * all dependencies. In full compilation mode this information is defined
-     * on a `@defer` block level instead and dependency function is generated
-     * on per-block level.
      */
     deferrableTypes: Map<string, string>;
     /**
