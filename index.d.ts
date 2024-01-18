@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.0+sha-51d53fc
+ * @license Angular v17.1.0+sha-9ff4893
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -757,8 +757,6 @@ export declare class CompilerConfig {
     strictInjectionParameters: boolean;
     constructor({ defaultEncapsulation, preserveWhitespaces, strictInjectionParameters }?: {
         defaultEncapsulation?: ViewEncapsulation;
-        useJit?: boolean;
-        missingTranslation?: MissingTranslationStrategy | null;
         preserveWhitespaces?: boolean;
         strictInjectionParameters?: boolean;
     });
