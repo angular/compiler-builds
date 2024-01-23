@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-9384537
+ * @license Angular v17.2.0-next.0+sha-f81a436
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2628,6 +2628,10 @@ class Identifiers {
     static { this.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE }; }
     static { this.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE }; }
     static { this.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE }; }
+    // Signal queries
+    static { this.viewQuerySignal = { name: 'ɵɵviewQuerySignal', moduleName: CORE }; }
+    static { this.contentQuerySignal = { name: 'ɵɵcontentQuerySignal', moduleName: CORE }; }
+    static { this.queryAdvance = { name: 'ɵɵqueryAdvance', moduleName: CORE }; }
     static { this.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE }; }
     static { this.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE }; }
     static { this.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE }; }
@@ -5068,29 +5072,6 @@ function trimTrailingNulls(parameters) {
         parameters.pop();
     }
     return parameters;
-}
-function getQueryPredicate(query, constantPool) {
-    if (Array.isArray(query.predicate)) {
-        let predicate = [];
-        query.predicate.forEach((selector) => {
-            // Each item in predicates array may contain strings with comma-separated refs
-            // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
-            // as separate array entities
-            const selectors = selector.split(',').map(token => literal(token.trim()));
-            predicate.push(...selectors);
-        });
-        return constantPool.getConstLiteral(literalArr(predicate), true);
-    }
-    else {
-        // The original predicate may have been wrapped in a `forwardRef()` call.
-        switch (query.predicate.forwardRef) {
-            case 0 /* ForwardRefHandling.None */:
-            case 2 /* ForwardRefHandling.Unwrapped */:
-                return query.predicate.expression;
-            case 1 /* ForwardRefHandling.Wrapped */:
-                return importExpr(Identifiers.resolveForwardRef).callFn([query.predicate.expression]);
-        }
-    }
 }
 /**
  * A representation for an object literal used during codegen of definition objects. The generic
@@ -25044,6 +25025,55 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
 
 const USE_TEMPLATE_PIPELINE = false;
 
+/**
+ * Translates query flags into `TQueryFlags` type in
+ * packages/core/src/render3/interfaces/query.ts
+ * @param query
+ */
+function toQueryFlags(query) {
+    return ((query.descendants ? 1 /* QueryFlags.descendants */ : 0 /* QueryFlags.none */) |
+        (query.static ? 2 /* QueryFlags.isStatic */ : 0 /* QueryFlags.none */) |
+        (query.emitDistinctChangesOnly ? 4 /* QueryFlags.emitDistinctChangesOnly */ : 0 /* QueryFlags.none */));
+}
+function getQueryPredicate(query, constantPool) {
+    if (Array.isArray(query.predicate)) {
+        let predicate = [];
+        query.predicate.forEach((selector) => {
+            // Each item in predicates array may contain strings with comma-separated refs
+            // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
+            // as separate array entities
+            const selectors = selector.split(',').map((token) => literal(token.trim()));
+            predicate.push(...selectors);
+        });
+        return constantPool.getConstLiteral(literalArr(predicate), true);
+    }
+    else {
+        // The original predicate may have been wrapped in a `forwardRef()` call.
+        switch (query.predicate.forwardRef) {
+            case 0 /* ForwardRefHandling.None */:
+            case 2 /* ForwardRefHandling.Unwrapped */:
+                return query.predicate.expression;
+            case 1 /* ForwardRefHandling.Wrapped */:
+                return importExpr(Identifiers.resolveForwardRef).callFn([query.predicate.expression]);
+        }
+    }
+}
+function createQueryCreateCall(query, constantPool, queryTypeFns, prependParams) {
+    const parameters = [];
+    if (prependParams !== undefined) {
+        parameters.push(...prependParams);
+    }
+    if (query.isSignal) {
+        parameters.push(new ReadPropExpr(variable(CONTEXT_NAME), query.propertyName));
+    }
+    parameters.push(getQueryPredicate(query, constantPool), literal(toQueryFlags(query)));
+    if (query.read) {
+        parameters.push(query.read);
+    }
+    const queryCreateFn = query.isSignal ? queryTypeFns.signalBased : queryTypeFns.nonSignal;
+    return importExpr(queryCreateFn).callFn(parameters);
+}
+
 const IMPORTANT_FLAG = '!important';
 /**
  * Minimum amount of binding slots required in the runtime for style/class bindings.
@@ -30338,22 +30368,6 @@ function compileDeclarationList(list, mode) {
             throw new Error(`Unsupported with an array of pre-resolved dependencies`);
     }
 }
-function prepareQueryParams(query, constantPool) {
-    const parameters = [getQueryPredicate(query, constantPool), literal(toQueryFlags(query))];
-    if (query.read) {
-        parameters.push(query.read);
-    }
-    return parameters;
-}
-/**
- * Translates query flags into `TQueryFlags` type in packages/core/src/render3/interfaces/query.ts
- * @param query
- */
-function toQueryFlags(query) {
-    return (query.descendants ? 1 /* QueryFlags.descendants */ : 0 /* QueryFlags.none */) |
-        (query.static ? 2 /* QueryFlags.isStatic */ : 0 /* QueryFlags.none */) |
-        (query.emitDistinctChangesOnly ? 4 /* QueryFlags.emitDistinctChangesOnly */ : 0 /* QueryFlags.none */);
-}
 function convertAttributesToExpressions(attributes) {
     const values = [];
     for (let key of Object.getOwnPropertyNames(attributes)) {
@@ -30368,10 +30382,17 @@ function createContentQueriesFunction(queries, constantPool, name) {
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
     for (const query of queries) {
-        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null);
-        createStatements.push(importExpr(Identifiers.contentQuery)
-            .callFn([variable('dirIndex'), ...prepareQueryParams(query, constantPool)])
+        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null) or
+        //                r3.contentQuerySignal(dirIndex, propName, somePredicate, <flags>, <read>).
+        createStatements.push(createQueryCreateCall(query, constantPool, { nonSignal: Identifiers.contentQuery, signalBased: Identifiers.contentQuerySignal }, 
+        /* prependParams */ [variable('dirIndex')])
             .toStmt());
+        // Signal queries update lazily and we just advance the index.
+        // TODO: Chaining?
+        if (query.isSignal) {
+            updateStatements.push(importExpr(Identifiers.queryAdvance).callFn([]).toStmt());
+            continue;
+        }
         // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
         const getQueryList = importExpr(Identifiers.loadQuery).callFn([]);
@@ -30461,9 +30482,19 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     const updateStatements = [];
     const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
     viewQueries.forEach((query) => {
-        // creation, e.g. r3.viewQuery(somePredicate, true);
-        const queryDefinition = importExpr(Identifiers.viewQuery).callFn(prepareQueryParams(query, constantPool));
-        createStatements.push(queryDefinition.toStmt());
+        // creation call, e.g. r3.viewQuery(somePredicate, true) or
+        //                r3.viewQuerySignal(ctx.prop, somePredicate, true);
+        const queryDefinitionCall = createQueryCreateCall(query, constantPool, {
+            signalBased: Identifiers.viewQuerySignal,
+            nonSignal: Identifiers.viewQuery,
+        });
+        createStatements.push(queryDefinitionCall.toStmt());
+        // Signal queries update lazily and we just advance the index.
+        // TODO: Chaining?
+        if (query.isSignal) {
+            updateStatements.push(importExpr(Identifiers.queryAdvance).callFn([]).toStmt());
+            return;
+        }
         // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
         const temporary = tempAllocator();
         const getQueryList = importExpr(Identifiers.loadQuery).callFn([]);
@@ -31864,6 +31895,8 @@ class CompilerFacadeImpl {
 function convertToR3QueryMetadata(facade) {
     return {
         ...facade,
+        // Decorator queries are never signal-based.
+        isSignal: false,
         predicate: convertQueryPredicate(facade.predicate),
         read: facade.read ? new WrappedNodeExpr(facade.read) : null,
         static: facade.static,
@@ -31879,6 +31912,7 @@ function convertQueryDeclarationToMetadata(declaration) {
         read: declaration.read ? new WrappedNodeExpr(declaration.read) : null,
         static: declaration.static ?? false,
         emitDistinctChangesOnly: declaration.emitDistinctChangesOnly ?? true,
+        isSignal: !!declaration.isSignal,
     };
 }
 function convertQueryPredicate(predicate) {
@@ -32317,7 +32351,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.0+sha-9384537');
+const VERSION = new Version('17.2.0-next.0+sha-f81a436');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33883,7 +33917,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33979,7 +34013,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34047,6 +34081,11 @@ function getMinimumVersionForPartialOutput(meta) {
     if (needsNewInputPartialOutput(meta)) {
         minVersion = '17.1.0';
     }
+    // If there are signal-based queries, partial output generates an extra field
+    // that should be parsed by linkers. Ensure a proper minimum linker version.
+    if (meta.queries.some(q => q.isSignal) || meta.viewQueries.some(q => q.isSignal)) {
+        minVersion = '17.2.0';
+    }
     return minVersion;
 }
 /**
@@ -34082,6 +34121,9 @@ function compileQuery(query) {
     meta.set('read', query.read);
     if (query.static) {
         meta.set('static', literal(true));
+    }
+    if (query.isSignal) {
+        meta.set('isSignal', literal(true));
     }
     return meta.toLiteralMap();
 }
@@ -34363,7 +34405,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34398,7 +34440,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34449,7 +34491,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34482,7 +34524,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34533,7 +34575,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-9384537'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-f81a436'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
