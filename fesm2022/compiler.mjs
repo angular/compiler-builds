@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-09f9423
+ * @license Angular v17.2.0-next.0+sha-7751645
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4971,11 +4971,11 @@ function invokeInstruction(span, reference, params) {
  *
  * A variable declaration is added to the statements the first time the allocator is invoked.
  */
-function temporaryAllocator(statements, name) {
+function temporaryAllocator(pushStatement, name) {
     let temp = null;
     return () => {
         if (!temp) {
-            statements.push(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
+            pushStatement(new DeclareVarStmt(TEMPORARY_NAME, undefined, DYNAMIC_TYPE));
             temp = variable(name);
         }
         return temp;
@@ -25025,584 +25025,6 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
 
 const USE_TEMPLATE_PIPELINE = false;
 
-/**
- * Translates query flags into `TQueryFlags` type in
- * packages/core/src/render3/interfaces/query.ts
- * @param query
- */
-function toQueryFlags(query) {
-    return ((query.descendants ? 1 /* QueryFlags.descendants */ : 0 /* QueryFlags.none */) |
-        (query.static ? 2 /* QueryFlags.isStatic */ : 0 /* QueryFlags.none */) |
-        (query.emitDistinctChangesOnly ? 4 /* QueryFlags.emitDistinctChangesOnly */ : 0 /* QueryFlags.none */));
-}
-function getQueryPredicate(query, constantPool) {
-    if (Array.isArray(query.predicate)) {
-        let predicate = [];
-        query.predicate.forEach((selector) => {
-            // Each item in predicates array may contain strings with comma-separated refs
-            // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
-            // as separate array entities
-            const selectors = selector.split(',').map((token) => literal(token.trim()));
-            predicate.push(...selectors);
-        });
-        return constantPool.getConstLiteral(literalArr(predicate), true);
-    }
-    else {
-        // The original predicate may have been wrapped in a `forwardRef()` call.
-        switch (query.predicate.forwardRef) {
-            case 0 /* ForwardRefHandling.None */:
-            case 2 /* ForwardRefHandling.Unwrapped */:
-                return query.predicate.expression;
-            case 1 /* ForwardRefHandling.Wrapped */:
-                return importExpr(Identifiers.resolveForwardRef).callFn([query.predicate.expression]);
-        }
-    }
-}
-function createQueryCreateCall(query, constantPool, queryTypeFns, prependParams) {
-    const parameters = [];
-    if (prependParams !== undefined) {
-        parameters.push(...prependParams);
-    }
-    if (query.isSignal) {
-        parameters.push(new ReadPropExpr(variable(CONTEXT_NAME), query.propertyName));
-    }
-    parameters.push(getQueryPredicate(query, constantPool), literal(toQueryFlags(query)));
-    if (query.read) {
-        parameters.push(query.read);
-    }
-    const queryCreateFn = query.isSignal ? queryTypeFns.signalBased : queryTypeFns.nonSignal;
-    return importExpr(queryCreateFn).callFn(parameters);
-}
-
-const IMPORTANT_FLAG = '!important';
-/**
- * Minimum amount of binding slots required in the runtime for style/class bindings.
- *
- * Styling in Angular uses up two slots in the runtime LView/TData data structures to
- * record binding data, property information and metadata.
- *
- * When a binding is registered it will place the following information in the `LView`:
- *
- * slot 1) binding value
- * slot 2) cached value (all other values collected before it in string form)
- *
- * When a binding is registered it will place the following information in the `TData`:
- *
- * slot 1) prop name
- * slot 2) binding index that points to the previous style/class binding (and some extra config
- * values)
- *
- * Let's imagine we have a binding that looks like so:
- *
- * ```
- * <div [style.width]="x" [style.height]="y">
- * ```
- *
- * Our `LView` and `TData` data-structures look like so:
- *
- * ```typescript
- * LView = [
- *   // ...
- *   x, // value of x
- *   "width: x",
- *
- *   y, // value of y
- *   "width: x; height: y",
- *   // ...
- * ];
- *
- * TData = [
- *   // ...
- *   "width", // binding slot 20
- *   0,
- *
- *   "height",
- *   20,
- *   // ...
- * ];
- * ```
- *
- * */
-const MIN_STYLING_BINDING_SLOTS_REQUIRED = 2;
-/**
- * Produces creation/update instructions for all styling bindings (class and style)
- *
- * It also produces the creation instruction to register all initial styling values
- * (which are all the static class="..." and style="..." attribute values that exist
- * on an element within a template).
- *
- * The builder class below handles producing instructions for the following cases:
- *
- * - Static style/class attributes (style="..." and class="...")
- * - Dynamic style/class map bindings ([style]="map" and [class]="map|string")
- * - Dynamic style/class property bindings ([style.prop]="exp" and [class.name]="exp")
- *
- * Due to the complex relationship of all of these cases, the instructions generated
- * for these attributes/properties/bindings must be done so in the correct order. The
- * order which these must be generated is as follows:
- *
- * if (createMode) {
- *   styling(...)
- * }
- * if (updateMode) {
- *   styleMap(...)
- *   classMap(...)
- *   styleProp(...)
- *   classProp(...)
- * }
- *
- * The creation/update methods within the builder class produce these instructions.
- */
-class StylingBuilder {
-    constructor(_directiveExpr) {
-        this._directiveExpr = _directiveExpr;
-        /** Whether or not there are any static styling values present */
-        this._hasInitialValues = false;
-        /**
-         *  Whether or not there are any styling bindings present
-         *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
-         */
-        this.hasBindings = false;
-        this.hasBindingsWithPipes = false;
-        /** the input for [class] (if it exists) */
-        this._classMapInput = null;
-        /** the input for [style] (if it exists) */
-        this._styleMapInput = null;
-        /** an array of each [style.prop] input */
-        this._singleStyleInputs = null;
-        /** an array of each [class.name] input */
-        this._singleClassInputs = null;
-        this._lastStylingInput = null;
-        this._firstStylingInput = null;
-        // maps are used instead of hash maps because a Map will
-        // retain the ordering of the keys
-        /**
-         * Represents the location of each style binding in the template
-         * (e.g. `<div [style.width]="w" [style.height]="h">` implies
-         * that `width=0` and `height=1`)
-         */
-        this._stylesIndex = new Map();
-        /**
-         * Represents the location of each class binding in the template
-         * (e.g. `<div [class.big]="b" [class.hidden]="h">` implies
-         * that `big=0` and `hidden=1`)
-         */
-        this._classesIndex = new Map();
-        this._initialStyleValues = [];
-        this._initialClassValues = [];
-    }
-    /**
-     * Registers a given input to the styling builder to be later used when producing AOT code.
-     *
-     * The code below will only accept the input if it is somehow tied to styling (whether it be
-     * style/class bindings or static style/class attributes).
-     */
-    registerBoundInput(input) {
-        // [attr.style] or [attr.class] are skipped in the code below,
-        // they should not be treated as styling-based bindings since
-        // they are intended to be written directly to the attr and
-        // will therefore skip all style/class resolution that is present
-        // with style="", [style]="" and [style.prop]="", class="",
-        // [class.prop]="". [class]="" assignments
-        let binding = null;
-        let name = input.name;
-        switch (input.type) {
-            case 0 /* BindingType.Property */:
-                binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
-                break;
-            case 3 /* BindingType.Style */:
-                binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
-                break;
-            case 2 /* BindingType.Class */:
-                binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
-                break;
-        }
-        return binding ? true : false;
-    }
-    registerInputBasedOnName(name, expression, sourceSpan) {
-        let binding = null;
-        const prefix = name.substring(0, 6);
-        const isStyle = name === 'style' || prefix === 'style.' || prefix === 'style!';
-        const isClass = !isStyle && (name === 'class' || prefix === 'class.' || prefix === 'class!');
-        if (isStyle || isClass) {
-            const isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
-            const property = name.slice(isMapBased ? 5 : 6); // the dot explains why there's a +1
-            if (isStyle) {
-                binding = this.registerStyleInput(property, isMapBased, expression, sourceSpan);
-            }
-            else {
-                binding = this.registerClassInput(property, isMapBased, expression, sourceSpan);
-            }
-        }
-        return binding;
-    }
-    registerStyleInput(name, isMapBased, value, sourceSpan, suffix) {
-        if (isEmptyExpression(value)) {
-            return null;
-        }
-        // CSS custom properties are case-sensitive so we shouldn't normalize them.
-        // See: https://www.w3.org/TR/css-variables-1/#defining-variables
-        if (!isCssCustomProperty(name)) {
-            name = hyphenate(name);
-        }
-        const { property, hasOverrideFlag, suffix: bindingSuffix } = parseProperty(name);
-        suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
-        const entry = { name: property, suffix: suffix, value, sourceSpan, hasOverrideFlag };
-        if (isMapBased) {
-            this._styleMapInput = entry;
-        }
-        else {
-            (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
-            registerIntoMap(this._stylesIndex, property);
-        }
-        this._lastStylingInput = entry;
-        this._firstStylingInput = this._firstStylingInput || entry;
-        this._checkForPipes(value);
-        this.hasBindings = true;
-        return entry;
-    }
-    registerClassInput(name, isMapBased, value, sourceSpan) {
-        if (isEmptyExpression(value)) {
-            return null;
-        }
-        const { property, hasOverrideFlag } = parseProperty(name);
-        const entry = { name: property, value, sourceSpan, hasOverrideFlag, suffix: null };
-        if (isMapBased) {
-            this._classMapInput = entry;
-        }
-        else {
-            (this._singleClassInputs = this._singleClassInputs || []).push(entry);
-            registerIntoMap(this._classesIndex, property);
-        }
-        this._lastStylingInput = entry;
-        this._firstStylingInput = this._firstStylingInput || entry;
-        this._checkForPipes(value);
-        this.hasBindings = true;
-        return entry;
-    }
-    _checkForPipes(value) {
-        if ((value instanceof ASTWithSource) && (value.ast instanceof BindingPipe)) {
-            this.hasBindingsWithPipes = true;
-        }
-    }
-    /**
-     * Registers the element's static style string value to the builder.
-     *
-     * @param value the style string (e.g. `width:100px; height:200px;`)
-     */
-    registerStyleAttr(value) {
-        this._initialStyleValues = parse(value);
-        this._hasInitialValues = true;
-    }
-    /**
-     * Registers the element's static class string value to the builder.
-     *
-     * @param value the className string (e.g. `disabled gold zoom`)
-     */
-    registerClassAttr(value) {
-        this._initialClassValues = value.trim().split(/\s+/g);
-        this._hasInitialValues = true;
-    }
-    /**
-     * Appends all styling-related expressions to the provided attrs array.
-     *
-     * @param attrs an existing array where each of the styling expressions
-     * will be inserted into.
-     */
-    populateInitialStylingAttrs(attrs) {
-        // [CLASS_MARKER, 'foo', 'bar', 'baz' ...]
-        if (this._initialClassValues.length) {
-            attrs.push(literal(1 /* AttributeMarker.Classes */));
-            for (let i = 0; i < this._initialClassValues.length; i++) {
-                attrs.push(literal(this._initialClassValues[i]));
-            }
-        }
-        // [STYLE_MARKER, 'width', '200px', 'height', '100px', ...]
-        if (this._initialStyleValues.length) {
-            attrs.push(literal(2 /* AttributeMarker.Styles */));
-            for (let i = 0; i < this._initialStyleValues.length; i += 2) {
-                attrs.push(literal(this._initialStyleValues[i]), literal(this._initialStyleValues[i + 1]));
-            }
-        }
-    }
-    /**
-     * Builds an instruction with all the expressions and parameters for `elementHostAttrs`.
-     *
-     * The instruction generation code below is used for producing the AOT statement code which is
-     * responsible for registering initial styles (within a directive hostBindings' creation block),
-     * as well as any of the provided attribute values, to the directive host element.
-     */
-    assignHostAttrs(attrs, definitionMap) {
-        if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
-            this.populateInitialStylingAttrs(attrs);
-            definitionMap.set('hostAttrs', literalArr(attrs));
-        }
-    }
-    /**
-     * Builds an instruction with all the expressions and parameters for `classMap`.
-     *
-     * The instruction data will contain all expressions for `classMap` to function
-     * which includes the `[class]` expression params.
-     */
-    buildClassMapInstruction(valueConverter) {
-        if (this._classMapInput) {
-            return this._buildMapBasedInstruction(valueConverter, true, this._classMapInput);
-        }
-        return null;
-    }
-    /**
-     * Builds an instruction with all the expressions and parameters for `styleMap`.
-     *
-     * The instruction data will contain all expressions for `styleMap` to function
-     * which includes the `[style]` expression params.
-     */
-    buildStyleMapInstruction(valueConverter) {
-        if (this._styleMapInput) {
-            return this._buildMapBasedInstruction(valueConverter, false, this._styleMapInput);
-        }
-        return null;
-    }
-    _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
-        // each styling binding value is stored in the LView
-        // map-based bindings allocate two slots: one for the
-        // previous binding value and another for the previous
-        // className or style attribute value.
-        let totalBindingSlotsRequired = MIN_STYLING_BINDING_SLOTS_REQUIRED;
-        // these values must be outside of the update block so that they can
-        // be evaluated (the AST visit call) during creation time so that any
-        // pipes can be picked up in time before the template is built
-        const mapValue = stylingInput.value.visit(valueConverter);
-        let reference;
-        if (mapValue instanceof Interpolation$1) {
-            totalBindingSlotsRequired += mapValue.expressions.length;
-            reference = isClassBased ? getClassMapInterpolationExpression(mapValue) :
-                getStyleMapInterpolationExpression(mapValue);
-        }
-        else {
-            reference = isClassBased ? Identifiers.classMap : Identifiers.styleMap;
-        }
-        return {
-            reference,
-            calls: [{
-                    supportsInterpolation: true,
-                    sourceSpan: stylingInput.sourceSpan,
-                    allocateBindingSlots: totalBindingSlotsRequired,
-                    params: (convertFn) => {
-                        const convertResult = convertFn(mapValue);
-                        const params = Array.isArray(convertResult) ? convertResult : [convertResult];
-                        return params;
-                    }
-                }]
-        };
-    }
-    _buildSingleInputs(reference, inputs, valueConverter, getInterpolationExpressionFn, isClassBased) {
-        const instructions = [];
-        inputs.forEach(input => {
-            const previousInstruction = instructions[instructions.length - 1];
-            const value = input.value.visit(valueConverter);
-            let referenceForCall = reference;
-            // each styling binding value is stored in the LView
-            // but there are two values stored for each binding:
-            //   1) the value itself
-            //   2) an intermediate value (concatenation of style up to this point).
-            //      We need to store the intermediate value so that we don't allocate
-            //      the strings on each CD.
-            let totalBindingSlotsRequired = MIN_STYLING_BINDING_SLOTS_REQUIRED;
-            if (value instanceof Interpolation$1) {
-                totalBindingSlotsRequired += value.expressions.length;
-                if (getInterpolationExpressionFn) {
-                    referenceForCall = getInterpolationExpressionFn(value);
-                }
-            }
-            const call = {
-                sourceSpan: input.sourceSpan,
-                allocateBindingSlots: totalBindingSlotsRequired,
-                supportsInterpolation: !!getInterpolationExpressionFn,
-                params: (convertFn) => {
-                    // params => stylingProp(propName, value, suffix)
-                    const params = [];
-                    params.push(literal(input.name));
-                    const convertResult = convertFn(value);
-                    if (Array.isArray(convertResult)) {
-                        params.push(...convertResult);
-                    }
-                    else {
-                        params.push(convertResult);
-                    }
-                    // [style.prop] bindings may use suffix values (e.g. px, em, etc...), therefore,
-                    // if that is detected then we need to pass that in as an optional param.
-                    if (!isClassBased && input.suffix !== null) {
-                        params.push(literal(input.suffix));
-                    }
-                    return params;
-                }
-            };
-            // If we ended up generating a call to the same instruction as the previous styling property
-            // we can chain the calls together safely to save some bytes, otherwise we have to generate
-            // a separate instruction call. This is primarily a concern with interpolation instructions
-            // where we may start off with one `reference`, but end up using another based on the
-            // number of interpolations.
-            if (previousInstruction && previousInstruction.reference === referenceForCall) {
-                previousInstruction.calls.push(call);
-            }
-            else {
-                instructions.push({ reference: referenceForCall, calls: [call] });
-            }
-        });
-        return instructions;
-    }
-    _buildClassInputs(valueConverter) {
-        if (this._singleClassInputs) {
-            return this._buildSingleInputs(Identifiers.classProp, this._singleClassInputs, valueConverter, null, true);
-        }
-        return [];
-    }
-    _buildStyleInputs(valueConverter) {
-        if (this._singleStyleInputs) {
-            return this._buildSingleInputs(Identifiers.styleProp, this._singleStyleInputs, valueConverter, getStylePropInterpolationExpression, false);
-        }
-        return [];
-    }
-    /**
-     * Constructs all instructions which contain the expressions that will be placed
-     * into the update block of a template function or a directive hostBindings function.
-     */
-    buildUpdateLevelInstructions(valueConverter) {
-        const instructions = [];
-        if (this.hasBindings) {
-            const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
-            if (styleMapInstruction) {
-                instructions.push(styleMapInstruction);
-            }
-            const classMapInstruction = this.buildClassMapInstruction(valueConverter);
-            if (classMapInstruction) {
-                instructions.push(classMapInstruction);
-            }
-            instructions.push(...this._buildStyleInputs(valueConverter));
-            instructions.push(...this._buildClassInputs(valueConverter));
-        }
-        return instructions;
-    }
-}
-function registerIntoMap(map, key) {
-    if (!map.has(key)) {
-        map.set(key, map.size);
-    }
-}
-function parseProperty(name) {
-    let hasOverrideFlag = false;
-    const overrideIndex = name.indexOf(IMPORTANT_FLAG);
-    if (overrideIndex !== -1) {
-        name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
-        hasOverrideFlag = true;
-    }
-    let suffix = null;
-    let property = name;
-    const unitIndex = name.lastIndexOf('.');
-    if (unitIndex > 0) {
-        suffix = name.slice(unitIndex + 1);
-        property = name.substring(0, unitIndex);
-    }
-    return { property, suffix, hasOverrideFlag };
-}
-/**
- * Gets the instruction to generate for an interpolated class map.
- * @param interpolation An Interpolation AST
- */
-function getClassMapInterpolationExpression(interpolation) {
-    switch (getInterpolationArgsLength(interpolation)) {
-        case 1:
-            return Identifiers.classMap;
-        case 3:
-            return Identifiers.classMapInterpolate1;
-        case 5:
-            return Identifiers.classMapInterpolate2;
-        case 7:
-            return Identifiers.classMapInterpolate3;
-        case 9:
-            return Identifiers.classMapInterpolate4;
-        case 11:
-            return Identifiers.classMapInterpolate5;
-        case 13:
-            return Identifiers.classMapInterpolate6;
-        case 15:
-            return Identifiers.classMapInterpolate7;
-        case 17:
-            return Identifiers.classMapInterpolate8;
-        default:
-            return Identifiers.classMapInterpolateV;
-    }
-}
-/**
- * Gets the instruction to generate for an interpolated style map.
- * @param interpolation An Interpolation AST
- */
-function getStyleMapInterpolationExpression(interpolation) {
-    switch (getInterpolationArgsLength(interpolation)) {
-        case 1:
-            return Identifiers.styleMap;
-        case 3:
-            return Identifiers.styleMapInterpolate1;
-        case 5:
-            return Identifiers.styleMapInterpolate2;
-        case 7:
-            return Identifiers.styleMapInterpolate3;
-        case 9:
-            return Identifiers.styleMapInterpolate4;
-        case 11:
-            return Identifiers.styleMapInterpolate5;
-        case 13:
-            return Identifiers.styleMapInterpolate6;
-        case 15:
-            return Identifiers.styleMapInterpolate7;
-        case 17:
-            return Identifiers.styleMapInterpolate8;
-        default:
-            return Identifiers.styleMapInterpolateV;
-    }
-}
-/**
- * Gets the instruction to generate for an interpolated style prop.
- * @param interpolation An Interpolation AST
- */
-function getStylePropInterpolationExpression(interpolation) {
-    switch (getInterpolationArgsLength(interpolation)) {
-        case 1:
-            return Identifiers.styleProp;
-        case 3:
-            return Identifiers.stylePropInterpolate1;
-        case 5:
-            return Identifiers.stylePropInterpolate2;
-        case 7:
-            return Identifiers.stylePropInterpolate3;
-        case 9:
-            return Identifiers.stylePropInterpolate4;
-        case 11:
-            return Identifiers.stylePropInterpolate5;
-        case 13:
-            return Identifiers.stylePropInterpolate6;
-        case 15:
-            return Identifiers.stylePropInterpolate7;
-        case 17:
-            return Identifiers.stylePropInterpolate8;
-        default:
-            return Identifiers.stylePropInterpolateV;
-    }
-}
-/**
- * Checks whether property name is a custom CSS property.
- * See: https://www.w3.org/TR/css-variables-1
- */
-function isCssCustomProperty(name) {
-    return name.startsWith('--');
-}
-function isEmptyExpression(ast) {
-    if (ast instanceof ASTWithSource) {
-        ast = ast.ast;
-    }
-    return ast instanceof EmptyExpr$1;
-}
-
 class HtmlParser extends Parser {
     constructor() {
         super(getHtmlTagDefinition);
@@ -27764,6 +27186,535 @@ function serializePlaceholderValue(value) {
         default:
             return value;
     }
+}
+
+const IMPORTANT_FLAG = '!important';
+/**
+ * Minimum amount of binding slots required in the runtime for style/class bindings.
+ *
+ * Styling in Angular uses up two slots in the runtime LView/TData data structures to
+ * record binding data, property information and metadata.
+ *
+ * When a binding is registered it will place the following information in the `LView`:
+ *
+ * slot 1) binding value
+ * slot 2) cached value (all other values collected before it in string form)
+ *
+ * When a binding is registered it will place the following information in the `TData`:
+ *
+ * slot 1) prop name
+ * slot 2) binding index that points to the previous style/class binding (and some extra config
+ * values)
+ *
+ * Let's imagine we have a binding that looks like so:
+ *
+ * ```
+ * <div [style.width]="x" [style.height]="y">
+ * ```
+ *
+ * Our `LView` and `TData` data-structures look like so:
+ *
+ * ```typescript
+ * LView = [
+ *   // ...
+ *   x, // value of x
+ *   "width: x",
+ *
+ *   y, // value of y
+ *   "width: x; height: y",
+ *   // ...
+ * ];
+ *
+ * TData = [
+ *   // ...
+ *   "width", // binding slot 20
+ *   0,
+ *
+ *   "height",
+ *   20,
+ *   // ...
+ * ];
+ * ```
+ *
+ * */
+const MIN_STYLING_BINDING_SLOTS_REQUIRED = 2;
+/**
+ * Produces creation/update instructions for all styling bindings (class and style)
+ *
+ * It also produces the creation instruction to register all initial styling values
+ * (which are all the static class="..." and style="..." attribute values that exist
+ * on an element within a template).
+ *
+ * The builder class below handles producing instructions for the following cases:
+ *
+ * - Static style/class attributes (style="..." and class="...")
+ * - Dynamic style/class map bindings ([style]="map" and [class]="map|string")
+ * - Dynamic style/class property bindings ([style.prop]="exp" and [class.name]="exp")
+ *
+ * Due to the complex relationship of all of these cases, the instructions generated
+ * for these attributes/properties/bindings must be done so in the correct order. The
+ * order which these must be generated is as follows:
+ *
+ * if (createMode) {
+ *   styling(...)
+ * }
+ * if (updateMode) {
+ *   styleMap(...)
+ *   classMap(...)
+ *   styleProp(...)
+ *   classProp(...)
+ * }
+ *
+ * The creation/update methods within the builder class produce these instructions.
+ */
+class StylingBuilder {
+    constructor(_directiveExpr) {
+        this._directiveExpr = _directiveExpr;
+        /** Whether or not there are any static styling values present */
+        this._hasInitialValues = false;
+        /**
+         *  Whether or not there are any styling bindings present
+         *  (i.e. `[style]`, `[class]`, `[style.prop]` or `[class.name]`)
+         */
+        this.hasBindings = false;
+        this.hasBindingsWithPipes = false;
+        /** the input for [class] (if it exists) */
+        this._classMapInput = null;
+        /** the input for [style] (if it exists) */
+        this._styleMapInput = null;
+        /** an array of each [style.prop] input */
+        this._singleStyleInputs = null;
+        /** an array of each [class.name] input */
+        this._singleClassInputs = null;
+        this._lastStylingInput = null;
+        this._firstStylingInput = null;
+        // maps are used instead of hash maps because a Map will
+        // retain the ordering of the keys
+        /**
+         * Represents the location of each style binding in the template
+         * (e.g. `<div [style.width]="w" [style.height]="h">` implies
+         * that `width=0` and `height=1`)
+         */
+        this._stylesIndex = new Map();
+        /**
+         * Represents the location of each class binding in the template
+         * (e.g. `<div [class.big]="b" [class.hidden]="h">` implies
+         * that `big=0` and `hidden=1`)
+         */
+        this._classesIndex = new Map();
+        this._initialStyleValues = [];
+        this._initialClassValues = [];
+    }
+    /**
+     * Registers a given input to the styling builder to be later used when producing AOT code.
+     *
+     * The code below will only accept the input if it is somehow tied to styling (whether it be
+     * style/class bindings or static style/class attributes).
+     */
+    registerBoundInput(input) {
+        // [attr.style] or [attr.class] are skipped in the code below,
+        // they should not be treated as styling-based bindings since
+        // they are intended to be written directly to the attr and
+        // will therefore skip all style/class resolution that is present
+        // with style="", [style]="" and [style.prop]="", class="",
+        // [class.prop]="". [class]="" assignments
+        let binding = null;
+        let name = input.name;
+        switch (input.type) {
+            case 0 /* BindingType.Property */:
+                binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
+                break;
+            case 3 /* BindingType.Style */:
+                binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
+                break;
+            case 2 /* BindingType.Class */:
+                binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
+                break;
+        }
+        return binding ? true : false;
+    }
+    registerInputBasedOnName(name, expression, sourceSpan) {
+        let binding = null;
+        const prefix = name.substring(0, 6);
+        const isStyle = name === 'style' || prefix === 'style.' || prefix === 'style!';
+        const isClass = !isStyle && (name === 'class' || prefix === 'class.' || prefix === 'class!');
+        if (isStyle || isClass) {
+            const isMapBased = name.charAt(5) !== '.'; // style.prop or class.prop makes this a no
+            const property = name.slice(isMapBased ? 5 : 6); // the dot explains why there's a +1
+            if (isStyle) {
+                binding = this.registerStyleInput(property, isMapBased, expression, sourceSpan);
+            }
+            else {
+                binding = this.registerClassInput(property, isMapBased, expression, sourceSpan);
+            }
+        }
+        return binding;
+    }
+    registerStyleInput(name, isMapBased, value, sourceSpan, suffix) {
+        if (isEmptyExpression(value)) {
+            return null;
+        }
+        // CSS custom properties are case-sensitive so we shouldn't normalize them.
+        // See: https://www.w3.org/TR/css-variables-1/#defining-variables
+        if (!isCssCustomProperty(name)) {
+            name = hyphenate(name);
+        }
+        const { property, hasOverrideFlag, suffix: bindingSuffix } = parseProperty(name);
+        suffix = typeof suffix === 'string' && suffix.length !== 0 ? suffix : bindingSuffix;
+        const entry = { name: property, suffix: suffix, value, sourceSpan, hasOverrideFlag };
+        if (isMapBased) {
+            this._styleMapInput = entry;
+        }
+        else {
+            (this._singleStyleInputs = this._singleStyleInputs || []).push(entry);
+            registerIntoMap(this._stylesIndex, property);
+        }
+        this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
+        this._checkForPipes(value);
+        this.hasBindings = true;
+        return entry;
+    }
+    registerClassInput(name, isMapBased, value, sourceSpan) {
+        if (isEmptyExpression(value)) {
+            return null;
+        }
+        const { property, hasOverrideFlag } = parseProperty(name);
+        const entry = { name: property, value, sourceSpan, hasOverrideFlag, suffix: null };
+        if (isMapBased) {
+            this._classMapInput = entry;
+        }
+        else {
+            (this._singleClassInputs = this._singleClassInputs || []).push(entry);
+            registerIntoMap(this._classesIndex, property);
+        }
+        this._lastStylingInput = entry;
+        this._firstStylingInput = this._firstStylingInput || entry;
+        this._checkForPipes(value);
+        this.hasBindings = true;
+        return entry;
+    }
+    _checkForPipes(value) {
+        if ((value instanceof ASTWithSource) && (value.ast instanceof BindingPipe)) {
+            this.hasBindingsWithPipes = true;
+        }
+    }
+    /**
+     * Registers the element's static style string value to the builder.
+     *
+     * @param value the style string (e.g. `width:100px; height:200px;`)
+     */
+    registerStyleAttr(value) {
+        this._initialStyleValues = parse(value);
+        this._hasInitialValues = true;
+    }
+    /**
+     * Registers the element's static class string value to the builder.
+     *
+     * @param value the className string (e.g. `disabled gold zoom`)
+     */
+    registerClassAttr(value) {
+        this._initialClassValues = value.trim().split(/\s+/g);
+        this._hasInitialValues = true;
+    }
+    /**
+     * Appends all styling-related expressions to the provided attrs array.
+     *
+     * @param attrs an existing array where each of the styling expressions
+     * will be inserted into.
+     */
+    populateInitialStylingAttrs(attrs) {
+        // [CLASS_MARKER, 'foo', 'bar', 'baz' ...]
+        if (this._initialClassValues.length) {
+            attrs.push(literal(1 /* AttributeMarker.Classes */));
+            for (let i = 0; i < this._initialClassValues.length; i++) {
+                attrs.push(literal(this._initialClassValues[i]));
+            }
+        }
+        // [STYLE_MARKER, 'width', '200px', 'height', '100px', ...]
+        if (this._initialStyleValues.length) {
+            attrs.push(literal(2 /* AttributeMarker.Styles */));
+            for (let i = 0; i < this._initialStyleValues.length; i += 2) {
+                attrs.push(literal(this._initialStyleValues[i]), literal(this._initialStyleValues[i + 1]));
+            }
+        }
+    }
+    /**
+     * Builds an instruction with all the expressions and parameters for `elementHostAttrs`.
+     *
+     * The instruction generation code below is used for producing the AOT statement code which is
+     * responsible for registering initial styles (within a directive hostBindings' creation block),
+     * as well as any of the provided attribute values, to the directive host element.
+     */
+    assignHostAttrs(attrs, definitionMap) {
+        if (this._directiveExpr && (attrs.length || this._hasInitialValues)) {
+            this.populateInitialStylingAttrs(attrs);
+            definitionMap.set('hostAttrs', literalArr(attrs));
+        }
+    }
+    /**
+     * Builds an instruction with all the expressions and parameters for `classMap`.
+     *
+     * The instruction data will contain all expressions for `classMap` to function
+     * which includes the `[class]` expression params.
+     */
+    buildClassMapInstruction(valueConverter) {
+        if (this._classMapInput) {
+            return this._buildMapBasedInstruction(valueConverter, true, this._classMapInput);
+        }
+        return null;
+    }
+    /**
+     * Builds an instruction with all the expressions and parameters for `styleMap`.
+     *
+     * The instruction data will contain all expressions for `styleMap` to function
+     * which includes the `[style]` expression params.
+     */
+    buildStyleMapInstruction(valueConverter) {
+        if (this._styleMapInput) {
+            return this._buildMapBasedInstruction(valueConverter, false, this._styleMapInput);
+        }
+        return null;
+    }
+    _buildMapBasedInstruction(valueConverter, isClassBased, stylingInput) {
+        // each styling binding value is stored in the LView
+        // map-based bindings allocate two slots: one for the
+        // previous binding value and another for the previous
+        // className or style attribute value.
+        let totalBindingSlotsRequired = MIN_STYLING_BINDING_SLOTS_REQUIRED;
+        // these values must be outside of the update block so that they can
+        // be evaluated (the AST visit call) during creation time so that any
+        // pipes can be picked up in time before the template is built
+        const mapValue = stylingInput.value.visit(valueConverter);
+        let reference;
+        if (mapValue instanceof Interpolation$1) {
+            totalBindingSlotsRequired += mapValue.expressions.length;
+            reference = isClassBased ? getClassMapInterpolationExpression(mapValue) :
+                getStyleMapInterpolationExpression(mapValue);
+        }
+        else {
+            reference = isClassBased ? Identifiers.classMap : Identifiers.styleMap;
+        }
+        return {
+            reference,
+            calls: [{
+                    supportsInterpolation: true,
+                    sourceSpan: stylingInput.sourceSpan,
+                    allocateBindingSlots: totalBindingSlotsRequired,
+                    params: (convertFn) => {
+                        const convertResult = convertFn(mapValue);
+                        const params = Array.isArray(convertResult) ? convertResult : [convertResult];
+                        return params;
+                    }
+                }]
+        };
+    }
+    _buildSingleInputs(reference, inputs, valueConverter, getInterpolationExpressionFn, isClassBased) {
+        const instructions = [];
+        inputs.forEach(input => {
+            const previousInstruction = instructions[instructions.length - 1];
+            const value = input.value.visit(valueConverter);
+            let referenceForCall = reference;
+            // each styling binding value is stored in the LView
+            // but there are two values stored for each binding:
+            //   1) the value itself
+            //   2) an intermediate value (concatenation of style up to this point).
+            //      We need to store the intermediate value so that we don't allocate
+            //      the strings on each CD.
+            let totalBindingSlotsRequired = MIN_STYLING_BINDING_SLOTS_REQUIRED;
+            if (value instanceof Interpolation$1) {
+                totalBindingSlotsRequired += value.expressions.length;
+                if (getInterpolationExpressionFn) {
+                    referenceForCall = getInterpolationExpressionFn(value);
+                }
+            }
+            const call = {
+                sourceSpan: input.sourceSpan,
+                allocateBindingSlots: totalBindingSlotsRequired,
+                supportsInterpolation: !!getInterpolationExpressionFn,
+                params: (convertFn) => {
+                    // params => stylingProp(propName, value, suffix)
+                    const params = [];
+                    params.push(literal(input.name));
+                    const convertResult = convertFn(value);
+                    if (Array.isArray(convertResult)) {
+                        params.push(...convertResult);
+                    }
+                    else {
+                        params.push(convertResult);
+                    }
+                    // [style.prop] bindings may use suffix values (e.g. px, em, etc...), therefore,
+                    // if that is detected then we need to pass that in as an optional param.
+                    if (!isClassBased && input.suffix !== null) {
+                        params.push(literal(input.suffix));
+                    }
+                    return params;
+                }
+            };
+            // If we ended up generating a call to the same instruction as the previous styling property
+            // we can chain the calls together safely to save some bytes, otherwise we have to generate
+            // a separate instruction call. This is primarily a concern with interpolation instructions
+            // where we may start off with one `reference`, but end up using another based on the
+            // number of interpolations.
+            if (previousInstruction && previousInstruction.reference === referenceForCall) {
+                previousInstruction.calls.push(call);
+            }
+            else {
+                instructions.push({ reference: referenceForCall, calls: [call] });
+            }
+        });
+        return instructions;
+    }
+    _buildClassInputs(valueConverter) {
+        if (this._singleClassInputs) {
+            return this._buildSingleInputs(Identifiers.classProp, this._singleClassInputs, valueConverter, null, true);
+        }
+        return [];
+    }
+    _buildStyleInputs(valueConverter) {
+        if (this._singleStyleInputs) {
+            return this._buildSingleInputs(Identifiers.styleProp, this._singleStyleInputs, valueConverter, getStylePropInterpolationExpression, false);
+        }
+        return [];
+    }
+    /**
+     * Constructs all instructions which contain the expressions that will be placed
+     * into the update block of a template function or a directive hostBindings function.
+     */
+    buildUpdateLevelInstructions(valueConverter) {
+        const instructions = [];
+        if (this.hasBindings) {
+            const styleMapInstruction = this.buildStyleMapInstruction(valueConverter);
+            if (styleMapInstruction) {
+                instructions.push(styleMapInstruction);
+            }
+            const classMapInstruction = this.buildClassMapInstruction(valueConverter);
+            if (classMapInstruction) {
+                instructions.push(classMapInstruction);
+            }
+            instructions.push(...this._buildStyleInputs(valueConverter));
+            instructions.push(...this._buildClassInputs(valueConverter));
+        }
+        return instructions;
+    }
+}
+function registerIntoMap(map, key) {
+    if (!map.has(key)) {
+        map.set(key, map.size);
+    }
+}
+function parseProperty(name) {
+    let hasOverrideFlag = false;
+    const overrideIndex = name.indexOf(IMPORTANT_FLAG);
+    if (overrideIndex !== -1) {
+        name = overrideIndex > 0 ? name.substring(0, overrideIndex) : '';
+        hasOverrideFlag = true;
+    }
+    let suffix = null;
+    let property = name;
+    const unitIndex = name.lastIndexOf('.');
+    if (unitIndex > 0) {
+        suffix = name.slice(unitIndex + 1);
+        property = name.substring(0, unitIndex);
+    }
+    return { property, suffix, hasOverrideFlag };
+}
+/**
+ * Gets the instruction to generate for an interpolated class map.
+ * @param interpolation An Interpolation AST
+ */
+function getClassMapInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers.classMap;
+        case 3:
+            return Identifiers.classMapInterpolate1;
+        case 5:
+            return Identifiers.classMapInterpolate2;
+        case 7:
+            return Identifiers.classMapInterpolate3;
+        case 9:
+            return Identifiers.classMapInterpolate4;
+        case 11:
+            return Identifiers.classMapInterpolate5;
+        case 13:
+            return Identifiers.classMapInterpolate6;
+        case 15:
+            return Identifiers.classMapInterpolate7;
+        case 17:
+            return Identifiers.classMapInterpolate8;
+        default:
+            return Identifiers.classMapInterpolateV;
+    }
+}
+/**
+ * Gets the instruction to generate for an interpolated style map.
+ * @param interpolation An Interpolation AST
+ */
+function getStyleMapInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers.styleMap;
+        case 3:
+            return Identifiers.styleMapInterpolate1;
+        case 5:
+            return Identifiers.styleMapInterpolate2;
+        case 7:
+            return Identifiers.styleMapInterpolate3;
+        case 9:
+            return Identifiers.styleMapInterpolate4;
+        case 11:
+            return Identifiers.styleMapInterpolate5;
+        case 13:
+            return Identifiers.styleMapInterpolate6;
+        case 15:
+            return Identifiers.styleMapInterpolate7;
+        case 17:
+            return Identifiers.styleMapInterpolate8;
+        default:
+            return Identifiers.styleMapInterpolateV;
+    }
+}
+/**
+ * Gets the instruction to generate for an interpolated style prop.
+ * @param interpolation An Interpolation AST
+ */
+function getStylePropInterpolationExpression(interpolation) {
+    switch (getInterpolationArgsLength(interpolation)) {
+        case 1:
+            return Identifiers.styleProp;
+        case 3:
+            return Identifiers.stylePropInterpolate1;
+        case 5:
+            return Identifiers.stylePropInterpolate2;
+        case 7:
+            return Identifiers.stylePropInterpolate3;
+        case 9:
+            return Identifiers.stylePropInterpolate4;
+        case 11:
+            return Identifiers.stylePropInterpolate5;
+        case 13:
+            return Identifiers.stylePropInterpolate6;
+        case 15:
+            return Identifiers.stylePropInterpolate7;
+        case 17:
+            return Identifiers.stylePropInterpolate8;
+        default:
+            return Identifiers.stylePropInterpolateV;
+    }
+}
+/**
+ * Checks whether property name is a custom CSS property.
+ * See: https://www.w3.org/TR/css-variables-1
+ */
+function isCssCustomProperty(name) {
+    return name.startsWith('--');
+}
+function isEmptyExpression(ast) {
+    if (ast instanceof ASTWithSource) {
+        ast = ast.ast;
+    }
+    return ast instanceof EmptyExpr$1;
 }
 
 // Selector attribute name of `<ng-content>`
@@ -30074,6 +30025,171 @@ function createClosureModeGuard() {
         .and(variable(NG_I18N_CLOSURE_MODE));
 }
 
+/**
+ * Translates query flags into `TQueryFlags` type in
+ * packages/core/src/render3/interfaces/query.ts
+ * @param query
+ */
+function toQueryFlags(query) {
+    return ((query.descendants ? 1 /* QueryFlags.descendants */ : 0 /* QueryFlags.none */) |
+        (query.static ? 2 /* QueryFlags.isStatic */ : 0 /* QueryFlags.none */) |
+        (query.emitDistinctChangesOnly ? 4 /* QueryFlags.emitDistinctChangesOnly */ : 0 /* QueryFlags.none */));
+}
+function getQueryPredicate(query, constantPool) {
+    if (Array.isArray(query.predicate)) {
+        let predicate = [];
+        query.predicate.forEach((selector) => {
+            // Each item in predicates array may contain strings with comma-separated refs
+            // (for ex. 'ref, ref1, ..., refN'), thus we extract individual refs and store them
+            // as separate array entities
+            const selectors = selector.split(',').map((token) => literal(token.trim()));
+            predicate.push(...selectors);
+        });
+        return constantPool.getConstLiteral(literalArr(predicate), true);
+    }
+    else {
+        // The original predicate may have been wrapped in a `forwardRef()` call.
+        switch (query.predicate.forwardRef) {
+            case 0 /* ForwardRefHandling.None */:
+            case 2 /* ForwardRefHandling.Unwrapped */:
+                return query.predicate.expression;
+            case 1 /* ForwardRefHandling.Wrapped */:
+                return importExpr(Identifiers.resolveForwardRef).callFn([query.predicate.expression]);
+        }
+    }
+}
+function createQueryCreateCall(query, constantPool, queryTypeFns, prependParams) {
+    const parameters = [];
+    if (prependParams !== undefined) {
+        parameters.push(...prependParams);
+    }
+    if (query.isSignal) {
+        parameters.push(new ReadPropExpr(variable(CONTEXT_NAME), query.propertyName));
+    }
+    parameters.push(getQueryPredicate(query, constantPool), literal(toQueryFlags(query)));
+    if (query.read) {
+        parameters.push(query.read);
+    }
+    const queryCreateFn = query.isSignal ? queryTypeFns.signalBased : queryTypeFns.nonSignal;
+    return importExpr(queryCreateFn).callFn(parameters);
+}
+const queryAdvancePlaceholder = Symbol('queryAdvancePlaceholder');
+/**
+ * Collapses query advance placeholders in a list of statements.
+ *
+ * This allows for less generated code because multiple sibling query advance
+ * statements can be collapsed into a single call with the count as argument.
+ *
+ * e.g.
+ *
+ * ```ts
+ *   bla();
+ *   queryAdvance();
+ *   queryAdvance();
+ *   bla();
+ * ```
+ *
+ *   --> will turn into
+ *
+ * ```
+ *   bla();
+ *   queryAdvance(2);
+ *   bla();
+ * ```
+ */
+function collapseAdvanceStatements(statements) {
+    const result = [];
+    let advanceCollapseCount = 0;
+    const flushAdvanceCount = () => {
+        if (advanceCollapseCount > 0) {
+            result.unshift(importExpr(Identifiers.queryAdvance)
+                .callFn(advanceCollapseCount === 1 ? [] : [literal(advanceCollapseCount)])
+                .toStmt());
+            advanceCollapseCount = 0;
+        }
+    };
+    // Iterate through statements in reverse and collapse advance placeholders.
+    for (let i = statements.length - 1; i >= 0; i--) {
+        const st = statements[i];
+        if (st === queryAdvancePlaceholder) {
+            advanceCollapseCount++;
+        }
+        else {
+            flushAdvanceCount();
+            result.unshift(st);
+        }
+    }
+    flushAdvanceCount();
+    return result;
+}
+// Define and update any view queries
+function createViewQueriesFunction(viewQueries, constantPool, name) {
+    const createStatements = [];
+    const updateStatements = [];
+    const tempAllocator = temporaryAllocator(st => updateStatements.push(st), TEMPORARY_NAME);
+    viewQueries.forEach((query) => {
+        // creation call, e.g. r3.viewQuery(somePredicate, true) or
+        //                r3.viewQuerySignal(ctx.prop, somePredicate, true);
+        const queryDefinitionCall = createQueryCreateCall(query, constantPool, {
+            signalBased: Identifiers.viewQuerySignal,
+            nonSignal: Identifiers.viewQuery,
+        });
+        createStatements.push(queryDefinitionCall.toStmt());
+        // Signal queries update lazily and we just advance the index.
+        if (query.isSignal) {
+            updateStatements.push(queryAdvancePlaceholder);
+            return;
+        }
+        // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
+        const temporary = tempAllocator();
+        const getQueryList = importExpr(Identifiers.loadQuery).callFn([]);
+        const refresh = importExpr(Identifiers.queryRefresh).callFn([temporary.set(getQueryList)]);
+        const updateDirective = variable(CONTEXT_NAME)
+            .prop(query.propertyName)
+            .set(query.first ? temporary.prop('first') : temporary);
+        updateStatements.push(refresh.and(updateDirective).toStmt());
+    });
+    const viewQueryFnName = name ? `${name}_Query` : null;
+    return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
+        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, collapseAdvanceStatements(updateStatements))
+    ], INFERRED_TYPE, null, viewQueryFnName);
+}
+// Define and update any content queries
+function createContentQueriesFunction(queries, constantPool, name) {
+    const createStatements = [];
+    const updateStatements = [];
+    const tempAllocator = temporaryAllocator(st => updateStatements.push(st), TEMPORARY_NAME);
+    for (const query of queries) {
+        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null) or
+        //                r3.contentQuerySignal(dirIndex, propName, somePredicate, <flags>, <read>).
+        createStatements.push(createQueryCreateCall(query, constantPool, { nonSignal: Identifiers.contentQuery, signalBased: Identifiers.contentQuerySignal }, 
+        /* prependParams */ [variable('dirIndex')])
+            .toStmt());
+        // Signal queries update lazily and we just advance the index.
+        if (query.isSignal) {
+            updateStatements.push(queryAdvancePlaceholder);
+            continue;
+        }
+        // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
+        const temporary = tempAllocator();
+        const getQueryList = importExpr(Identifiers.loadQuery).callFn([]);
+        const refresh = importExpr(Identifiers.queryRefresh).callFn([temporary.set(getQueryList)]);
+        const updateDirective = variable(CONTEXT_NAME)
+            .prop(query.propertyName)
+            .set(query.first ? temporary.prop('first') : temporary);
+        updateStatements.push(refresh.and(updateDirective).toStmt());
+    }
+    const contentQueriesFnName = name ? `${name}_ContentQueries` : null;
+    return fn([
+        new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
+        new FnParam('dirIndex', null)
+    ], [
+        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
+        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, collapseAdvanceStatements(updateStatements)),
+    ], INFERRED_TYPE, null, contentQueriesFnName);
+}
+
 // This regex matches any binding names that contain the "attr." prefix, e.g. "attr.required"
 // If there is a match, the first matching group will contain the attribute name to bind.
 const ATTR_REGEX = /attr\.([^\]]+)/;
@@ -30376,41 +30492,6 @@ function convertAttributesToExpressions(attributes) {
     }
     return values;
 }
-// Define and update any content queries
-function createContentQueriesFunction(queries, constantPool, name) {
-    const createStatements = [];
-    const updateStatements = [];
-    const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    for (const query of queries) {
-        // creation, e.g. r3.contentQuery(dirIndex, somePredicate, true, null) or
-        //                r3.contentQuerySignal(dirIndex, propName, somePredicate, <flags>, <read>).
-        createStatements.push(createQueryCreateCall(query, constantPool, { nonSignal: Identifiers.contentQuery, signalBased: Identifiers.contentQuerySignal }, 
-        /* prependParams */ [variable('dirIndex')])
-            .toStmt());
-        // Signal queries update lazily and we just advance the index.
-        // TODO: Chaining?
-        if (query.isSignal) {
-            updateStatements.push(importExpr(Identifiers.queryAdvance).callFn([]).toStmt());
-            continue;
-        }
-        // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
-        const temporary = tempAllocator();
-        const getQueryList = importExpr(Identifiers.loadQuery).callFn([]);
-        const refresh = importExpr(Identifiers.queryRefresh).callFn([temporary.set(getQueryList)]);
-        const updateDirective = variable(CONTEXT_NAME)
-            .prop(query.propertyName)
-            .set(query.first ? temporary.prop('first') : temporary);
-        updateStatements.push(refresh.and(updateDirective).toStmt());
-    }
-    const contentQueriesFnName = name ? `${name}_ContentQueries` : null;
-    return fn([
-        new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null),
-        new FnParam('dirIndex', null)
-    ], [
-        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
-        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateStatements)
-    ], INFERRED_TYPE, null, contentQueriesFnName);
-}
 function stringAsType(str) {
     return expressionType(literal(str));
 }
@@ -30475,40 +30556,6 @@ function createDirectiveType(meta) {
         typeParams.push(expressionType(literal(meta.isSignal)));
     }
     return expressionType(importExpr(Identifiers.DirectiveDeclaration, typeParams));
-}
-// Define and update any view queries
-function createViewQueriesFunction(viewQueries, constantPool, name) {
-    const createStatements = [];
-    const updateStatements = [];
-    const tempAllocator = temporaryAllocator(updateStatements, TEMPORARY_NAME);
-    viewQueries.forEach((query) => {
-        // creation call, e.g. r3.viewQuery(somePredicate, true) or
-        //                r3.viewQuerySignal(ctx.prop, somePredicate, true);
-        const queryDefinitionCall = createQueryCreateCall(query, constantPool, {
-            signalBased: Identifiers.viewQuerySignal,
-            nonSignal: Identifiers.viewQuery,
-        });
-        createStatements.push(queryDefinitionCall.toStmt());
-        // Signal queries update lazily and we just advance the index.
-        // TODO: Chaining?
-        if (query.isSignal) {
-            updateStatements.push(importExpr(Identifiers.queryAdvance).callFn([]).toStmt());
-            return;
-        }
-        // update, e.g. (r3.queryRefresh(tmp = r3.loadQuery()) && (ctx.someDir = tmp));
-        const temporary = tempAllocator();
-        const getQueryList = importExpr(Identifiers.loadQuery).callFn([]);
-        const refresh = importExpr(Identifiers.queryRefresh).callFn([temporary.set(getQueryList)]);
-        const updateDirective = variable(CONTEXT_NAME)
-            .prop(query.propertyName)
-            .set(query.first ? temporary.prop('first') : temporary);
-        updateStatements.push(refresh.and(updateDirective).toStmt());
-    });
-    const viewQueryFnName = name ? `${name}_Query` : null;
-    return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [
-        renderFlagCheckIfStmt(1 /* core.RenderFlags.Create */, createStatements),
-        renderFlagCheckIfStmt(2 /* core.RenderFlags.Update */, updateStatements)
-    ], INFERRED_TYPE, null, viewQueryFnName);
 }
 // Return a host binding function or null if one is not necessary.
 function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name, definitionMap) {
@@ -31895,8 +31942,7 @@ class CompilerFacadeImpl {
 function convertToR3QueryMetadata(facade) {
     return {
         ...facade,
-        // Decorator queries are never signal-based.
-        isSignal: false,
+        isSignal: facade.isSignal,
         predicate: convertQueryPredicate(facade.predicate),
         read: facade.read ? new WrappedNodeExpr(facade.read) : null,
         static: facade.static,
@@ -32351,7 +32397,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.0+sha-09f9423');
+const VERSION = new Version('17.2.0-next.0+sha-7751645');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33917,7 +33963,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34013,7 +34059,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34405,7 +34451,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34440,7 +34486,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34491,7 +34537,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34524,7 +34570,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34575,7 +34621,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-09f9423'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-7751645'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
