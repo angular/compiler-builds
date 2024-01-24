@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-fad1354
+ * @license Angular v17.2.0-next.0+sha-c043128
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3090,6 +3090,7 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      * not be set. If component has empty array imports then this field is not set.
      */
     rawImports?: outputAst.Expression;
+    useTemplatePipeline: boolean;
 }
 
 /**
@@ -3840,6 +3841,7 @@ export declare interface R3HostMetadata {
         styleAttr?: string;
         classAttr?: string;
     };
+    useTemplatePipeline: boolean;
 }
 
 export declare class R3Identifiers {

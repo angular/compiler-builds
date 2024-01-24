@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-fad1354
+ * @license Angular v17.2.0-next.0+sha-c043128
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11024,7 +11024,7 @@ function createExtractedAttributeOp(target, bindingKind, namespace, name, expres
         ...NEW_OP,
     };
 }
-function createDeferOp(xref, main, mainSlot, metadata, sourceSpan) {
+function createDeferOp(xref, main, mainSlot, metadata, resolverFn, sourceSpan) {
     return {
         kind: OpKind.Defer,
         xref,
@@ -11043,7 +11043,7 @@ function createDeferOp(xref, main, mainSlot, metadata, sourceSpan) {
         errorView: null,
         errorSlot: null,
         metadata,
-        resolverFn: null,
+        resolverFn,
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
@@ -11232,11 +11232,12 @@ class CompilationJob {
  * embedded views or host bindings.
  */
 class ComponentCompilationJob extends CompilationJob {
-    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta) {
+    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta, allDeferrableDepsFn) {
         super(componentName, pool, compatibility);
         this.relativeContextFilePath = relativeContextFilePath;
         this.i18nUseExternalIds = i18nUseExternalIds;
         this.deferBlocksMeta = deferBlocksMeta;
+        this.allDeferrableDepsFn = allDeferrableDepsFn;
         this.kind = CompilationJobKind.Tmpl;
         this.fnSuffix = 'Template';
         this.views = new Map();
@@ -12157,6 +12158,9 @@ function createDeferDepsFns(job) {
         for (const op of unit.create) {
             if (op.kind === OpKind.Defer) {
                 if (op.metadata.deps.length === 0) {
+                    continue;
+                }
+                if (op.resolverFn !== null) {
                     continue;
                 }
                 const dependencies = [];
@@ -24075,8 +24079,8 @@ const NG_TEMPLATE_TAG_NAME$1 = 'ng-template';
  * representation.
  * TODO: Refactor more of the ingestion code into phases.
  */
-function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta) {
-    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta);
+function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta, allDeferrableDepsFn) {
+    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta, allDeferrableDepsFn);
     ingestNodes(job.root, template);
     return job;
 }
@@ -24400,7 +24404,7 @@ function ingestDeferBlock(unit, deferBlock) {
     const error = ingestDeferView(unit, 'Error', deferBlock.error?.i18n, deferBlock.error?.children, deferBlock.error?.sourceSpan);
     // Create the main defer op, and ops for all secondary views.
     const deferXref = unit.job.allocateXrefId();
-    const deferOp = createDeferOp(deferXref, main.xref, main.handle, blockMeta, deferBlock.sourceSpan);
+    const deferOp = createDeferOp(deferXref, main.xref, main.handle, blockMeta, unit.job.allDeferrableDepsFn, deferBlock.sourceSpan);
     deferOp.placeholderView = placeholder?.xref ?? null;
     deferOp.placeholderSlot = placeholder?.handle ?? null;
     deferOp.loadingSlot = loading?.handle ?? null;
@@ -25633,11 +25637,16 @@ const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+([\S\s]*)/;
 /** Pattern for the tracking expression in a for loop block. */
 const FOR_LOOP_TRACK_PATTERN = /^track\s+([\S\s]*)/;
 /** Pattern for the `as` expression in a conditional block. */
-const CONDITIONAL_ALIAS_PATTERN = /^as\s+(.*)/;
+const CONDITIONAL_ALIAS_PATTERN = /^(as\s)+(.*)/;
 /** Pattern used to identify an `else if` block. */
 const ELSE_IF_PATTERN = /^else[^\S\r\n]+if/;
 /** Pattern used to identify a `let` parameter. */
 const FOR_LOOP_LET_PATTERN = /^let\s+([\S\s]*)/;
+/**
+ * Pattern to group a string into leading whitespace, non whitespace, and trailing whitespace.
+ * Useful for getting the variable name span when a span can contain leading and trailing space.
+ */
+const CHARACTERS_IN_SURROUNDING_WHITESPACE_PATTERN = /(\s*)(\S+)(\s*)/;
 /** Names of variables that are allowed to be used in the `let` expression of a `for` loop. */
 const ALLOWED_FOR_LOOP_LET_VARIABLES = new Set(['$index', '$first', '$last', '$even', '$odd', '$count']);
 /**
@@ -25777,8 +25786,13 @@ function parseForLoopParameters(block, errors, bindingParser) {
         return null;
     }
     const [, itemName, rawExpression] = match;
+    // `expressionParam.expression` contains the variable declaration and the expression of the
+    // for...of statement, i.e. 'user of users' The variable of a ForOfStatement is _only_ the "const
+    // user" part and does not include "of x".
+    const variableName = expressionParam.expression.split(' ')[0];
+    const variableSpan = new ParseSourceSpan(expressionParam.sourceSpan.start, expressionParam.sourceSpan.start.moveBy(variableName.length));
     const result = {
-        itemName: new Variable(itemName, '$implicit', expressionParam.sourceSpan, expressionParam.sourceSpan),
+        itemName: new Variable(itemName, '$implicit', variableSpan, variableSpan),
         trackBy: null,
         expression: parseBlockParameterToBinding(expressionParam, bindingParser, rawExpression),
         context: {},
@@ -25786,7 +25800,8 @@ function parseForLoopParameters(block, errors, bindingParser) {
     for (const param of secondaryParams) {
         const letMatch = param.expression.match(FOR_LOOP_LET_PATTERN);
         if (letMatch !== null) {
-            parseLetParameter(param.sourceSpan, letMatch[1], param.sourceSpan, result.context, errors);
+            const variablesSpan = new ParseSourceSpan(param.sourceSpan.start.moveBy(letMatch[0].length - letMatch[1].length), param.sourceSpan.end);
+            parseLetParameter(param.sourceSpan, letMatch[1], variablesSpan, result.context, errors);
             continue;
         }
         const trackMatch = param.expression.match(FOR_LOOP_TRACK_PATTERN);
@@ -25817,6 +25832,7 @@ function parseForLoopParameters(block, errors, bindingParser) {
 /** Parses the `let` parameter of a `for` loop block. */
 function parseLetParameter(sourceSpan, expression, span, context, errors) {
     const parts = expression.split(',');
+    let startSpan = span.start;
     for (const part of parts) {
         const expressionParts = part.split('=');
         const name = expressionParts.length === 2 ? expressionParts[0].trim() : '';
@@ -25831,8 +25847,26 @@ function parseLetParameter(sourceSpan, expression, span, context, errors) {
             errors.push(new ParseError(sourceSpan, `Duplicate "let" parameter variable "${variableName}"`));
         }
         else {
-            context[variableName] = new Variable(name, variableName, span, span);
+            const [, keyLeadingWhitespace, keyName] = expressionParts[0].match(CHARACTERS_IN_SURROUNDING_WHITESPACE_PATTERN) ?? [];
+            const keySpan = keyLeadingWhitespace !== undefined && expressionParts.length === 2 ?
+                new ParseSourceSpan(
+                /* strip leading spaces */
+                startSpan.moveBy(keyLeadingWhitespace.length), 
+                /* advance to end of the variable name */
+                startSpan.moveBy(keyLeadingWhitespace.length + keyName.length)) :
+                span;
+            let valueSpan = undefined;
+            if (expressionParts.length === 2) {
+                const [, valueLeadingWhitespace, implicit] = expressionParts[1].match(CHARACTERS_IN_SURROUNDING_WHITESPACE_PATTERN) ?? [];
+                valueSpan = valueLeadingWhitespace !== undefined ?
+                    new ParseSourceSpan(startSpan.moveBy(expressionParts[0].length + 1 + valueLeadingWhitespace.length), startSpan.moveBy(expressionParts[0].length + 1 + valueLeadingWhitespace.length +
+                        implicit.length)) :
+                    undefined;
+            }
+            const sourceSpan = new ParseSourceSpan(keySpan.start, valueSpan?.end ?? keySpan.end);
+            context[variableName] = new Variable(name, variableName, sourceSpan, keySpan, valueSpan);
         }
+        startSpan = startSpan.moveBy(part.length + 1 /* add 1 to move past the comma */);
     }
 }
 /**
@@ -25944,8 +25978,10 @@ function parseConditionalBlockParameters(block, errors, bindingParser) {
             errors.push(new ParseError(param.sourceSpan, 'Conditional can only have one "as" expression'));
         }
         else {
-            const name = aliasMatch[1].trim();
-            expressionAlias = new Variable(name, name, param.sourceSpan, param.sourceSpan);
+            const name = aliasMatch[2].trim();
+            const variableStart = param.sourceSpan.start.moveBy(aliasMatch[1].length);
+            const variableSpan = new ParseSourceSpan(variableStart, variableStart.moveBy(name.length));
+            expressionAlias = new Variable(name, name, variableSpan, variableSpan);
         }
     }
     return { expression, expressionAlias };
@@ -30321,16 +30357,16 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const templateTypeName = meta.name;
     const templateName = templateTypeName ? `${templateTypeName}_Template` : null;
+    let allDeferrableDepsFn = null;
+    if (meta.deferBlocks.size > 0 && meta.deferrableTypes.size > 0 &&
+        meta.deferBlockDepsEmitMode === 1 /* DeferBlockDepsEmitMode.PerComponent */) {
+        const fnName = `${templateTypeName}_DeferFn`;
+        allDeferrableDepsFn = createDeferredDepsFunction(constantPool, fnName, meta.deferrableTypes);
+    }
     // Template compilation is currently conditional as we're in the process of rewriting it.
-    if (!USE_TEMPLATE_PIPELINE) {
+    if (!USE_TEMPLATE_PIPELINE && !meta.useTemplatePipeline) {
         // This is the main path currently used in compilation, which compiles the template with the
         // legacy `TemplateDefinitionBuilder`.
-        let allDeferrableDepsFn = null;
-        if (meta.deferBlocks.size > 0 && meta.deferrableTypes.size > 0 &&
-            meta.deferBlockDepsEmitMode === 1 /* DeferBlockDepsEmitMode.PerComponent */) {
-            const fnName = `${templateTypeName}_DeferFn`;
-            allDeferrableDepsFn = createDeferredDepsFunction(constantPool, fnName, meta.deferrableTypes);
-        }
         const template = meta.template;
         const templateBuilder = new TemplateDefinitionBuilder(constantPool, BindingScope.createRootScope(), 0, templateTypeName, null, null, templateName, Identifiers.namespaceHTML, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.deferBlocks, new Map(), allDeferrableDepsFn);
         const templateFunctionExpression = templateBuilder.buildTemplateFunction(template.nodes, []);
@@ -30367,7 +30403,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     else {
         // This path compiles the template using the prototype template pipeline. First the template is
         // ingested into IR:
-        const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.deferBlocks);
+        const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.deferBlocks, allDeferrableDepsFn);
         // Then the IR is transformed to prepare it for cod egeneration.
         transform(tpl, CompilationJobKind.Tmpl);
         // Finally we emit the template function:
@@ -30562,7 +30598,7 @@ function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindin
     const bindings = bindingParser.createBoundHostProperties(hostBindingsMetadata.properties, typeSourceSpan);
     // Calculate host event bindings
     const eventBindings = bindingParser.createDirectiveHostEventAsts(hostBindingsMetadata.listeners, typeSourceSpan);
-    if (USE_TEMPLATE_PIPELINE) {
+    if (USE_TEMPLATE_PIPELINE || hostBindingsMetadata.useTemplatePipeline) {
         // The parser for host bindings treats class and style attributes specially -- they are
         // extracted into these separate fields. This is not the case for templates, so the compiler can
         // actually already handle these special attributes internally. Therefore, we just drop them
@@ -31746,6 +31782,7 @@ function extractScopedNodeEntities(rootScope) {
 class ResourceLoader {
 }
 
+const SHOULD_USE_TEMPLATE_PIPELINE_FOR_JIT = false;
 class CompilerFacadeImpl {
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
@@ -31879,6 +31916,7 @@ class CompilerFacadeImpl {
                 null,
             relativeContextFilePath: '',
             i18nUseExternalIds: true,
+            useTemplatePipeline: SHOULD_USE_TEMPLATE_PIPELINE_FOR_JIT,
         };
         const jitExpressionSourceMap = `ng:///${facade.name}.js`;
         return this.compileComponentFromMeta(angularCoreEnv, jitExpressionSourceMap, meta);
@@ -32001,7 +32039,10 @@ function convertDirectiveFacadeToMetadata(facade) {
         typeSourceSpan: facade.typeSourceSpan,
         type: wrapReference(facade.type),
         deps: null,
-        host: extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host),
+        host: {
+            ...extractHostBindings(facade.propMetadata, facade.typeSourceSpan, facade.host),
+            useTemplatePipeline: SHOULD_USE_TEMPLATE_PIPELINE_FOR_JIT,
+        },
         inputs: { ...inputsFromMetadata, ...inputsFromType },
         outputs: { ...outputsFromMetadata, ...outputsFromType },
         queries: facade.queries.map(convertToR3QueryMetadata),
@@ -32044,6 +32085,7 @@ function convertHostDeclarationToMetadata(host = {}) {
             classAttr: host.classAttribute,
             styleAttr: host.styleAttribute,
         },
+        useTemplatePipeline: SHOULD_USE_TEMPLATE_PIPELINE_FOR_JIT,
     };
 }
 function convertHostDirectivesToMetadata(metadata) {
@@ -32116,6 +32158,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
         declarationListEmitMode: 2 /* DeclarationListEmitMode.ClosureResolved */,
         relativeContextFilePath: '',
         i18nUseExternalIds: true,
+        useTemplatePipeline: SHOULD_USE_TEMPLATE_PIPELINE_FOR_JIT,
     };
 }
 function convertDeclarationFacadeToMetadata(declaration) {
@@ -32397,7 +32440,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.0+sha-fad1354');
+const VERSION = new Version('17.2.0-next.0+sha-c043128');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -33963,7 +34006,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34059,7 +34102,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34451,7 +34494,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34486,7 +34529,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34537,7 +34580,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34570,7 +34613,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34621,7 +34664,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-fad1354'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-c043128'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
