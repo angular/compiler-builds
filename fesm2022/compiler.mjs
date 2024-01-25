@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-bd9c2c5
+ * @license Angular v17.2.0-next.0+sha-75aeae4
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5138,7 +5138,7 @@ function getAttrsForDirectiveMatching(elOrTpl) {
             }
         });
         elOrTpl.inputs.forEach(i => {
-            if (i.type === 0 /* BindingType.Property */) {
+            if (i.type === 0 /* BindingType.Property */ || i.type === 5 /* BindingType.TwoWay */) {
                 attributesMap[i.name] = '';
             }
         });
@@ -6930,6 +6930,7 @@ var ParsedPropertyType;
     ParsedPropertyType[ParsedPropertyType["DEFAULT"] = 0] = "DEFAULT";
     ParsedPropertyType[ParsedPropertyType["LITERAL_ATTR"] = 1] = "LITERAL_ATTR";
     ParsedPropertyType[ParsedPropertyType["ANIMATION"] = 2] = "ANIMATION";
+    ParsedPropertyType[ParsedPropertyType["TWO_WAY"] = 3] = "TWO_WAY";
 })(ParsedPropertyType || (ParsedPropertyType = {}));
 class ParsedEvent {
     // Regular events have a target
@@ -12181,7 +12182,8 @@ function createDeferDepsFns(job) {
                 if (op.handle.slot === null) {
                     throw new Error('AssertionError: slot must be assigned bfore extracting defer deps functions');
                 }
-                op.resolverFn = job.pool.getSharedFunctionReference(depsFnExpr, `${job.componentName}_Defer_${op.handle.slot}_DepsFn`, 
+                const fullPathName = unit.fnName?.replace(`_Template`, ``);
+                op.resolverFn = job.pool.getSharedFunctionReference(depsFnExpr, `${fullPathName}_Defer_${op.handle.slot}_DepsFn`, 
                 /* Don't use unique names for TDB compatibility */ false);
             }
         }
@@ -23941,7 +23943,6 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: expandSafeReads },
     { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
     { kind: CompilationJobKind.Tmpl, fn: allocateSlots },
-    { kind: CompilationJobKind.Tmpl, fn: createDeferDepsFns },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: extractI18nMessages },
@@ -23954,6 +23955,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: generateAdvance },
     { kind: CompilationJobKind.Both, fn: optimizeVariables },
     { kind: CompilationJobKind.Both, fn: nameFunctionsAndVariables },
+    { kind: CompilationJobKind.Tmpl, fn: createDeferDepsFns },
     { kind: CompilationJobKind.Tmpl, fn: mergeNextContextExpressions },
     { kind: CompilationJobKind.Tmpl, fn: generateNgContainerOps },
     { kind: CompilationJobKind.Tmpl, fn: collapseEmptyInstructions },
@@ -24138,7 +24140,7 @@ function ingestHostAttribute(job, name, value, securityContexts) {
     job.root.update.push(attrBinding);
 }
 function ingestHostEvent(job, event) {
-    const [phase, target] = event.type === 0 /* e.ParsedEventType.Regular */ ? [null, event.targetOrPhase] :
+    const [phase, target] = event.type !== 1 /* e.ParsedEventType.Animation */ ? [null, event.targetOrPhase] :
         [event.targetOrPhase, null];
     const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, makeListenerHandlerOps(job.root, event.handler, event.handlerSpan), phase, target, true, event.sourceSpan);
     job.root.create.push(eventBinding);
@@ -24729,6 +24731,8 @@ function convertAstWithInterpolation(job, value, i18nMeta, sourceSpan) {
 // TODO: Can we populate Template binding kinds in ingest?
 const BINDING_KINDS = new Map([
     [0 /* e.BindingType.Property */, BindingKind.Property],
+    // TODO(crisbeto): we'll need a different BindingKind for two-way bindings.
+    [5 /* e.BindingType.TwoWay */, BindingKind.Property],
     [1 /* e.BindingType.Attribute */, BindingKind.Attribute],
     [2 /* e.BindingType.Class */, BindingKind.ClassName],
     [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
@@ -24874,8 +24878,8 @@ function createTemplateBinding(view, xref, type, name, value, unit, securityCont
     // update instruction.
     if (templateKind === TemplateKind.Structural) {
         if (!isStructuralTemplateAttribute &&
-            (type === 0 /* e.BindingType.Property */ || type === 2 /* e.BindingType.Class */ ||
-                type === 3 /* e.BindingType.Style */)) {
+            (type === 0 /* e.BindingType.Property */ || type === 5 /* e.BindingType.TwoWay */ ||
+                type === 2 /* e.BindingType.Class */ || type === 3 /* e.BindingType.Style */)) {
             // Because this binding doesn't really target the ng-template, it must be a binding on an
             // inner node of a structural template. We can't skip it entirely, because we still need it on
             // the ng-template's consts (e.g. for the purposes of directive matching). However, we should
@@ -25157,7 +25161,7 @@ class BindingParser {
         for (const propName of Object.keys(properties)) {
             const expression = properties[propName];
             if (typeof expression === 'string') {
-                this.parsePropertyBinding(propName, expression, true, sourceSpan, sourceSpan.start.offset, undefined, [], 
+                this.parsePropertyBinding(propName, expression, true, false, sourceSpan, sourceSpan.start.offset, undefined, [], 
                 // Use the `sourceSpan` for  `keySpan`. This isn't really accurate, but neither is the
                 // sourceSpan, as it represents the sourceSpan of the host itself rather than the
                 // source of the host binding (which doesn't exist in the template). Regardless,
@@ -25253,7 +25257,7 @@ class BindingParser {
             else if (binding.value) {
                 const srcSpan = isIvyAst ? bindingSpan : sourceSpan;
                 const valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
-                this._parsePropertyAst(key, binding.value, srcSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+                this._parsePropertyAst(key, binding.value, false, srcSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
             }
             else {
                 targetMatchableAttrs.push([key, '' /* value */]);
@@ -25306,7 +25310,7 @@ class BindingParser {
             targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan, keySpan, valueSpan));
         }
     }
-    parsePropertyBinding(name, expression, isHost, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
+    parsePropertyBinding(name, expression, isHost, isPartOfAssignmentBinding, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
         if (name.length === 0) {
             this._reportError(`Property name is missing in binding`, sourceSpan);
         }
@@ -25329,20 +25333,20 @@ class BindingParser {
             this._parseAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
         else {
-            this._parsePropertyAst(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
     }
     parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan, interpolatedTokens) {
         const expr = this.parseInterpolation(value, valueSpan || sourceSpan, interpolatedTokens);
         if (expr) {
-            this._parsePropertyAst(name, expr, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+            this._parsePropertyAst(name, expr, false, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
             return true;
         }
         return false;
     }
-    _parsePropertyAst(name, ast, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+    _parsePropertyAst(name, ast, isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
         targetMatchableAttrs.push([name, ast.source]);
-        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.DEFAULT, sourceSpan, keySpan, valueSpan));
+        targetProps.push(new ParsedProperty(name, ast, isPartOfAssignmentBinding ? ParsedPropertyType.TWO_WAY : ParsedPropertyType.DEFAULT, sourceSpan, keySpan, valueSpan));
     }
     _parseAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
         if (name.length === 0) {
@@ -25412,7 +25416,8 @@ class BindingParser {
             const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
             boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
-            bindingType = 0 /* BindingType.Property */;
+            bindingType =
+                boundProp.type === ParsedPropertyType.TWO_WAY ? 5 /* BindingType.TwoWay */ : 0 /* BindingType.Property */;
             if (!skipValidation) {
                 this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
             }
@@ -25462,7 +25467,7 @@ class BindingParser {
         const [target, eventName] = splitAtColon(name, [null, name]);
         const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
         targetMatchableAttrs.push([name, ast.source]);
-        targetEvents.push(new ParsedEvent(eventName, target, 0 /* ParsedEventType.Regular */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, target, isAssignmentEvent ? 2 /* ParsedEventType.TwoWay */ : 0 /* ParsedEventType.Regular */, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -26842,7 +26847,7 @@ class HtmlAstToIvyAst {
             if (bindParts[KW_BIND_IDX] != null) {
                 const identifier = bindParts[IDENT_KW_IDX];
                 const keySpan = createKeySpan(srcSpan, bindParts[KW_BIND_IDX], identifier);
-                this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                this.bindingParser.parsePropertyBinding(identifier, value, false, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
             }
             else if (bindParts[KW_LET_IDX]) {
                 if (isTemplateElement) {
@@ -26869,7 +26874,7 @@ class HtmlAstToIvyAst {
             else if (bindParts[KW_BINDON_IDX]) {
                 const identifier = bindParts[IDENT_KW_IDX];
                 const keySpan = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX], identifier);
-                this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                this.bindingParser.parsePropertyBinding(identifier, value, false, true, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
                 this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan);
             }
             else if (bindParts[KW_AT_IDX]) {
@@ -26899,11 +26904,11 @@ class HtmlAstToIvyAst {
             const identifier = name.substring(delims.start.length, name.length - delims.end.length);
             const keySpan = createKeySpan(srcSpan, delims.start, identifier);
             if (delims.start === BINDING_DELIMS.BANANA_BOX.start) {
-                this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                this.bindingParser.parsePropertyBinding(identifier, value, false, true, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
                 this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan);
             }
             else if (delims.start === BINDING_DELIMS.PROPERTY.start) {
-                this.bindingParser.parsePropertyBinding(identifier, value, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
+                this.bindingParser.parsePropertyBinding(identifier, value, false, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
             }
             else {
                 const events = [];
@@ -28301,7 +28306,8 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach(input => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if (input.type === 0 /* BindingType.Property */ && input.i18n) {
+                if ((input.type === 0 /* BindingType.Property */ || input.type === 5 /* BindingType.TwoWay */) &&
+                    input.i18n) {
                     boundI18nAttrs.push(input);
                 }
                 else {
@@ -28427,7 +28433,7 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
-                    if (inputType === 0 /* BindingType.Property */) {
+                    if (inputType === 0 /* BindingType.Property */ || inputType === 5 /* BindingType.TwoWay */) {
                         if (value instanceof Interpolation$1) {
                             // prop="{{value}}" and friends
                             this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -32440,7 +32446,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.0+sha-bd9c2c5');
+const VERSION = new Version('17.2.0-next.0+sha-75aeae4');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34006,7 +34012,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34102,7 +34108,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34494,7 +34500,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34529,7 +34535,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34580,7 +34586,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34613,7 +34619,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34664,7 +34670,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.0+sha-bd9c2c5'));
+    definitionMap.set('version', literal('17.2.0-next.0+sha-75aeae4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

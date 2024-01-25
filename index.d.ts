@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.0+sha-bd9c2c5
+ * @license Angular v17.2.0-next.0+sha-75aeae4
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -401,7 +401,7 @@ declare class BindingParser {
      */
     private _parseTemplateBindings;
     parseLiteralAttr(name: string, value: string | null, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan): void;
-    parsePropertyBinding(name: string, expression: string, isHost: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan): void;
+    parsePropertyBinding(name: string, expression: string, isHost: boolean, isPartOfAssignmentBinding: boolean, sourceSpan: ParseSourceSpan, absoluteOffset: number, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan): void;
     parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): boolean;
     private _parsePropertyAst;
     private _parseAnimation;
@@ -435,7 +435,8 @@ export declare const enum BindingType {
     Attribute = 1,
     Class = 2,
     Style = 3,
-    Animation = 4
+    Animation = 4,
+    TwoWay = 5
 }
 
 export declare class Block extends NodeWithI18n {
@@ -2434,7 +2435,8 @@ export declare class ParsedEvent {
 
 export declare const enum ParsedEventType {
     Regular = 0,
-    Animation = 1
+    Animation = 1,
+    TwoWay = 2
 }
 
 export declare interface ParsedHostBindings {
@@ -2468,7 +2470,8 @@ export declare class ParsedProperty {
 export declare enum ParsedPropertyType {
     DEFAULT = 0,
     LITERAL_ATTR = 1,
-    ANIMATION = 2
+    ANIMATION = 2,
+    TWO_WAY = 3
 }
 
 /**
