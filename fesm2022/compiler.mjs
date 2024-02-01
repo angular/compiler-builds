@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.1+sha-70d0fb0
+ * @license Angular v17.2.0-next.1+sha-3b892e9
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2632,6 +2632,10 @@ class Identifiers {
     static { this.viewQuerySignal = { name: 'ɵɵviewQuerySignal', moduleName: CORE }; }
     static { this.contentQuerySignal = { name: 'ɵɵcontentQuerySignal', moduleName: CORE }; }
     static { this.queryAdvance = { name: 'ɵɵqueryAdvance', moduleName: CORE }; }
+    // Two-way bindings
+    static { this.twoWayProperty = { name: 'ɵɵtwoWayProperty', moduleName: CORE }; }
+    static { this.twoWayBindingSet = { name: 'ɵɵtwoWayBindingSet', moduleName: CORE }; }
+    static { this.twoWayListener = { name: 'ɵɵtwoWayListener', moduleName: CORE }; }
     static { this.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE }; }
     static { this.InheritDefinitionFeature = { name: 'ɵɵInheritDefinitionFeature', moduleName: CORE }; }
     static { this.CopyDefinitionFeature = { name: 'ɵɵCopyDefinitionFeature', moduleName: CORE }; }
@@ -4961,6 +4965,8 @@ const CHAINABLE_INSTRUCTIONS = new Set([
     Identifiers.textInterpolate8,
     Identifiers.textInterpolateV,
     Identifiers.templateCreate,
+    Identifiers.twoWayProperty,
+    Identifiers.twoWayListener,
 ]);
 /** Generates a call to a single instruction. */
 function invokeInstruction(span, reference, params) {
@@ -6933,8 +6939,6 @@ var ParsedPropertyType;
     ParsedPropertyType[ParsedPropertyType["TWO_WAY"] = 3] = "TWO_WAY";
 })(ParsedPropertyType || (ParsedPropertyType = {}));
 class ParsedEvent {
-    // Regular events have a target
-    // Animation events have a phase
     constructor(name, targetOrPhase, type, handler, sourceSpan, handlerSpan, keySpan) {
         this.name = name;
         this.targetOrPhase = targetOrPhase;
@@ -6978,32 +6982,10 @@ class EventHandlerVars {
  * used in an action binding (e.g. an event handler).
  */
 function convertActionBinding(localResolver, implicitReceiver, action, bindingId, baseSourceSpan, implicitReceiverAccesses, globals) {
-    if (!localResolver) {
-        localResolver = new DefaultLocalResolver(globals);
-    }
-    const actionWithoutBuiltins = convertPropertyBindingBuiltins({
-        createLiteralArrayConverter: (argCount) => {
-            // Note: no caching for literal arrays in actions.
-            return (args) => literalArr(args);
-        },
-        createLiteralMapConverter: (keys) => {
-            // Note: no caching for literal maps in actions.
-            return (values) => {
-                const entries = keys.map((k, i) => ({
-                    key: k.key,
-                    value: values[i],
-                    quoted: k.quoted,
-                }));
-                return literalMap(entries);
-            };
-        },
-        createPipeConverter: (name) => {
-            throw new Error(`Illegal State: Actions are not allowed to contain pipes. Pipe: ${name}`);
-        }
-    }, action);
+    localResolver ??= new DefaultLocalResolver(globals);
     const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, /* supportsInterpolation */ false, baseSourceSpan, implicitReceiverAccesses);
     const actionStmts = [];
-    flattenStatements(actionWithoutBuiltins.visit(visitor, _Mode.Statement), actionStmts);
+    flattenStatements(convertActionBuiltins(action).visit(visitor, _Mode.Statement), actionStmts);
     prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
     if (visitor.usesImplicitReceiver) {
         localResolver.notifyImplicitReceiverUse();
@@ -7017,6 +6999,77 @@ function convertActionBinding(localResolver, implicitReceiver, action, bindingId
         }
     }
     return actionStmts;
+}
+function convertAssignmentActionBinding(localResolver, implicitReceiver, action, bindingId, baseSourceSpan, implicitReceiverAccesses, globals) {
+    localResolver ??= new DefaultLocalResolver(globals);
+    const visitor = new _AstToIrVisitor(localResolver, implicitReceiver, bindingId, /* supportsInterpolation */ false, baseSourceSpan, implicitReceiverAccesses);
+    let convertedAction = convertActionBuiltins(action).visit(visitor, _Mode.Statement);
+    // This should already have been asserted in the parser, but we verify it here just in case.
+    if (!(convertedAction instanceof ExpressionStatement)) {
+        throw new Error(`Illegal state: unsupported expression in two-way action binding.`);
+    }
+    // Converts `[(ngModel)]="name"` to `twoWayBindingSet(ctx.name, $event) || (ctx.name = $event)`.
+    convertedAction = wrapAssignmentAction(convertedAction.expr).toStmt();
+    const actionStmts = [];
+    flattenStatements(convertedAction, actionStmts);
+    prependTemporaryDecls(visitor.temporaryCount, bindingId, actionStmts);
+    // Assignment events always return `$event`.
+    actionStmts.push(new ReturnStatement(EventHandlerVars.event));
+    implicitReceiverAccesses?.add(EventHandlerVars.event.name);
+    if (visitor.usesImplicitReceiver) {
+        localResolver.notifyImplicitReceiverUse();
+    }
+    return actionStmts;
+}
+function wrapAssignmentReadExpression(ast) {
+    return new ExternalExpr(Identifiers.twoWayBindingSet)
+        .callFn([ast, EventHandlerVars.event])
+        .or(ast.set(EventHandlerVars.event));
+}
+function isReadExpression$1(value) {
+    return value instanceof ReadPropExpr || value instanceof ReadKeyExpr;
+}
+function wrapAssignmentAction(ast) {
+    // The only officially supported expressions inside of a two-way binding are read expressions.
+    if (isReadExpression$1(ast)) {
+        return wrapAssignmentReadExpression(ast);
+    }
+    // However, historically the expression parser was handling two-way events by appending `=$event`
+    // to the raw string before attempting to parse it. This has led to bugs over the years (see
+    // #37809) and to unintentionally supporting unassignable events in the two-way binding. The
+    // logic below aims to emulate the old behavior while still supporting the new output format
+    // which uses `twoWayBindingSet`. Note that the generated code doesn't necessarily make sense
+    // based on what the user wrote, for example the event binding for `[(value)]="a ? b : c"`
+    // would produce `ctx.a ? ctx.b : ctx.c = $event`. We aim to reproduce what the parser used
+    // to generate before #54154.
+    if (ast instanceof BinaryOperatorExpr && isReadExpression$1(ast.rhs)) {
+        // `a && b` -> `ctx.a && twoWayBindingSet(ctx.b, $event) || (ctx.b = $event)`
+        return new BinaryOperatorExpr(ast.operator, ast.lhs, wrapAssignmentReadExpression(ast.rhs));
+    }
+    // Note: this also supports nullish coalescing expressions which
+    // would've been downleveled to ternary expressions by this point.
+    if (ast instanceof ConditionalExpr && isReadExpression$1(ast.falseCase)) {
+        // `a ? b : c` -> `ctx.a ? ctx.b : twoWayBindingSet(ctx.c, $event) || (ctx.c = $event)`
+        return new ConditionalExpr(ast.condition, ast.trueCase, wrapAssignmentReadExpression(ast.falseCase));
+    }
+    // `!!a` -> `twoWayBindingSet(ctx.a, $event) || (ctx.a = $event)`
+    // Note: previously we'd actually produce `!!(ctx.a = $event)`, but the wrapping
+    // node doesn't affect the result so we don't need to carry it over.
+    if (ast instanceof NotExpr) {
+        let expr = ast.condition;
+        while (true) {
+            if (expr instanceof NotExpr) {
+                expr = expr.condition;
+            }
+            else {
+                if (isReadExpression$1(expr)) {
+                    return wrapAssignmentReadExpression(expr);
+                }
+                break;
+            }
+        }
+    }
+    throw new Error(`Illegal state: unsupported expression in two-way action binding.`);
 }
 function convertPropertyBindingBuiltins(converterFactory, ast) {
     return convertBuiltins(converterFactory, ast);
@@ -7100,6 +7153,29 @@ function getStatementsFromVisitor(visitor, bindingId) {
 function convertBuiltins(converterFactory, ast) {
     const visitor = new _BuiltinAstConverter(converterFactory);
     return ast.visit(visitor);
+}
+function convertActionBuiltins(action) {
+    const converterFactory = {
+        createLiteralArrayConverter: () => {
+            // Note: no caching for literal arrays in actions.
+            return (args) => literalArr(args);
+        },
+        createLiteralMapConverter: (keys) => {
+            // Note: no caching for literal maps in actions.
+            return (values) => {
+                const entries = keys.map((k, i) => ({
+                    key: k.key,
+                    value: values[i],
+                    quoted: k.quoted,
+                }));
+                return literalMap(entries);
+            };
+        },
+        createPipeConverter: (name) => {
+            throw new Error(`Illegal State: Actions are not allowed to contain pipes. Pipe: ${name}`);
+        }
+    };
+    return convertPropertyBindingBuiltins(converterFactory, action);
 }
 function temporaryName(bindingId, temporaryNumber) {
     return `tmp_${bindingId}_${temporaryNumber}`;
@@ -8985,45 +9061,53 @@ var OpKind;
      */
     OpKind[OpKind["Repeater"] = 35] = "Repeater";
     /**
+     * An operation to bind an expression to the property side of a two-way binding.
+     */
+    OpKind[OpKind["TwoWayProperty"] = 36] = "TwoWayProperty";
+    /**
+     * An operation declaring the event side of a two-way binding.
+     */
+    OpKind[OpKind["TwoWayListener"] = 37] = "TwoWayListener";
+    /**
      * The start of an i18n block.
      */
-    OpKind[OpKind["I18nStart"] = 36] = "I18nStart";
+    OpKind[OpKind["I18nStart"] = 38] = "I18nStart";
     /**
      * A self-closing i18n on a single element.
      */
-    OpKind[OpKind["I18n"] = 37] = "I18n";
+    OpKind[OpKind["I18n"] = 39] = "I18n";
     /**
      * The end of an i18n block.
      */
-    OpKind[OpKind["I18nEnd"] = 38] = "I18nEnd";
+    OpKind[OpKind["I18nEnd"] = 40] = "I18nEnd";
     /**
      * An expression in an i18n message.
      */
-    OpKind[OpKind["I18nExpression"] = 39] = "I18nExpression";
+    OpKind[OpKind["I18nExpression"] = 41] = "I18nExpression";
     /**
      * An instruction that applies a set of i18n expressions.
      */
-    OpKind[OpKind["I18nApply"] = 40] = "I18nApply";
+    OpKind[OpKind["I18nApply"] = 42] = "I18nApply";
     /**
      * An instruction to create an ICU expression.
      */
-    OpKind[OpKind["IcuStart"] = 41] = "IcuStart";
+    OpKind[OpKind["IcuStart"] = 43] = "IcuStart";
     /**
      * An instruction to update an ICU expression.
      */
-    OpKind[OpKind["IcuEnd"] = 42] = "IcuEnd";
+    OpKind[OpKind["IcuEnd"] = 44] = "IcuEnd";
     /**
      * An instruction representing a placeholder in an ICU expression.
      */
-    OpKind[OpKind["IcuPlaceholder"] = 43] = "IcuPlaceholder";
+    OpKind[OpKind["IcuPlaceholder"] = 45] = "IcuPlaceholder";
     /**
      * An i18n context containing information needed to generate an i18n message.
      */
-    OpKind[OpKind["I18nContext"] = 44] = "I18nContext";
+    OpKind[OpKind["I18nContext"] = 46] = "I18nContext";
     /**
      * A creation op that corresponds to i18n attributes on an element.
      */
-    OpKind[OpKind["I18nAttributes"] = 45] = "I18nAttributes";
+    OpKind[OpKind["I18nAttributes"] = 47] = "I18nAttributes";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -9135,6 +9219,10 @@ var ExpressionKind;
      * An expression that will be automatically extracted to the component const array.
      */
     ExpressionKind[ExpressionKind["ConstCollected"] = 25] = "ConstCollected";
+    /**
+     * Operation that sets the value of a two-way binding.
+     */
+    ExpressionKind[ExpressionKind["TwoWayBindingSet"] = 26] = "TwoWayBindingSet";
 })(ExpressionKind || (ExpressionKind = {}));
 var VariableFlags;
 (function (VariableFlags) {
@@ -9220,6 +9308,10 @@ var BindingKind;
      * Animation property bindings.
      */
     BindingKind[BindingKind["Animation"] = 6] = "Animation";
+    /**
+     * Property side of a two-way binding.
+     */
+    BindingKind[BindingKind["TwoWayProperty"] = 7] = "TwoWayProperty";
 })(BindingKind || (BindingKind = {}));
 /**
  * Enumeration of possible times i18n params can be resolved.
@@ -9474,6 +9566,27 @@ function createPropertyOp(target, name, expression, isAnimationTrigger, security
         name,
         expression,
         isAnimationTrigger,
+        securityContext,
+        sanitizer: null,
+        isStructuralTemplateAttribute,
+        templateKind,
+        i18nContext,
+        i18nMessage,
+        sourceSpan,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `TwoWayPropertyOp`.
+ */
+function createTwoWayPropertyOp(target, name, expression, securityContext, isStructuralTemplateAttribute, templateKind, i18nContext, i18nMessage, sourceSpan) {
+    return {
+        kind: OpKind.TwoWayProperty,
+        target,
+        name,
+        expression,
         securityContext,
         sanitizer: null,
         isStructuralTemplateAttribute,
@@ -9861,6 +9974,31 @@ class ResetViewExpr extends ExpressionBase {
     }
     clone() {
         return new ResetViewExpr(this.expr.clone());
+    }
+}
+class TwoWayBindingSetExpr extends ExpressionBase {
+    constructor(target, value) {
+        super();
+        this.target = target;
+        this.value = value;
+        this.kind = ExpressionKind.TwoWayBindingSet;
+    }
+    visitExpression(visitor, context) {
+        this.target.visitExpression(visitor, context);
+        this.value.visitExpression(visitor, context);
+    }
+    isEquivalent(other) {
+        return this.target.isEquivalent(other.target) && this.value.isEquivalent(other.value);
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.target = transformExpressionsInExpression(this.target, transform, flags);
+        this.value = transformExpressionsInExpression(this.value, transform, flags);
+    }
+    clone() {
+        return new TwoWayBindingSetExpr(this.target, this.value);
     }
 }
 /**
@@ -10322,6 +10460,11 @@ function transformExpressionsInOp(op, transform, flags) {
             op.sanitizer =
                 op.sanitizer && transformExpressionsInExpression(op.sanitizer, transform, flags);
             break;
+        case OpKind.TwoWayProperty:
+            op.expression = transformExpressionsInExpression(op.expression, transform, flags);
+            op.sanitizer =
+                op.sanitizer && transformExpressionsInExpression(op.sanitizer, transform, flags);
+            break;
         case OpKind.I18nExpression:
             op.expression = transformExpressionsInExpression(op.expression, transform, flags);
             break;
@@ -10350,6 +10493,7 @@ function transformExpressionsInOp(op, transform, flags) {
             }
             break;
         case OpKind.Listener:
+        case OpKind.TwoWayListener:
             for (const innerOp of op.handlerOps) {
                 transformExpressionsInOp(innerOp, transform, flags | VisitorContextFlag.InChildOperation);
             }
@@ -10968,6 +11112,24 @@ function createListenerOp(target, targetSlot, name, tag, handlerOps, animationPh
         ...NEW_OP,
     };
 }
+/**
+ * Create a `TwoWayListenerOp`.
+ */
+function createTwoWayListenerOp(target, targetSlot, name, tag, handlerOps, sourceSpan) {
+    const handlerList = new OpList();
+    handlerList.push(handlerOps);
+    return {
+        kind: OpKind.TwoWayListener,
+        target,
+        targetSlot,
+        tag,
+        name,
+        handlerOps: handlerList,
+        handlerFnName: null,
+        sourceSpan,
+        ...NEW_OP,
+    };
+}
 function createPipeOp(xref, slot, name) {
     return {
         kind: OpKind.Pipe,
@@ -11325,7 +11487,7 @@ class CompilationUnit {
     *ops() {
         for (const op of this.create) {
             yield op;
-            if (op.kind === OpKind.Listener) {
+            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
                 for (const listenerOp of op.handlerOps) {
                     yield listenerOp;
                 }
@@ -11571,6 +11733,11 @@ function extractAttributes(job) {
                         /* i18nMessage */ null, op.securityContext), lookupElement$2(elements, op.target));
                     }
                     break;
+                case OpKind.TwoWayProperty:
+                    OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.TwoWayProperty, null, op.name, /* expression */ null, 
+                    /* i18nContext */ null, 
+                    /* i18nMessage */ null, op.securityContext), lookupElement$2(elements, op.target));
+                    break;
                 case OpKind.StyleProp:
                 case OpKind.ClassProp:
                     // TODO: Can style or class bindings be i18n attributes?
@@ -11602,6 +11769,15 @@ function extractAttributes(job) {
                         else {
                             OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
                         }
+                    }
+                    break;
+                case OpKind.TwoWayListener:
+                    // Two-way listeners aren't supported in host bindings.
+                    if (job.kind !== CompilationJobKind.Host) {
+                        const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, null, op.name, /* expression */ null, 
+                        /* i18nContext */ null, 
+                        /* i18nMessage */ null, SecurityContext.NONE);
+                        OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
                     }
                     break;
             }
@@ -11692,6 +11868,15 @@ function specializeBindings(job) {
                         OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
                     }
                     break;
+                case BindingKind.TwoWayProperty:
+                    if (!(op.expression instanceof Expression)) {
+                        // We shouldn't be able to hit this code path since interpolations in two-way bindings
+                        // result in a parser error. We assert here so that downstream we can assume that
+                        // the value is always an expression.
+                        throw new Error(`Expected value of two-way property binding "${op.name}" to be an expression`);
+                    }
+                    OpList.replace(op, createTwoWayPropertyOp(op.target, op.name, op.expression, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
+                    break;
                 case BindingKind.I18n:
                 case BindingKind.ClassName:
                 case BindingKind.StyleProperty:
@@ -11728,6 +11913,8 @@ const CHAINABLE = new Set([
     Identifiers.syntheticHostListener,
     Identifiers.syntheticHostProperty,
     Identifiers.templateCreate,
+    Identifiers.twoWayProperty,
+    Identifiers.twoWayListener,
 ]);
 /**
  * Post-process a reified view compilation and convert sequential calls to chainable instructions
@@ -12001,7 +12188,7 @@ class ElementAttributes {
         return this.byKind.get(BindingKind.StyleProperty) ?? FLYWEIGHT_ARRAY;
     }
     get bindings() {
-        return this.byKind.get(BindingKind.Property) ?? FLYWEIGHT_ARRAY;
+        return this.propertyBindings ?? FLYWEIGHT_ARRAY;
     }
     get template() {
         return this.byKind.get(BindingKind.Template) ?? FLYWEIGHT_ARRAY;
@@ -12013,6 +12200,7 @@ class ElementAttributes {
         this.compatibility = compatibility;
         this.known = new Map();
         this.byKind = new Map;
+        this.propertyBindings = null;
         this.projectAs = null;
     }
     isKnown(kind, name, value) {
@@ -12062,10 +12250,16 @@ class ElementAttributes {
         }
     }
     arrayFor(kind) {
-        if (!this.byKind.has(kind)) {
-            this.byKind.set(kind, []);
+        if (kind === BindingKind.Property || kind === BindingKind.TwoWayProperty) {
+            this.propertyBindings ??= [];
+            return this.propertyBindings;
         }
-        return this.byKind.get(kind);
+        else {
+            if (!this.byKind.has(kind)) {
+                this.byKind.set(kind, []);
+            }
+            return this.byKind.get(kind);
+        }
     }
 }
 /**
@@ -12995,6 +13189,7 @@ function recursivelyProcessView(view, parentScope) {
                 }
                 break;
             case OpKind.Listener:
+            case OpKind.TwoWayListener:
                 // Prepend variables to listener handler functions.
                 op.handlerOps.prepend(generateVariablesInScopeForView(view, scope));
                 break;
@@ -13658,15 +13853,12 @@ class Parser$1 {
         this._lexer = _lexer;
         this.errors = [];
     }
-    parseAction(input, isAssignmentEvent, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._checkNoInterpolation(input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        let flags = 1 /* ParseFlags.Action */;
-        if (isAssignmentEvent) {
-            flags |= 2 /* ParseFlags.AssignmentEvent */;
-        }
-        const ast = new _ParseAST(input, location, absoluteOffset, tokens, flags, this.errors, 0).parseChain();
+        const ast = new _ParseAST(input, location, absoluteOffset, tokens, 1 /* ParseFlags.Action */, this.errors, 0)
+            .parseChain();
         return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
     }
     parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
@@ -14143,7 +14335,7 @@ class _ParseAST {
         let result = this.parseExpression();
         if (this.consumeOptionalOperator('|')) {
             if (this.parseFlags & 1 /* ParseFlags.Action */) {
-                this.error('Cannot have a pipe in an action expression');
+                this.error(`Cannot have a pipe in an action expression`);
             }
             do {
                 const nameStart = this.inputIndex;
@@ -14485,7 +14677,7 @@ class _ParseAST {
         const nameSpan = this.sourceSpan(nameStart);
         let receiver;
         if (isSafe) {
-            if (this.consumeOptionalAssignment()) {
+            if (this.consumeOptionalOperator('=')) {
                 this.error('The \'?.\' operator cannot be used in the assignment');
                 receiver = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
             }
@@ -14494,7 +14686,7 @@ class _ParseAST {
             }
         }
         else {
-            if (this.consumeOptionalAssignment()) {
+            if (this.consumeOptionalOperator('=')) {
                 if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
                     this.error('Bindings cannot contain assignments');
                     return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
@@ -14520,22 +14712,6 @@ class _ParseAST {
         const sourceSpan = this.sourceSpan(start);
         return isSafe ? new SafeCall(span, sourceSpan, receiver, args, argumentSpan) :
             new Call(span, sourceSpan, receiver, args, argumentSpan);
-    }
-    consumeOptionalAssignment() {
-        // When parsing assignment events (originating from two-way-binding aka banana-in-a-box syntax),
-        // it is valid for the primary expression to be terminated by the non-null operator. This
-        // primary expression is substituted as LHS of the assignment operator to achieve
-        // two-way-binding, such that the LHS could be the non-null operator. The grammar doesn't
-        // naturally allow for this syntax, so assignment events are parsed specially.
-        if ((this.parseFlags & 2 /* ParseFlags.AssignmentEvent */) && this.next.isOperator('!') &&
-            this.peek(1).isOperator('=')) {
-            // First skip over the ! operator.
-            this.advance();
-            // Then skip over the = operator, to fully consume the optional assignment operator.
-            this.advance();
-            return true;
-        }
-        return this.consumeOptionalOperator('=');
     }
     parseCallArguments() {
         if (this.next.isCharacter($RPAREN))
@@ -20647,6 +20823,15 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 }
                 op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
                 break;
+            case OpKind.TwoWayListener:
+                if (op.handlerFnName !== null) {
+                    break;
+                }
+                if (op.targetSlot.slot === null) {
+                    throw new Error(`Expected a slot to be assigned`);
+                }
+                op.handlerFnName = sanitizeIdentifier(`${unit.fnName}_${op.tag.replace('-', '_')}_${op.name}_${op.targetSlot.slot}_listener`);
+                break;
             case OpKind.Variable:
                 varNames.set(op.xref, getVariableName(unit, op.variable, state));
                 break;
@@ -20761,7 +20946,7 @@ function stripImportant(name) {
 function mergeNextContextExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.Listener) {
+            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
                 mergeNextContextsInOps(op.handlerOps);
             }
         }
@@ -20902,6 +21087,14 @@ function kindWithInterpolationTest(kind, interpolation) {
         return op.kind === kind && interpolation === op.expression instanceof Interpolation;
     };
 }
+function basicListenerKindTest(op) {
+    return (op.kind === OpKind.Listener && !(op.hostListener && op.isAnimationListener)) ||
+        op.kind === OpKind.TwoWayListener;
+}
+function nonInterpolationPropertyKindTest(op) {
+    return (op.kind === OpKind.Property || op.kind === OpKind.TwoWayProperty) &&
+        !(op.expression instanceof Interpolation);
+}
 /**
  * Defines the groups based on `OpKind` that ops will be divided into, for the various create
  * op kinds. Ops will be collected into groups, then optionally transformed, before recombining
@@ -20909,7 +21102,7 @@ function kindWithInterpolationTest(kind, interpolation) {
  */
 const CREATE_ORDERING = [
     { test: op => op.kind === OpKind.Listener && op.hostListener && op.isAnimationListener },
-    { test: op => op.kind === OpKind.Listener && !(op.hostListener && op.isAnimationListener) },
+    { test: basicListenerKindTest },
 ];
 /**
  * Defines the groups based on `OpKind` that ops will be divided into, for the various update
@@ -20922,7 +21115,7 @@ const UPDATE_ORDERING = [
     { test: kindTest(OpKind.ClassProp) },
     { test: kindWithInterpolationTest(OpKind.Attribute, true) },
     { test: kindWithInterpolationTest(OpKind.Property, true) },
-    { test: kindWithInterpolationTest(OpKind.Property, false) },
+    { test: nonInterpolationPropertyKindTest },
     { test: kindWithInterpolationTest(OpKind.Attribute, false) },
 ];
 /**
@@ -20941,8 +21134,9 @@ const UPDATE_HOST_ORDERING = [
  * The set of all op kinds we handle in the reordering phase.
  */
 const handledOpKinds = new Set([
-    OpKind.Listener, OpKind.StyleMap, OpKind.ClassMap, OpKind.StyleProp,
-    OpKind.ClassProp, OpKind.Property, OpKind.HostProperty, OpKind.Attribute
+    OpKind.Listener, OpKind.TwoWayListener, OpKind.StyleMap, OpKind.ClassMap,
+    OpKind.StyleProp, OpKind.ClassProp, OpKind.Property, OpKind.TwoWayProperty,
+    OpKind.HostProperty, OpKind.Attribute
 ]);
 /**
  * Many type of operations have ordering constraints that must be respected. For example, a
@@ -21408,6 +21602,12 @@ function listener(name, handlerFn, eventTargetResolver, syntheticHost, sourceSpa
     }
     return call(syntheticHost ? Identifiers.syntheticHostListener : Identifiers.listener, args, sourceSpan);
 }
+function twoWayBindingSet(target, value) {
+    return importExpr(Identifiers.twoWayBindingSet).callFn([target, value]);
+}
+function twoWayListener(name, handlerFn, sourceSpan) {
+    return call(Identifiers.twoWayListener, [literal(name), handlerFn], sourceSpan);
+}
 function pipe(slot, name) {
     return call(Identifiers.pipe, [
         literal(slot),
@@ -21567,6 +21767,13 @@ function property(name, expression, sanitizer, sourceSpan) {
         args.push(sanitizer);
     }
     return call(Identifiers.property, args, sourceSpan);
+}
+function twoWayProperty(name, expression, sanitizer, sourceSpan) {
+    const args = [literal(name), expression];
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    return call(Identifiers.twoWayProperty, args, sourceSpan);
 }
 function attribute(name, expression, sanitizer, namespace) {
     const args = [literal(name), expression];
@@ -22010,6 +22217,9 @@ function reifyCreateOperations(unit, ops) {
                 }
                 OpList.replace(op, listener(op.name, listenerFn, eventTargetResolver, op.hostListener && op.isAnimationListener, op.sourceSpan));
                 break;
+            case OpKind.TwoWayListener:
+                OpList.replace(op, twoWayListener(op.name, reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, true), op.sourceSpan));
+                break;
             case OpKind.Variable:
                 if (op.variable.name === null) {
                     throw new Error(`AssertionError: unnamed variable ${op.xref}`);
@@ -22118,6 +22328,9 @@ function reifyUpdateOperations(_unit, ops) {
                     OpList.replace(op, property(op.name, op.expression, op.sanitizer, op.sourceSpan));
                 }
                 break;
+            case OpKind.TwoWayProperty:
+                OpList.replace(op, twoWayProperty(op.name, op.expression, op.sanitizer, op.sourceSpan));
+                break;
             case OpKind.StyleProp:
                 if (op.expression instanceof Interpolation) {
                     OpList.replace(op, stylePropInterpolate(op.name, op.expression.strings, op.expression.expressions, op.unit, op.sourceSpan));
@@ -22215,6 +22428,8 @@ function reifyIrExpression(expr) {
             return reference(expr.targetSlot.slot + 1 + expr.offset);
         case ExpressionKind.LexicalRead:
             throw new Error(`AssertionError: unresolved LexicalRead of ${expr.name}`);
+        case ExpressionKind.TwoWayBindingSet:
+            throw new Error(`AssertionError: unresolved TwoWayBindingSet`);
         case ExpressionKind.RestoreView:
             if (typeof expr.view === 'number') {
                 throw new Error(`AssertionError: unresolved RestoreView`);
@@ -22375,6 +22590,7 @@ function processLexicalScope$1(view, ops) {
                 }
                 break;
             case OpKind.Listener:
+            case OpKind.TwoWayListener:
                 processLexicalScope$1(view, op.handlerOps);
                 break;
         }
@@ -22410,10 +22626,13 @@ function resolveDollarEvent(job) {
 }
 function transformDollarEvent(unit, ops) {
     for (const op of ops) {
-        if (op.kind === OpKind.Listener) {
+        if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
             transformExpressionsInOp(op, (expr) => {
                 if (expr instanceof LexicalReadExpr && expr.name === '$event') {
-                    op.consumesDollarEvent = true;
+                    // Two-way listeners always consume `$event` so they omit this field.
+                    if (op.kind === OpKind.Listener) {
+                        op.consumesDollarEvent = true;
+                    }
                     return new ReadVarExpr(expr.name);
                 }
                 return expr;
@@ -22788,6 +23007,7 @@ function processLexicalScope(unit, ops, savedView) {
                 }
                 break;
             case OpKind.Listener:
+            case OpKind.TwoWayListener:
                 // Listener functions have separate variable declarations, so process them as a separate
                 // lexical scope.
                 processLexicalScope(unit, op.handlerOps, savedView);
@@ -22798,7 +23018,7 @@ function processLexicalScope(unit, ops, savedView) {
     // scope. Also, look for `ir.RestoreViewExpr`s and match them with the snapshotted view context
     // variable.
     for (const op of ops) {
-        if (op.kind == OpKind.Listener) {
+        if (op.kind == OpKind.Listener || op.kind === OpKind.TwoWayListener) {
             // Listeners were already processed above with their own scopes.
             continue;
         }
@@ -22948,6 +23168,75 @@ function getOnlySecurityContext(securityContext) {
 }
 
 /**
+ * Transforms a `TwoWayBindingSet` expression into an expression that either
+ * sets a value through the `twoWayBindingSet` instruction or falls back to setting
+ * the value directly. E.g. the expression `TwoWayBindingSet(target, value)` becomes:
+ * `ng.twoWayBindingSet(target, value) || (target = value)`.
+ */
+function transformTwoWayBindingSet(job) {
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (op.kind === OpKind.TwoWayListener) {
+                transformExpressionsInOp(op, (expr) => {
+                    if (expr instanceof TwoWayBindingSetExpr) {
+                        return wrapAction(expr.target, expr.value);
+                    }
+                    return expr;
+                }, VisitorContextFlag.InChildOperation);
+            }
+        }
+    }
+}
+function wrapSetOperation(target, value) {
+    return twoWayBindingSet(target, value).or(target.set(value));
+}
+function isReadExpression(value) {
+    return value instanceof ReadPropExpr || value instanceof ReadKeyExpr;
+}
+function wrapAction(target, value) {
+    // The only officially supported expressions inside of a two-way binding are read expressions.
+    if (isReadExpression(target)) {
+        return wrapSetOperation(target, value);
+    }
+    // However, historically the expression parser was handling two-way events by appending `=$event`
+    // to the raw string before attempting to parse it. This has led to bugs over the years (see
+    // #37809) and to unintentionally supporting unassignable events in the two-way binding. The
+    // logic below aims to emulate the old behavior while still supporting the new output format
+    // which uses `twoWayBindingSet`. Note that the generated code doesn't necessarily make sense
+    // based on what the user wrote, for example the event binding for `[(value)]="a ? b : c"`
+    // would produce `ctx.a ? ctx.b : ctx.c = $event`. We aim to reproduce what the parser used
+    // to generate before #54154.
+    if (target instanceof BinaryOperatorExpr && isReadExpression(target.rhs)) {
+        // `a && b` -> `ctx.a && twoWayBindingSet(ctx.b, $event) || (ctx.b = $event)`
+        return new BinaryOperatorExpr(target.operator, target.lhs, wrapSetOperation(target.rhs, value));
+    }
+    // Note: this also supports nullish coalescing expressions which
+    // would've been downleveled to ternary expressions by this point.
+    if (target instanceof ConditionalExpr && isReadExpression(target.falseCase)) {
+        // `a ? b : c` -> `ctx.a ? ctx.b : twoWayBindingSet(ctx.c, $event) || (ctx.c = $event)`
+        return new ConditionalExpr(target.condition, target.trueCase, wrapSetOperation(target.falseCase, value));
+    }
+    // `!!a` -> `twoWayBindingSet(ctx.a, $event) || (ctx.a = $event)`
+    // Note: previously we'd actually produce `!!(ctx.a = $event)`, but the wrapping
+    // node doesn't affect the result so we don't need to carry it over.
+    if (target instanceof NotExpr) {
+        let expr = target.condition;
+        while (true) {
+            if (expr instanceof NotExpr) {
+                expr = expr.condition;
+            }
+            else {
+                if (isReadExpression(expr)) {
+                    return wrapSetOperation(expr, value);
+                }
+                break;
+            }
+        }
+    }
+    throw new Error(`Unsupported expression in two-way action binding.`);
+}
+
+/**
  * When inside of a listener, we may need access to one or more enclosing views. Therefore, each
  * view should save the current view, and each listener must have the ability to restore the
  * appropriate view. We eagerly generate all save view variables; they will be optimized away later.
@@ -22962,7 +23251,7 @@ function saveAndRestoreView(job) {
             }, new GetCurrentViewExpr(), VariableFlags.None),
         ]);
         for (const op of unit.create) {
-            if (op.kind !== OpKind.Listener) {
+            if (op.kind !== OpKind.Listener && op.kind !== OpKind.TwoWayListener) {
                 continue;
             }
             // Embedded views always need the save/restore view operation.
@@ -23152,7 +23441,7 @@ function generateTemporaries(ops) {
         generatedStatements.push(...Array.from(new Set(defs.values()))
             .map(name => createStatementOp(new DeclareVarStmt(name))));
         opCount++;
-        if (op.kind === OpKind.Listener) {
+        if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
             op.handlerOps.prepend(generateTemporaries(op.handlerOps));
         }
     }
@@ -23400,6 +23689,9 @@ function varsUsedByOp(op) {
                 slots += op.expression.expressions.length;
             }
             return slots;
+        case OpKind.TwoWayProperty:
+            // Two-way properties can only have expressions so they only need one variable slot.
+            return 1;
         case OpKind.StyleProp:
         case OpKind.ClassProp:
         case OpKind.StyleMap:
@@ -23473,14 +23765,14 @@ function optimizeVariables(job) {
         inlineAlwaysInlineVariables(unit.create);
         inlineAlwaysInlineVariables(unit.update);
         for (const op of unit.create) {
-            if (op.kind === OpKind.Listener) {
+            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
                 inlineAlwaysInlineVariables(op.handlerOps);
             }
         }
         optimizeVariablesInOpList(unit.create, job.compatibility);
         optimizeVariablesInOpList(unit.update, job.compatibility);
         for (const op of unit.create) {
-            if (op.kind === OpKind.Listener) {
+            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
                 optimizeVariablesInOpList(op.handlerOps, job.compatibility);
             }
         }
@@ -23935,6 +24227,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: generateTrackVariables },
     { kind: CompilationJobKind.Both, fn: resolveNames },
     { kind: CompilationJobKind.Tmpl, fn: resolveDeferTargetNames },
+    { kind: CompilationJobKind.Tmpl, fn: transformTwoWayBindingSet },
     { kind: CompilationJobKind.Tmpl, fn: optimizeTrackFns },
     { kind: CompilationJobKind.Both, fn: resolveContexts },
     { kind: CompilationJobKind.Both, fn: resolveSanitizers },
@@ -24731,8 +25024,7 @@ function convertAstWithInterpolation(job, value, i18nMeta, sourceSpan) {
 // TODO: Can we populate Template binding kinds in ingest?
 const BINDING_KINDS = new Map([
     [0 /* e.BindingType.Property */, BindingKind.Property],
-    // TODO(crisbeto): we'll need a different BindingKind for two-way bindings.
-    [5 /* e.BindingType.TwoWay */, BindingKind.Property],
+    [5 /* e.BindingType.TwoWay */, BindingKind.TwoWayProperty],
     [1 /* e.BindingType.Attribute */, BindingKind.Attribute],
     [2 /* e.BindingType.Class */, BindingKind.ClassName],
     [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
@@ -24791,7 +25083,12 @@ function ingestElementBindings(unit, op, element) {
         if (output.type === 1 /* e.ParsedEventType.Animation */ && output.phase === null) {
             throw Error('Animation listener should have a phase');
         }
-        unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
+        if (output.type === 2 /* e.ParsedEventType.TwoWay */) {
+            unit.create.push(createTwoWayListenerOp(op.xref, op.handle, output.name, op.tag, makeTwoWayListenerHandlerOps(unit, output.handler, output.handlerSpan), output.sourceSpan));
+        }
+        else {
+            unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
+        }
     }
     // If any of the bindings on this element have an i18n message, then an i18n attrs configuration
     // op is also required.
@@ -24830,7 +25127,12 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
             throw Error('Animation listener should have a phase');
         }
         if (templateKind === TemplateKind.NgTemplate) {
-            unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
+            if (output.type === 2 /* e.ParsedEventType.TwoWay */) {
+                unit.create.push(createTwoWayListenerOp(op.xref, op.handle, output.name, op.tag, makeTwoWayListenerHandlerOps(unit, output.handler, output.handlerSpan), output.sourceSpan));
+            }
+            else {
+                unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
+            }
         }
         if (templateKind === TemplateKind.Structural &&
             output.type !== 1 /* e.ParsedEventType.Animation */) {
@@ -24877,14 +25179,19 @@ function createTemplateBinding(view, xref, type, name, value, unit, securityCont
     // If this is a structural template, then several kinds of bindings should not result in an
     // update instruction.
     if (templateKind === TemplateKind.Structural) {
-        if (!isStructuralTemplateAttribute &&
-            (type === 0 /* e.BindingType.Property */ || type === 5 /* e.BindingType.TwoWay */ ||
-                type === 2 /* e.BindingType.Class */ || type === 3 /* e.BindingType.Style */)) {
-            // Because this binding doesn't really target the ng-template, it must be a binding on an
-            // inner node of a structural template. We can't skip it entirely, because we still need it on
-            // the ng-template's consts (e.g. for the purposes of directive matching). However, we should
-            // not generate an update instruction for it.
-            return createExtractedAttributeOp(xref, BindingKind.Property, null, name, null, null, i18nMessage, securityContext);
+        if (!isStructuralTemplateAttribute) {
+            switch (type) {
+                case 0 /* e.BindingType.Property */:
+                case 2 /* e.BindingType.Class */:
+                case 3 /* e.BindingType.Style */:
+                    // Because this binding doesn't really target the ng-template, it must be a binding on an
+                    // inner node of a structural template. We can't skip it entirely, because we still need
+                    // it on the ng-template's consts (e.g. for the purposes of directive matching). However,
+                    // we should not generate an update instruction for it.
+                    return createExtractedAttributeOp(xref, BindingKind.Property, null, name, null, null, i18nMessage, securityContext);
+                case 5 /* e.BindingType.TwoWay */:
+                    return createExtractedAttributeOp(xref, BindingKind.TwoWayProperty, null, name, null, null, i18nMessage, securityContext);
+            }
         }
         if (!isTextBinding && (type === 1 /* e.BindingType.Attribute */ || type === 4 /* e.BindingType.Animation */)) {
             // Again, this binding doesn't really target the ng-template; it actually targets the element
@@ -24930,6 +25237,25 @@ function makeListenerHandlerOps(unit, handler, handlerSpan) {
     const returnExpr = expressions.pop();
     handlerOps.push(...expressions.map(e => createStatementOp(new ExpressionStatement(e, e.sourceSpan))));
     handlerOps.push(createStatementOp(new ReturnStatement(returnExpr, returnExpr.sourceSpan)));
+    return handlerOps;
+}
+function makeTwoWayListenerHandlerOps(unit, handler, handlerSpan) {
+    handler = astOf(handler);
+    const handlerOps = new Array();
+    if (handler instanceof Chain) {
+        if (handler.expressions.length === 1) {
+            handler = handler.expressions[0];
+        }
+        else {
+            // This is validated during parsing already, but we do it here just in case.
+            throw new Error('Expected two-way listener to have a single expression.');
+        }
+    }
+    const handlerExpr = convertAst(handler, unit.job, handlerSpan);
+    const eventReference = new LexicalReadExpr('$event');
+    const twoWaySetExpr = new TwoWayBindingSetExpr(handlerExpr, eventReference);
+    handlerOps.push(createStatementOp(new ExpressionStatement(twoWaySetExpr)));
+    handlerOps.push(createStatementOp(new ReturnStatement(eventReference)));
     return handlerOps;
 }
 function astOf(ast) {
@@ -25434,7 +25760,7 @@ class BindingParser {
             if (keySpan !== undefined) {
                 keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
             }
-            this._parseAnimationEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetEvents, keySpan);
+            this._parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan);
         }
         else {
             this._parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan);
@@ -25444,11 +25770,11 @@ class BindingParser {
         const prop = this._schemaRegistry.getMappedPropName(propName);
         return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
     }
-    _parseAnimationEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetEvents, keySpan) {
+    _parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan) {
         const matches = splitAtPeriod(name, [name, '']);
         const eventName = matches[0];
         const phase = matches[1].toLowerCase();
-        const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
+        const ast = this._parseAction(expression, handlerSpan);
         targetEvents.push(new ParsedEvent(eventName, phase, 1 /* ParsedEventType.Animation */, ast, sourceSpan, handlerSpan, keySpan));
         if (eventName.length === 0) {
             this._reportError(`Animation event name is missing in binding`, sourceSpan);
@@ -25465,17 +25791,24 @@ class BindingParser {
     _parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
         // long format: 'target: eventName'
         const [target, eventName] = splitAtColon(name, [null, name]);
-        const ast = this._parseAction(expression, isAssignmentEvent, handlerSpan);
+        const prevErrorCount = this.errors.length;
+        const ast = this._parseAction(expression, handlerSpan);
+        const isValid = this.errors.length === prevErrorCount;
         targetMatchableAttrs.push([name, ast.source]);
+        // Don't try to validate assignment events if there were other
+        // parsing errors to avoid adding more noise to the error logs.
+        if (isAssignmentEvent && isValid && !this._isAllowedAssignmentEvent(ast)) {
+            this._reportError('Unsupported expression in a two-way binding', sourceSpan);
+        }
         targetEvents.push(new ParsedEvent(eventName, target, isAssignmentEvent ? 2 /* ParsedEventType.TwoWay */ : 0 /* ParsedEventType.Regular */, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
-    _parseAction(value, isAssignmentEvent, sourceSpan) {
+    _parseAction(value, sourceSpan) {
         const sourceInfo = (sourceSpan && sourceSpan.start || '(unknown').toString();
         const absoluteOffset = (sourceSpan && sourceSpan.start) ? sourceSpan.start.offset : 0;
         try {
-            const ast = this._exprParser.parseAction(value, isAssignmentEvent, sourceInfo, absoluteOffset, this._interpolationConfig);
+            const ast = this._exprParser.parseAction(value, sourceInfo, absoluteOffset, this._interpolationConfig);
             if (ast) {
                 this._reportExpressionParserErrors(ast.errors, sourceSpan);
             }
@@ -25509,6 +25842,26 @@ class BindingParser {
         if (report.error) {
             this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
         }
+    }
+    /**
+     * Returns whether a parsed AST is allowed to be used within the event side of a two-way binding.
+     * @param ast Parsed AST to be checked.
+     */
+    _isAllowedAssignmentEvent(ast) {
+        if (ast instanceof ASTWithSource) {
+            return this._isAllowedAssignmentEvent(ast.ast);
+        }
+        if (ast instanceof NonNullAssert) {
+            return this._isAllowedAssignmentEvent(ast.expression);
+        }
+        if (ast instanceof PropertyRead || ast instanceof KeyedRead) {
+            return true;
+        }
+        if (ast instanceof Binary) {
+            return (ast.operation === '&&' || ast.operation === '||' || ast.operation === '??') &&
+                (ast.right instanceof PropertyRead || ast.right instanceof KeyedRead);
+        }
+        return ast instanceof Conditional || ast instanceof PrefixNot;
     }
 }
 class PipeCollector extends RecursiveAstVisitor {
@@ -26950,7 +27303,7 @@ class HtmlAstToIvyAst {
     }
     parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents, keySpan) {
         const events = [];
-        this.bindingParser.parseEvent(`${name}Change`, `${expression} =$event`, /* isAssignmentEvent */ true, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
+        this.bindingParser.parseEvent(`${name}Change`, expression, /* isAssignmentEvent */ true, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
         addEvents(events, boundEvents);
     }
     reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
@@ -27784,7 +28137,9 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
     const implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
         variable(CONTEXT_NAME) :
         scope.getOrCreateSharedContextVar(0);
-    const bindingStatements = convertActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
+    const bindingStatements = eventAst.type === 2 /* ParsedEventType.TwoWay */ ?
+        convertAssignmentActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS) :
+        convertActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
     const variableDeclarations = scope?.variableDeclarations();
     const restoreViewStatement = scope?.restoreViewStatement();
@@ -28352,7 +28707,7 @@ class TemplateDefinitionBuilder {
             // Generate Listeners (outputs)
             if (element.outputs.length > 0) {
                 for (const outputAst of element.outputs) {
-                    this.creationInstruction(outputAst.sourceSpan, Identifiers.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
+                    this.creationInstruction(outputAst.sourceSpan, outputAst.type === 2 /* ParsedEventType.TwoWay */ ? Identifiers.twoWayListener : Identifiers.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
                 }
             }
             // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes and
@@ -28395,6 +28750,7 @@ class TemplateDefinitionBuilder {
                 this.allocateBindingSlots(value);
                 propertyBindings.push({
                     span: input.sourceSpan,
+                    reference: Identifiers.property,
                     paramsOrFn: getBindingFunctionParams(() => hasValue ? this.convertPropertyBinding(value) : emptyValueBindInstruction, prepareSyntheticPropertyName(input.name))
                 });
             }
@@ -28433,6 +28789,8 @@ class TemplateDefinitionBuilder {
                         }
                     }
                     this.allocateBindingSlots(value);
+                    // Note: we don't separate two-way property bindings and regular ones,
+                    // because their assignment order needs to be maintained.
                     if (inputType === 0 /* BindingType.Property */ || inputType === 5 /* BindingType.TwoWay */) {
                         if (value instanceof Interpolation$1) {
                             // prop="{{value}}" and friends
@@ -28443,6 +28801,7 @@ class TemplateDefinitionBuilder {
                             // Collect all the properties so that we can chain into a single function at the end.
                             propertyBindings.push({
                                 span: input.sourceSpan,
+                                reference: inputType === 5 /* BindingType.TwoWay */ ? Identifiers.twoWayProperty : Identifiers.property,
                                 paramsOrFn: getBindingFunctionParams(() => this.convertPropertyBinding(value), attrName, params)
                             });
                         }
@@ -28475,7 +28834,7 @@ class TemplateDefinitionBuilder {
             }
         });
         for (const propertyBinding of propertyBindings) {
-            this.updateInstructionWithAdvance(elementIndex, propertyBinding.span, Identifiers.property, propertyBinding.paramsOrFn);
+            this.updateInstructionWithAdvance(elementIndex, propertyBinding.span, propertyBinding.reference, propertyBinding.paramsOrFn);
         }
         for (const attributeBinding of attributeBindings) {
             this.updateInstructionWithAdvance(elementIndex, attributeBinding.span, Identifiers.attribute, attributeBinding.paramsOrFn);
@@ -28571,7 +28930,7 @@ class TemplateDefinitionBuilder {
             }
             // Generate listeners for directive output
             for (const outputAst of template.outputs) {
-                this.creationInstruction(outputAst.sourceSpan, Identifiers.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
+                this.creationInstruction(outputAst.sourceSpan, outputAst.type === 2 /* ParsedEventType.TwoWay */ ? Identifiers.twoWayListener : Identifiers.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
             }
         }
     }
@@ -32446,7 +32805,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.1+sha-70d0fb0');
+const VERSION = new Version('17.2.0-next.1+sha-3b892e9');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34012,7 +34371,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34108,7 +34467,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34500,7 +34859,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34535,7 +34894,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34586,7 +34945,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34619,7 +34978,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34670,7 +35029,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-70d0fb0'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-3b892e9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34703,5 +35062,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ParseAST, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

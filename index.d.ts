@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.1+sha-70d0fb0
+ * @license Angular v17.2.0-next.1+sha-3b892e9
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -157,12 +157,12 @@ export declare abstract class ASTWithName extends AST {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan);
 }
 
-export declare class ASTWithSource extends AST {
-    ast: AST;
+export declare class ASTWithSource<T extends AST = AST> extends AST {
+    ast: T;
     source: string | null;
     location: string;
     errors: ParserError[];
-    constructor(ast: AST, source: string | null, location: string, absoluteOffset: number, errors: ParserError[]);
+    constructor(ast: T, source: string | null, location: string, absoluteOffset: number, errors: ParserError[]);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
@@ -420,6 +420,11 @@ declare class BindingParser {
      * @param isAttr true when binding to an attribute
      */
     private _validatePropertyOrAttributeName;
+    /**
+     * Returns whether a parsed AST is allowed to be used within the event side of a two-way binding.
+     * @param ast Parsed AST to be checked.
+     */
+    private _isAllowedAssignmentEvent;
 }
 
 export declare class BindingPipe extends ASTWithName {
@@ -2218,210 +2223,6 @@ declare namespace outputAst {
 }
 export { outputAst }
 
-export declare class _ParseAST {
-    input: string;
-    location: string;
-    absoluteOffset: number;
-    tokens: Token[];
-    parseFlags: ParseFlags;
-    private errors;
-    private offset;
-    private rparensExpected;
-    private rbracketsExpected;
-    private rbracesExpected;
-    private context;
-    private sourceSpanCache;
-    index: number;
-    constructor(input: string, location: string, absoluteOffset: number, tokens: Token[], parseFlags: ParseFlags, errors: ParserError[], offset: number);
-    peek(offset: number): Token;
-    get next(): Token;
-    /** Whether all the parser input has been processed. */
-    get atEOF(): boolean;
-    /**
-     * Index of the next token to be processed, or the end of the last token if all have been
-     * processed.
-     */
-    get inputIndex(): number;
-    /**
-     * End index of the last processed token, or the start of the first token if none have been
-     * processed.
-     */
-    get currentEndIndex(): number;
-    /**
-     * Returns the absolute offset of the start of the current token.
-     */
-    get currentAbsoluteOffset(): number;
-    /**
-     * Retrieve a `ParseSpan` from `start` to the current position (or to `artificialEndIndex` if
-     * provided).
-     *
-     * @param start Position from which the `ParseSpan` will start.
-     * @param artificialEndIndex Optional ending index to be used if provided (and if greater than the
-     *     natural ending index)
-     */
-    span(start: number, artificialEndIndex?: number): ParseSpan;
-    sourceSpan(start: number, artificialEndIndex?: number): AbsoluteSourceSpan;
-    advance(): void;
-    /**
-     * Executes a callback in the provided context.
-     */
-    private withContext;
-    consumeOptionalCharacter(code: number): boolean;
-    peekKeywordLet(): boolean;
-    peekKeywordAs(): boolean;
-    /**
-     * Consumes an expected character, otherwise emits an error about the missing expected character
-     * and skips over the token stream until reaching a recoverable point.
-     *
-     * See `this.error` and `this.skip` for more details.
-     */
-    expectCharacter(code: number): void;
-    consumeOptionalOperator(op: string): boolean;
-    expectOperator(operator: string): void;
-    prettyPrintToken(tok: Token): string;
-    expectIdentifierOrKeyword(): string | null;
-    expectIdentifierOrKeywordOrString(): string;
-    parseChain(): AST;
-    parsePipe(): AST;
-    parseExpression(): AST;
-    parseConditional(): AST;
-    parseLogicalOr(): AST;
-    parseLogicalAnd(): AST;
-    parseNullishCoalescing(): AST;
-    parseEquality(): AST;
-    parseRelational(): AST;
-    parseAdditive(): AST;
-    parseMultiplicative(): AST;
-    parsePrefix(): AST;
-    parseCallChain(): AST;
-    parsePrimary(): AST;
-    parseExpressionList(terminator: number): AST[];
-    parseLiteralMap(): LiteralMap;
-    parseAccessMember(readReceiver: AST, start: number, isSafe: boolean): AST;
-    parseCall(receiver: AST, start: number, isSafe: boolean): AST;
-    private consumeOptionalAssignment;
-    parseCallArguments(): BindingPipe[];
-    /**
-     * Parses an identifier, a keyword, a string with an optional `-` in between,
-     * and returns the string along with its absolute source span.
-     */
-    expectTemplateBindingKey(): TemplateBindingIdentifier;
-    /**
-     * Parse microsyntax template expression and return a list of bindings or
-     * parsing errors in case the given expression is invalid.
-     *
-     * For example,
-     * ```
-     *   <div *ngFor="let item of items; index as i; trackBy: func">
-     * ```
-     * contains five bindings:
-     * 1. ngFor -> null
-     * 2. item -> NgForOfContext.$implicit
-     * 3. ngForOf -> items
-     * 4. i -> NgForOfContext.index
-     * 5. ngForTrackBy -> func
-     *
-     * For a full description of the microsyntax grammar, see
-     * https://gist.github.com/mhevery/d3530294cff2e4a1b3fe15ff75d08855
-     *
-     * @param templateKey name of the microsyntax directive, like ngIf, ngFor,
-     * without the *, along with its absolute span.
-     */
-    parseTemplateBindings(templateKey: TemplateBindingIdentifier): TemplateBindingParseResult;
-    parseKeyedReadOrWrite(receiver: AST, start: number, isSafe: boolean): AST;
-    /**
-     * Parse a directive keyword, followed by a mandatory expression.
-     * For example, "of items", "trackBy: func".
-     * The bindings are: ngForOf -> items, ngForTrackBy -> func
-     * There could be an optional "as" binding that follows the expression.
-     * For example,
-     * ```
-     *   *ngFor="let item of items | slice:0:1 as collection".
-     *                    ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
-     *               keyword    bound target   optional 'as' binding
-     * ```
-     *
-     * @param key binding key, for example, ngFor, ngIf, ngForOf, along with its
-     * absolute span.
-     */
-    private parseDirectiveKeywordBindings;
-    /**
-     * Return the expression AST for the bound target of a directive keyword
-     * binding. For example,
-     * ```
-     *   *ngIf="condition | pipe"
-     *          ^^^^^^^^^^^^^^^^ bound target for "ngIf"
-     *   *ngFor="let item of items"
-     *                       ^^^^^ bound target for "ngForOf"
-     * ```
-     */
-    private getDirectiveBoundTarget;
-    /**
-     * Return the binding for a variable declared using `as`. Note that the order
-     * of the key-value pair in this declaration is reversed. For example,
-     * ```
-     *   *ngFor="let item of items; index as i"
-     *                              ^^^^^    ^
-     *                              value    key
-     * ```
-     *
-     * @param value name of the value in the declaration, "ngIf" in the example
-     * above, along with its absolute span.
-     */
-    private parseAsBinding;
-    /**
-     * Return the binding for a variable declared using `let`. For example,
-     * ```
-     *   *ngFor="let item of items; let i=index;"
-     *           ^^^^^^^^           ^^^^^^^^^^^
-     * ```
-     * In the first binding, `item` is bound to `NgForOfContext.$implicit`.
-     * In the second binding, `i` is bound to `NgForOfContext.index`.
-     */
-    private parseLetBinding;
-    /**
-     * Consume the optional statement terminator: semicolon or comma.
-     */
-    private consumeStatementTerminator;
-    /**
-     * Records an error and skips over the token stream until reaching a recoverable point. See
-     * `this.skip` for more details on token skipping.
-     */
-    error(message: string, index?: number | null): void;
-    private locationText;
-    /**
-     * Records an error for an unexpected private identifier being discovered.
-     * @param token Token representing a private identifier.
-     * @param extraMessage Optional additional message being appended to the error.
-     */
-    private _reportErrorForPrivateIdentifier;
-    /**
-     * Error recovery should skip tokens until it encounters a recovery point.
-     *
-     * The following are treated as unconditional recovery points:
-     *   - end of input
-     *   - ';' (parseChain() is always the root production, and it expects a ';')
-     *   - '|' (since pipes may be chained and each pipe expression may be treated independently)
-     *
-     * The following are conditional recovery points:
-     *   - ')', '}', ']' if one of calling productions is expecting one of these symbols
-     *     - This allows skip() to recover from errors such as '(a.) + 1' allowing more of the AST to
-     *       be retained (it doesn't skip any tokens as the ')' is retained because of the '(' begins
-     *       an '(' <expr> ')' production).
-     *       The recovery points of grouping symbols must be conditional as they must be skipped if
-     *       none of the calling productions are not expecting the closing token else we will never
-     *       make progress in the case of an extraneous group closing symbol (such as a stray ')').
-     *       That is, we skip a closing symbol if we are not in a grouping production.
-     *   - '=' in a `Writable` context
-     *     - In this context, we are able to recover after seeing the `=` operator, which
-     *       signals the presence of an independent rvalue expression following the `=` operator.
-     *
-     * If a production expects one of these token it increments the corresponding nesting count,
-     * and then decrements it just prior to checking if the token is in the input.
-     */
-    private skip;
-}
-
 export declare class ParsedEvent {
     name: string;
     targetOrPhase: string;
@@ -2430,6 +2231,7 @@ export declare class ParsedEvent {
     sourceSpan: ParseSourceSpan;
     handlerSpan: ParseSourceSpan;
     readonly keySpan: ParseSourceSpan;
+    constructor(name: string, targetOrPhase: string, type: ParsedEventType.TwoWay, handler: ASTWithSource<NonNullAssert | PropertyRead | KeyedRead>, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
     constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
 }
 
@@ -2552,12 +2354,7 @@ export declare const enum ParseFlags {
     /**
      * Whether an output binding is being parsed.
      */
-    Action = 1,
-    /**
-     * Whether an assignment event is being parsed, i.e. an expression originating from
-     * two-way-binding aka banana-in-a-box syntax.
-     */
-    AssignmentEvent = 2
+    Action = 1
 }
 
 export declare function parseHostBindings(host: {
@@ -2582,7 +2379,7 @@ export declare class Parser {
     private _lexer;
     private errors;
     constructor(_lexer: Lexer);
-    parseAction(input: string, isAssignmentEvent: boolean, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
@@ -4034,6 +3831,9 @@ export declare class R3Identifiers {
     static viewQuerySignal: outputAst.ExternalReference;
     static contentQuerySignal: outputAst.ExternalReference;
     static queryAdvance: outputAst.ExternalReference;
+    static twoWayProperty: outputAst.ExternalReference;
+    static twoWayBindingSet: outputAst.ExternalReference;
+    static twoWayListener: outputAst.ExternalReference;
     static NgOnChangesFeature: outputAst.ExternalReference;
     static InheritDefinitionFeature: outputAst.ExternalReference;
     static CopyDefinitionFeature: outputAst.ExternalReference;
