@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.1+sha-3b892e9
+ * @license Angular v17.2.0-next.1+sha-36a9bf3
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -697,7 +697,10 @@ export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outp
  * Similar to the `setClassMetadata` call, it's wrapped into the `ngDevMode`
  * check to tree-shake away this code in production mode.
  */
-export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, deferrableTypes: Map<string, string> | null): outputAst.Expression;
+export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, deferrableTypes: Map<string, {
+    importPath: string;
+    isDefaultImport: boolean;
+}> | null): outputAst.Expression;
 
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
@@ -2835,7 +2838,10 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
     /**
      * Map of deferrable symbol names -> corresponding import paths.
      */
-    deferrableTypes: Map<string, string>;
+    deferrableTypes: Map<string, {
+        importPath: string;
+        isDefaultImport: boolean;
+    }>;
     /**
      * Specifies how the 'directives' and/or `pipes` array, if generated, need to be emitted.
      */
@@ -3423,6 +3429,10 @@ export declare interface R3DeferBlockTemplateDependency {
      * Import path where this dependency is located.
      */
     importPath: string | null;
+    /**
+     * Whether the symbol is the default export.
+     */
+    isDefaultImport: boolean;
 }
 
 declare interface R3DelegatedFnOrClassMetadata extends R3ConstructorFactoryMetadata {
