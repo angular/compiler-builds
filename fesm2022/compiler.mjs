@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.1+sha-74aa8a3
+ * @license Angular v17.2.0-next.1+sha-f600f0f
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -25070,12 +25070,20 @@ function asMessage(i18nMeta) {
  */
 function ingestElementBindings(unit, op, element) {
     let bindings = new Array();
+    let i18nAttributeBindingNames = new Set();
     for (const attr of element.attributes) {
         // Attribute literal bindings, such as `attr.foo="bar"`.
         const securityContext = domSchema.securityContext(element.name, attr.name, true);
         bindings.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, convertAstWithInterpolation(unit.job, attr.value, attr.i18n), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+        if (attr.i18n) {
+            i18nAttributeBindingNames.add(attr.name);
+        }
     }
     for (const input of element.inputs) {
+        if (i18nAttributeBindingNames.has(input.name)) {
+            console.error(`On component ${unit.job.componentName}, the binding ${input
+                .name} is both an i18n attribute and a property. You may want to remove the property binding. This will become a compilation error in future versions of Angular.`);
+        }
         // All dynamic bindings (both attribute and property bindings).
         bindings.push(createBindingOp(op.xref, BINDING_KINDS.get(input.type), input.name, convertAstWithInterpolation(unit.job, astOf(input.value), input.i18n), input.unit, input.securityContext, false, false, null, asMessage(input.i18n) ?? null, input.sourceSpan));
     }
@@ -32809,7 +32817,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.1+sha-74aa8a3');
+const VERSION = new Version('17.2.0-next.1+sha-f600f0f');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34377,7 +34385,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34473,7 +34481,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34865,7 +34873,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34900,7 +34908,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34951,7 +34959,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34984,7 +34992,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35035,7 +35043,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-74aa8a3'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-f600f0f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
