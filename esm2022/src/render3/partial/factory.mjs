@@ -21,7 +21,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION = '12.0.0';
 export function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', o.literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', o.literal('17.1.2+sha-47c712e'));
+    definitionMap.set('version', o.literal('17.1.2+sha-fc4d8bb'));
     definitionMap.set('ngImport', o.importExpr(R3.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
