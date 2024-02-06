@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.1.2+sha-4297005
+ * @license Angular v17.1.2+sha-bc4a6a9
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -803,6 +803,13 @@ export declare class ConstantPool {
     private literals;
     private literalFactories;
     private sharedConstants;
+    /**
+     * Constant pool also tracks claimed names from {@link uniqueName}.
+     * This is useful to avoid collisions if variables are intended to be
+     * named a certain way- but may conflict. We wouldn't want to always suffix
+     * them with unique numbers.
+     */
+    private _claimedNames;
     private nextNameIndex;
     constructor(isClosureCompilerEnabled?: boolean);
     getConstLiteral(literal: outputAst.Expression, forceShared?: boolean): outputAst.Expression;
@@ -814,13 +821,13 @@ export declare class ConstantPool {
     getSharedFunctionReference(fn: outputAst.FunctionExpr | outputAst.ArrowFunctionExpr, prefix: string, useUniqueName?: boolean): outputAst.Expression;
     private _getLiteralFactory;
     /**
-     * Produce a unique name.
+     * Produce a unique name in the context of this pool.
      *
      * The name might be unique among different prefixes if any of the prefixes end in
      * a digit so the prefix should be a constant string (not based on user input) and
      * must not end in a digit.
      */
-    uniqueName(prefix: string): string;
+    uniqueName(name: string, alwaysIncludeSuffix?: boolean): string;
     private freshName;
 }
 
