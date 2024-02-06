@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.0-next.1+sha-19fae76
+ * @license Angular v17.2.0-next.1+sha-bfbb306
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2236,6 +2236,13 @@ class ConstantPool {
         this.literals = new Map();
         this.literalFactories = new Map();
         this.sharedConstants = new Map();
+        /**
+         * Constant pool also tracks claimed names from {@link uniqueName}.
+         * This is useful to avoid collisions if variables are intended to be
+         * named a certain way- but may conflict. We wouldn't want to always suffix
+         * them with unique numbers.
+         */
+        this._claimedNames = new Map();
         this.nextNameIndex = 0;
     }
     getConstLiteral(literal, forceShared) {
@@ -2358,14 +2365,17 @@ class ConstantPool {
         return { literalFactory, literalFactoryArguments };
     }
     /**
-     * Produce a unique name.
+     * Produce a unique name in the context of this pool.
      *
      * The name might be unique among different prefixes if any of the prefixes end in
      * a digit so the prefix should be a constant string (not based on user input) and
      * must not end in a digit.
      */
-    uniqueName(prefix) {
-        return `${prefix}${this.nextNameIndex++}`;
+    uniqueName(name, alwaysIncludeSuffix = true) {
+        const count = this._claimedNames.get(name) ?? 0;
+        const result = count === 0 && !alwaysIncludeSuffix ? `${name}` : `${name}${count}`;
+        this._claimedNames.set(name, count + 1);
+        return result;
     }
     freshName() {
         return this.uniqueName(CONSTANT_PREFIX);
@@ -20792,7 +20802,10 @@ function nameFunctionsAndVariables(job) {
 }
 function addNamesToView(unit, baseName, state, compatibility) {
     if (unit.fnName === null) {
-        unit.fnName = sanitizeIdentifier(`${baseName}_${unit.job.fnSuffix}`);
+        // Ensure unique names for view units. This is necessary because there might be multiple
+        // components with same names in the context of the same pool. Only add the suffix
+        // if really needed.
+        unit.fnName = unit.job.pool.uniqueName(sanitizeIdentifier(`${baseName}_${unit.job.fnSuffix}`), /* alwaysIncludeSuffix */ false);
     }
     // Keep track of the names we assign to variables in the view. We'll need to propagate these
     // into reads of those variables afterwards.
@@ -28877,7 +28890,9 @@ class TemplateDefinitionBuilder {
             }
         }
         const contextName = `${this.contextName}${contextNameSuffix}_${index}`;
-        const name = `${contextName}_Template`;
+        // Note: For the unique name, we don't include an unique suffix, unless really needed.
+        // This keeps the generated output more clean as most of the time, we don't expect conflicts.
+        const name = this.constantPool.uniqueName(`${contextName}_Template`, /** alwaysIncludeSuffix */ false);
         // Create the template function
         const visitor = new TemplateDefinitionBuilder(this.constantPool, this._bindingScope, this.level + 1, contextName, this.i18n, index, name, this._namespace, this.fileBasedI18nSuffix, this.i18nUseExternalIds, this.deferBlocks, this.elementLocations, this.allDeferrableDepsFn, this._constants);
         // Nested templates must not be visited until after their parent templates have completed
@@ -32817,7 +32832,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.0-next.1+sha-19fae76');
+const VERSION = new Version('17.2.0-next.1+sha-bfbb306');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34385,7 +34400,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34481,7 +34496,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34873,7 +34888,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34908,7 +34923,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34959,7 +34974,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34992,7 +35007,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35043,7 +35058,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.0-next.1+sha-19fae76'));
+    definitionMap.set('version', literal('17.2.0-next.1+sha-bfbb306'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
