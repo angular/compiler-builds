@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.1+sha-3e31f1a
+ * @license Angular v17.2.1+sha-bb57d34
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2705,12 +2705,11 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private scopedNodeEntities;
     private usedPipes;
     private eagerPipes;
-    private deferredBlocks;
-    private rootScope;
+    private deferBlocks;
     constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
         directive: DirectiveT;
         node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferredBlocks: Set<TmplAstDeferredBlock>, rootScope: Scope);
+    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferBlocks: Map<TmplAstDeferredBlock, Scope>);
     getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
     getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
