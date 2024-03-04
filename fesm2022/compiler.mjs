@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.2.3+sha-7ead0fc
+ * @license Angular v17.2.3+sha-2fc1971
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -9206,34 +9206,21 @@ var ExpressionKind;
      */
     ExpressionKind[ExpressionKind["ReadTemporaryExpr"] = 19] = "ReadTemporaryExpr";
     /**
-     * An expression representing a sanitizer function.
-     */
-    ExpressionKind[ExpressionKind["SanitizerExpr"] = 20] = "SanitizerExpr";
-    /**
-     * An expression representing a function to create trusted values.
-     */
-    ExpressionKind[ExpressionKind["TrustedValueFnExpr"] = 21] = "TrustedValueFnExpr";
-    /**
      * An expression that will cause a literal slot index to be emitted.
      */
-    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 22] = "SlotLiteralExpr";
+    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 20] = "SlotLiteralExpr";
     /**
      * A test expression for a conditional op.
      */
-    ExpressionKind[ExpressionKind["ConditionalCase"] = 23] = "ConditionalCase";
-    /**
-     * A variable for use inside a repeater, providing one of the ambiently-available context
-     * properties ($even, $first, etc.).
-     */
-    ExpressionKind[ExpressionKind["DerivedRepeaterVar"] = 24] = "DerivedRepeaterVar";
+    ExpressionKind[ExpressionKind["ConditionalCase"] = 21] = "ConditionalCase";
     /**
      * An expression that will be automatically extracted to the component const array.
      */
-    ExpressionKind[ExpressionKind["ConstCollected"] = 25] = "ConstCollected";
+    ExpressionKind[ExpressionKind["ConstCollected"] = 22] = "ConstCollected";
     /**
      * Operation that sets the value of a two-way binding.
      */
-    ExpressionKind[ExpressionKind["TwoWayBindingSet"] = 26] = "TwoWayBindingSet";
+    ExpressionKind[ExpressionKind["TwoWayBindingSet"] = 23] = "TwoWayBindingSet";
 })(ExpressionKind || (ExpressionKind = {}));
 var VariableFlags;
 (function (VariableFlags) {
@@ -9277,15 +9264,6 @@ var CompatibilityMode;
     CompatibilityMode[CompatibilityMode["Normal"] = 0] = "Normal";
     CompatibilityMode[CompatibilityMode["TemplateDefinitionBuilder"] = 1] = "TemplateDefinitionBuilder";
 })(CompatibilityMode || (CompatibilityMode = {}));
-/**
- * Enumeration of the different kinds of `@defer` secondary blocks.
- */
-var DeferSecondaryKind;
-(function (DeferSecondaryKind) {
-    DeferSecondaryKind[DeferSecondaryKind["Loading"] = 0] = "Loading";
-    DeferSecondaryKind[DeferSecondaryKind["Placeholder"] = 1] = "Placeholder";
-    DeferSecondaryKind[DeferSecondaryKind["Error"] = 2] = "Error";
-})(DeferSecondaryKind || (DeferSecondaryKind = {}));
 /**
  * Enumeration of the types of attributes which can be applied to an element.
  */
@@ -9335,7 +9313,7 @@ var I18nParamResolutionTime;
      */
     I18nParamResolutionTime[I18nParamResolutionTime["Creation"] = 0] = "Creation";
     /**
-     * Param is resolved during post-processing. This should be used for params who's value comes from
+     * Param is resolved during post-processing. This should be used for params whose value comes from
      * an ICU.
      */
     I18nParamResolutionTime[I18nParamResolutionTime["Postproccessing"] = 1] = "Postproccessing";
@@ -9362,7 +9340,7 @@ var I18nParamValueFlags;
 (function (I18nParamValueFlags) {
     I18nParamValueFlags[I18nParamValueFlags["None"] = 0] = "None";
     /**
-     *  This value represtents an element tag.
+     *  This value represents an element tag.
      */
     I18nParamValueFlags[I18nParamValueFlags["ElementTag"] = 1] = "ElementTag";
     /**
@@ -9456,14 +9434,6 @@ const TRAIT_DEPENDS_ON_SLOT_CONTEXT = {
  */
 const TRAIT_CONSUMES_VARS = {
     [ConsumesVarsTrait]: true,
-};
-/**
- * Default values for `UsesVarOffset` fields (used with the spread operator to initialize
- * implementors of this trait).
- */
-const TRAIT_USES_VAR_OFFSET = {
-    [UsesVarOffset]: true,
-    varOffset: null,
 };
 /**
  * Test whether an operation implements `ConsumesSlotOpTrait`.
@@ -11345,12 +11315,6 @@ function createI18nAttributesOp(xref, handle, target) {
         ...TRAIT_CONSUMES_SLOT,
     };
 }
-function literalOrArrayLiteral$1(value) {
-    if (Array.isArray(value)) {
-        return literalArr(value.map(literalOrArrayLiteral$1));
-    }
-    return literal(value, INFERRED_TYPE);
-}
 
 function createHostPropertyOp(name, expression, isAnimationTrigger, i18nContext, securityContext, sourceSpan) {
     return {
@@ -11738,7 +11702,7 @@ function extractAttributes(job) {
                             bindingKind = BindingKind.Property;
                         }
                         OpList.insertBefore(
-                        // Deliberaly null i18nMessage value
+                        // Deliberately null i18nMessage value
                         createExtractedAttributeOp(op.target, bindingKind, null, op.name, /* expression */ null, 
                         /* i18nContext */ null, 
                         /* i18nMessage */ null, op.securityContext), lookupElement$2(elements, op.target));
@@ -12214,7 +12178,7 @@ class ElementAttributes {
         this.propertyBindings = null;
         this.projectAs = null;
     }
-    isKnown(kind, name, value) {
+    isKnown(kind, name) {
         const nameToValue = this.known.get(kind) ?? new Set();
         this.known.set(kind, nameToValue);
         if (nameToValue.has(name)) {
@@ -12230,7 +12194,7 @@ class ElementAttributes {
         const allowDuplicates = this.compatibility === CompatibilityMode.TemplateDefinitionBuilder &&
             (kind === BindingKind.Attribute || kind === BindingKind.ClassName ||
                 kind === BindingKind.StyleProperty);
-        if (!allowDuplicates && this.isKnown(kind, name, value)) {
+        if (!allowDuplicates && this.isKnown(kind, name)) {
             return;
         }
         // TODO: Can this be its own phase
@@ -12987,7 +12951,7 @@ function createI18nMessage(job, context, messagePlaceholder) {
  */
 function formatIcuPlaceholder(op) {
     if (op.strings.length !== op.expressionPlaceholders.length + 1) {
-        throw Error(`AsserionError: Invalid ICU placeholder with ${op.strings.length} strings and ${op.expressionPlaceholders.length} expressions`);
+        throw Error(`AssertionError: Invalid ICU placeholder with ${op.strings.length} strings and ${op.expressionPlaceholders.length} expressions`);
     }
     const values = op.expressionPlaceholders.map(formatValue);
     return op.strings.flatMap((str, i) => [str, values[i] || '']).join('');
@@ -20861,7 +20825,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 if (op.emptyView !== null) {
                     const emptyView = unit.job.views.get(op.emptyView);
                     // Repeater empty view function is at slot +2 (metadata is in the first slot).
-                    addNamesToView(emptyView, `${baseName}_${`${op.functionNameSuffix}Empty`}_${op.handle.slot + 2}`, state, compatibility);
+                    addNamesToView(emptyView, `${baseName}_${op.functionNameSuffix}Empty_${op.handle.slot + 2}`, state, compatibility);
                 }
                 // Repeater primary view function is at slot +1 (metadata is in the first slot).
                 addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.handle.slot + 1}`, state, compatibility);
@@ -21417,7 +21381,8 @@ function propagateI18nBlocksToTemplates(unit, subTemplateIndex) {
             case OpKind.RepeaterCreate:
                 // Propagate i18n blocks to the @for template.
                 const forView = unit.job.views.get(op.xref);
-                subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.xref), i18nBlock, op.i18nPlaceholder, subTemplateIndex);
+                subTemplateIndex =
+                    propagateI18nBlocksForView(forView, i18nBlock, op.i18nPlaceholder, subTemplateIndex);
                 // Then if there's an @empty template, propagate the i18n blocks for it as well.
                 if (op.emptyView !== null) {
                     subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.emptyView), i18nBlock, op.emptyI18nPlaceholder, subTemplateIndex);
@@ -22513,7 +22478,7 @@ function reifyListenerHandler(unit, name, handlerOps, consumesDollarEvent) {
 }
 
 /**
- * Bidningd with no content can be safely deleted.
+ * Binding with no content can be safely deleted.
  */
 function removeEmptyBindings(job) {
     for (const unit of job.units) {
@@ -22636,11 +22601,11 @@ function processLexicalScope$1(view, ops) {
  */
 function resolveDollarEvent(job) {
     for (const unit of job.units) {
-        transformDollarEvent(unit, unit.create);
-        transformDollarEvent(unit, unit.update);
+        transformDollarEvent(unit.create);
+        transformDollarEvent(unit.update);
     }
 }
-function transformDollarEvent(unit, ops) {
+function transformDollarEvent(ops) {
     for (const op of ops) {
         if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
             transformExpressionsInOp(op, (expr) => {
@@ -22878,7 +22843,7 @@ function recordTemplateStart(job, view, slot, i18nPlaceholder, i18nContext, i18n
  * Records an i18n param value for the closing of a template.
  */
 function recordTemplateClose(job, view, slot, i18nPlaceholder, i18nContext, i18nBlock, structuralDirective) {
-    const { startName, closeName } = i18nPlaceholder;
+    const { closeName } = i18nPlaceholder;
     const flags = I18nParamValueFlags.TemplateTag | I18nParamValueFlags.CloseTag;
     // Self-closing tags don't have a closing tag placeholder, instead the template's closing is
     // recorded via an additional flag on the template start value.
@@ -22920,14 +22885,14 @@ function addParam(params, placeholder, value, subTemplateIndex, flags) {
  */
 function resolveI18nExpressionPlaceholders(job) {
     // Record all of the i18n context ops, and the sub-template index for each i18n op.
-    const subTemplateIndicies = new Map();
+    const subTemplateIndices = new Map();
     const i18nContexts = new Map();
     const icuPlaceholders = new Map();
     for (const unit of job.units) {
         for (const op of unit.create) {
             switch (op.kind) {
                 case OpKind.I18nStart:
-                    subTemplateIndicies.set(op.xref, op.subTemplateIndex);
+                    subTemplateIndices.set(op.xref, op.subTemplateIndex);
                     break;
                 case OpKind.I18nContext:
                     i18nContexts.set(op.xref, op);
@@ -22949,7 +22914,7 @@ function resolveI18nExpressionPlaceholders(job) {
         for (const op of unit.update) {
             if (op.kind === OpKind.I18nExpression) {
                 const index = expressionIndices.get(referenceIndex(op)) || 0;
-                const subTemplateIndex = subTemplateIndicies.get(op.i18nOwner) ?? null;
+                const subTemplateIndex = subTemplateIndices.get(op.i18nOwner) ?? null;
                 const value = {
                     value: index,
                     subTemplateIndex: subTemplateIndex,
@@ -23038,7 +23003,7 @@ function processLexicalScope(unit, ops, savedView) {
             // Listeners were already processed above with their own scopes.
             continue;
         }
-        transformExpressionsInOp(op, (expr, flags) => {
+        transformExpressionsInOp(op, (expr) => {
             if (expr instanceof LexicalReadExpr) {
                 // `expr` is a read of a name within the lexical scope of this view.
                 // Either that name is defined within the current view, or it represents a property from the
@@ -23653,7 +23618,7 @@ function countVariables(job) {
                 }
             });
         }
-        // Compatiblity mode pass for pure function offsets (as explained above).
+        // Compatibility mode pass for pure function offsets (as explained above).
         if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
             for (const op of unit.ops()) {
                 visitExpressionsInOp(op, expr => {
@@ -23921,7 +23886,6 @@ function optimizeVariablesInOpList(ops, compatibility) {
     const toInline = [];
     for (const [id, count] of varUsages) {
         const decl = varDecls.get(id);
-        const varInfo = opMap.get(decl);
         // We can inline variables that:
         //  - are used exactly once, and
         //  - are not used remotely
@@ -24797,7 +24761,6 @@ function ingestDeferBlock(unit, deferBlock) {
 function ingestIcu(unit, icu) {
     if (icu.i18n instanceof Message && isSingleI18nIcu(icu.i18n)) {
         const xref = unit.job.allocateXrefId();
-        const icuNode = icu.i18n.nodes[0];
         unit.create.push(createIcuStartOp(xref, icu.i18n, icuFromI18nMessage(icu.i18n).name, null));
         for (const [placeholder, text] of Object.entries({ ...icu.vars, ...icu.placeholders })) {
             if (text instanceof BoundText) {
@@ -32843,7 +32806,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.2.3+sha-7ead0fc');
+const VERSION = new Version('17.2.3+sha-2fc1971');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34411,7 +34374,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34507,7 +34470,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34899,7 +34862,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34934,7 +34897,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34985,7 +34948,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -35018,7 +34981,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35069,7 +35032,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.2.3+sha-7ead0fc'));
+    definitionMap.set('version', literal('17.2.3+sha-2fc1971'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
