@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.3.0-next.1+sha-33a6fab
+ * @license Angular v17.3.0-next.1+sha-b40f1e5
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -455,14 +455,6 @@ export declare class Block extends NodeWithI18n {
     visit(visitor: Visitor, context: any): any;
 }
 
-declare class BlockNode {
-    nameSpan: ParseSourceSpan;
-    sourceSpan: ParseSourceSpan;
-    startSourceSpan: ParseSourceSpan;
-    endSourceSpan: ParseSourceSpan | null;
-    constructor(nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
-}
-
 export declare class BlockParameter implements BaseNode {
     expression: string;
     sourceSpan: ParseSourceSpan;
@@ -667,7 +659,7 @@ declare class Comment_3 implements TmplAstNode {
     value: string;
     sourceSpan: ParseSourceSpan;
     constructor(value: string, sourceSpan: ParseSourceSpan);
-    visit<Result>(_visitor: Visitor_3<Result>): Result;
+    visit<Result>(_visitor: TmplAstVisitor<Result>): Result;
 }
 
 /**
@@ -4414,7 +4406,7 @@ export declare interface SchemaMetadata {
  * be captured and available by name in `namedEntities`. Additionally, child templates will
  * be analyzed and have their child `Scope`s available in `childScopes`.
  */
-declare class Scope implements Visitor_3 {
+declare class Scope implements TmplAstVisitor {
     readonly parentScope: Scope | null;
     readonly rootNode: ScopedNode | null;
     /**
@@ -4639,7 +4631,7 @@ export declare const STRING_TYPE: BuiltinType;
 
 declare namespace t {
     export {
-        visitAll_2 as visitAll,
+        tmplAstVisitAll as visitAll,
         TmplAstNode as Node,
         Comment_3 as Comment,
         TmplAstText as Text,
@@ -4656,7 +4648,7 @@ declare namespace t {
         TmplAstTimerDeferredTrigger as TimerDeferredTrigger,
         TmplAstInteractionDeferredTrigger as InteractionDeferredTrigger,
         TmplAstViewportDeferredTrigger as ViewportDeferredTrigger,
-        BlockNode,
+        TmplAstBlockNode as BlockNode,
         TmplAstDeferredBlockPlaceholder as DeferredBlockPlaceholder,
         TmplAstDeferredBlockLoading as DeferredBlockLoading,
         TmplAstDeferredBlockError as DeferredBlockError,
@@ -4675,7 +4667,7 @@ declare namespace t {
         TmplAstVariable as Variable,
         TmplAstReference as Reference,
         TmplAstIcu as Icu,
-        Visitor_3 as Visitor,
+        TmplAstVisitor as Visitor,
         TmplAstRecursiveVisitor as RecursiveVisitor
     }
 }
@@ -4825,6 +4817,14 @@ export declare class ThisReceiver extends ImplicitReceiver {
     visit(visitor: AstVisitor, context?: any): any;
 }
 
+export declare class TmplAstBlockNode {
+    nameSpan: ParseSourceSpan;
+    sourceSpan: ParseSourceSpan;
+    startSourceSpan: ParseSourceSpan;
+    endSourceSpan: ParseSourceSpan | null;
+    constructor(nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null);
+}
+
 export declare class TmplAstBoundAttribute implements TmplAstNode {
     name: string;
     type: BindingType;
@@ -4837,7 +4837,7 @@ export declare class TmplAstBoundAttribute implements TmplAstNode {
     i18n: I18nMeta_2 | undefined;
     constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan: ParseSourceSpan | undefined, i18n: I18nMeta_2 | undefined);
     static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nMeta_2): TmplAstBoundAttribute;
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstBoundDeferredTrigger extends TmplAstDeferredTrigger {
@@ -4856,7 +4856,7 @@ export declare class TmplAstBoundEvent implements TmplAstNode {
     readonly keySpan: ParseSourceSpan;
     constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
     static fromParsedEvent(event: ParsedEvent): TmplAstBoundEvent;
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstBoundText implements TmplAstNode {
@@ -4864,7 +4864,7 @@ export declare class TmplAstBoundText implements TmplAstNode {
     sourceSpan: ParseSourceSpan;
     i18n?: I18nMeta_2 | undefined;
     constructor(value: AST, sourceSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstContent implements TmplAstNode {
@@ -4874,10 +4874,10 @@ export declare class TmplAstContent implements TmplAstNode {
     i18n?: I18nMeta_2 | undefined;
     readonly name = "ng-content";
     constructor(selector: string, attributes: TmplAstTextAttribute[], sourceSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstDeferredBlock extends BlockNode implements TmplAstNode {
+export declare class TmplAstDeferredBlock extends TmplAstBlockNode implements TmplAstNode {
     children: TmplAstNode[];
     placeholder: TmplAstDeferredBlockPlaceholder | null;
     loading: TmplAstDeferredBlockLoading | null;
@@ -4889,33 +4889,33 @@ export declare class TmplAstDeferredBlock extends BlockNode implements TmplAstNo
     private readonly definedTriggers;
     private readonly definedPrefetchTriggers;
     constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
-    visitAll(visitor: Visitor_3<unknown>): void;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
+    visitAll(visitor: TmplAstVisitor<unknown>): void;
     private visitTriggers;
 }
 
-export declare class TmplAstDeferredBlockError extends BlockNode implements TmplAstNode {
+export declare class TmplAstDeferredBlockError extends TmplAstBlockNode implements TmplAstNode {
     children: TmplAstNode[];
     i18n?: I18nMeta_2 | undefined;
     constructor(children: TmplAstNode[], nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstDeferredBlockLoading extends BlockNode implements TmplAstNode {
+export declare class TmplAstDeferredBlockLoading extends TmplAstBlockNode implements TmplAstNode {
     children: TmplAstNode[];
     afterTime: number | null;
     minimumTime: number | null;
     i18n?: I18nMeta_2 | undefined;
     constructor(children: TmplAstNode[], afterTime: number | null, minimumTime: number | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstDeferredBlockPlaceholder extends BlockNode implements TmplAstNode {
+export declare class TmplAstDeferredBlockPlaceholder extends TmplAstBlockNode implements TmplAstNode {
     children: TmplAstNode[];
     minimumTime: number | null;
     i18n?: I18nMeta_2 | undefined;
     constructor(children: TmplAstNode[], minimumTime: number | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare interface TmplAstDeferredBlockTriggers {
@@ -4934,7 +4934,7 @@ export declare abstract class TmplAstDeferredTrigger implements TmplAstNode {
     prefetchSpan: ParseSourceSpan | null;
     whenOrOnSourceSpan: ParseSourceSpan | null;
     constructor(nameSpan: ParseSourceSpan | null, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, whenOrOnSourceSpan: ParseSourceSpan | null);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstElement implements TmplAstNode {
@@ -4949,10 +4949,10 @@ export declare class TmplAstElement implements TmplAstNode {
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta_2 | undefined;
     constructor(name: string, attributes: TmplAstTextAttribute[], inputs: TmplAstBoundAttribute[], outputs: TmplAstBoundEvent[], children: TmplAstNode[], references: TmplAstReference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstForLoopBlock extends BlockNode implements TmplAstNode {
+export declare class TmplAstForLoopBlock extends TmplAstBlockNode implements TmplAstNode {
     item: TmplAstVariable;
     expression: ASTWithSource;
     trackBy: ASTWithSource;
@@ -4963,14 +4963,14 @@ export declare class TmplAstForLoopBlock extends BlockNode implements TmplAstNod
     mainBlockSpan: ParseSourceSpan;
     i18n?: I18nMeta_2 | undefined;
     constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, trackKeywordSpan: ParseSourceSpan, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstForLoopBlockEmpty extends BlockNode implements TmplAstNode {
+export declare class TmplAstForLoopBlockEmpty extends TmplAstBlockNode implements TmplAstNode {
     children: TmplAstNode[];
     i18n?: I18nMeta_2 | undefined;
     constructor(children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstHoverDeferredTrigger extends TmplAstDeferredTrigger {
@@ -4992,25 +4992,25 @@ export declare class TmplAstIcu implements TmplAstNode {
     }, placeholders: {
         [name: string]: TmplAstText | TmplAstBoundText;
     }, sourceSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstIdleDeferredTrigger extends TmplAstDeferredTrigger {
 }
 
-export declare class TmplAstIfBlock extends BlockNode implements TmplAstNode {
+export declare class TmplAstIfBlock extends TmplAstBlockNode implements TmplAstNode {
     branches: TmplAstIfBlockBranch[];
     constructor(branches: TmplAstIfBlockBranch[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstIfBlockBranch extends BlockNode implements TmplAstNode {
+export declare class TmplAstIfBlockBranch extends TmplAstBlockNode implements TmplAstNode {
     expression: AST | null;
     children: TmplAstNode[];
     expressionAlias: TmplAstVariable | null;
     i18n?: I18nMeta_2 | undefined;
     constructor(expression: AST | null, children: TmplAstNode[], expressionAlias: TmplAstVariable | null, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstImmediateDeferredTrigger extends TmplAstDeferredTrigger {
@@ -5023,10 +5023,10 @@ export declare class TmplAstInteractionDeferredTrigger extends TmplAstDeferredTr
 
 export declare interface TmplAstNode {
     sourceSpan: ParseSourceSpan;
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstRecursiveVisitor implements Visitor_3<void> {
+export declare class TmplAstRecursiveVisitor implements TmplAstVisitor<void> {
     visitElement(element: TmplAstElement): void;
     visitTemplate(template: TmplAstTemplate): void;
     visitDeferredBlock(deferred: TmplAstDeferredBlock): void;
@@ -5059,10 +5059,10 @@ export declare class TmplAstReference implements TmplAstNode {
     readonly keySpan: ParseSourceSpan;
     valueSpan?: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstSwitchBlock extends BlockNode implements TmplAstNode {
+export declare class TmplAstSwitchBlock extends TmplAstBlockNode implements TmplAstNode {
     expression: AST;
     cases: TmplAstSwitchBlockCase[];
     /**
@@ -5076,15 +5076,15 @@ export declare class TmplAstSwitchBlock extends BlockNode implements TmplAstNode
      * aren't meant to be processed in any other way.
      */
     unknownBlocks: TmplAstUnknownBlock[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
-export declare class TmplAstSwitchBlockCase extends BlockNode implements TmplAstNode {
+export declare class TmplAstSwitchBlockCase extends TmplAstBlockNode implements TmplAstNode {
     expression: AST | null;
     children: TmplAstNode[];
     i18n?: I18nMeta_2 | undefined;
     constructor(expression: AST | null, children: TmplAstNode[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstTemplate implements TmplAstNode {
@@ -5101,14 +5101,14 @@ export declare class TmplAstTemplate implements TmplAstNode {
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta_2 | undefined;
     constructor(tagName: string | null, attributes: TmplAstTextAttribute[], inputs: TmplAstBoundAttribute[], outputs: TmplAstBoundEvent[], templateAttrs: (TmplAstBoundAttribute | TmplAstTextAttribute)[], children: TmplAstNode[], references: TmplAstReference[], variables: TmplAstVariable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstText implements TmplAstNode {
     value: string;
     sourceSpan: ParseSourceSpan;
     constructor(value: string, sourceSpan: ParseSourceSpan);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 /**
@@ -5125,7 +5125,7 @@ export declare class TmplAstTextAttribute implements TmplAstNode {
     valueSpan?: ParseSourceSpan | undefined;
     i18n?: I18nMeta_2 | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan | undefined, valueSpan?: ParseSourceSpan | undefined, i18n?: I18nMeta_2 | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstTimerDeferredTrigger extends TmplAstDeferredTrigger {
@@ -5138,7 +5138,7 @@ export declare class TmplAstUnknownBlock implements TmplAstNode {
     sourceSpan: ParseSourceSpan;
     nameSpan: ParseSourceSpan;
     constructor(name: string, sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstVariable implements TmplAstNode {
@@ -5148,12 +5148,41 @@ export declare class TmplAstVariable implements TmplAstNode {
     readonly keySpan: ParseSourceSpan;
     valueSpan?: ParseSourceSpan | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan, keySpan: ParseSourceSpan, valueSpan?: ParseSourceSpan | undefined);
-    visit<Result>(visitor: Visitor_3<Result>): Result;
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
 export declare class TmplAstViewportDeferredTrigger extends TmplAstDeferredTrigger {
     reference: string | null;
     constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null);
+}
+
+export declare function tmplAstVisitAll<Result>(visitor: TmplAstVisitor<Result>, nodes: TmplAstNode[]): Result[];
+
+export declare interface TmplAstVisitor<Result = any> {
+    visit?(node: TmplAstNode): Result;
+    visitElement(element: TmplAstElement): Result;
+    visitTemplate(template: TmplAstTemplate): Result;
+    visitContent(content: TmplAstContent): Result;
+    visitVariable(variable: TmplAstVariable): Result;
+    visitReference(reference: TmplAstReference): Result;
+    visitTextAttribute(attribute: TmplAstTextAttribute): Result;
+    visitBoundAttribute(attribute: TmplAstBoundAttribute): Result;
+    visitBoundEvent(attribute: TmplAstBoundEvent): Result;
+    visitText(text: TmplAstText): Result;
+    visitBoundText(text: TmplAstBoundText): Result;
+    visitIcu(icu: TmplAstIcu): Result;
+    visitDeferredBlock(deferred: TmplAstDeferredBlock): Result;
+    visitDeferredBlockPlaceholder(block: TmplAstDeferredBlockPlaceholder): Result;
+    visitDeferredBlockError(block: TmplAstDeferredBlockError): Result;
+    visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): Result;
+    visitDeferredTrigger(trigger: TmplAstDeferredTrigger): Result;
+    visitSwitchBlock(block: TmplAstSwitchBlock): Result;
+    visitSwitchBlockCase(block: TmplAstSwitchBlockCase): Result;
+    visitForLoopBlock(block: TmplAstForLoopBlock): Result;
+    visitForLoopBlockEmpty(block: TmplAstForLoopBlockEmpty): Result;
+    visitIfBlock(block: TmplAstIfBlock): Result;
+    visitIfBlockBranch(block: TmplAstIfBlockBranch): Result;
+    visitUnknownBlock(block: TmplAstUnknownBlock): Result;
 }
 
 export declare class Token {
@@ -5403,8 +5432,6 @@ export declare enum ViewEncapsulation {
 
 export declare function visitAll(visitor: Visitor, nodes: Node_2[], context?: any): any[];
 
-declare function visitAll_2<Result>(visitor: Visitor_3<Result>, nodes: TmplAstNode[]): Result[];
-
 export declare interface Visitor {
     visit?(node: Node_2, context: any): any;
     visitElement(element: Element_2, context: any): any;
@@ -5425,33 +5452,6 @@ declare interface Visitor_2 {
     visitPlaceholder(ph: Placeholder, context?: any): any;
     visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
     visitBlockPlaceholder(ph: BlockPlaceholder, context?: any): any;
-}
-
-declare interface Visitor_3<Result = any> {
-    visit?(node: TmplAstNode): Result;
-    visitElement(element: TmplAstElement): Result;
-    visitTemplate(template: TmplAstTemplate): Result;
-    visitContent(content: TmplAstContent): Result;
-    visitVariable(variable: TmplAstVariable): Result;
-    visitReference(reference: TmplAstReference): Result;
-    visitTextAttribute(attribute: TmplAstTextAttribute): Result;
-    visitBoundAttribute(attribute: TmplAstBoundAttribute): Result;
-    visitBoundEvent(attribute: TmplAstBoundEvent): Result;
-    visitText(text: TmplAstText): Result;
-    visitBoundText(text: TmplAstBoundText): Result;
-    visitIcu(icu: TmplAstIcu): Result;
-    visitDeferredBlock(deferred: TmplAstDeferredBlock): Result;
-    visitDeferredBlockPlaceholder(block: TmplAstDeferredBlockPlaceholder): Result;
-    visitDeferredBlockError(block: TmplAstDeferredBlockError): Result;
-    visitDeferredBlockLoading(block: TmplAstDeferredBlockLoading): Result;
-    visitDeferredTrigger(trigger: TmplAstDeferredTrigger): Result;
-    visitSwitchBlock(block: TmplAstSwitchBlock): Result;
-    visitSwitchBlockCase(block: TmplAstSwitchBlockCase): Result;
-    visitForLoopBlock(block: TmplAstForLoopBlock): Result;
-    visitForLoopBlockEmpty(block: TmplAstForLoopBlockEmpty): Result;
-    visitIfBlock(block: TmplAstIfBlock): Result;
-    visitIfBlockBranch(block: TmplAstIfBlockBranch): Result;
-    visitUnknownBlock(block: TmplAstUnknownBlock): Result;
 }
 
 export declare class WrappedNodeExpr<T> extends Expression {
