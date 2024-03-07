@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.0+sha-cd242a1
+ * @license Angular v18.0.0-next.0+sha-ef39107
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -435,7 +435,7 @@ export declare class BindingPipe extends ASTWithName {
     visit(visitor: AstVisitor, context?: any): any;
 }
 
-export declare const enum BindingType {
+export declare enum BindingType {
     Property = 0,
     Attribute = 1,
     Class = 2,
@@ -2237,7 +2237,7 @@ export declare class ParsedEvent {
     constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
 }
 
-export declare const enum ParsedEventType {
+export declare enum ParsedEventType {
     Regular = 0,
     Animation = 1,
     TwoWay = 2

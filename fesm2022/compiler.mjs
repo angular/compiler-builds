@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.0+sha-cd242a1
+ * @license Angular v18.0.0-next.0+sha-ef39107
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3722,6 +3722,754 @@ function getInjectFn(target) {
     }
 }
 
+class ParserError {
+    constructor(message, input, errLocation, ctxLocation) {
+        this.input = input;
+        this.errLocation = errLocation;
+        this.ctxLocation = ctxLocation;
+        this.message = `Parser Error: ${message} ${errLocation} [${input}] in ${ctxLocation}`;
+    }
+}
+class ParseSpan {
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+    toAbsolute(absoluteOffset) {
+        return new AbsoluteSourceSpan(absoluteOffset + this.start, absoluteOffset + this.end);
+    }
+}
+class AST {
+    constructor(span, 
+    /**
+     * Absolute location of the expression AST in a source code file.
+     */
+    sourceSpan) {
+        this.span = span;
+        this.sourceSpan = sourceSpan;
+    }
+    toString() {
+        return 'AST';
+    }
+}
+class ASTWithName extends AST {
+    constructor(span, sourceSpan, nameSpan) {
+        super(span, sourceSpan);
+        this.nameSpan = nameSpan;
+    }
+}
+class EmptyExpr$1 extends AST {
+    visit(visitor, context = null) {
+        // do nothing
+    }
+}
+class ImplicitReceiver extends AST {
+    visit(visitor, context = null) {
+        return visitor.visitImplicitReceiver(this, context);
+    }
+}
+/**
+ * Receiver when something is accessed through `this` (e.g. `this.foo`). Note that this class
+ * inherits from `ImplicitReceiver`, because accessing something through `this` is treated the
+ * same as accessing it implicitly inside of an Angular template (e.g. `[attr.title]="this.title"`
+ * is the same as `[attr.title]="title"`.). Inheriting allows for the `this` accesses to be treated
+ * the same as implicit ones, except for a couple of exceptions like `$event` and `$any`.
+ * TODO: we should find a way for this class not to extend from `ImplicitReceiver` in the future.
+ */
+class ThisReceiver extends ImplicitReceiver {
+    visit(visitor, context = null) {
+        return visitor.visitThisReceiver?.(this, context);
+    }
+}
+/**
+ * Multiple expressions separated by a semicolon.
+ */
+class Chain extends AST {
+    constructor(span, sourceSpan, expressions) {
+        super(span, sourceSpan);
+        this.expressions = expressions;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitChain(this, context);
+    }
+}
+class Conditional extends AST {
+    constructor(span, sourceSpan, condition, trueExp, falseExp) {
+        super(span, sourceSpan);
+        this.condition = condition;
+        this.trueExp = trueExp;
+        this.falseExp = falseExp;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitConditional(this, context);
+    }
+}
+class PropertyRead extends ASTWithName {
+    constructor(span, sourceSpan, nameSpan, receiver, name) {
+        super(span, sourceSpan, nameSpan);
+        this.receiver = receiver;
+        this.name = name;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitPropertyRead(this, context);
+    }
+}
+class PropertyWrite extends ASTWithName {
+    constructor(span, sourceSpan, nameSpan, receiver, name, value) {
+        super(span, sourceSpan, nameSpan);
+        this.receiver = receiver;
+        this.name = name;
+        this.value = value;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitPropertyWrite(this, context);
+    }
+}
+class SafePropertyRead extends ASTWithName {
+    constructor(span, sourceSpan, nameSpan, receiver, name) {
+        super(span, sourceSpan, nameSpan);
+        this.receiver = receiver;
+        this.name = name;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitSafePropertyRead(this, context);
+    }
+}
+class KeyedRead extends AST {
+    constructor(span, sourceSpan, receiver, key) {
+        super(span, sourceSpan);
+        this.receiver = receiver;
+        this.key = key;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitKeyedRead(this, context);
+    }
+}
+class SafeKeyedRead extends AST {
+    constructor(span, sourceSpan, receiver, key) {
+        super(span, sourceSpan);
+        this.receiver = receiver;
+        this.key = key;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitSafeKeyedRead(this, context);
+    }
+}
+class KeyedWrite extends AST {
+    constructor(span, sourceSpan, receiver, key, value) {
+        super(span, sourceSpan);
+        this.receiver = receiver;
+        this.key = key;
+        this.value = value;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitKeyedWrite(this, context);
+    }
+}
+class BindingPipe extends ASTWithName {
+    constructor(span, sourceSpan, exp, name, args, nameSpan) {
+        super(span, sourceSpan, nameSpan);
+        this.exp = exp;
+        this.name = name;
+        this.args = args;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitPipe(this, context);
+    }
+}
+class LiteralPrimitive extends AST {
+    constructor(span, sourceSpan, value) {
+        super(span, sourceSpan);
+        this.value = value;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitLiteralPrimitive(this, context);
+    }
+}
+class LiteralArray extends AST {
+    constructor(span, sourceSpan, expressions) {
+        super(span, sourceSpan);
+        this.expressions = expressions;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitLiteralArray(this, context);
+    }
+}
+class LiteralMap extends AST {
+    constructor(span, sourceSpan, keys, values) {
+        super(span, sourceSpan);
+        this.keys = keys;
+        this.values = values;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitLiteralMap(this, context);
+    }
+}
+class Interpolation$1 extends AST {
+    constructor(span, sourceSpan, strings, expressions) {
+        super(span, sourceSpan);
+        this.strings = strings;
+        this.expressions = expressions;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitInterpolation(this, context);
+    }
+}
+class Binary extends AST {
+    constructor(span, sourceSpan, operation, left, right) {
+        super(span, sourceSpan);
+        this.operation = operation;
+        this.left = left;
+        this.right = right;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitBinary(this, context);
+    }
+}
+/**
+ * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
+ * node that was originally used. This inheritance relation can be deleted in some future major,
+ * after consumers have been given a chance to fully support Unary.
+ */
+class Unary extends Binary {
+    /**
+     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
+     */
+    static createMinus(span, sourceSpan, expr) {
+        return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
+    }
+    /**
+     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
+     */
+    static createPlus(span, sourceSpan, expr) {
+        return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
+    }
+    /**
+     * During the deprecation period this constructor is private, to avoid consumers from creating
+     * a `Unary` with the fallback properties for `Binary`.
+     */
+    constructor(span, sourceSpan, operator, expr, binaryOp, binaryLeft, binaryRight) {
+        super(span, sourceSpan, binaryOp, binaryLeft, binaryRight);
+        this.operator = operator;
+        this.expr = expr;
+        // Redeclare the properties that are inherited from `Binary` as `never`, as consumers should not
+        // depend on these fields when operating on `Unary`.
+        this.left = null;
+        this.right = null;
+        this.operation = null;
+    }
+    visit(visitor, context = null) {
+        if (visitor.visitUnary !== undefined) {
+            return visitor.visitUnary(this, context);
+        }
+        return visitor.visitBinary(this, context);
+    }
+}
+class PrefixNot extends AST {
+    constructor(span, sourceSpan, expression) {
+        super(span, sourceSpan);
+        this.expression = expression;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitPrefixNot(this, context);
+    }
+}
+class NonNullAssert extends AST {
+    constructor(span, sourceSpan, expression) {
+        super(span, sourceSpan);
+        this.expression = expression;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitNonNullAssert(this, context);
+    }
+}
+class Call extends AST {
+    constructor(span, sourceSpan, receiver, args, argumentSpan) {
+        super(span, sourceSpan);
+        this.receiver = receiver;
+        this.args = args;
+        this.argumentSpan = argumentSpan;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitCall(this, context);
+    }
+}
+class SafeCall extends AST {
+    constructor(span, sourceSpan, receiver, args, argumentSpan) {
+        super(span, sourceSpan);
+        this.receiver = receiver;
+        this.args = args;
+        this.argumentSpan = argumentSpan;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitSafeCall(this, context);
+    }
+}
+/**
+ * Records the absolute position of a text span in a source file, where `start` and `end` are the
+ * starting and ending byte offsets, respectively, of the text span in a source file.
+ */
+class AbsoluteSourceSpan {
+    constructor(start, end) {
+        this.start = start;
+        this.end = end;
+    }
+}
+class ASTWithSource extends AST {
+    constructor(ast, source, location, absoluteOffset, errors) {
+        super(new ParseSpan(0, source === null ? 0 : source.length), new AbsoluteSourceSpan(absoluteOffset, source === null ? absoluteOffset : absoluteOffset + source.length));
+        this.ast = ast;
+        this.source = source;
+        this.location = location;
+        this.errors = errors;
+    }
+    visit(visitor, context = null) {
+        if (visitor.visitASTWithSource) {
+            return visitor.visitASTWithSource(this, context);
+        }
+        return this.ast.visit(visitor, context);
+    }
+    toString() {
+        return `${this.source} in ${this.location}`;
+    }
+}
+class VariableBinding {
+    /**
+     * @param sourceSpan entire span of the binding.
+     * @param key name of the LHS along with its span.
+     * @param value optional value for the RHS along with its span.
+     */
+    constructor(sourceSpan, key, value) {
+        this.sourceSpan = sourceSpan;
+        this.key = key;
+        this.value = value;
+    }
+}
+class ExpressionBinding {
+    /**
+     * @param sourceSpan entire span of the binding.
+     * @param key binding name, like ngForOf, ngForTrackBy, ngIf, along with its
+     * span. Note that the length of the span may not be the same as
+     * `key.source.length`. For example,
+     * 1. key.source = ngFor, key.span is for "ngFor"
+     * 2. key.source = ngForOf, key.span is for "of"
+     * 3. key.source = ngForTrackBy, key.span is for "trackBy"
+     * @param value optional expression for the RHS.
+     */
+    constructor(sourceSpan, key, value) {
+        this.sourceSpan = sourceSpan;
+        this.key = key;
+        this.value = value;
+    }
+}
+class RecursiveAstVisitor {
+    visit(ast, context) {
+        // The default implementation just visits every node.
+        // Classes that extend RecursiveAstVisitor should override this function
+        // to selectively visit the specified node.
+        ast.visit(this, context);
+    }
+    visitUnary(ast, context) {
+        this.visit(ast.expr, context);
+    }
+    visitBinary(ast, context) {
+        this.visit(ast.left, context);
+        this.visit(ast.right, context);
+    }
+    visitChain(ast, context) {
+        this.visitAll(ast.expressions, context);
+    }
+    visitConditional(ast, context) {
+        this.visit(ast.condition, context);
+        this.visit(ast.trueExp, context);
+        this.visit(ast.falseExp, context);
+    }
+    visitPipe(ast, context) {
+        this.visit(ast.exp, context);
+        this.visitAll(ast.args, context);
+    }
+    visitImplicitReceiver(ast, context) { }
+    visitThisReceiver(ast, context) { }
+    visitInterpolation(ast, context) {
+        this.visitAll(ast.expressions, context);
+    }
+    visitKeyedRead(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visit(ast.key, context);
+    }
+    visitKeyedWrite(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visit(ast.key, context);
+        this.visit(ast.value, context);
+    }
+    visitLiteralArray(ast, context) {
+        this.visitAll(ast.expressions, context);
+    }
+    visitLiteralMap(ast, context) {
+        this.visitAll(ast.values, context);
+    }
+    visitLiteralPrimitive(ast, context) { }
+    visitPrefixNot(ast, context) {
+        this.visit(ast.expression, context);
+    }
+    visitNonNullAssert(ast, context) {
+        this.visit(ast.expression, context);
+    }
+    visitPropertyRead(ast, context) {
+        this.visit(ast.receiver, context);
+    }
+    visitPropertyWrite(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visit(ast.value, context);
+    }
+    visitSafePropertyRead(ast, context) {
+        this.visit(ast.receiver, context);
+    }
+    visitSafeKeyedRead(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visit(ast.key, context);
+    }
+    visitCall(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visitAll(ast.args, context);
+    }
+    visitSafeCall(ast, context) {
+        this.visit(ast.receiver, context);
+        this.visitAll(ast.args, context);
+    }
+    // This is not part of the AstVisitor interface, just a helper method
+    visitAll(asts, context) {
+        for (const ast of asts) {
+            this.visit(ast, context);
+        }
+    }
+}
+class AstTransformer {
+    visitImplicitReceiver(ast, context) {
+        return ast;
+    }
+    visitThisReceiver(ast, context) {
+        return ast;
+    }
+    visitInterpolation(ast, context) {
+        return new Interpolation$1(ast.span, ast.sourceSpan, ast.strings, this.visitAll(ast.expressions));
+    }
+    visitLiteralPrimitive(ast, context) {
+        return new LiteralPrimitive(ast.span, ast.sourceSpan, ast.value);
+    }
+    visitPropertyRead(ast, context) {
+        return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
+    }
+    visitPropertyWrite(ast, context) {
+        return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
+    }
+    visitSafePropertyRead(ast, context) {
+        return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
+    }
+    visitLiteralArray(ast, context) {
+        return new LiteralArray(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
+    }
+    visitLiteralMap(ast, context) {
+        return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, this.visitAll(ast.values));
+    }
+    visitUnary(ast, context) {
+        switch (ast.operator) {
+            case '+':
+                return Unary.createPlus(ast.span, ast.sourceSpan, ast.expr.visit(this));
+            case '-':
+                return Unary.createMinus(ast.span, ast.sourceSpan, ast.expr.visit(this));
+            default:
+                throw new Error(`Unknown unary operator ${ast.operator}`);
+        }
+    }
+    visitBinary(ast, context) {
+        return new Binary(ast.span, ast.sourceSpan, ast.operation, ast.left.visit(this), ast.right.visit(this));
+    }
+    visitPrefixNot(ast, context) {
+        return new PrefixNot(ast.span, ast.sourceSpan, ast.expression.visit(this));
+    }
+    visitNonNullAssert(ast, context) {
+        return new NonNullAssert(ast.span, ast.sourceSpan, ast.expression.visit(this));
+    }
+    visitConditional(ast, context) {
+        return new Conditional(ast.span, ast.sourceSpan, ast.condition.visit(this), ast.trueExp.visit(this), ast.falseExp.visit(this));
+    }
+    visitPipe(ast, context) {
+        return new BindingPipe(ast.span, ast.sourceSpan, ast.exp.visit(this), ast.name, this.visitAll(ast.args), ast.nameSpan);
+    }
+    visitKeyedRead(ast, context) {
+        return new KeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
+    }
+    visitKeyedWrite(ast, context) {
+        return new KeyedWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this), ast.value.visit(this));
+    }
+    visitCall(ast, context) {
+        return new Call(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
+    }
+    visitSafeCall(ast, context) {
+        return new SafeCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
+    }
+    visitAll(asts) {
+        const res = [];
+        for (let i = 0; i < asts.length; ++i) {
+            res[i] = asts[i].visit(this);
+        }
+        return res;
+    }
+    visitChain(ast, context) {
+        return new Chain(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
+    }
+    visitSafeKeyedRead(ast, context) {
+        return new SafeKeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
+    }
+}
+// A transformer that only creates new nodes if the transformer makes a change or
+// a change is made a child node.
+class AstMemoryEfficientTransformer {
+    visitImplicitReceiver(ast, context) {
+        return ast;
+    }
+    visitThisReceiver(ast, context) {
+        return ast;
+    }
+    visitInterpolation(ast, context) {
+        const expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions)
+            return new Interpolation$1(ast.span, ast.sourceSpan, ast.strings, expressions);
+        return ast;
+    }
+    visitLiteralPrimitive(ast, context) {
+        return ast;
+    }
+    visitPropertyRead(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
+        }
+        return ast;
+    }
+    visitPropertyWrite(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        const value = ast.value.visit(this);
+        if (receiver !== ast.receiver || value !== ast.value) {
+            return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, value);
+        }
+        return ast;
+    }
+    visitSafePropertyRead(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        if (receiver !== ast.receiver) {
+            return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
+        }
+        return ast;
+    }
+    visitLiteralArray(ast, context) {
+        const expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions) {
+            return new LiteralArray(ast.span, ast.sourceSpan, expressions);
+        }
+        return ast;
+    }
+    visitLiteralMap(ast, context) {
+        const values = this.visitAll(ast.values);
+        if (values !== ast.values) {
+            return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, values);
+        }
+        return ast;
+    }
+    visitUnary(ast, context) {
+        const expr = ast.expr.visit(this);
+        if (expr !== ast.expr) {
+            switch (ast.operator) {
+                case '+':
+                    return Unary.createPlus(ast.span, ast.sourceSpan, expr);
+                case '-':
+                    return Unary.createMinus(ast.span, ast.sourceSpan, expr);
+                default:
+                    throw new Error(`Unknown unary operator ${ast.operator}`);
+            }
+        }
+        return ast;
+    }
+    visitBinary(ast, context) {
+        const left = ast.left.visit(this);
+        const right = ast.right.visit(this);
+        if (left !== ast.left || right !== ast.right) {
+            return new Binary(ast.span, ast.sourceSpan, ast.operation, left, right);
+        }
+        return ast;
+    }
+    visitPrefixNot(ast, context) {
+        const expression = ast.expression.visit(this);
+        if (expression !== ast.expression) {
+            return new PrefixNot(ast.span, ast.sourceSpan, expression);
+        }
+        return ast;
+    }
+    visitNonNullAssert(ast, context) {
+        const expression = ast.expression.visit(this);
+        if (expression !== ast.expression) {
+            return new NonNullAssert(ast.span, ast.sourceSpan, expression);
+        }
+        return ast;
+    }
+    visitConditional(ast, context) {
+        const condition = ast.condition.visit(this);
+        const trueExp = ast.trueExp.visit(this);
+        const falseExp = ast.falseExp.visit(this);
+        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== ast.falseExp) {
+            return new Conditional(ast.span, ast.sourceSpan, condition, trueExp, falseExp);
+        }
+        return ast;
+    }
+    visitPipe(ast, context) {
+        const exp = ast.exp.visit(this);
+        const args = this.visitAll(ast.args);
+        if (exp !== ast.exp || args !== ast.args) {
+            return new BindingPipe(ast.span, ast.sourceSpan, exp, ast.name, args, ast.nameSpan);
+        }
+        return ast;
+    }
+    visitKeyedRead(ast, context) {
+        const obj = ast.receiver.visit(this);
+        const key = ast.key.visit(this);
+        if (obj !== ast.receiver || key !== ast.key) {
+            return new KeyedRead(ast.span, ast.sourceSpan, obj, key);
+        }
+        return ast;
+    }
+    visitKeyedWrite(ast, context) {
+        const obj = ast.receiver.visit(this);
+        const key = ast.key.visit(this);
+        const value = ast.value.visit(this);
+        if (obj !== ast.receiver || key !== ast.key || value !== ast.value) {
+            return new KeyedWrite(ast.span, ast.sourceSpan, obj, key, value);
+        }
+        return ast;
+    }
+    visitAll(asts) {
+        const res = [];
+        let modified = false;
+        for (let i = 0; i < asts.length; ++i) {
+            const original = asts[i];
+            const value = original.visit(this);
+            res[i] = value;
+            modified = modified || value !== original;
+        }
+        return modified ? res : asts;
+    }
+    visitChain(ast, context) {
+        const expressions = this.visitAll(ast.expressions);
+        if (expressions !== ast.expressions) {
+            return new Chain(ast.span, ast.sourceSpan, expressions);
+        }
+        return ast;
+    }
+    visitCall(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        const args = this.visitAll(ast.args);
+        if (receiver !== ast.receiver || args !== ast.args) {
+            return new Call(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
+        }
+        return ast;
+    }
+    visitSafeCall(ast, context) {
+        const receiver = ast.receiver.visit(this);
+        const args = this.visitAll(ast.args);
+        if (receiver !== ast.receiver || args !== ast.args) {
+            return new SafeCall(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
+        }
+        return ast;
+    }
+    visitSafeKeyedRead(ast, context) {
+        const obj = ast.receiver.visit(this);
+        const key = ast.key.visit(this);
+        if (obj !== ast.receiver || key !== ast.key) {
+            return new SafeKeyedRead(ast.span, ast.sourceSpan, obj, key);
+        }
+        return ast;
+    }
+}
+// Bindings
+class ParsedProperty {
+    constructor(name, expression, type, sourceSpan, keySpan, valueSpan) {
+        this.name = name;
+        this.expression = expression;
+        this.type = type;
+        this.sourceSpan = sourceSpan;
+        this.keySpan = keySpan;
+        this.valueSpan = valueSpan;
+        this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
+        this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
+    }
+}
+var ParsedPropertyType;
+(function (ParsedPropertyType) {
+    ParsedPropertyType[ParsedPropertyType["DEFAULT"] = 0] = "DEFAULT";
+    ParsedPropertyType[ParsedPropertyType["LITERAL_ATTR"] = 1] = "LITERAL_ATTR";
+    ParsedPropertyType[ParsedPropertyType["ANIMATION"] = 2] = "ANIMATION";
+    ParsedPropertyType[ParsedPropertyType["TWO_WAY"] = 3] = "TWO_WAY";
+})(ParsedPropertyType || (ParsedPropertyType = {}));
+var ParsedEventType;
+(function (ParsedEventType) {
+    // DOM or Directive event
+    ParsedEventType[ParsedEventType["Regular"] = 0] = "Regular";
+    // Animation specific event
+    ParsedEventType[ParsedEventType["Animation"] = 1] = "Animation";
+    // Event side of a two-way binding (e.g. `[(property)]="expression"`).
+    ParsedEventType[ParsedEventType["TwoWay"] = 2] = "TwoWay";
+})(ParsedEventType || (ParsedEventType = {}));
+class ParsedEvent {
+    constructor(name, targetOrPhase, type, handler, sourceSpan, handlerSpan, keySpan) {
+        this.name = name;
+        this.targetOrPhase = targetOrPhase;
+        this.type = type;
+        this.handler = handler;
+        this.sourceSpan = sourceSpan;
+        this.handlerSpan = handlerSpan;
+        this.keySpan = keySpan;
+    }
+}
+/**
+ * ParsedVariable represents a variable declaration in a microsyntax expression.
+ */
+class ParsedVariable {
+    constructor(name, value, sourceSpan, keySpan, valueSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.keySpan = keySpan;
+        this.valueSpan = valueSpan;
+    }
+}
+var BindingType;
+(function (BindingType) {
+    // A regular binding to a property (e.g. `[property]="expression"`).
+    BindingType[BindingType["Property"] = 0] = "Property";
+    // A binding to an element attribute (e.g. `[attr.name]="expression"`).
+    BindingType[BindingType["Attribute"] = 1] = "Attribute";
+    // A binding to a CSS class (e.g. `[class.name]="condition"`).
+    BindingType[BindingType["Class"] = 2] = "Class";
+    // A binding to a style rule (e.g. `[style.rule]="expression"`).
+    BindingType[BindingType["Style"] = 3] = "Style";
+    // A binding to an animation reference (e.g. `[animate.key]="expression"`).
+    BindingType[BindingType["Animation"] = 4] = "Animation";
+    // Property side of a two-way binding (e.g. `[(property)]="expression"`).
+    BindingType[BindingType["TwoWay"] = 5] = "TwoWay";
+})(BindingType || (BindingType = {}));
+class BoundElementProperty {
+    constructor(name, type, securityContext, value, unit, sourceSpan, keySpan, valueSpan) {
+        this.name = name;
+        this.type = type;
+        this.securityContext = securityContext;
+        this.value = value;
+        this.unit = unit;
+        this.sourceSpan = sourceSpan;
+        this.keySpan = keySpan;
+        this.valueSpan = valueSpan;
+    }
+}
+
 var TagContentType;
 (function (TagContentType) {
     TagContentType[TagContentType["RAW_TEXT"] = 0] = "RAW_TEXT";
@@ -3849,8 +4597,8 @@ class BoundEvent {
         this.keySpan = keySpan;
     }
     static fromParsedEvent(event) {
-        const target = event.type === 0 /* ParsedEventType.Regular */ ? event.targetOrPhase : null;
-        const phase = event.type === 1 /* ParsedEventType.Animation */ ? event.targetOrPhase : null;
+        const target = event.type === ParsedEventType.Regular ? event.targetOrPhase : null;
+        const phase = event.type === ParsedEventType.Animation ? event.targetOrPhase : null;
         if (event.keySpan === undefined) {
             throw new Error(`Unexpected state: keySpan must be defined for bound event but was not for ${event.name}: ${event.sourceSpan}`);
         }
@@ -5155,7 +5903,7 @@ function getAttrsForDirectiveMatching(elOrTpl) {
             }
         });
         elOrTpl.inputs.forEach(i => {
-            if (i.type === 0 /* BindingType.Property */ || i.type === 5 /* BindingType.TwoWay */) {
+            if (i.type === BindingType.Property || i.type === BindingType.TwoWay) {
                 attributesMap[i.name] = '';
             }
         });
@@ -6260,730 +7008,6 @@ var R3TemplateDependencyKind;
     R3TemplateDependencyKind[R3TemplateDependencyKind["Pipe"] = 1] = "Pipe";
     R3TemplateDependencyKind[R3TemplateDependencyKind["NgModule"] = 2] = "NgModule";
 })(R3TemplateDependencyKind || (R3TemplateDependencyKind = {}));
-
-class ParserError {
-    constructor(message, input, errLocation, ctxLocation) {
-        this.input = input;
-        this.errLocation = errLocation;
-        this.ctxLocation = ctxLocation;
-        this.message = `Parser Error: ${message} ${errLocation} [${input}] in ${ctxLocation}`;
-    }
-}
-class ParseSpan {
-    constructor(start, end) {
-        this.start = start;
-        this.end = end;
-    }
-    toAbsolute(absoluteOffset) {
-        return new AbsoluteSourceSpan(absoluteOffset + this.start, absoluteOffset + this.end);
-    }
-}
-class AST {
-    constructor(span, 
-    /**
-     * Absolute location of the expression AST in a source code file.
-     */
-    sourceSpan) {
-        this.span = span;
-        this.sourceSpan = sourceSpan;
-    }
-    toString() {
-        return 'AST';
-    }
-}
-class ASTWithName extends AST {
-    constructor(span, sourceSpan, nameSpan) {
-        super(span, sourceSpan);
-        this.nameSpan = nameSpan;
-    }
-}
-class EmptyExpr$1 extends AST {
-    visit(visitor, context = null) {
-        // do nothing
-    }
-}
-class ImplicitReceiver extends AST {
-    visit(visitor, context = null) {
-        return visitor.visitImplicitReceiver(this, context);
-    }
-}
-/**
- * Receiver when something is accessed through `this` (e.g. `this.foo`). Note that this class
- * inherits from `ImplicitReceiver`, because accessing something through `this` is treated the
- * same as accessing it implicitly inside of an Angular template (e.g. `[attr.title]="this.title"`
- * is the same as `[attr.title]="title"`.). Inheriting allows for the `this` accesses to be treated
- * the same as implicit ones, except for a couple of exceptions like `$event` and `$any`.
- * TODO: we should find a way for this class not to extend from `ImplicitReceiver` in the future.
- */
-class ThisReceiver extends ImplicitReceiver {
-    visit(visitor, context = null) {
-        return visitor.visitThisReceiver?.(this, context);
-    }
-}
-/**
- * Multiple expressions separated by a semicolon.
- */
-class Chain extends AST {
-    constructor(span, sourceSpan, expressions) {
-        super(span, sourceSpan);
-        this.expressions = expressions;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitChain(this, context);
-    }
-}
-class Conditional extends AST {
-    constructor(span, sourceSpan, condition, trueExp, falseExp) {
-        super(span, sourceSpan);
-        this.condition = condition;
-        this.trueExp = trueExp;
-        this.falseExp = falseExp;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitConditional(this, context);
-    }
-}
-class PropertyRead extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name) {
-        super(span, sourceSpan, nameSpan);
-        this.receiver = receiver;
-        this.name = name;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitPropertyRead(this, context);
-    }
-}
-class PropertyWrite extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name, value) {
-        super(span, sourceSpan, nameSpan);
-        this.receiver = receiver;
-        this.name = name;
-        this.value = value;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitPropertyWrite(this, context);
-    }
-}
-class SafePropertyRead extends ASTWithName {
-    constructor(span, sourceSpan, nameSpan, receiver, name) {
-        super(span, sourceSpan, nameSpan);
-        this.receiver = receiver;
-        this.name = name;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitSafePropertyRead(this, context);
-    }
-}
-class KeyedRead extends AST {
-    constructor(span, sourceSpan, receiver, key) {
-        super(span, sourceSpan);
-        this.receiver = receiver;
-        this.key = key;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitKeyedRead(this, context);
-    }
-}
-class SafeKeyedRead extends AST {
-    constructor(span, sourceSpan, receiver, key) {
-        super(span, sourceSpan);
-        this.receiver = receiver;
-        this.key = key;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitSafeKeyedRead(this, context);
-    }
-}
-class KeyedWrite extends AST {
-    constructor(span, sourceSpan, receiver, key, value) {
-        super(span, sourceSpan);
-        this.receiver = receiver;
-        this.key = key;
-        this.value = value;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitKeyedWrite(this, context);
-    }
-}
-class BindingPipe extends ASTWithName {
-    constructor(span, sourceSpan, exp, name, args, nameSpan) {
-        super(span, sourceSpan, nameSpan);
-        this.exp = exp;
-        this.name = name;
-        this.args = args;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitPipe(this, context);
-    }
-}
-class LiteralPrimitive extends AST {
-    constructor(span, sourceSpan, value) {
-        super(span, sourceSpan);
-        this.value = value;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitLiteralPrimitive(this, context);
-    }
-}
-class LiteralArray extends AST {
-    constructor(span, sourceSpan, expressions) {
-        super(span, sourceSpan);
-        this.expressions = expressions;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitLiteralArray(this, context);
-    }
-}
-class LiteralMap extends AST {
-    constructor(span, sourceSpan, keys, values) {
-        super(span, sourceSpan);
-        this.keys = keys;
-        this.values = values;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitLiteralMap(this, context);
-    }
-}
-class Interpolation$1 extends AST {
-    constructor(span, sourceSpan, strings, expressions) {
-        super(span, sourceSpan);
-        this.strings = strings;
-        this.expressions = expressions;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitInterpolation(this, context);
-    }
-}
-class Binary extends AST {
-    constructor(span, sourceSpan, operation, left, right) {
-        super(span, sourceSpan);
-        this.operation = operation;
-        this.left = left;
-        this.right = right;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitBinary(this, context);
-    }
-}
-/**
- * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
- * node that was originally used. This inheritance relation can be deleted in some future major,
- * after consumers have been given a chance to fully support Unary.
- */
-class Unary extends Binary {
-    /**
-     * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
-     */
-    static createMinus(span, sourceSpan, expr) {
-        return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
-    }
-    /**
-     * Creates a unary plus expression "+x", represented as `Binary` using "x - 0".
-     */
-    static createPlus(span, sourceSpan, expr) {
-        return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
-    }
-    /**
-     * During the deprecation period this constructor is private, to avoid consumers from creating
-     * a `Unary` with the fallback properties for `Binary`.
-     */
-    constructor(span, sourceSpan, operator, expr, binaryOp, binaryLeft, binaryRight) {
-        super(span, sourceSpan, binaryOp, binaryLeft, binaryRight);
-        this.operator = operator;
-        this.expr = expr;
-        // Redeclare the properties that are inherited from `Binary` as `never`, as consumers should not
-        // depend on these fields when operating on `Unary`.
-        this.left = null;
-        this.right = null;
-        this.operation = null;
-    }
-    visit(visitor, context = null) {
-        if (visitor.visitUnary !== undefined) {
-            return visitor.visitUnary(this, context);
-        }
-        return visitor.visitBinary(this, context);
-    }
-}
-class PrefixNot extends AST {
-    constructor(span, sourceSpan, expression) {
-        super(span, sourceSpan);
-        this.expression = expression;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitPrefixNot(this, context);
-    }
-}
-class NonNullAssert extends AST {
-    constructor(span, sourceSpan, expression) {
-        super(span, sourceSpan);
-        this.expression = expression;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitNonNullAssert(this, context);
-    }
-}
-class Call extends AST {
-    constructor(span, sourceSpan, receiver, args, argumentSpan) {
-        super(span, sourceSpan);
-        this.receiver = receiver;
-        this.args = args;
-        this.argumentSpan = argumentSpan;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitCall(this, context);
-    }
-}
-class SafeCall extends AST {
-    constructor(span, sourceSpan, receiver, args, argumentSpan) {
-        super(span, sourceSpan);
-        this.receiver = receiver;
-        this.args = args;
-        this.argumentSpan = argumentSpan;
-    }
-    visit(visitor, context = null) {
-        return visitor.visitSafeCall(this, context);
-    }
-}
-/**
- * Records the absolute position of a text span in a source file, where `start` and `end` are the
- * starting and ending byte offsets, respectively, of the text span in a source file.
- */
-class AbsoluteSourceSpan {
-    constructor(start, end) {
-        this.start = start;
-        this.end = end;
-    }
-}
-class ASTWithSource extends AST {
-    constructor(ast, source, location, absoluteOffset, errors) {
-        super(new ParseSpan(0, source === null ? 0 : source.length), new AbsoluteSourceSpan(absoluteOffset, source === null ? absoluteOffset : absoluteOffset + source.length));
-        this.ast = ast;
-        this.source = source;
-        this.location = location;
-        this.errors = errors;
-    }
-    visit(visitor, context = null) {
-        if (visitor.visitASTWithSource) {
-            return visitor.visitASTWithSource(this, context);
-        }
-        return this.ast.visit(visitor, context);
-    }
-    toString() {
-        return `${this.source} in ${this.location}`;
-    }
-}
-class VariableBinding {
-    /**
-     * @param sourceSpan entire span of the binding.
-     * @param key name of the LHS along with its span.
-     * @param value optional value for the RHS along with its span.
-     */
-    constructor(sourceSpan, key, value) {
-        this.sourceSpan = sourceSpan;
-        this.key = key;
-        this.value = value;
-    }
-}
-class ExpressionBinding {
-    /**
-     * @param sourceSpan entire span of the binding.
-     * @param key binding name, like ngForOf, ngForTrackBy, ngIf, along with its
-     * span. Note that the length of the span may not be the same as
-     * `key.source.length`. For example,
-     * 1. key.source = ngFor, key.span is for "ngFor"
-     * 2. key.source = ngForOf, key.span is for "of"
-     * 3. key.source = ngForTrackBy, key.span is for "trackBy"
-     * @param value optional expression for the RHS.
-     */
-    constructor(sourceSpan, key, value) {
-        this.sourceSpan = sourceSpan;
-        this.key = key;
-        this.value = value;
-    }
-}
-class RecursiveAstVisitor {
-    visit(ast, context) {
-        // The default implementation just visits every node.
-        // Classes that extend RecursiveAstVisitor should override this function
-        // to selectively visit the specified node.
-        ast.visit(this, context);
-    }
-    visitUnary(ast, context) {
-        this.visit(ast.expr, context);
-    }
-    visitBinary(ast, context) {
-        this.visit(ast.left, context);
-        this.visit(ast.right, context);
-    }
-    visitChain(ast, context) {
-        this.visitAll(ast.expressions, context);
-    }
-    visitConditional(ast, context) {
-        this.visit(ast.condition, context);
-        this.visit(ast.trueExp, context);
-        this.visit(ast.falseExp, context);
-    }
-    visitPipe(ast, context) {
-        this.visit(ast.exp, context);
-        this.visitAll(ast.args, context);
-    }
-    visitImplicitReceiver(ast, context) { }
-    visitThisReceiver(ast, context) { }
-    visitInterpolation(ast, context) {
-        this.visitAll(ast.expressions, context);
-    }
-    visitKeyedRead(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visit(ast.key, context);
-    }
-    visitKeyedWrite(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visit(ast.key, context);
-        this.visit(ast.value, context);
-    }
-    visitLiteralArray(ast, context) {
-        this.visitAll(ast.expressions, context);
-    }
-    visitLiteralMap(ast, context) {
-        this.visitAll(ast.values, context);
-    }
-    visitLiteralPrimitive(ast, context) { }
-    visitPrefixNot(ast, context) {
-        this.visit(ast.expression, context);
-    }
-    visitNonNullAssert(ast, context) {
-        this.visit(ast.expression, context);
-    }
-    visitPropertyRead(ast, context) {
-        this.visit(ast.receiver, context);
-    }
-    visitPropertyWrite(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visit(ast.value, context);
-    }
-    visitSafePropertyRead(ast, context) {
-        this.visit(ast.receiver, context);
-    }
-    visitSafeKeyedRead(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visit(ast.key, context);
-    }
-    visitCall(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visitAll(ast.args, context);
-    }
-    visitSafeCall(ast, context) {
-        this.visit(ast.receiver, context);
-        this.visitAll(ast.args, context);
-    }
-    // This is not part of the AstVisitor interface, just a helper method
-    visitAll(asts, context) {
-        for (const ast of asts) {
-            this.visit(ast, context);
-        }
-    }
-}
-class AstTransformer {
-    visitImplicitReceiver(ast, context) {
-        return ast;
-    }
-    visitThisReceiver(ast, context) {
-        return ast;
-    }
-    visitInterpolation(ast, context) {
-        return new Interpolation$1(ast.span, ast.sourceSpan, ast.strings, this.visitAll(ast.expressions));
-    }
-    visitLiteralPrimitive(ast, context) {
-        return new LiteralPrimitive(ast.span, ast.sourceSpan, ast.value);
-    }
-    visitPropertyRead(ast, context) {
-        return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
-    }
-    visitPropertyWrite(ast, context) {
-        return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
-    }
-    visitSafePropertyRead(ast, context) {
-        return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
-    }
-    visitLiteralArray(ast, context) {
-        return new LiteralArray(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
-    }
-    visitLiteralMap(ast, context) {
-        return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, this.visitAll(ast.values));
-    }
-    visitUnary(ast, context) {
-        switch (ast.operator) {
-            case '+':
-                return Unary.createPlus(ast.span, ast.sourceSpan, ast.expr.visit(this));
-            case '-':
-                return Unary.createMinus(ast.span, ast.sourceSpan, ast.expr.visit(this));
-            default:
-                throw new Error(`Unknown unary operator ${ast.operator}`);
-        }
-    }
-    visitBinary(ast, context) {
-        return new Binary(ast.span, ast.sourceSpan, ast.operation, ast.left.visit(this), ast.right.visit(this));
-    }
-    visitPrefixNot(ast, context) {
-        return new PrefixNot(ast.span, ast.sourceSpan, ast.expression.visit(this));
-    }
-    visitNonNullAssert(ast, context) {
-        return new NonNullAssert(ast.span, ast.sourceSpan, ast.expression.visit(this));
-    }
-    visitConditional(ast, context) {
-        return new Conditional(ast.span, ast.sourceSpan, ast.condition.visit(this), ast.trueExp.visit(this), ast.falseExp.visit(this));
-    }
-    visitPipe(ast, context) {
-        return new BindingPipe(ast.span, ast.sourceSpan, ast.exp.visit(this), ast.name, this.visitAll(ast.args), ast.nameSpan);
-    }
-    visitKeyedRead(ast, context) {
-        return new KeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
-    }
-    visitKeyedWrite(ast, context) {
-        return new KeyedWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this), ast.value.visit(this));
-    }
-    visitCall(ast, context) {
-        return new Call(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
-    }
-    visitSafeCall(ast, context) {
-        return new SafeCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
-    }
-    visitAll(asts) {
-        const res = [];
-        for (let i = 0; i < asts.length; ++i) {
-            res[i] = asts[i].visit(this);
-        }
-        return res;
-    }
-    visitChain(ast, context) {
-        return new Chain(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
-    }
-    visitSafeKeyedRead(ast, context) {
-        return new SafeKeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
-    }
-}
-// A transformer that only creates new nodes if the transformer makes a change or
-// a change is made a child node.
-class AstMemoryEfficientTransformer {
-    visitImplicitReceiver(ast, context) {
-        return ast;
-    }
-    visitThisReceiver(ast, context) {
-        return ast;
-    }
-    visitInterpolation(ast, context) {
-        const expressions = this.visitAll(ast.expressions);
-        if (expressions !== ast.expressions)
-            return new Interpolation$1(ast.span, ast.sourceSpan, ast.strings, expressions);
-        return ast;
-    }
-    visitLiteralPrimitive(ast, context) {
-        return ast;
-    }
-    visitPropertyRead(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        if (receiver !== ast.receiver) {
-            return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
-        }
-        return ast;
-    }
-    visitPropertyWrite(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const value = ast.value.visit(this);
-        if (receiver !== ast.receiver || value !== ast.value) {
-            return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, value);
-        }
-        return ast;
-    }
-    visitSafePropertyRead(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        if (receiver !== ast.receiver) {
-            return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
-        }
-        return ast;
-    }
-    visitLiteralArray(ast, context) {
-        const expressions = this.visitAll(ast.expressions);
-        if (expressions !== ast.expressions) {
-            return new LiteralArray(ast.span, ast.sourceSpan, expressions);
-        }
-        return ast;
-    }
-    visitLiteralMap(ast, context) {
-        const values = this.visitAll(ast.values);
-        if (values !== ast.values) {
-            return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, values);
-        }
-        return ast;
-    }
-    visitUnary(ast, context) {
-        const expr = ast.expr.visit(this);
-        if (expr !== ast.expr) {
-            switch (ast.operator) {
-                case '+':
-                    return Unary.createPlus(ast.span, ast.sourceSpan, expr);
-                case '-':
-                    return Unary.createMinus(ast.span, ast.sourceSpan, expr);
-                default:
-                    throw new Error(`Unknown unary operator ${ast.operator}`);
-            }
-        }
-        return ast;
-    }
-    visitBinary(ast, context) {
-        const left = ast.left.visit(this);
-        const right = ast.right.visit(this);
-        if (left !== ast.left || right !== ast.right) {
-            return new Binary(ast.span, ast.sourceSpan, ast.operation, left, right);
-        }
-        return ast;
-    }
-    visitPrefixNot(ast, context) {
-        const expression = ast.expression.visit(this);
-        if (expression !== ast.expression) {
-            return new PrefixNot(ast.span, ast.sourceSpan, expression);
-        }
-        return ast;
-    }
-    visitNonNullAssert(ast, context) {
-        const expression = ast.expression.visit(this);
-        if (expression !== ast.expression) {
-            return new NonNullAssert(ast.span, ast.sourceSpan, expression);
-        }
-        return ast;
-    }
-    visitConditional(ast, context) {
-        const condition = ast.condition.visit(this);
-        const trueExp = ast.trueExp.visit(this);
-        const falseExp = ast.falseExp.visit(this);
-        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== ast.falseExp) {
-            return new Conditional(ast.span, ast.sourceSpan, condition, trueExp, falseExp);
-        }
-        return ast;
-    }
-    visitPipe(ast, context) {
-        const exp = ast.exp.visit(this);
-        const args = this.visitAll(ast.args);
-        if (exp !== ast.exp || args !== ast.args) {
-            return new BindingPipe(ast.span, ast.sourceSpan, exp, ast.name, args, ast.nameSpan);
-        }
-        return ast;
-    }
-    visitKeyedRead(ast, context) {
-        const obj = ast.receiver.visit(this);
-        const key = ast.key.visit(this);
-        if (obj !== ast.receiver || key !== ast.key) {
-            return new KeyedRead(ast.span, ast.sourceSpan, obj, key);
-        }
-        return ast;
-    }
-    visitKeyedWrite(ast, context) {
-        const obj = ast.receiver.visit(this);
-        const key = ast.key.visit(this);
-        const value = ast.value.visit(this);
-        if (obj !== ast.receiver || key !== ast.key || value !== ast.value) {
-            return new KeyedWrite(ast.span, ast.sourceSpan, obj, key, value);
-        }
-        return ast;
-    }
-    visitAll(asts) {
-        const res = [];
-        let modified = false;
-        for (let i = 0; i < asts.length; ++i) {
-            const original = asts[i];
-            const value = original.visit(this);
-            res[i] = value;
-            modified = modified || value !== original;
-        }
-        return modified ? res : asts;
-    }
-    visitChain(ast, context) {
-        const expressions = this.visitAll(ast.expressions);
-        if (expressions !== ast.expressions) {
-            return new Chain(ast.span, ast.sourceSpan, expressions);
-        }
-        return ast;
-    }
-    visitCall(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const args = this.visitAll(ast.args);
-        if (receiver !== ast.receiver || args !== ast.args) {
-            return new Call(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
-        }
-        return ast;
-    }
-    visitSafeCall(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const args = this.visitAll(ast.args);
-        if (receiver !== ast.receiver || args !== ast.args) {
-            return new SafeCall(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
-        }
-        return ast;
-    }
-    visitSafeKeyedRead(ast, context) {
-        const obj = ast.receiver.visit(this);
-        const key = ast.key.visit(this);
-        if (obj !== ast.receiver || key !== ast.key) {
-            return new SafeKeyedRead(ast.span, ast.sourceSpan, obj, key);
-        }
-        return ast;
-    }
-}
-// Bindings
-class ParsedProperty {
-    constructor(name, expression, type, sourceSpan, keySpan, valueSpan) {
-        this.name = name;
-        this.expression = expression;
-        this.type = type;
-        this.sourceSpan = sourceSpan;
-        this.keySpan = keySpan;
-        this.valueSpan = valueSpan;
-        this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
-        this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
-    }
-}
-var ParsedPropertyType;
-(function (ParsedPropertyType) {
-    ParsedPropertyType[ParsedPropertyType["DEFAULT"] = 0] = "DEFAULT";
-    ParsedPropertyType[ParsedPropertyType["LITERAL_ATTR"] = 1] = "LITERAL_ATTR";
-    ParsedPropertyType[ParsedPropertyType["ANIMATION"] = 2] = "ANIMATION";
-    ParsedPropertyType[ParsedPropertyType["TWO_WAY"] = 3] = "TWO_WAY";
-})(ParsedPropertyType || (ParsedPropertyType = {}));
-class ParsedEvent {
-    constructor(name, targetOrPhase, type, handler, sourceSpan, handlerSpan, keySpan) {
-        this.name = name;
-        this.targetOrPhase = targetOrPhase;
-        this.type = type;
-        this.handler = handler;
-        this.sourceSpan = sourceSpan;
-        this.handlerSpan = handlerSpan;
-        this.keySpan = keySpan;
-    }
-}
-/**
- * ParsedVariable represents a variable declaration in a microsyntax expression.
- */
-class ParsedVariable {
-    constructor(name, value, sourceSpan, keySpan, valueSpan) {
-        this.name = name;
-        this.value = value;
-        this.sourceSpan = sourceSpan;
-        this.keySpan = keySpan;
-        this.valueSpan = valueSpan;
-    }
-}
-class BoundElementProperty {
-    constructor(name, type, securityContext, value, unit, sourceSpan, keySpan, valueSpan) {
-        this.name = name;
-        this.type = type;
-        this.securityContext = securityContext;
-        this.value = value;
-        this.unit = unit;
-        this.sourceSpan = sourceSpan;
-        this.keySpan = keySpan;
-        this.valueSpan = valueSpan;
-    }
-}
 
 class EventHandlerVars {
     static { this.event = variable('$event'); }
@@ -24413,7 +24437,7 @@ function ingestHostAttribute(job, name, value, securityContexts) {
     job.root.update.push(attrBinding);
 }
 function ingestHostEvent(job, event) {
-    const [phase, target] = event.type !== 1 /* e.ParsedEventType.Animation */ ? [null, event.targetOrPhase] :
+    const [phase, target] = event.type !== ParsedEventType.Animation ? [null, event.targetOrPhase] :
         [event.targetOrPhase, null];
     const eventBinding = createListenerOp(job.root.xref, new SlotHandle(), event.name, null, makeListenerHandlerOps(job.root, event.handler, event.handlerSpan), phase, target, true, event.sourceSpan);
     job.root.create.push(eventBinding);
@@ -25002,12 +25026,12 @@ function convertAstWithInterpolation(job, value, i18nMeta, sourceSpan) {
 }
 // TODO: Can we populate Template binding kinds in ingest?
 const BINDING_KINDS = new Map([
-    [0 /* e.BindingType.Property */, BindingKind.Property],
-    [5 /* e.BindingType.TwoWay */, BindingKind.TwoWayProperty],
-    [1 /* e.BindingType.Attribute */, BindingKind.Attribute],
-    [2 /* e.BindingType.Class */, BindingKind.ClassName],
-    [3 /* e.BindingType.Style */, BindingKind.StyleProperty],
-    [4 /* e.BindingType.Animation */, BindingKind.Animation],
+    [BindingType.Property, BindingKind.Property],
+    [BindingType.TwoWay, BindingKind.TwoWayProperty],
+    [BindingType.Attribute, BindingKind.Attribute],
+    [BindingType.Class, BindingKind.ClassName],
+    [BindingType.Style, BindingKind.StyleProperty],
+    [BindingType.Animation, BindingKind.Animation],
 ]);
 /**
  * Checks whether the given template is a plain ng-template (as opposed to another kind of template
@@ -25067,10 +25091,10 @@ function ingestElementBindings(unit, op, element) {
     unit.create.push(bindings.filter((b) => b?.kind === OpKind.ExtractedAttribute));
     unit.update.push(bindings.filter((b) => b?.kind === OpKind.Binding));
     for (const output of element.outputs) {
-        if (output.type === 1 /* e.ParsedEventType.Animation */ && output.phase === null) {
+        if (output.type === ParsedEventType.Animation && output.phase === null) {
             throw Error('Animation listener should have a phase');
         }
-        if (output.type === 2 /* e.ParsedEventType.TwoWay */) {
+        if (output.type === ParsedEventType.TwoWay) {
             unit.create.push(createTwoWayListenerOp(op.xref, op.handle, output.name, op.tag, makeTwoWayListenerHandlerOps(unit, output.handler, output.handlerSpan), output.sourceSpan));
         }
         else {
@@ -25092,7 +25116,7 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
     for (const attr of template.templateAttrs) {
         if (attr instanceof TextAttribute) {
             const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, attr.name, true);
-            bindings.push(createTemplateBinding(unit, op.xref, 1 /* e.BindingType.Attribute */, attr.name, attr.value, null, securityContext, true, templateKind, asMessage(attr.i18n), attr.sourceSpan));
+            bindings.push(createTemplateBinding(unit, op.xref, BindingType.Attribute, attr.name, attr.value, null, securityContext, true, templateKind, asMessage(attr.i18n), attr.sourceSpan));
         }
         else {
             bindings.push(createTemplateBinding(unit, op.xref, attr.type, attr.name, astOf(attr.value), attr.unit, attr.securityContext, true, templateKind, asMessage(attr.i18n), attr.sourceSpan));
@@ -25101,7 +25125,7 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
     for (const attr of template.attributes) {
         // Attribute literal bindings, such as `attr.foo="bar"`.
         const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, attr.name, true);
-        bindings.push(createTemplateBinding(unit, op.xref, 1 /* e.BindingType.Attribute */, attr.name, attr.value, null, securityContext, false, templateKind, asMessage(attr.i18n), attr.sourceSpan));
+        bindings.push(createTemplateBinding(unit, op.xref, BindingType.Attribute, attr.name, attr.value, null, securityContext, false, templateKind, asMessage(attr.i18n), attr.sourceSpan));
     }
     for (const input of template.inputs) {
         // Dynamic bindings (both attribute and property bindings).
@@ -25110,11 +25134,11 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
     unit.create.push(bindings.filter((b) => b?.kind === OpKind.ExtractedAttribute));
     unit.update.push(bindings.filter((b) => b?.kind === OpKind.Binding));
     for (const output of template.outputs) {
-        if (output.type === 1 /* e.ParsedEventType.Animation */ && output.phase === null) {
+        if (output.type === ParsedEventType.Animation && output.phase === null) {
             throw Error('Animation listener should have a phase');
         }
         if (templateKind === TemplateKind.NgTemplate) {
-            if (output.type === 2 /* e.ParsedEventType.TwoWay */) {
+            if (output.type === ParsedEventType.TwoWay) {
                 unit.create.push(createTwoWayListenerOp(op.xref, op.handle, output.name, op.tag, makeTwoWayListenerHandlerOps(unit, output.handler, output.handlerSpan), output.sourceSpan));
             }
             else {
@@ -25122,7 +25146,7 @@ function ingestTemplateBindings(unit, op, template, templateKind) {
             }
         }
         if (templateKind === TemplateKind.Structural &&
-            output.type !== 1 /* e.ParsedEventType.Animation */) {
+            output.type !== ParsedEventType.Animation) {
             // Animation bindings are excluded from the structural template's const array.
             const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME$1, output.name, false);
             unit.create.push(createExtractedAttributeOp(op.xref, BindingKind.Property, null, output.name, null, null, null, securityContext));
@@ -25168,19 +25192,19 @@ function createTemplateBinding(view, xref, type, name, value, unit, securityCont
     if (templateKind === TemplateKind.Structural) {
         if (!isStructuralTemplateAttribute) {
             switch (type) {
-                case 0 /* e.BindingType.Property */:
-                case 2 /* e.BindingType.Class */:
-                case 3 /* e.BindingType.Style */:
+                case BindingType.Property:
+                case BindingType.Class:
+                case BindingType.Style:
                     // Because this binding doesn't really target the ng-template, it must be a binding on an
                     // inner node of a structural template. We can't skip it entirely, because we still need
                     // it on the ng-template's consts (e.g. for the purposes of directive matching). However,
                     // we should not generate an update instruction for it.
                     return createExtractedAttributeOp(xref, BindingKind.Property, null, name, null, null, i18nMessage, securityContext);
-                case 5 /* e.BindingType.TwoWay */:
+                case BindingType.TwoWay:
                     return createExtractedAttributeOp(xref, BindingKind.TwoWayProperty, null, name, null, null, i18nMessage, securityContext);
             }
         }
-        if (!isTextBinding && (type === 1 /* e.BindingType.Attribute */ || type === 4 /* e.BindingType.Animation */)) {
+        if (!isTextBinding && (type === BindingType.Attribute || type === BindingType.Animation)) {
             // Again, this binding doesn't really target the ng-template; it actually targets the element
             // inside the structural template. In the case of non-text attribute or animation bindings,
             // the binding doesn't even show up on the ng-template const array, so we just skip it
@@ -25205,8 +25229,8 @@ function createTemplateBinding(view, xref, type, name, value, unit, securityCont
         // and classes also get const collected into the `AttributeMarker.Bindings` field. Dynamic
         // attribute bindings are missing from the consts entirely. We choose to emit them into the
         // consts field anyway, to avoid creating special cases for something so arcane and nonsensical.
-        if (type === 2 /* e.BindingType.Class */ || type === 3 /* e.BindingType.Style */ ||
-            (type === 1 /* e.BindingType.Attribute */ && !isTextBinding)) {
+        if (type === BindingType.Class || type === BindingType.Style ||
+            (type === BindingType.Attribute && !isTextBinding)) {
             // TODO: These cases should be parse errors.
             bindingType = BindingKind.Property;
         }
@@ -25689,7 +25713,7 @@ class BindingParser {
     }
     createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
         if (boundProp.isAnimation) {
-            return new BoundElementProperty(boundProp.name, 4 /* BindingType.Animation */, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+            return new BoundElementProperty(boundProp.name, BindingType.Animation, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
         }
         let unit = null;
         let bindingType = undefined;
@@ -25710,17 +25734,17 @@ class BindingParser {
                     const name = boundPropertyName.substring(nsSeparatorIdx + 1);
                     boundPropertyName = mergeNsAndName(ns, name);
                 }
-                bindingType = 1 /* BindingType.Attribute */;
+                bindingType = BindingType.Attribute;
             }
             else if (parts[0] == CLASS_PREFIX) {
                 boundPropertyName = parts[1];
-                bindingType = 2 /* BindingType.Class */;
+                bindingType = BindingType.Class;
                 securityContexts = [SecurityContext.NONE];
             }
             else if (parts[0] == STYLE_PREFIX) {
                 unit = parts.length > 2 ? parts[2] : null;
                 boundPropertyName = parts[1];
-                bindingType = 3 /* BindingType.Style */;
+                bindingType = BindingType.Style;
                 securityContexts = [SecurityContext.STYLE];
             }
         }
@@ -25730,7 +25754,7 @@ class BindingParser {
             boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
             securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
             bindingType =
-                boundProp.type === ParsedPropertyType.TWO_WAY ? 5 /* BindingType.TwoWay */ : 0 /* BindingType.Property */;
+                boundProp.type === ParsedPropertyType.TWO_WAY ? BindingType.TwoWay : BindingType.Property;
             if (!skipValidation) {
                 this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
             }
@@ -25762,7 +25786,7 @@ class BindingParser {
         const eventName = matches[0];
         const phase = matches[1].toLowerCase();
         const ast = this._parseAction(expression, handlerSpan);
-        targetEvents.push(new ParsedEvent(eventName, phase, 1 /* ParsedEventType.Animation */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, phase, ParsedEventType.Animation, ast, sourceSpan, handlerSpan, keySpan));
         if (eventName.length === 0) {
             this._reportError(`Animation event name is missing in binding`, sourceSpan);
         }
@@ -25787,7 +25811,7 @@ class BindingParser {
         if (isAssignmentEvent && isValid && !this._isAllowedAssignmentEvent(ast)) {
             this._reportError('Unsupported expression in a two-way binding', sourceSpan);
         }
-        targetEvents.push(new ParsedEvent(eventName, target, isAssignmentEvent ? 2 /* ParsedEventType.TwoWay */ : 0 /* ParsedEventType.Regular */, ast, sourceSpan, handlerSpan, keySpan));
+        targetEvents.push(new ParsedEvent(eventName, target, isAssignmentEvent ? ParsedEventType.TwoWay : ParsedEventType.Regular, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -27702,13 +27726,13 @@ class StylingBuilder {
         let binding = null;
         let name = input.name;
         switch (input.type) {
-            case 0 /* BindingType.Property */:
+            case BindingType.Property:
                 binding = this.registerInputBasedOnName(name, input.value, input.sourceSpan);
                 break;
-            case 3 /* BindingType.Style */:
+            case BindingType.Style:
                 binding = this.registerStyleInput(name, false, input.value, input.sourceSpan, input.unit);
                 break;
-            case 2 /* BindingType.Class */:
+            case BindingType.Class:
                 binding = this.registerClassInput(name, false, input.value, input.sourceSpan);
                 break;
         }
@@ -28124,7 +28148,7 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
     const implicitReceiverExpr = (scope === null || scope.bindingLevel === 0) ?
         variable(CONTEXT_NAME) :
         scope.getOrCreateSharedContextVar(0);
-    const bindingStatements = eventAst.type === 2 /* ParsedEventType.TwoWay */ ?
+    const bindingStatements = eventAst.type === ParsedEventType.TwoWay ?
         convertAssignmentActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS) :
         convertActionBinding(scope, implicitReceiverExpr, handler, 'b', eventAst.handlerSpan, implicitReceiverAccesses, EVENT_BINDING_SCOPE_GLOBALS);
     const statements = [];
@@ -28149,7 +28173,7 @@ function prepareEventListenerParameters(eventAst, handlerName = null, scope = nu
             statements.push(new ExpressionStatement(invokeInstruction(null, Identifiers.resetView, [])));
         }
     }
-    const eventName = type === 1 /* ParsedEventType.Animation */ ? prepareSyntheticListenerName(name, phase) : name;
+    const eventName = type === ParsedEventType.Animation ? prepareSyntheticListenerName(name, phase) : name;
     const fnName = handlerName && sanitizeIdentifier(handlerName);
     const fnArgs = [];
     if (implicitReceiverAccesses.has(eventArgumentName)) {
@@ -28648,7 +28672,7 @@ class TemplateDefinitionBuilder {
         element.inputs.forEach(input => {
             const stylingInputWasSet = stylingBuilder.registerBoundInput(input);
             if (!stylingInputWasSet) {
-                if ((input.type === 0 /* BindingType.Property */ || input.type === 5 /* BindingType.TwoWay */) &&
+                if ((input.type === BindingType.Property || input.type === BindingType.TwoWay) &&
                     input.i18n) {
                     boundI18nAttrs.push(input);
                 }
@@ -28694,7 +28718,7 @@ class TemplateDefinitionBuilder {
             // Generate Listeners (outputs)
             if (element.outputs.length > 0) {
                 for (const outputAst of element.outputs) {
-                    this.creationInstruction(outputAst.sourceSpan, outputAst.type === 2 /* ParsedEventType.TwoWay */ ? Identifiers.twoWayListener : Identifiers.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
+                    this.creationInstruction(outputAst.sourceSpan, outputAst.type === ParsedEventType.TwoWay ? Identifiers.twoWayListener : Identifiers.listener, this.prepareListenerParameter(element.name, outputAst, elementIndex));
                 }
             }
             // Note: it's important to keep i18n/i18nStart instructions after i18nAttributes and
@@ -28722,7 +28746,7 @@ class TemplateDefinitionBuilder {
         // Generate element input bindings
         allOtherInputs.forEach(input => {
             const inputType = input.type;
-            if (inputType === 4 /* BindingType.Animation */) {
+            if (inputType === BindingType.Animation) {
                 const value = input.value.visit(this._valueConverter);
                 // animation bindings can be presented in the following formats:
                 // 1. [@binding]="fooExp"
@@ -28750,7 +28774,7 @@ class TemplateDefinitionBuilder {
                 if (value !== undefined) {
                     const params = [];
                     const [attrNamespace, attrName] = splitNsName(input.name);
-                    const isAttributeBinding = inputType === 1 /* BindingType.Attribute */;
+                    const isAttributeBinding = inputType === BindingType.Attribute;
                     let sanitizationRef = resolveSanitizationFn(input.securityContext, isAttributeBinding);
                     if (!sanitizationRef) {
                         // If there was no sanitization function found based on the security context
@@ -28778,7 +28802,7 @@ class TemplateDefinitionBuilder {
                     this.allocateBindingSlots(value);
                     // Note: we don't separate two-way property bindings and regular ones,
                     // because their assignment order needs to be maintained.
-                    if (inputType === 0 /* BindingType.Property */ || inputType === 5 /* BindingType.TwoWay */) {
+                    if (inputType === BindingType.Property || inputType === BindingType.TwoWay) {
                         if (value instanceof Interpolation$1) {
                             // prop="{{value}}" and friends
                             this.interpolatedUpdateInstruction(getPropertyInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -28788,12 +28812,12 @@ class TemplateDefinitionBuilder {
                             // Collect all the properties so that we can chain into a single function at the end.
                             propertyBindings.push({
                                 span: input.sourceSpan,
-                                reference: inputType === 5 /* BindingType.TwoWay */ ? Identifiers.twoWayProperty : Identifiers.property,
+                                reference: inputType === BindingType.TwoWay ? Identifiers.twoWayProperty : Identifiers.property,
                                 paramsOrFn: getBindingFunctionParams(() => this.convertPropertyBinding(value), attrName, params)
                             });
                         }
                     }
-                    else if (inputType === 1 /* BindingType.Attribute */) {
+                    else if (inputType === BindingType.Attribute) {
                         if (value instanceof Interpolation$1 && getInterpolationArgsLength(value) > 1) {
                             // attr.name="text{{value}}" and friends
                             this.interpolatedUpdateInstruction(getAttributeInterpolationExpression(value), elementIndex, attrName, input, value, params);
@@ -28919,7 +28943,7 @@ class TemplateDefinitionBuilder {
             }
             // Generate listeners for directive output
             for (const outputAst of template.outputs) {
-                this.creationInstruction(outputAst.sourceSpan, outputAst.type === 2 /* ParsedEventType.TwoWay */ ? Identifiers.twoWayListener : Identifiers.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
+                this.creationInstruction(outputAst.sourceSpan, outputAst.type === ParsedEventType.TwoWay ? Identifiers.twoWayListener : Identifiers.listener, this.prepareListenerParameter('ng_template', outputAst, templateIndex));
             }
         }
     }
@@ -29676,13 +29700,13 @@ class TemplateDefinitionBuilder {
                 const input = inputs[i];
                 // We don't want the animation and attribute bindings in the
                 // attributes array since they aren't used for directive matching.
-                if (input.type !== 4 /* BindingType.Animation */ && input.type !== 1 /* BindingType.Attribute */) {
+                if (input.type !== BindingType.Animation && input.type !== BindingType.Attribute) {
                     addAttrExpr(input.name);
                 }
             }
             for (let i = 0; i < outputs.length; i++) {
                 const output = outputs[i];
-                if (output.type !== 1 /* ParsedEventType.Animation */) {
+                if (output.type !== ParsedEventType.Animation) {
                     addAttrExpr(output.name);
                 }
             }
@@ -29745,7 +29769,7 @@ class TemplateDefinitionBuilder {
     prepareListenerParameter(tagName, outputAst, index) {
         return () => {
             const eventName = outputAst.name;
-            const bindingFnName = outputAst.type === 1 /* ParsedEventType.Animation */ ?
+            const bindingFnName = outputAst.type === ParsedEventType.Animation ?
                 // synthetic @listener.foo values are treated the exact same as are standard listeners
                 prepareSyntheticListenerFunctionName(eventName, outputAst.phase) :
                 sanitizeIdentifier(eventName);
@@ -31184,12 +31208,12 @@ function createHostListeners(eventBindings, name) {
     const instructions = [];
     for (const binding of eventBindings) {
         let bindingName = binding.name && sanitizeIdentifier(binding.name);
-        const bindingFnName = binding.type === 1 /* ParsedEventType.Animation */ ?
+        const bindingFnName = binding.type === ParsedEventType.Animation ?
             prepareSyntheticListenerFunctionName(bindingName, binding.targetOrPhase) :
             bindingName;
         const handlerName = name && bindingName ? `${name}_${bindingFnName}_HostBindingHandler` : null;
         const params = prepareEventListenerParameters(BoundEvent.fromParsedEvent(binding), handlerName);
-        if (binding.type == 1 /* ParsedEventType.Animation */) {
+        if (binding.type == ParsedEventType.Animation) {
             syntheticListenerParams.push(params);
         }
         else {
@@ -32806,7 +32830,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.0+sha-cd242a1');
+const VERSION = new Version('18.0.0-next.0+sha-ef39107');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34374,7 +34398,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34470,7 +34494,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34862,7 +34886,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34897,7 +34921,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34948,7 +34972,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34981,7 +35005,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35032,7 +35056,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-cd242a1'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-ef39107'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -35065,5 +35089,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
