@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.0+sha-8180c39
+ * @license Angular v18.0.0-next.0+sha-fb189c6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2817,8 +2817,29 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
         preserveWhitespaces?: boolean;
     };
     declarations: DeclarationT[];
-    /** Metadata related to the deferred blocks in the component's template. */
-    defer: R3DeferMetadata;
+    /**
+     * Map of all types that can be defer loaded (ts.ClassDeclaration) ->
+     * corresponding import declaration (ts.ImportDeclaration) within
+     * the current source file.
+     */
+    deferrableDeclToImportDecl: Map<outputAst.Expression, outputAst.Expression>;
+    /**
+     * Map of `@defer` blocks -> their corresponding metadata.
+     */
+    deferBlocks: Map<t.DeferredBlock, R3DeferBlockMetadata>;
+    /**
+     * Defines how dynamic imports for deferred dependencies should be grouped:
+     *  - either in a function on per-component basis (in case of local compilation)
+     *  - or in a function on per-block basis (in full compilation mode)
+     */
+    deferBlockDepsEmitMode: DeferBlockDepsEmitMode;
+    /**
+     * Map of deferrable symbol names -> corresponding import paths.
+     */
+    deferrableTypes: Map<string, {
+        importPath: string;
+        isDefaultImport: boolean;
+    }>;
     /**
      * Specifies how the 'directives' and/or `pipes` array, if generated, need to be emitted.
      */
@@ -3377,15 +3398,40 @@ export declare interface R3DeclareQueryMetadata {
 export declare type R3DeclareTemplateDependencyMetadata = R3DeclareDirectiveDependencyMetadata | R3DeclarePipeDependencyMetadata | R3DeclareNgModuleDependencyMetadata;
 
 /**
- * Information about the deferred blocks in a component's template.
+ * Information necessary to compile a `defer` block.
  */
-export declare type R3DeferMetadata = {
-    mode: DeferBlockDepsEmitMode.PerBlock;
-    blocks: Map<t.DeferredBlock, outputAst.ArrowFunctionExpr | null>;
-} | {
-    mode: DeferBlockDepsEmitMode.PerComponent;
-    dependenciesFn: outputAst.ArrowFunctionExpr | null;
-};
+export declare interface R3DeferBlockMetadata {
+    /** Dependencies used within the block. */
+    deps: R3DeferBlockTemplateDependency[];
+    /** Mapping between triggers and the DOM nodes they refer to. */
+    triggerElements: Map<t.DeferredTrigger, t.Element | null>;
+}
+
+/**
+ * Describes a dependency used within a `@defer` block.
+ */
+export declare interface R3DeferBlockTemplateDependency {
+    /**
+     * Reference to a dependency.
+     */
+    type: outputAst.WrappedNodeExpr<unknown>;
+    /**
+     * Dependency class name.
+     */
+    symbolName: string;
+    /**
+     * Whether this dependency can be defer-loaded.
+     */
+    isDeferrable: boolean;
+    /**
+     * Import path where this dependency is located.
+     */
+    importPath: string | null;
+    /**
+     * Whether the symbol is the default export.
+     */
+    isDefaultImport: boolean;
+}
 
 declare interface R3DelegatedFnOrClassMetadata extends R3ConstructorFactoryMetadata {
     delegate: outputAst.Expression;
