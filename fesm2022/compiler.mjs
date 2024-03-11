@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.0+sha-81ccf5d
+ * @license Angular v18.0.0-next.0+sha-280a3a2
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22161,10 +22161,19 @@ function transformTwoWayBindingSet(job) {
     }
 }
 function wrapSetOperation(target, value) {
+    // ASSUMPTION: here we're assuming that `ReadVariableExpr` will be a reference
+    // to a local template variable. This appears to be the case at the time of writing.
+    // If the expression is targeting a variable read, we only emit the `twoWayBindingSet` since
+    // the fallback would be attempting to write into a constant. Invalid usages will be flagged
+    // during template type checking.
+    if (target instanceof ReadVariableExpr) {
+        return twoWayBindingSet(target, value);
+    }
     return twoWayBindingSet(target, value).or(target.set(value));
 }
 function isReadExpression(value) {
-    return value instanceof ReadPropExpr || value instanceof ReadKeyExpr;
+    return value instanceof ReadPropExpr || value instanceof ReadKeyExpr ||
+        value instanceof ReadVariableExpr;
 }
 function wrapAction(target, value) {
     // The only officially supported expressions inside of a two-way binding are read expressions.
@@ -28569,7 +28578,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.0+sha-81ccf5d');
+const VERSION = new Version('18.0.0-next.0+sha-280a3a2');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30137,7 +30146,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30233,7 +30242,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30625,7 +30634,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30660,7 +30669,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30711,7 +30720,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30744,7 +30753,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30795,7 +30804,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-81ccf5d'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-280a3a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
