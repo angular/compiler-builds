@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.0+sha-64f870c
+ * @license Angular v18.0.0-next.0+sha-6ea208e
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -10058,7 +10058,7 @@ function createExtractedAttributeOp(target, bindingKind, namespace, name, expres
         ...NEW_OP,
     };
 }
-function createDeferOp(xref, main, mainSlot, metadata, resolverFn, sourceSpan) {
+function createDeferOp(xref, main, mainSlot, ownResolverFn, resolverFn, sourceSpan) {
     return {
         kind: OpKind.Defer,
         xref,
@@ -10076,7 +10076,7 @@ function createDeferOp(xref, main, mainSlot, metadata, resolverFn, sourceSpan) {
         placeholderMinimumTime: null,
         errorView: null,
         errorSlot: null,
-        metadata,
+        ownResolverFn,
         resolverFn,
         sourceSpan,
         ...NEW_OP,
@@ -10260,11 +10260,11 @@ class CompilationJob {
  * embedded views or host bindings.
  */
 class ComponentCompilationJob extends CompilationJob {
-    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta, allDeferrableDepsFn) {
+    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn) {
         super(componentName, pool, compatibility);
         this.relativeContextFilePath = relativeContextFilePath;
         this.i18nUseExternalIds = i18nUseExternalIds;
-        this.deferBlocksMeta = deferBlocksMeta;
+        this.deferMeta = deferMeta;
         this.allDeferrableDepsFn = allDeferrableDepsFn;
         this.kind = CompilationJobKind.Tmpl;
         this.fnSuffix = 'Template';
@@ -11211,41 +11211,23 @@ function convertI18nBindings(job) {
 }
 
 /**
- * Create extracted deps functions for defer ops.
+ * Resolve the dependency function of a deferred block.
  */
-function createDeferDepsFns(job) {
+function resolveDeferDepsFns(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
             if (op.kind === OpKind.Defer) {
-                if (op.metadata.deps.length === 0) {
-                    continue;
-                }
                 if (op.resolverFn !== null) {
                     continue;
                 }
-                const dependencies = [];
-                for (const dep of op.metadata.deps) {
-                    if (dep.isDeferrable) {
-                        // Callback function, e.g. `m () => m.MyCmp;`.
-                        const innerFn = arrowFn(
-                        // Default imports are always accessed through the `default` property.
-                        [new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(dep.isDefaultImport ? 'default' : dep.symbolName));
-                        // Dynamic import, e.g. `import('./a').then(...)`.
-                        const importExpr = (new DynamicImportExpr(dep.importPath)).prop('then').callFn([innerFn]);
-                        dependencies.push(importExpr);
+                if (op.ownResolverFn !== null) {
+                    if (op.handle.slot === null) {
+                        throw new Error('AssertionError: slot must be assigned before extracting defer deps functions');
                     }
-                    else {
-                        // Non-deferrable symbol, just use a reference to the type.
-                        dependencies.push(dep.type);
-                    }
+                    const fullPathName = unit.fnName?.replace('_Template', '');
+                    op.resolverFn = job.pool.getSharedFunctionReference(op.ownResolverFn, `${fullPathName}_Defer_${op.handle.slot}_DepsFn`, 
+                    /* Don't use unique names for TDB compatibility */ false);
                 }
-                const depsFnExpr = arrowFn([], literalArr(dependencies));
-                if (op.handle.slot === null) {
-                    throw new Error('AssertionError: slot must be assigned bfore extracting defer deps functions');
-                }
-                const fullPathName = unit.fnName?.replace(`_Template`, ``);
-                op.resolverFn = job.pool.getSharedFunctionReference(depsFnExpr, `${fullPathName}_Defer_${op.handle.slot}_DepsFn`, 
-                /* Don't use unique names for TDB compatibility */ false);
             }
         }
     }
@@ -23229,7 +23211,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: generateAdvance },
     { kind: CompilationJobKind.Both, fn: optimizeVariables },
     { kind: CompilationJobKind.Both, fn: nameFunctionsAndVariables },
-    { kind: CompilationJobKind.Tmpl, fn: createDeferDepsFns },
+    { kind: CompilationJobKind.Tmpl, fn: resolveDeferDepsFns },
     { kind: CompilationJobKind.Tmpl, fn: mergeNextContextExpressions },
     { kind: CompilationJobKind.Tmpl, fn: generateNgContainerOps },
     { kind: CompilationJobKind.Tmpl, fn: collapseEmptyInstructions },
@@ -23361,8 +23343,8 @@ function isSingleI18nIcu(meta) {
  * representation.
  * TODO: Refactor more of the ingestion code into phases.
  */
-function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta, allDeferrableDepsFn) {
-    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferBlocksMeta, allDeferrableDepsFn);
+function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn) {
+    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn);
     ingestNodes(job.root, template);
     return job;
 }
@@ -23675,9 +23657,12 @@ function ingestDeferView(unit, suffix, i18nMeta, children, sourceSpan) {
     return templateOp;
 }
 function ingestDeferBlock(unit, deferBlock) {
-    const blockMeta = unit.job.deferBlocksMeta.get(deferBlock);
-    if (blockMeta === undefined) {
-        throw new Error(`AssertionError: unable to find metadata for deferred block`);
+    let ownResolverFn = null;
+    if (unit.job.deferMeta.mode === 0 /* DeferBlockDepsEmitMode.PerBlock */) {
+        if (!unit.job.deferMeta.blocks.has(deferBlock)) {
+            throw new Error(`AssertionError: unable to find a dependency function for this deferred block`);
+        }
+        ownResolverFn = unit.job.deferMeta.blocks.get(deferBlock) ?? null;
     }
     // Generate the defer main view and all secondary views.
     const main = ingestDeferView(unit, '', deferBlock.i18n, deferBlock.children, deferBlock.sourceSpan);
@@ -23686,7 +23671,7 @@ function ingestDeferBlock(unit, deferBlock) {
     const error = ingestDeferView(unit, 'Error', deferBlock.error?.i18n, deferBlock.error?.children, deferBlock.error?.sourceSpan);
     // Create the main defer op, and ops for all secondary views.
     const deferXref = unit.job.allocateXrefId();
-    const deferOp = createDeferOp(deferXref, main.xref, main.handle, blockMeta, unit.job.allDeferrableDepsFn, deferBlock.sourceSpan);
+    const deferOp = createDeferOp(deferXref, main.xref, main.handle, ownResolverFn, unit.job.allDeferrableDepsFn, deferBlock.sourceSpan);
     deferOp.placeholderView = placeholder?.xref ?? null;
     deferOp.placeholderSlot = placeholder?.handle ?? null;
     deferOp.loadingSlot = loading?.handle ?? null;
@@ -26725,24 +26710,6 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
     return { expression, type, statements: [] };
 }
 /**
- * Creates an AST for a function that contains dynamic imports representing
- * deferrable dependencies.
- */
-function createDeferredDepsFunction(constantPool, name, deps) {
-    // This defer block has deps for which we need to generate dynamic imports.
-    const dependencyExp = [];
-    for (const [symbolName, { importPath, isDefaultImport }] of deps) {
-        // Callback function, e.g. `m () => m.MyCmp;`.
-        const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
-        // Dynamic import, e.g. `import('./a').then(...)`.
-        const importExpr = (new DynamicImportExpr(importPath)).prop('then').callFn([innerFn]);
-        dependencyExp.push(importExpr);
-    }
-    const depsFnExpr = arrowFn([], literalArr(dependencyExp));
-    constantPool.statements.push(depsFnExpr.toDeclStmt(name, StmtModifier.Final));
-    return variable(name);
-}
-/**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
  */
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
@@ -26762,13 +26729,14 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     // e.g. `template: function MyComponent_Template(_ctx, _cm) {...}`
     const templateTypeName = meta.name;
     let allDeferrableDepsFn = null;
-    if (meta.deferBlocks.size > 0 && meta.deferrableTypes.size > 0 &&
-        meta.deferBlockDepsEmitMode === 1 /* DeferBlockDepsEmitMode.PerComponent */) {
+    if (meta.defer.mode === 1 /* DeferBlockDepsEmitMode.PerComponent */ &&
+        meta.defer.dependenciesFn !== null) {
         const fnName = `${templateTypeName}_DeferFn`;
-        allDeferrableDepsFn = createDeferredDepsFunction(constantPool, fnName, meta.deferrableTypes);
+        constantPool.statements.push(meta.defer.dependenciesFn.toDeclStmt(fnName, StmtModifier.Final));
+        allDeferrableDepsFn = variable(fnName);
     }
     // First the template is ingested into IR:
-    const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.deferBlocks, allDeferrableDepsFn);
+    const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn);
     // Then the IR is transformed to prepare it for cod egeneration.
     transform(tpl, CompilationJobKind.Tmpl);
     // Finally we emit the template function:
@@ -27130,6 +27098,41 @@ function createHostDirectivesMappingArray(mapping) {
         }
     }
     return elements.length > 0 ? literalArr(elements) : null;
+}
+/**
+ * Compiles the dependency resolver function for a defer block.
+ */
+function compileDeferResolverFunction(meta) {
+    const depExpressions = [];
+    if (meta.mode === 0 /* DeferBlockDepsEmitMode.PerBlock */) {
+        for (const dep of meta.dependencies) {
+            if (dep.isDeferrable) {
+                // Callback function, e.g. `m () => m.MyCmp;`.
+                const innerFn = arrowFn(
+                // Default imports are always accessed through the `default` property.
+                [new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(dep.isDefaultImport ? 'default' : dep.symbolName));
+                // Dynamic import, e.g. `import('./a').then(...)`.
+                const importExpr = (new DynamicImportExpr(dep.importPath)).prop('then').callFn([innerFn]);
+                depExpressions.push(importExpr);
+            }
+            else {
+                // Non-deferrable symbol, just use a reference to the type. Note that it's important to
+                // go through `typeReference`, rather than `symbolName` in order to preserve the
+                // original reference within the source file.
+                depExpressions.push(dep.typeReference);
+            }
+        }
+    }
+    else {
+        for (const { symbolName, importPath, isDefaultImport } of meta.dependencies) {
+            // Callback function, e.g. `m () => m.MyCmp;`.
+            const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
+            // Dynamic import, e.g. `import('./a').then(...)`.
+            const importExpr = (new DynamicImportExpr(importPath)).prop('then').callFn([innerFn]);
+            depExpressions.push(importExpr);
+        }
+    }
+    return arrowFn([], literalArr(depExpressions));
 }
 
 /**
@@ -28036,7 +28039,7 @@ class CompilerFacadeImpl {
     }
     compileComponent(angularCoreEnv, sourceMapUrl, facade) {
         // Parse the template and check for errors.
-        const { template, interpolation, deferBlocks } = parseJitTemplate(facade.template, facade.name, sourceMapUrl, facade.preserveWhitespaces, facade.interpolation);
+        const { template, interpolation, defer } = parseJitTemplate(facade.template, facade.name, sourceMapUrl, facade.preserveWhitespaces, facade.interpolation);
         // Compile the component metadata, including template, into an expression.
         const meta = {
             ...facade,
@@ -28045,10 +28048,7 @@ class CompilerFacadeImpl {
             template,
             declarations: facade.declarations.map(convertDeclarationFacadeToMetadata),
             declarationListEmitMode: 0 /* DeclarationListEmitMode.Direct */,
-            deferBlocks,
-            deferrableTypes: new Map(),
-            deferrableDeclToImportDecl: new Map(),
-            deferBlockDepsEmitMode: 0 /* DeferBlockDepsEmitMode.PerBlock */,
+            defer,
             styles: [...facade.styles, ...template.styles],
             encapsulation: facade.encapsulation,
             interpolation,
@@ -28255,7 +28255,7 @@ function convertOpaqueValuesToExpressions(obj) {
     return result;
 }
 function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMapUrl) {
-    const { template, interpolation, deferBlocks } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, decl.preserveWhitespaces ?? false, decl.interpolation);
+    const { template, interpolation, defer } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, decl.preserveWhitespaces ?? false, decl.interpolation);
     const declarations = [];
     if (decl.dependencies) {
         for (const innerDep of decl.dependencies) {
@@ -28287,10 +28287,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
         viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) :
             null,
         animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null,
-        deferBlocks,
-        deferrableTypes: new Map(),
-        deferrableDeclToImportDecl: new Map(),
-        deferBlockDepsEmitMode: 0 /* DeferBlockDepsEmitMode.PerBlock */,
+        defer,
         changeDetection: decl.changeDetection ?? ChangeDetectionStrategy.Default,
         encapsulation: decl.encapsulation ?? ViewEncapsulation.Emulated,
         interpolation,
@@ -28348,7 +28345,7 @@ function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces,
     return {
         template: parsed,
         interpolation: interpolationConfig,
-        deferBlocks: createR3DeferredMetadata(boundTarget)
+        defer: createR3ComponentDeferMetadata(boundTarget)
     };
 }
 /**
@@ -28404,23 +28401,15 @@ function createR3DependencyMetadata(token, isAttributeDep, host, optional, self,
     const attributeNameType = isAttributeDep ? literal('unknown') : null;
     return { token, attributeNameType, host, optional, self, skipSelf };
 }
-function createR3DeferredMetadata(boundTarget) {
+function createR3ComponentDeferMetadata(boundTarget) {
     const deferredBlocks = boundTarget.getDeferBlocks();
-    const meta = new Map();
+    const blocks = new Map();
     for (const block of deferredBlocks) {
-        const triggerElements = new Map();
-        resolveDeferTriggers(block, block.triggers, boundTarget, triggerElements);
-        resolveDeferTriggers(block, block.prefetchTriggers, boundTarget, triggerElements);
-        // TODO: leaving `deps` empty in JIT mode for now, to be implemented as one of the next steps.
-        meta.set(block, { deps: [], triggerElements });
+        // TODO: leaving dependency function empty in JIT mode for now,
+        // to be implemented as one of the next steps.
+        blocks.set(block, null);
     }
-    return meta;
-}
-function resolveDeferTriggers(block, triggers, boundTarget, triggerElements) {
-    Object.keys(triggers).forEach(key => {
-        const trigger = triggers[key];
-        triggerElements.set(trigger, boundTarget.getDeferredTriggerTarget(block, trigger));
-    });
+    return { mode: 0 /* DeferBlockDepsEmitMode.PerBlock */, blocks };
 }
 function extractHostBindings(propMetadata, sourceSpan, host) {
     // First parse the declarations from the metadata.
@@ -28578,7 +28567,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.0+sha-64f870c');
+const VERSION = new Version('18.0.0-next.0+sha-6ea208e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30073,13 +30062,13 @@ function compileClassMetadata(metadata) {
  * check to tree-shake away this code in production mode.
  */
 function compileComponentClassMetadata(metadata, deferrableTypes) {
-    if (deferrableTypes === null || deferrableTypes.size === 0) {
+    if (deferrableTypes === null || deferrableTypes.length === 0) {
         // If there are no deferrable symbols - just generate a regular `setClassMetadata` call.
         return compileClassMetadata(metadata);
     }
     const dynamicImports = [];
     const importedSymbols = [];
-    for (const [symbolName, { importPath, isDefaultImport }] of deferrableTypes) {
+    for (const { symbolName, importPath, isDefaultImport } of deferrableTypes) {
         // e.g. `(m) => m.CmpA`
         const innerFn = 
         // Default imports are always accessed through the `default` property.
@@ -30146,7 +30135,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30242,7 +30231,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30634,7 +30623,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30669,7 +30658,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30720,7 +30709,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30753,7 +30742,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30804,7 +30793,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-64f870c'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-6ea208e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -30837,5 +30826,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
