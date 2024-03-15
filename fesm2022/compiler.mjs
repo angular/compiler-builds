@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.0+sha-3691570
+ * @license Angular v18.0.0-next.0+sha-5a63a47
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -24320,14 +24320,22 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
             root = child;
         }
     }
-    // If we've found a single root node, its tag name and *static* attributes can be copied
-    // to the surrounding template to be used for content projection. Note that it's important
-    // that we don't copy any bound attributes since they don't participate in content projection
-    // and they can be used in directive matching (in the case of `Template.templateAttrs`).
+    // If we've found a single root node, its tag name and attributes can be
+    // copied to the surrounding template to be used for content projection.
     if (root !== null) {
+        // Collect the static attributes for content projection purposes.
         for (const attr of root.attributes) {
             const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME, attr.name, true);
             unit.update.push(createBindingOp(xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+        }
+        // Also collect the inputs since they participate in content projection as well.
+        // Note that TDB used to collect the outputs as well, but it wasn't passing them into
+        // the template instruction. Here we just don't collect them.
+        for (const attr of root.inputs) {
+            if (attr.type !== BindingType.Animation && attr.type !== BindingType.Attribute) {
+                const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME, attr.name, true);
+                unit.create.push(createExtractedAttributeOp(xref, BindingKind.Property, null, attr.name, null, null, null, securityContext));
+            }
         }
         const tagName = root instanceof Element$1 ? root.name : root.tagName;
         // Don't pass along `ng-template` tag name since it enables directive matching.
@@ -28567,7 +28575,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.0+sha-3691570');
+const VERSION = new Version('18.0.0-next.0+sha-5a63a47');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30135,7 +30143,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30231,7 +30239,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30623,7 +30631,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30658,7 +30666,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30709,7 +30717,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30742,7 +30750,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30793,7 +30801,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.0+sha-3691570'));
+    definitionMap.set('version', literal('18.0.0-next.0+sha-5a63a47'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
