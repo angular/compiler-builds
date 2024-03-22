@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.1+sha-0461bff
+ * @license Angular v18.0.0-next.1+sha-5bd188a
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2339,13 +2339,16 @@ class ConstantPool {
             }
             // Function declarations are saved as function statements
             // so we compare them directly to the passed-in function.
-            if (!isArrow && current instanceof DeclareFunctionStmt && fn.isEquivalent(current)) {
+            if (!isArrow && current instanceof DeclareFunctionStmt && fn instanceof FunctionExpr &&
+                fn.isEquivalent(current)) {
                 return variable(current.name);
             }
         }
         // Otherwise declare the function.
         const name = useUniqueName ? this.uniqueName(prefix) : prefix;
-        this.statements.push(fn.toDeclStmt(name, StmtModifier.Final));
+        this.statements.push(fn instanceof FunctionExpr ?
+            fn.toDeclStmt(name, StmtModifier.Final) :
+            new DeclareVarStmt(name, fn, INFERRED_TYPE, StmtModifier.Final, fn.sourceSpan));
         return variable(name);
     }
     _getLiteralFactory(key, values, resultMap) {
@@ -2631,6 +2634,7 @@ class Identifiers {
     static { this.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE }; }
     static { this.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE }; }
     static { this.declareClassMetadata = { name: 'ɵɵngDeclareClassMetadata', moduleName: CORE }; }
+    static { this.declareClassMetadataAsync = { name: 'ɵɵngDeclareClassMetadataAsync', moduleName: CORE }; }
     static { this.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE }; }
     static { this.setClassMetadataAsync = { name: 'ɵsetClassMetadataAsync', moduleName: CORE }; }
     static { this.setClassDebugInfo = { name: 'ɵsetClassDebugInfo', moduleName: CORE }; }
@@ -4934,7 +4938,7 @@ class RecursiveVisitor$1 {
         visitAll$1(this, block.children);
     }
     visitForLoopBlock(block) {
-        const blockItems = [block.item, ...Object.values(block.contextVariables), ...block.children];
+        const blockItems = [block.item, ...block.contextVariables, ...block.children];
         block.empty && blockItems.push(block.empty);
         visitAll$1(this, blockItems);
     }
@@ -22486,6 +22490,9 @@ function optimizeTrackFns(job) {
                 op.trackByFn = importExpr(Identifiers.repeaterTrackByIdentity);
             }
             else if (isTrackByFunctionCall(job.root.xref, op.track)) {
+                // Mark the function as using the component instance to play it safe
+                // since the method might be using `this` internally (see #53628).
+                op.usesComponentInstance = true;
                 // Top-level method calls in the form of `fn($index, item)` can be passed in directly.
                 if (op.track.receiver.receiver.view === unit.xref) {
                     // TODO: this may be wrong
@@ -22549,7 +22556,7 @@ function generateTrackVariables(job) {
             }
             op.track = transformExpressionsInExpression(op.track, expr => {
                 if (expr instanceof LexicalReadExpr) {
-                    if (expr.name === op.varNames.$index) {
+                    if (op.varNames.$index.has(expr.name)) {
                         return variable('$index');
                     }
                     else if (expr.name === op.varNames.$implicit) {
@@ -23577,12 +23584,7 @@ function ingestIfBlock(unit, ifBlock) {
     for (let i = 0; i < ifBlock.branches.length; i++) {
         const ifCase = ifBlock.branches[i];
         const cView = unit.job.allocateView(unit.xref);
-        let tagName = null;
-        // Only the first branch can be used for projection, because the conditional
-        // uses the container of the first branch as the insertion point for all branches.
-        if (i === 0) {
-            tagName = ingestControlFlowInsertionPoint(unit, cView.xref, ifCase);
-        }
+        const tagName = ingestControlFlowInsertionPoint(unit, cView.xref, ifCase);
         if (ifCase.expressionAlias !== null) {
             cView.contextVariables.set(ifCase.expressionAlias.name, CTX_REF);
         }
@@ -23620,6 +23622,7 @@ function ingestSwitchBlock(unit, switchBlock) {
     let conditions = [];
     for (const switchCase of switchBlock.cases) {
         const cView = unit.job.allocateView(unit.xref);
+        const tagName = ingestControlFlowInsertionPoint(unit, cView.xref, switchCase);
         let switchCaseI18nMeta = undefined;
         if (switchCase.i18n !== undefined) {
             if (!(switchCase.i18n instanceof BlockPlaceholder)) {
@@ -23627,7 +23630,7 @@ function ingestSwitchBlock(unit, switchBlock) {
             }
             switchCaseI18nMeta = switchCase.i18n;
         }
-        const templateOp = createTemplateOp(cView.xref, TemplateKind.Block, null, 'Case', Namespace.HTML, switchCaseI18nMeta, switchCase.startSourceSpan, switchCase.sourceSpan);
+        const templateOp = createTemplateOp(cView.xref, TemplateKind.Block, tagName, 'Case', Namespace.HTML, switchCaseI18nMeta, switchCase.startSourceSpan, switchCase.sourceSpan);
         unit.create.push(templateOp);
         if (firstXref === null) {
             firstXref = cView.xref;
@@ -23773,43 +23776,35 @@ function ingestIcu(unit, icu) {
  */
 function ingestForBlock(unit, forBlock) {
     const repeaterView = unit.job.allocateView(unit.xref);
+    // We copy TemplateDefinitionBuilder's scheme of creating names for `$count` and `$index`
+    // that are suffixed with special information, to disambiguate which level of nested loop
+    // the below aliases refer to.
+    // TODO: We should refactor Template Pipeline's variable phases to gracefully handle
+    // shadowing, and arbitrarily many levels of variables depending on each other.
+    const indexName = `ɵ$index_${repeaterView.xref}`;
+    const countName = `ɵ$count_${repeaterView.xref}`;
+    const indexVarNames = new Set();
     // Set all the context variables and aliases available in the repeater.
     repeaterView.contextVariables.set(forBlock.item.name, forBlock.item.value);
-    repeaterView.contextVariables.set(forBlock.contextVariables.$index.name, forBlock.contextVariables.$index.value);
-    repeaterView.contextVariables.set(forBlock.contextVariables.$count.name, forBlock.contextVariables.$count.value);
-    // We copy TemplateDefinitionBuilder's scheme of creating names for `$count` and `$index` that are
-    // suffixed with special information, to disambiguate which level of nested loop the below aliases
-    // refer to.
-    // TODO: We should refactor Template Pipeline's variable phases to gracefully handle shadowing,
-    // and arbitrarily many levels of variables depending on each other.
-    const indexName = `ɵ${forBlock.contextVariables.$index.name}_${repeaterView.xref}`;
-    const countName = `ɵ${forBlock.contextVariables.$count.name}_${repeaterView.xref}`;
-    repeaterView.contextVariables.set(indexName, forBlock.contextVariables.$index.value);
-    repeaterView.contextVariables.set(countName, forBlock.contextVariables.$count.value);
-    repeaterView.aliases.add({
-        kind: SemanticVariableKind.Alias,
-        name: null,
-        identifier: forBlock.contextVariables.$first.name,
-        expression: new LexicalReadExpr(indexName).identical(literal(0))
-    });
-    repeaterView.aliases.add({
-        kind: SemanticVariableKind.Alias,
-        name: null,
-        identifier: forBlock.contextVariables.$last.name,
-        expression: new LexicalReadExpr(indexName).identical(new LexicalReadExpr(countName).minus(literal(1)))
-    });
-    repeaterView.aliases.add({
-        kind: SemanticVariableKind.Alias,
-        name: null,
-        identifier: forBlock.contextVariables.$even.name,
-        expression: new LexicalReadExpr(indexName).modulo(literal(2)).identical(literal(0))
-    });
-    repeaterView.aliases.add({
-        kind: SemanticVariableKind.Alias,
-        name: null,
-        identifier: forBlock.contextVariables.$odd.name,
-        expression: new LexicalReadExpr(indexName).modulo(literal(2)).notIdentical(literal(0))
-    });
+    for (const variable of forBlock.contextVariables) {
+        if (variable.value === '$index') {
+            indexVarNames.add(variable.name);
+        }
+        if (variable.name === '$index') {
+            repeaterView.contextVariables.set('$index', variable.value).set(indexName, variable.value);
+        }
+        else if (variable.name === '$count') {
+            repeaterView.contextVariables.set('$count', variable.value).set(countName, variable.value);
+        }
+        else {
+            repeaterView.aliases.add({
+                kind: SemanticVariableKind.Alias,
+                name: null,
+                identifier: variable.name,
+                expression: getComputedForLoopVariableExpression(variable, indexName, countName)
+            });
+        }
+    }
     const sourceSpan = convertSourceSpan(forBlock.trackBy.span, forBlock.sourceSpan);
     const track = convertAst(forBlock.trackBy, unit.job, sourceSpan);
     ingestNodes(repeaterView, forBlock.children);
@@ -23821,12 +23816,7 @@ function ingestForBlock(unit, forBlock) {
         emptyTagName = ingestControlFlowInsertionPoint(unit, emptyView.xref, forBlock.empty);
     }
     const varNames = {
-        $index: forBlock.contextVariables.$index.name,
-        $count: forBlock.contextVariables.$count.name,
-        $first: forBlock.contextVariables.$first.name,
-        $last: forBlock.contextVariables.$last.name,
-        $even: forBlock.contextVariables.$even.name,
-        $odd: forBlock.contextVariables.$odd.name,
+        $index: indexVarNames,
         $implicit: forBlock.item.name,
     };
     if (forBlock.i18n !== undefined && !(forBlock.i18n instanceof BlockPlaceholder)) {
@@ -23844,6 +23834,30 @@ function ingestForBlock(unit, forBlock) {
     const expression = convertAst(forBlock.expression, unit.job, convertSourceSpan(forBlock.expression.span, forBlock.sourceSpan));
     const repeater = createRepeaterOp(repeaterCreate.xref, repeaterCreate.handle, expression, forBlock.sourceSpan);
     unit.update.push(repeater);
+}
+/**
+ * Gets an expression that represents a variable in an `@for` loop.
+ * @param variable AST representing the variable.
+ * @param indexName Loop-specific name for `$index`.
+ * @param countName Loop-specific name for `$count`.
+ */
+function getComputedForLoopVariableExpression(variable, indexName, countName) {
+    switch (variable.value) {
+        case '$index':
+            return new LexicalReadExpr(indexName);
+        case '$count':
+            return new LexicalReadExpr(countName);
+        case '$first':
+            return new LexicalReadExpr(indexName).identical(literal(0));
+        case '$last':
+            return new LexicalReadExpr(indexName).identical(new LexicalReadExpr(countName).minus(literal(1)));
+        case '$even':
+            return new LexicalReadExpr(indexName).modulo(literal(2)).identical(literal(0));
+        case '$odd':
+            return new LexicalReadExpr(indexName).modulo(literal(2)).notIdentical(literal(0));
+        default:
+            throw new Error(`AssertionError: unknown @for loop variable ${variable.value}`);
+    }
 }
 /**
  * Convert a template AST expression into an output AST expression.
@@ -25307,7 +25321,12 @@ function parseForLoopParameters(block, errors, bindingParser) {
         itemName: new Variable(itemName, '$implicit', variableSpan, variableSpan),
         trackBy: null,
         expression: parseBlockParameterToBinding(expressionParam, bindingParser, rawExpression),
-        context: {},
+        context: Array.from(ALLOWED_FOR_LOOP_LET_VARIABLES, variableName => {
+            // Give ambiently-available context variables empty spans at the end of
+            // the start of the `for` block, since they are not explicitly defined.
+            const emptySpanAfterForBlockStart = new ParseSourceSpan(block.startSourceSpan.end, block.startSourceSpan.end);
+            return new Variable(variableName, variableName, emptySpanAfterForBlockStart, emptySpanAfterForBlockStart);
+        }),
     };
     for (const param of secondaryParams) {
         const letMatch = param.expression.match(FOR_LOOP_LET_PATTERN);
@@ -25333,15 +25352,6 @@ function parseForLoopParameters(block, errors, bindingParser) {
         }
         errors.push(new ParseError(param.sourceSpan, `Unrecognized @for loop paramater "${param.expression}"`));
     }
-    // Fill out any variables that haven't been defined explicitly.
-    for (const variableName of ALLOWED_FOR_LOOP_LET_VARIABLES) {
-        if (!result.context.hasOwnProperty(variableName)) {
-            // Give ambiently-available context variables empty spans at the end of the start of the `for`
-            // block, since they are not explicitly defined.
-            const emptySpanAfterForBlockStart = new ParseSourceSpan(block.startSourceSpan.end, block.startSourceSpan.end);
-            result.context[variableName] = new Variable(variableName, variableName, emptySpanAfterForBlockStart, emptySpanAfterForBlockStart);
-        }
-    }
     return result;
 }
 /** Parses the `let` parameter of a `for` loop block. */
@@ -25351,14 +25361,14 @@ function parseLetParameter(sourceSpan, expression, span, context, errors) {
     for (const part of parts) {
         const expressionParts = part.split('=');
         const name = expressionParts.length === 2 ? expressionParts[0].trim() : '';
-        const variableName = (expressionParts.length === 2 ? expressionParts[1].trim() : '');
+        const variableName = expressionParts.length === 2 ? expressionParts[1].trim() : '';
         if (name.length === 0 || variableName.length === 0) {
             errors.push(new ParseError(sourceSpan, `Invalid @for loop "let" parameter. Parameter should match the pattern "<name> = <variable name>"`));
         }
         else if (!ALLOWED_FOR_LOOP_LET_VARIABLES.has(variableName)) {
             errors.push(new ParseError(sourceSpan, `Unknown "let" parameter variable "${variableName}". The allowed variables are: ${Array.from(ALLOWED_FOR_LOOP_LET_VARIABLES).join(', ')}`));
         }
-        else if (context.hasOwnProperty(variableName)) {
+        else if (context.some(v => v.name === name)) {
             errors.push(new ParseError(sourceSpan, `Duplicate "let" parameter variable "${variableName}"`));
         }
         else {
@@ -25379,7 +25389,7 @@ function parseLetParameter(sourceSpan, expression, span, context, errors) {
                     undefined;
             }
             const sourceSpan = new ParseSourceSpan(keySpan.start, valueSpan?.end ?? keySpan.end);
-            context[variableName] = new Variable(name, variableName, sourceSpan, keySpan, valueSpan);
+            context.push(new Variable(name, variableName, sourceSpan, keySpan, valueSpan));
         }
         startSpan = startSpan.moveBy(part.length + 1 /* add 1 to move past the comma */);
     }
@@ -26740,7 +26750,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     if (meta.defer.mode === 1 /* DeferBlockDepsEmitMode.PerComponent */ &&
         meta.defer.dependenciesFn !== null) {
         const fnName = `${templateTypeName}_DeferFn`;
-        constantPool.statements.push(meta.defer.dependenciesFn.toDeclStmt(fnName, StmtModifier.Final));
+        constantPool.statements.push(new DeclareVarStmt(fnName, meta.defer.dependenciesFn, undefined, StmtModifier.Final));
         allDeferrableDepsFn = variable(fnName);
     }
     // First the template is ingested into IR:
@@ -27234,7 +27244,7 @@ class Scope {
         }
         else if (nodeOrNodes instanceof ForLoopBlock) {
             this.visitVariable(nodeOrNodes.item);
-            Object.values(nodeOrNodes.contextVariables).forEach(v => this.visitVariable(v));
+            nodeOrNodes.contextVariables.forEach(v => this.visitVariable(v));
             nodeOrNodes.children.forEach(node => node.visit(this));
         }
         else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty ||
@@ -27489,7 +27499,7 @@ class DirectiveBinder {
     }
     visitForLoopBlock(block) {
         block.item.visit(this);
-        Object.values(block.contextVariables).forEach(v => v.visit(this));
+        block.contextVariables.forEach(v => v.visit(this));
         block.children.forEach(node => node.visit(this));
         block.empty?.visit(this);
     }
@@ -27571,7 +27581,7 @@ class TemplateBinder extends RecursiveAstVisitor {
         const usedPipes = new Set();
         const eagerPipes = new Set();
         const template = nodes instanceof Template ? nodes : null;
-        const deferBlocks = new Map();
+        const deferBlocks = [];
         // The top-level template has nesting level 0.
         const binder = new TemplateBinder(expressions, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, template, 0);
         binder.ingest(nodes);
@@ -27595,7 +27605,7 @@ class TemplateBinder extends RecursiveAstVisitor {
         }
         else if (nodeOrNodes instanceof ForLoopBlock) {
             this.visitNode(nodeOrNodes.item);
-            Object.values(nodeOrNodes.contextVariables).forEach(v => this.visitNode(v));
+            nodeOrNodes.contextVariables.forEach(v => this.visitNode(v));
             nodeOrNodes.trackBy.visit(this);
             nodeOrNodes.children.forEach(this.visitNode);
             this.nestingLevel.set(nodeOrNodes, this.level);
@@ -27604,7 +27614,7 @@ class TemplateBinder extends RecursiveAstVisitor {
             if (this.scope.rootNode !== nodeOrNodes) {
                 throw new Error(`Assertion error: resolved incorrect scope for deferred block ${nodeOrNodes}`);
             }
-            this.deferBlocks.set(nodeOrNodes, this.scope);
+            this.deferBlocks.push([nodeOrNodes, this.scope]);
             nodeOrNodes.children.forEach(node => node.visit(this));
             this.nestingLevel.set(nodeOrNodes, this.level);
         }
@@ -27754,7 +27764,7 @@ class TemplateBinder extends RecursiveAstVisitor {
  * See `BoundTarget` for documentation on the individual methods.
  */
 class R3BoundTarget {
-    constructor(target, directives, eagerDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks) {
+    constructor(target, directives, eagerDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred) {
         this.target = target;
         this.directives = directives;
         this.eagerDirectives = eagerDirectives;
@@ -27766,7 +27776,8 @@ class R3BoundTarget {
         this.scopedNodeEntities = scopedNodeEntities;
         this.usedPipes = usedPipes;
         this.eagerPipes = eagerPipes;
-        this.deferBlocks = deferBlocks;
+        this.deferredBlocks = rawDeferred.map(current => current[0]);
+        this.deferredScopes = new Map(rawDeferred);
     }
     getEntitiesInScope(node) {
         return this.scopedNodeEntities.get(node) ?? new Set();
@@ -27805,7 +27816,7 @@ class R3BoundTarget {
         return Array.from(this.eagerPipes);
     }
     getDeferBlocks() {
-        return Array.from(this.deferBlocks.keys());
+        return this.deferredBlocks;
     }
     getDeferredTriggerTarget(block, trigger) {
         // Only triggers that refer to DOM nodes can be resolved.
@@ -27857,8 +27868,11 @@ class R3BoundTarget {
         return null;
     }
     isDeferred(element) {
-        for (const deferredScope of this.deferBlocks.values()) {
-            const stack = [deferredScope];
+        for (const block of this.deferredBlocks) {
+            if (!this.deferredScopes.has(block)) {
+                continue;
+            }
+            const stack = [this.deferredScopes.get(block)];
             while (stack.length > 0) {
                 const current = stack.pop();
                 if (current.elementsInScope.has(element)) {
@@ -28047,7 +28061,7 @@ class CompilerFacadeImpl {
     }
     compileComponent(angularCoreEnv, sourceMapUrl, facade) {
         // Parse the template and check for errors.
-        const { template, interpolation, defer } = parseJitTemplate(facade.template, facade.name, sourceMapUrl, facade.preserveWhitespaces, facade.interpolation);
+        const { template, interpolation, defer } = parseJitTemplate(facade.template, facade.name, sourceMapUrl, facade.preserveWhitespaces, facade.interpolation, undefined);
         // Compile the component metadata, including template, into an expression.
         const meta = {
             ...facade,
@@ -28263,7 +28277,7 @@ function convertOpaqueValuesToExpressions(obj) {
     return result;
 }
 function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMapUrl) {
-    const { template, interpolation, defer } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, decl.preserveWhitespaces ?? false, decl.interpolation);
+    const { template, interpolation, defer } = parseJitTemplate(decl.template, decl.type.name, sourceMapUrl, decl.preserveWhitespaces ?? false, decl.interpolation, decl.deferBlockDependencies);
     const declarations = [];
     if (decl.dependencies) {
         for (const innerDep of decl.dependencies) {
@@ -28340,7 +28354,7 @@ function convertPipeDeclarationToMetadata(pipe) {
         type: new WrappedNodeExpr(pipe.type),
     };
 }
-function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces, interpolation) {
+function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces, interpolation, deferBlockDependencies) {
     const interpolationConfig = interpolation ? InterpolationConfig.fromArray(interpolation) : DEFAULT_INTERPOLATION_CONFIG;
     // Parse the template and check for errors.
     const parsed = parseTemplate(template, sourceMapUrl, { preserveWhitespaces, interpolationConfig });
@@ -28353,7 +28367,7 @@ function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces,
     return {
         template: parsed,
         interpolation: interpolationConfig,
-        defer: createR3ComponentDeferMetadata(boundTarget)
+        defer: createR3ComponentDeferMetadata(boundTarget, deferBlockDependencies)
     };
 }
 /**
@@ -28409,13 +28423,12 @@ function createR3DependencyMetadata(token, isAttributeDep, host, optional, self,
     const attributeNameType = isAttributeDep ? literal('unknown') : null;
     return { token, attributeNameType, host, optional, self, skipSelf };
 }
-function createR3ComponentDeferMetadata(boundTarget) {
+function createR3ComponentDeferMetadata(boundTarget, deferBlockDependencies) {
     const deferredBlocks = boundTarget.getDeferBlocks();
     const blocks = new Map();
-    for (const block of deferredBlocks) {
-        // TODO: leaving dependency function empty in JIT mode for now,
-        // to be implemented as one of the next steps.
-        blocks.set(block, null);
+    for (let i = 0; i < deferredBlocks.length; i++) {
+        const dependencyFn = deferBlockDependencies?.[i];
+        blocks.set(deferredBlocks[i], dependencyFn ? new WrappedNodeExpr(dependencyFn) : null);
     }
     return { mode: 0 /* DeferBlockDepsEmitMode.PerBlock */, blocks };
 }
@@ -28575,7 +28588,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.1+sha-0461bff');
+const VERSION = new Version('18.0.0-next.1+sha-5bd188a');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30041,16 +30054,17 @@ var FactoryTarget;
 })(FactoryTarget || (FactoryTarget = {}));
 
 function compileClassMetadata(metadata) {
-    // Generate an ngDevMode guarded call to setClassMetadata with the class identifier and its
-    // metadata.
-    const fnCall = importExpr(Identifiers.setClassMetadata).callFn([
+    const fnCall = internalCompileClassMetadata(metadata);
+    return arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]).callFn([]);
+}
+/** Compiles only the `setClassMetadata` call without any additional wrappers. */
+function internalCompileClassMetadata(metadata) {
+    return importExpr(Identifiers.setClassMetadata).callFn([
         metadata.type,
         metadata.decorators,
         metadata.ctorParameters ?? literal(null),
         metadata.propDecorators ?? literal(null),
     ]);
-    const iife = arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
-    return iife.callFn([]);
 }
 /**
  * Wraps the `setClassMetadata` function with extra logic that dynamically
@@ -30069,42 +30083,54 @@ function compileClassMetadata(metadata) {
  * Similar to the `setClassMetadata` call, it's wrapped into the `ngDevMode`
  * check to tree-shake away this code in production mode.
  */
-function compileComponentClassMetadata(metadata, deferrableTypes) {
-    if (deferrableTypes === null || deferrableTypes.length === 0) {
+function compileComponentClassMetadata(metadata, dependencies) {
+    if (dependencies === null || dependencies.length === 0) {
         // If there are no deferrable symbols - just generate a regular `setClassMetadata` call.
         return compileClassMetadata(metadata);
     }
-    const dynamicImports = [];
-    const importedSymbols = [];
-    for (const { symbolName, importPath, isDefaultImport } of deferrableTypes) {
+    return internalCompileSetClassMetadataAsync(metadata, dependencies.map(dep => new FnParam(dep.symbolName, DYNAMIC_TYPE)), compileComponentMetadataAsyncResolver(dependencies));
+}
+/**
+ * Identical to `compileComponentClassMetadata`. Used for the cases where we're unable to
+ * analyze the deferred block dependencies, but we have a reference to the compiled
+ * dependency resolver function that we can use as is.
+ * @param metadata Class metadata for the internal `setClassMetadata` call.
+ * @param deferResolver Expression representing the deferred dependency loading function.
+ * @param deferredDependencyNames Names of the dependencies that are being loaded asynchronously.
+ */
+function compileOpaqueAsyncClassMetadata(metadata, deferResolver, deferredDependencyNames) {
+    return internalCompileSetClassMetadataAsync(metadata, deferredDependencyNames.map(name => new FnParam(name, DYNAMIC_TYPE)), deferResolver);
+}
+/**
+ * Internal logic used to compile a `setClassMetadataAsync` call.
+ * @param metadata Class metadata for the internal `setClassMetadata` call.
+ * @param wrapperParams Parameters to be set on the callback that wraps `setClassMetata`.
+ * @param dependencyResolverFn Function to resolve the deferred dependencies.
+ */
+function internalCompileSetClassMetadataAsync(metadata, wrapperParams, dependencyResolverFn) {
+    // Omit the wrapper since it'll be added around `setClassMetadataAsync` instead.
+    const setClassMetadataCall = internalCompileClassMetadata(metadata);
+    const setClassMetaWrapper = arrowFn(wrapperParams, [setClassMetadataCall.toStmt()]);
+    const setClassMetaAsync = importExpr(Identifiers.setClassMetadataAsync).callFn([
+        metadata.type, dependencyResolverFn, setClassMetaWrapper
+    ]);
+    return arrowFn([], [devOnlyGuardedExpression(setClassMetaAsync).toStmt()]).callFn([]);
+}
+/**
+ * Compiles the function that loads the dependencies for the
+ * entire component in `setClassMetadataAsync`.
+ */
+function compileComponentMetadataAsyncResolver(dependencies) {
+    const dynamicImports = dependencies.map(({ symbolName, importPath, isDefaultImport }) => {
         // e.g. `(m) => m.CmpA`
         const innerFn = 
         // Default imports are always accessed through the `default` property.
         arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
         // e.g. `import('./cmp-a').then(...)`
-        const importExpr = (new DynamicImportExpr(importPath)).prop('then').callFn([innerFn]);
-        dynamicImports.push(importExpr);
-        importedSymbols.push(new FnParam(symbolName, DYNAMIC_TYPE));
-    }
+        return new DynamicImportExpr(importPath).prop('then').callFn([innerFn]);
+    });
     // e.g. `() => [ ... ];`
-    const dependencyLoadingFn = arrowFn([], literalArr(dynamicImports));
-    // e.g. `setClassMetadata(...)`
-    const setClassMetadataCall = importExpr(Identifiers.setClassMetadata).callFn([
-        metadata.type,
-        metadata.decorators,
-        metadata.ctorParameters ?? literal(null),
-        metadata.propDecorators ?? literal(null),
-    ]);
-    // e.g. `(CmpA) => setClassMetadata(...)`
-    const setClassMetaWrapper = arrowFn(importedSymbols, [setClassMetadataCall.toStmt()]);
-    // Final `setClassMetadataAsync()` call with all arguments
-    const setClassMetaAsync = importExpr(Identifiers.setClassMetadataAsync).callFn([
-        metadata.type, dependencyLoadingFn, setClassMetaWrapper
-    ]);
-    // Generate an ngDevMode guarded call to `setClassMetadataAsync` with
-    // the class identifier and its metadata, so that this call can be tree-shaken.
-    const iife = arrowFn([], [devOnlyGuardedExpression(setClassMetaAsync).toStmt()]);
-    return iife.callFn([]);
+    return arrowFn([], literalArr(dynamicImports));
 }
 
 /**
@@ -30140,16 +30166,37 @@ function compileClassDebugInfo(debugInfo) {
  * Do not include any prerelease in these versions as they are ignored.
  */
 const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
+/**
+ * Minimum version at which deferred blocks are supported in the linker.
+ */
+const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
     definitionMap.set('ctorParameters', metadata.ctorParameters);
     definitionMap.set('propDecorators', metadata.propDecorators);
     return importExpr(Identifiers.declareClassMetadata).callFn([definitionMap.toLiteralMap()]);
+}
+function compileComponentDeclareClassMetadata(metadata, dependencies) {
+    if (dependencies === null || dependencies.length === 0) {
+        return compileDeclareClassMetadata(metadata);
+    }
+    const definitionMap = new DefinitionMap();
+    const callbackReturnDefinitionMap = new DefinitionMap();
+    callbackReturnDefinitionMap.set('decorators', metadata.decorators);
+    callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
+    callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
+    definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
+    definitionMap.set('ngImport', importExpr(Identifiers.core));
+    definitionMap.set('type', metadata.type);
+    definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
+    definitionMap.set('resolveMetadata', arrowFn(dependencies.map(dep => new FnParam(dep.symbolName, DYNAMIC_TYPE)), callbackReturnDefinitionMap.toLiteralMap()));
+    return importExpr(Identifiers.declareClassMetadataAsync).callFn([definitionMap.toLiteralMap()]);
 }
 
 /**
@@ -30239,7 +30286,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30511,6 +30558,29 @@ function createComponentDefinitionMap(meta, template, templateInfo) {
     if (template.preserveWhitespaces === true) {
         definitionMap.set('preserveWhitespaces', literal(true));
     }
+    if (meta.defer.mode === 0 /* DeferBlockDepsEmitMode.PerBlock */) {
+        const resolvers = [];
+        let hasResolvers = false;
+        for (const deps of meta.defer.blocks.values()) {
+            // Note: we need to push a `null` even if there are no dependencies, because matching of
+            // defer resolver functions to defer blocks happens by index and not adding an array
+            // entry for a block can throw off the blocks coming after it.
+            if (deps === null) {
+                resolvers.push(literal(null));
+            }
+            else {
+                resolvers.push(deps);
+                hasResolvers = true;
+            }
+        }
+        // If *all* the resolvers are null, we can skip the field.
+        if (hasResolvers) {
+            definitionMap.set('deferBlockDependencies', literalArr(resolvers));
+        }
+    }
+    else {
+        throw new Error('Unsupported defer function emit mode in partial compilation');
+    }
     return definitionMap;
 }
 function getTemplateExpression(template, templateInfo) {
@@ -30631,7 +30701,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30666,7 +30736,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30717,7 +30787,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30750,7 +30820,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30801,7 +30871,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-0461bff'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-5bd188a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -30834,5 +30904,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.1+sha-0461bff
+ * @license Angular v18.0.0-next.1+sha-5bd188a
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -668,7 +668,7 @@ declare class Comment_3 implements TmplAstNode {
  */
 export declare function compileClassDebugInfo(debugInfo: R3ClassDebugInfo): outputAst.Expression;
 
-export declare function compileClassMetadata(metadata: R3ClassMetadata): outputAst.Expression;
+export declare function compileClassMetadata(metadata: R3ClassMetadata): outputAst.InvokeFunctionExpr;
 
 export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outputAst.Expression;
 
@@ -689,7 +689,9 @@ export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outp
  * Similar to the `setClassMetadata` call, it's wrapped into the `ngDevMode`
  * check to tree-shake away this code in production mode.
  */
-export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, deferrableTypes: R3DeferPerComponentDependency[] | null): outputAst.Expression;
+export declare function compileComponentClassMetadata(metadata: R3ClassMetadata, dependencies: R3DeferPerComponentDependency[] | null): outputAst.Expression;
+
+export declare function compileComponentDeclareClassMetadata(metadata: R3ClassMetadata, dependencies: R3DeferPerComponentDependency[] | null): outputAst.Expression;
 
 /**
  * Compile a component for the render3 runtime as defined by the `R3ComponentMetadata`.
@@ -751,6 +753,16 @@ export declare function compileInjector(meta: R3InjectorMetadata): R3CompiledExp
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */
 export declare function compileNgModule(meta: R3NgModuleMetadata): R3CompiledExpression;
+
+/**
+ * Identical to `compileComponentClassMetadata`. Used for the cases where we're unable to
+ * analyze the deferred block dependencies, but we have a reference to the compiled
+ * dependency resolver function that we can use as is.
+ * @param metadata Class metadata for the internal `setClassMetadata` call.
+ * @param deferResolver Expression representing the deferred dependency loading function.
+ * @param deferredDependencyNames Names of the dependencies that are being loaded asynchronously.
+ */
+export declare function compileOpaqueAsyncClassMetadata(metadata: R3ClassMetadata, deferResolver: outputAst.Expression, deferredDependencyNames: string[]): outputAst.Expression;
 
 export declare function compilePipeFromMetadata(metadata: R3PipeMetadata): R3CompiledExpression;
 
@@ -817,7 +829,7 @@ export declare class ConstantPool {
         literalFactory: outputAst.Expression;
         literalFactoryArguments: outputAst.Expression[];
     };
-    getSharedFunctionReference(fn: outputAst.FunctionExpr | outputAst.ArrowFunctionExpr, prefix: string, useUniqueName?: boolean): outputAst.Expression;
+    getSharedFunctionReference(fn: outputAst.Expression, prefix: string, useUniqueName?: boolean): outputAst.Expression;
     private _getLiteralFactory;
     /**
      * Produce a unique name in the context of this pool.
@@ -1404,9 +1416,6 @@ declare class FnParam {
     isEquivalent(param: FnParam): boolean;
     clone(): FnParam;
 }
-
-/** Context variables that can be used inside a `ForLoopBlock`. */
-declare type ForLoopBlockContext = Record<'$index' | '$first' | '$last' | '$even' | '$odd' | '$count', TmplAstVariable>;
 
 /**
  * Specifies how a forward ref has been handled in a MaybeForwardRefExpression
@@ -2699,11 +2708,14 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private scopedNodeEntities;
     private usedPipes;
     private eagerPipes;
-    private deferBlocks;
+    /** Deferred blocks, ordered as they appear in the template. */
+    private deferredBlocks;
+    /** Map of deferred blocks to their scope. */
+    private deferredScopes;
     constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
         directive: DirectiveT;
         node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, deferBlocks: Map<TmplAstDeferredBlock, Scope>);
+    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, rawDeferred: [TmplAstDeferredBlock, Scope][]);
     getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
     getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
@@ -2801,10 +2813,10 @@ export declare interface R3CompiledExpression {
  */
 export declare type R3ComponentDeferMetadata = {
     mode: DeferBlockDepsEmitMode.PerBlock;
-    blocks: Map<t.DeferredBlock, outputAst.ArrowFunctionExpr | null>;
+    blocks: Map<t.DeferredBlock, outputAst.Expression | null>;
 } | {
     mode: DeferBlockDepsEmitMode.PerComponent;
-    dependenciesFn: outputAst.ArrowFunctionExpr | null;
+    dependenciesFn: outputAst.Expression | null;
 };
 
 /**
@@ -2945,6 +2957,22 @@ export declare interface R3DeclareClassMetadata extends R3PartialDeclaration {
 }
 
 /**
+ * Describes the shape of the object that the `ɵɵngDeclareClassMetadataAsync()` function accepts.
+ *
+ * This interface serves primarily as documentation, as conformance to this interface is not
+ * enforced during linking.
+ */
+export declare interface R3DeclareClassMetadataAsync extends R3PartialDeclaration {
+    /** Function that loads the deferred dependencies associated with the component. */
+    resolveDeferredDeps: outputAst.Expression;
+    /**
+     * Function that, when invoked with the resolved deferred
+     * dependencies, will return the class metadata.
+     */
+    resolveMetadata: outputAst.Expression;
+}
+
+/**
  * Describes the shape of the object that the `ɵɵngDeclareComponent()` function accepts.
  */
 export declare interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
@@ -2985,6 +3013,11 @@ export declare interface R3DeclareComponentMetadata extends R3DeclareDirectiveMe
      * support this.
      */
     dependencies?: R3DeclareTemplateDependencyMetadata[];
+    /**
+     * List of defer block dependency functions, ordered by the appearance
+     * of the corresponding deferred block in the template.
+     */
+    deferBlockDependencies?: outputAst.Expression[];
     /**
      * A map of pipe names to an expression referencing the pipe type (possibly a forward reference
      * wrapped in a `forwardRef` invocation) which are used in the template.
@@ -3838,6 +3871,7 @@ export declare class R3Identifiers {
     static definePipe: outputAst.ExternalReference;
     static declarePipe: outputAst.ExternalReference;
     static declareClassMetadata: outputAst.ExternalReference;
+    static declareClassMetadataAsync: outputAst.ExternalReference;
     static setClassMetadata: outputAst.ExternalReference;
     static setClassMetadataAsync: outputAst.ExternalReference;
     static setClassDebugInfo: outputAst.ExternalReference;
@@ -4665,7 +4699,6 @@ declare namespace t {
         TmplAstDeferredBlock as DeferredBlock,
         TmplAstSwitchBlock as SwitchBlock,
         TmplAstSwitchBlockCase as SwitchBlockCase,
-        ForLoopBlockContext,
         TmplAstForLoopBlock as ForLoopBlock,
         TmplAstForLoopBlockEmpty as ForLoopBlockEmpty,
         TmplAstIfBlock as IfBlock,
@@ -4966,12 +4999,12 @@ export declare class TmplAstForLoopBlock extends TmplAstBlockNode implements Tmp
     expression: ASTWithSource;
     trackBy: ASTWithSource;
     trackKeywordSpan: ParseSourceSpan;
-    contextVariables: ForLoopBlockContext;
+    contextVariables: TmplAstVariable[];
     children: TmplAstNode[];
     empty: TmplAstForLoopBlockEmpty | null;
     mainBlockSpan: ParseSourceSpan;
     i18n?: I18nMeta_2 | undefined;
-    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, trackKeywordSpan: ParseSourceSpan, contextVariables: ForLoopBlockContext, children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
+    constructor(item: TmplAstVariable, expression: ASTWithSource, trackBy: ASTWithSource, trackKeywordSpan: ParseSourceSpan, contextVariables: TmplAstVariable[], children: TmplAstNode[], empty: TmplAstForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, nameSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
