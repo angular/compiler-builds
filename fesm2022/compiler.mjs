@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.1+sha-ee3bb81
+ * @license Angular v18.0.0-next.1+sha-e1650e3
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -25312,6 +25312,9 @@ function parseForLoopParameters(block, errors, bindingParser) {
         return null;
     }
     const [, itemName, rawExpression] = match;
+    if (ALLOWED_FOR_LOOP_LET_VARIABLES.has(itemName)) {
+        errors.push(new ParseError(expressionParam.sourceSpan, `@for loop item name cannot be one of ${Array.from(ALLOWED_FOR_LOOP_LET_VARIABLES).join(', ')}.`));
+    }
     // `expressionParam.expression` contains the variable declaration and the expression of the
     // for...of statement, i.e. 'user of users' The variable of a ForOfStatement is _only_ the "const
     // user" part and does not include "of x".
@@ -25332,7 +25335,7 @@ function parseForLoopParameters(block, errors, bindingParser) {
         const letMatch = param.expression.match(FOR_LOOP_LET_PATTERN);
         if (letMatch !== null) {
             const variablesSpan = new ParseSourceSpan(param.sourceSpan.start.moveBy(letMatch[0].length - letMatch[1].length), param.sourceSpan.end);
-            parseLetParameter(param.sourceSpan, letMatch[1], variablesSpan, result.context, errors);
+            parseLetParameter(param.sourceSpan, letMatch[1], variablesSpan, itemName, result.context, errors);
             continue;
         }
         const trackMatch = param.expression.match(FOR_LOOP_TRACK_PATTERN);
@@ -25355,7 +25358,7 @@ function parseForLoopParameters(block, errors, bindingParser) {
     return result;
 }
 /** Parses the `let` parameter of a `for` loop block. */
-function parseLetParameter(sourceSpan, expression, span, context, errors) {
+function parseLetParameter(sourceSpan, expression, span, loopItemName, context, errors) {
     const parts = expression.split(',');
     let startSpan = span.start;
     for (const part of parts) {
@@ -25367,6 +25370,9 @@ function parseLetParameter(sourceSpan, expression, span, context, errors) {
         }
         else if (!ALLOWED_FOR_LOOP_LET_VARIABLES.has(variableName)) {
             errors.push(new ParseError(sourceSpan, `Unknown "let" parameter variable "${variableName}". The allowed variables are: ${Array.from(ALLOWED_FOR_LOOP_LET_VARIABLES).join(', ')}`));
+        }
+        else if (name === loopItemName) {
+            errors.push(new ParseError(sourceSpan, `Invalid @for loop "let" parameter. Variable cannot be called "${loopItemName}"`));
         }
         else if (context.some(v => v.name === name)) {
             errors.push(new ParseError(sourceSpan, `Duplicate "let" parameter variable "${variableName}"`));
@@ -28588,7 +28594,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.1+sha-ee3bb81');
+const VERSION = new Version('18.0.0-next.1+sha-e1650e3');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30173,7 +30179,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30191,7 +30197,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30286,7 +30292,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30701,7 +30707,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30736,7 +30742,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30787,7 +30793,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30820,7 +30826,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30871,7 +30877,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-ee3bb81'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
