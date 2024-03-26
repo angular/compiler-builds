@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.1+sha-e1650e3
+ * @license Angular v18.0.0-next.1+sha-d15dca0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4517,7 +4517,7 @@ declare class Scope implements TmplAstVisitor {
 }
 
 /** Node that has a `Scope` associated with it. */
-export declare type ScopedNode = TmplAstTemplate | TmplAstSwitchBlockCase | TmplAstIfBlockBranch | TmplAstForLoopBlock | TmplAstForLoopBlockEmpty | TmplAstDeferredBlock | TmplAstDeferredBlockError | TmplAstDeferredBlockLoading | TmplAstDeferredBlockPlaceholder;
+export declare type ScopedNode = TmplAstTemplate | TmplAstSwitchBlockCase | TmplAstIfBlockBranch | TmplAstForLoopBlock | TmplAstForLoopBlockEmpty | TmplAstDeferredBlock | TmplAstDeferredBlockError | TmplAstDeferredBlockLoading | TmplAstDeferredBlockPlaceholder | TmplAstContent;
 
 declare enum SecurityContext {
     NONE = 0,
@@ -4912,10 +4912,11 @@ export declare class TmplAstBoundText implements TmplAstNode {
 export declare class TmplAstContent implements TmplAstNode {
     selector: string;
     attributes: TmplAstTextAttribute[];
+    children: TmplAstNode[];
     sourceSpan: ParseSourceSpan;
     i18n?: I18nMeta_2 | undefined;
     readonly name = "ng-content";
-    constructor(selector: string, attributes: TmplAstTextAttribute[], sourceSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
+    constructor(selector: string, attributes: TmplAstTextAttribute[], children: TmplAstNode[], sourceSpan: ParseSourceSpan, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 

@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.1+sha-e1650e3
+ * @license Angular v18.0.0-next.1+sha-d15dca0
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4857,9 +4857,10 @@ class Template {
     }
 }
 class Content {
-    constructor(selector, attributes, sourceSpan, i18n) {
+    constructor(selector, attributes, children, sourceSpan, i18n) {
         this.selector = selector;
         this.attributes = attributes;
+        this.children = children;
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
         this.name = 'ng-content';
@@ -4953,7 +4954,9 @@ class RecursiveVisitor$1 {
         block.expressionAlias && blockItems.push(block.expressionAlias);
         visitAll$1(this, blockItems);
     }
-    visitContent(content) { }
+    visitContent(content) {
+        visitAll$1(this, content.children);
+    }
     visitVariable(variable) { }
     visitReference(reference) { }
     visitTextAttribute(attribute) { }
@@ -10029,19 +10032,21 @@ function createProjectionDefOp(def) {
         ...NEW_OP,
     };
 }
-function createProjectionOp(xref, selector, i18nPlaceholder, sourceSpan) {
+function createProjectionOp(xref, selector, i18nPlaceholder, fallbackView, sourceSpan) {
     return {
         kind: OpKind.Projection,
         xref,
         handle: new SlotHandle(),
         selector,
         i18nPlaceholder,
+        fallbackView,
         projectionSlotIndex: 0,
         attributes: null,
         localRefs: [],
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_CONSUMES_SLOT,
+        numSlotsUsed: fallbackView === null ? 1 : 2,
     };
 }
 /**
@@ -12033,6 +12038,11 @@ function recursivelyProcessView(view, parentScope) {
             case OpKind.Template:
                 // Descend into child embedded views.
                 recursivelyProcessView(view.job.views.get(op.xref), scope);
+                break;
+            case OpKind.Projection:
+                if (op.fallbackView !== null) {
+                    recursivelyProcessView(view.job.views.get(op.fallbackView), scope);
+                }
                 break;
             case OpKind.RepeaterCreate:
                 // Descend into child embedded views.
@@ -19854,6 +19864,18 @@ function addNamesToView(unit, baseName, state, compatibility) {
                 // Repeater primary view function is at slot +1 (metadata is in the first slot).
                 addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.handle.slot + 1}`, state, compatibility);
                 break;
+            case OpKind.Projection:
+                if (!(unit instanceof ViewCompilationUnit)) {
+                    throw new Error(`AssertionError: must be compiling a component`);
+                }
+                if (op.handle.slot === null) {
+                    throw new Error(`Expected slot to be assigned`);
+                }
+                if (op.fallbackView !== null) {
+                    const fallbackView = unit.job.views.get(op.fallbackView);
+                    addNamesToView(fallbackView, `${baseName}_ProjectionFallback_${op.handle.slot}`, state, compatibility);
+                }
+                break;
             case OpKind.Template:
                 if (!(unit instanceof ViewCompilationUnit)) {
                     throw new Error(`AssertionError: must be compiling a component`);
@@ -20659,12 +20681,18 @@ function deferOn(trigger, args, prefetch, sourceSpan) {
 function projectionDef(def) {
     return call(Identifiers.projectionDef, def ? [def] : [], null);
 }
-function projection(slot, projectionSlotIndex, attributes, sourceSpan) {
+function projection(slot, projectionSlotIndex, attributes, fallbackFnName, fallbackDecls, fallbackVars, sourceSpan) {
     const args = [literal(slot)];
-    if (projectionSlotIndex !== 0 || attributes !== null) {
+    if (projectionSlotIndex !== 0 || attributes !== null || fallbackFnName !== null) {
         args.push(literal(projectionSlotIndex));
         if (attributes !== null) {
             args.push(attributes);
+        }
+        if (fallbackFnName !== null) {
+            if (attributes === null) {
+                args.push(literal(null));
+            }
+            args.push(variable(fallbackFnName), literal(fallbackDecls), literal(fallbackVars));
         }
     }
     return call(Identifiers.projection, args, sourceSpan);
@@ -21234,7 +21262,26 @@ function reifyCreateOperations(unit, ops) {
                 if (op.handle.slot === null) {
                     throw new Error('No slot was assigned for project instruction');
                 }
-                OpList.replace(op, projection(op.handle.slot, op.projectionSlotIndex, op.attributes, op.sourceSpan));
+                let fallbackViewFnName = null;
+                let fallbackDecls = null;
+                let fallbackVars = null;
+                if (op.fallbackView !== null) {
+                    if (!(unit instanceof ViewCompilationUnit)) {
+                        throw new Error(`AssertionError: must be compiling a component`);
+                    }
+                    const fallbackView = unit.job.views.get(op.fallbackView);
+                    if (fallbackView === undefined) {
+                        throw new Error('AssertionError: projection had fallback view xref, but fallback view was not found');
+                    }
+                    if (fallbackView.fnName === null || fallbackView.decls === null ||
+                        fallbackView.vars === null) {
+                        throw new Error(`AssertionError: expected projection fallback view to have been named and counted`);
+                    }
+                    fallbackViewFnName = fallbackView.fnName;
+                    fallbackDecls = fallbackView.decls;
+                    fallbackVars = fallbackView.vars;
+                }
+                OpList.replace(op, projection(op.handle.slot, op.projectionSlotIndex, op.attributes, fallbackViewFnName, fallbackDecls, fallbackVars, op.sourceSpan));
                 break;
             case OpKind.RepeaterCreate:
                 if (op.handle.slot === null) {
@@ -23531,7 +23578,15 @@ function ingestContent(unit, content) {
     if (content.i18n !== undefined && !(content.i18n instanceof TagPlaceholder)) {
         throw Error(`Unhandled i18n metadata type for element: ${content.i18n.constructor.name}`);
     }
-    const op = createProjectionOp(unit.job.allocateXrefId(), content.selector, content.i18n, content.sourceSpan);
+    const id = unit.job.allocateXrefId();
+    let fallbackView = null;
+    // Don't capture default content that's only made up of empty text nodes and comments.
+    if (content.children.some(child => !(child instanceof Comment$1) &&
+        (!(child instanceof Text$3) || child.value.trim().length > 0))) {
+        fallbackView = unit.job.allocateView(unit.xref);
+        ingestNodes(fallbackView, content.children);
+    }
+    const op = createProjectionOp(id, content.selector, content.i18n, fallbackView?.xref ?? null, content.sourceSpan);
     for (const attr of content.attributes) {
         const securityContext = domSchema.securityContext(content.name, attr.name, true);
         unit.update.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
@@ -26167,14 +26222,9 @@ class HtmlAstToIvyAst {
         }
         let parsedElement;
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
-            // `<ng-content>`
-            if (element.children &&
-                !element.children.every((node) => isEmptyTextNode(node) || isCommentNode(node))) {
-                this.reportError(`<ng-content> element cannot have content.`, element.sourceSpan);
-            }
             const selector = preparsedElement.selectAttr;
             const attrs = element.attrs.map(attr => this.visitAttribute(attr));
-            parsedElement = new Content(selector, attrs, element.sourceSpan, element.i18n);
+            parsedElement = new Content(selector, attrs, children, element.sourceSpan, element.i18n);
             this.ngContentSelectors.push(selector);
         }
         else if (isTemplateElement) {
@@ -26535,12 +26585,6 @@ function normalizeAttributeName(attrName) {
 }
 function addEvents(events, boundEvents) {
     boundEvents.push(...events.map(e => BoundEvent.fromParsedEvent(e)));
-}
-function isEmptyTextNode(node) {
-    return node instanceof Text && node.value.trim().length == 0;
-}
-function isCommentNode(node) {
-    return node instanceof Comment;
 }
 function textContents(node) {
     if (node.children.length !== 1 || !(node.children[0] instanceof Text)) {
@@ -27256,7 +27300,7 @@ class Scope {
         else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty ||
             nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError ||
             nodeOrNodes instanceof DeferredBlockPlaceholder ||
-            nodeOrNodes instanceof DeferredBlockLoading) {
+            nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof Content) {
             nodeOrNodes.children.forEach(node => node.visit(this));
         }
         else {
@@ -27320,8 +27364,10 @@ class Scope {
     visitIfBlockBranch(block) {
         this.ingestScopedNode(block);
     }
+    visitContent(content) {
+        this.ingestScopedNode(content);
+    }
     // Unused visitors.
-    visitContent(content) { }
     visitBoundAttribute(attr) { }
     visitBoundEvent(event) { }
     visitBoundText(text) { }
@@ -27519,8 +27565,10 @@ class DirectiveBinder {
         block.expressionAlias?.visit(this);
         block.children.forEach(node => node.visit(this));
     }
+    visitContent(content) {
+        content.children.forEach(child => child.visit(this));
+    }
     // Unused visitors.
-    visitContent(content) { }
     visitVariable(variable) { }
     visitReference(reference) { }
     visitTextAttribute(attribute) { }
@@ -27627,7 +27675,7 @@ class TemplateBinder extends RecursiveAstVisitor {
         else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty ||
             nodeOrNodes instanceof DeferredBlockError ||
             nodeOrNodes instanceof DeferredBlockPlaceholder ||
-            nodeOrNodes instanceof DeferredBlockLoading) {
+            nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof Content) {
             nodeOrNodes.children.forEach(node => node.visit(this));
             this.nestingLevel.set(nodeOrNodes, this.level);
         }
@@ -27666,7 +27714,6 @@ class TemplateBinder extends RecursiveAstVisitor {
     }
     // Unused template visitors
     visitText(text) { }
-    visitContent(content) { }
     visitTextAttribute(attribute) { }
     visitUnknownBlock(block) { }
     visitDeferredTrigger() { }
@@ -27720,6 +27767,9 @@ class TemplateBinder extends RecursiveAstVisitor {
     visitIfBlockBranch(block) {
         block.expression?.visit(this);
         this.ingestScopedNode(block);
+    }
+    visitContent(content) {
+        this.ingestScopedNode(content);
     }
     visitBoundText(text) {
         text.value.visit(this);
@@ -28594,7 +28644,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.1+sha-e1650e3');
+const VERSION = new Version('18.0.0-next.1+sha-d15dca0');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30179,7 +30229,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30197,7 +30247,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30292,7 +30342,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30707,7 +30757,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30742,7 +30792,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30793,7 +30843,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30826,7 +30876,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30877,7 +30927,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e1650e3'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-d15dca0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
