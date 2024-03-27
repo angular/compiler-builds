@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.1+sha-e44b077
+ * @license Angular v18.0.0-next.1+sha-658cf8c
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -6970,7 +6970,7 @@ class ShadowCss {
             }
             else {
                 // Replace non hash comments with empty lines.
-                // This is done so that we do not leak any senstive data in comments.
+                // This is done so that we do not leak any sensitive data in comments.
                 const newLinesMatches = m.match(_newLinesRe);
                 comments.push((newLinesMatches?.join('') ?? '') + '\n');
             }
@@ -19922,7 +19922,7 @@ function getVariableName(unit, variable, state) {
                 break;
             case SemanticVariableKind.Identifier:
                 if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-                    // TODO: Prefix increment and `_r` are for compatiblity with the old naming scheme.
+                    // TODO: Prefix increment and `_r` are for compatibility with the old naming scheme.
                     // This has the potential to cause collisions when `ctx` is the identifier, so we need a
                     // special check for that as well.
                     const compatPrefix = variable.identifier === 'ctx' ? 'i' : '';
@@ -20416,7 +20416,7 @@ function wrapTemplateWithI18n(unit, parentI18n) {
     if (unit.create.head.next?.kind !== OpKind.I18nStart) {
         const id = unit.job.allocateXrefId();
         OpList.insertAfter(
-        // Nested ng-template i18n start/end ops should not recieve source spans.
+        // Nested ng-template i18n start/end ops should not receive source spans.
         createI18nStartOp(id, parentI18n.message, parentI18n.root, null), unit.create.head);
         OpList.insertBefore(createI18nEndOp(id, null), unit.create.tail);
     }
@@ -23188,7 +23188,7 @@ function wrapI18nIcus(job) {
                 case OpKind.IcuStart:
                     if (currentI18nOp === null) {
                         addedI18nId = job.allocateXrefId();
-                        // ICU i18n start/end ops should not recieve source spans.
+                        // ICU i18n start/end ops should not receive source spans.
                         OpList.insertBefore(createI18nStartOp(addedI18nId, op.message, undefined, null), op);
                     }
                     break;
@@ -27946,9 +27946,9 @@ class R3BoundTarget {
      */
     findEntityInScope(rootNode, name) {
         const entities = this.getEntitiesInScope(rootNode);
-        for (const entitity of entities) {
-            if (entitity.name === name) {
-                return entitity;
+        for (const entity of entities) {
+            if (entity.name === name) {
+                return entity;
             }
         }
         return null;
@@ -28644,7 +28644,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.1+sha-e44b077');
+const VERSION = new Version('18.0.0-next.1+sha-658cf8c');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30229,7 +30229,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30247,7 +30247,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30342,7 +30342,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30757,7 +30757,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30792,7 +30792,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30843,7 +30843,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30876,7 +30876,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30927,7 +30927,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.1+sha-e44b077'));
+    definitionMap.set('version', literal('18.0.0-next.1+sha-658cf8c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
