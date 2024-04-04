@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.3+sha-9ad4ed1
+ * @license Angular v18.0.0-next.3+sha-39624c6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2660,10 +2660,6 @@ class Identifiers {
     static { this.listener = { name: 'ɵɵlistener', moduleName: CORE }; }
     static { this.getInheritedFactory = {
         name: 'ɵɵgetInheritedFactory',
-        moduleName: CORE,
-    }; }
-    static { this.InputFlags = {
-        name: 'ɵɵInputFlags',
         moduleName: CORE,
     }; }
     // sanitization-related functions
@@ -5638,19 +5634,19 @@ function conditionallyCreateDirectiveBindingLiteral(map, forInputs) {
             publicName = value.bindingPropertyName;
             const differentDeclaringName = publicName !== declaredName;
             const hasDecoratorInputTransform = value.transformFunction !== null;
+            let flags = InputFlags.None;
             // Build up input flags
-            let flags = null;
             if (value.isSignal) {
-                flags = bitwiseOrInputFlagsExpr(InputFlags.SignalBased, flags);
+                flags |= InputFlags.SignalBased;
             }
             if (hasDecoratorInputTransform) {
-                flags = bitwiseOrInputFlagsExpr(InputFlags.HasDecoratorInputTransform, flags);
+                flags |= InputFlags.HasDecoratorInputTransform;
             }
             // Inputs, compared to outputs, will track their declared name (for `ngOnChanges`), support
             // decorator input transform functions, or store flag information if there is any.
-            if (forInputs && (differentDeclaringName || hasDecoratorInputTransform || flags !== null)) {
-                const flagsExpr = flags ?? importExpr(Identifiers.InputFlags).prop(InputFlags[InputFlags.None]);
-                const result = [flagsExpr, asLiteral(publicName)];
+            if (forInputs &&
+                (differentDeclaringName || hasDecoratorInputTransform || flags !== InputFlags.None)) {
+                const result = [literal(flags), asLiteral(publicName)];
                 if (differentDeclaringName || hasDecoratorInputTransform) {
                     result.push(asLiteral(declaredName));
                     if (hasDecoratorInputTransform) {
@@ -5670,26 +5666,6 @@ function conditionallyCreateDirectiveBindingLiteral(map, forInputs) {
             value: expressionValue,
         };
     }));
-}
-/** Gets an output AST expression referencing the given flag. */
-function getInputFlagExpr(flag) {
-    return importExpr(Identifiers.InputFlags).prop(InputFlags[flag]);
-}
-/** Combines a given input flag with an existing flag expression, if present. */
-function bitwiseOrInputFlagsExpr(flag, expr) {
-    if (expr === null) {
-        return getInputFlagExpr(flag);
-    }
-    return getInputFlagExpr(flag).bitwiseOr(expr);
-}
-/**
- *  Remove trailing null nodes as they are implied.
- */
-function trimTrailingNulls(parameters) {
-    while (isNull(parameters[parameters.length - 1])) {
-        parameters.pop();
-    }
-    return parameters;
 }
 /**
  * A representation for an object literal used during codegen of definition objects. The generic
@@ -28644,7 +28620,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.3+sha-9ad4ed1');
+const VERSION = new Version('18.0.0-next.3+sha-39624c6');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30229,7 +30205,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30247,7 +30223,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30342,7 +30318,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30757,7 +30733,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30792,7 +30768,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30843,7 +30819,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30876,7 +30852,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30927,7 +30903,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.3+sha-9ad4ed1'));
+    definitionMap.set('version', literal('18.0.0-next.3+sha-39624c6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.3+sha-9ad4ed1
+ * @license Angular v18.0.0-next.3+sha-39624c6
  * (c) 2010-2022 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3894,7 +3894,6 @@ export declare class R3Identifiers {
     static InputTransformsFeatureFeature: outputAst.ExternalReference;
     static listener: outputAst.ExternalReference;
     static getInheritedFactory: outputAst.ExternalReference;
-    static InputFlags: outputAst.ExternalReference;
     static sanitizeHtml: outputAst.ExternalReference;
     static sanitizeStyle: outputAst.ExternalReference;
     static sanitizeResourceUrl: outputAst.ExternalReference;
