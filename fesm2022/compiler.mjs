@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.4+sha-d28614b
+ * @license Angular v18.0.0-next.4+sha-3bc63ea
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22142,71 +22142,26 @@ function transformTwoWayBindingSet(job) {
         for (const op of unit.create) {
             if (op.kind === OpKind.TwoWayListener) {
                 transformExpressionsInOp(op, (expr) => {
-                    if (expr instanceof TwoWayBindingSetExpr) {
-                        return wrapAction(expr.target, expr.value);
+                    if (!(expr instanceof TwoWayBindingSetExpr)) {
+                        return expr;
                     }
-                    return expr;
+                    const { target, value } = expr;
+                    if (target instanceof ReadPropExpr || target instanceof ReadKeyExpr) {
+                        return twoWayBindingSet(target, value).or(target.set(value));
+                    }
+                    // ASSUMPTION: here we're assuming that `ReadVariableExpr` will be a reference
+                    // to a local template variable. This appears to be the case at the time of writing.
+                    // If the expression is targeting a variable read, we only emit the `twoWayBindingSet`
+                    // since the fallback would be attempting to write into a constant. Invalid usages will be
+                    // flagged during template type checking.
+                    if (target instanceof ReadVariableExpr) {
+                        return twoWayBindingSet(target, value);
+                    }
+                    throw new Error(`Unsupported expression in two-way action binding.`);
                 }, VisitorContextFlag.InChildOperation);
             }
         }
     }
-}
-function wrapSetOperation(target, value) {
-    // ASSUMPTION: here we're assuming that `ReadVariableExpr` will be a reference
-    // to a local template variable. This appears to be the case at the time of writing.
-    // If the expression is targeting a variable read, we only emit the `twoWayBindingSet` since
-    // the fallback would be attempting to write into a constant. Invalid usages will be flagged
-    // during template type checking.
-    if (target instanceof ReadVariableExpr) {
-        return twoWayBindingSet(target, value);
-    }
-    return twoWayBindingSet(target, value).or(target.set(value));
-}
-function isReadExpression(value) {
-    return value instanceof ReadPropExpr || value instanceof ReadKeyExpr ||
-        value instanceof ReadVariableExpr;
-}
-function wrapAction(target, value) {
-    // The only officially supported expressions inside of a two-way binding are read expressions.
-    if (isReadExpression(target)) {
-        return wrapSetOperation(target, value);
-    }
-    // However, historically the expression parser was handling two-way events by appending `=$event`
-    // to the raw string before attempting to parse it. This has led to bugs over the years (see
-    // #37809) and to unintentionally supporting unassignable events in the two-way binding. The
-    // logic below aims to emulate the old behavior while still supporting the new output format
-    // which uses `twoWayBindingSet`. Note that the generated code doesn't necessarily make sense
-    // based on what the user wrote, for example the event binding for `[(value)]="a ? b : c"`
-    // would produce `ctx.a ? ctx.b : ctx.c = $event`. We aim to reproduce what the parser used
-    // to generate before #54154.
-    if (target instanceof BinaryOperatorExpr && isReadExpression(target.rhs)) {
-        // `a && b` -> `ctx.a && twoWayBindingSet(ctx.b, $event) || (ctx.b = $event)`
-        return new BinaryOperatorExpr(target.operator, target.lhs, wrapSetOperation(target.rhs, value));
-    }
-    // Note: this also supports nullish coalescing expressions which
-    // would've been downleveled to ternary expressions by this point.
-    if (target instanceof ConditionalExpr && isReadExpression(target.falseCase)) {
-        // `a ? b : c` -> `ctx.a ? ctx.b : twoWayBindingSet(ctx.c, $event) || (ctx.c = $event)`
-        return new ConditionalExpr(target.condition, target.trueCase, wrapSetOperation(target.falseCase, value));
-    }
-    // `!!a` -> `twoWayBindingSet(ctx.a, $event) || (ctx.a = $event)`
-    // Note: previously we'd actually produce `!!(ctx.a = $event)`, but the wrapping
-    // node doesn't affect the result so we don't need to carry it over.
-    if (target instanceof NotExpr) {
-        let expr = target.condition;
-        while (true) {
-            if (expr instanceof NotExpr) {
-                expr = expr.condition;
-            }
-            else {
-                if (isReadExpression(expr)) {
-                    return wrapSetOperation(expr, value);
-                }
-                break;
-            }
-        }
-    }
-    throw new Error(`Unsupported expression in two-way action binding.`);
 }
 
 /**
@@ -24648,11 +24603,12 @@ const ANIMATE_PROP_PREFIX = 'animate-';
  * Parses bindings in templates and in the directive host area.
  */
 class BindingParser {
-    constructor(_exprParser, _interpolationConfig, _schemaRegistry, errors) {
+    constructor(_exprParser, _interpolationConfig, _schemaRegistry, errors, _allowInvalidAssignmentEvents = false) {
         this._exprParser = _exprParser;
         this._interpolationConfig = _interpolationConfig;
         this._schemaRegistry = _schemaRegistry;
         this.errors = errors;
+        this._allowInvalidAssignmentEvents = _allowInvalidAssignmentEvents;
     }
     get interpolationConfig() {
         return this._interpolationConfig;
@@ -25031,6 +24987,11 @@ class BindingParser {
         }
         if (ast instanceof PropertyRead || ast instanceof KeyedRead) {
             return true;
+        }
+        // TODO(crisbeto): this logic is only here to support the automated migration away
+        // from invalid bindings. It should be removed once the migration is deleted.
+        if (!this._allowInvalidAssignmentEvents) {
+            return false;
         }
         if (ast instanceof Binary) {
             return (ast.operation === '&&' || ast.operation === '||' || ast.operation === '??') &&
@@ -26556,8 +26517,8 @@ const LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
  * @param options options to modify how the template is parsed
  */
 function parseTemplate(template, templateUrl, options = {}) {
-    const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat } = options;
-    const bindingParser = makeBindingParser(interpolationConfig);
+    const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat, allowInvalidAssignmentEvents } = options;
+    const bindingParser = makeBindingParser(interpolationConfig, allowInvalidAssignmentEvents);
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, {
         leadingTriviaChars: LEADING_TRIVIA_CHARS,
@@ -26635,8 +26596,8 @@ const elementRegistry = new DomElementSchemaRegistry();
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, []);
+function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, allowInvalidAssignmentEvents = false) {
+    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, [], allowInvalidAssignmentEvents);
 }
 
 const COMPONENT_VARIABLE = '%COMP%';
@@ -28596,7 +28557,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-next.4+sha-d28614b');
+const VERSION = new Version('18.0.0-next.4+sha-3bc63ea');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -30181,7 +30142,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30199,7 +30160,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30294,7 +30255,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -30709,7 +30670,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30744,7 +30705,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -30795,7 +30756,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -30828,7 +30789,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -30879,7 +30840,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-next.4+sha-d28614b'));
+    definitionMap.set('version', literal('18.0.0-next.4+sha-3bc63ea'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

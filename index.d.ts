@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.4+sha-d28614b
+ * @license Angular v18.0.0-next.4+sha-3bc63ea
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -363,7 +363,8 @@ declare class BindingParser {
     private _interpolationConfig;
     private _schemaRegistry;
     errors: ParseError[];
-    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[]);
+    private _allowInvalidAssignmentEvents;
+    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[], _allowInvalidAssignmentEvents?: boolean);
     get interpolationConfig(): InterpolationConfig;
     createBoundHostProperties(properties: HostProperties, sourceSpan: ParseSourceSpan): ParsedProperty[] | null;
     createDirectiveHostEventAsts(hostListeners: HostListeners, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
@@ -1974,7 +1975,7 @@ declare function localizedString(metaBlock: I18nMeta, messageParts: LiteralPiece
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
+export declare function makeBindingParser(interpolationConfig?: InterpolationConfig, allowInvalidAssignmentEvents?: boolean): BindingParser;
 
 export declare class MapType extends Type {
     valueType: Type | null;
@@ -2623,6 +2624,12 @@ export declare interface ParseTemplateOptions {
     collectCommentNodes?: boolean;
     /** Whether the @ block syntax is enabled. */
     enableBlockSyntax?: boolean;
+    /**
+     * Whether the parser should allow invalid two-way bindings.
+     *
+     * This option is only present to support an automated migration away from the invalid syntax.
+     */
+    allowInvalidAssignmentEvents?: boolean;
 }
 
 export declare class ParseTreeResult {
