@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-next.5+sha-a5b5b7d
+ * @license Angular v18.0.0-next.5+sha-ca517d7
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -298,10 +298,7 @@ declare const enum AttributeMarker {
 
 declare interface AttributeValueInterpolationToken extends TokenBase {
     type: LexerTokenType.ATTR_VALUE_INTERPOLATION;
-    parts: [startMarker: string, expression: string, endMarker: string] | [
-    startMarker: string,
-    expression: string
-    ];
+    parts: [startMarker: string, expression: string, endMarker: string] | [startMarker: string, expression: string];
 }
 
 declare interface AttributeValueTextToken extends TokenBase {
@@ -771,7 +768,7 @@ export declare class CompilerConfig {
     defaultEncapsulation: ViewEncapsulation | null;
     preserveWhitespaces: boolean;
     strictInjectionParameters: boolean;
-    constructor({ defaultEncapsulation, preserveWhitespaces, strictInjectionParameters }?: {
+    constructor({ defaultEncapsulation, preserveWhitespaces, strictInjectionParameters, }?: {
         defaultEncapsulation?: ViewEncapsulation;
         preserveWhitespaces?: boolean;
         strictInjectionParameters?: boolean;
@@ -1690,10 +1687,7 @@ export declare interface InterpolationPiece {
 
 declare interface InterpolationToken extends TokenBase {
     type: LexerTokenType.INTERPOLATION;
-    parts: [startMarker: string, expression: string, endMarker: string] | [
-    startMarker: string,
-    expression: string
-    ];
+    parts: [startMarker: string, expression: string, endMarker: string] | [startMarker: string, expression: string];
 }
 
 export declare class InvokeFunctionExpr extends Expression {
@@ -1808,11 +1802,7 @@ export declare class LeadingComment {
 
 export declare function leadingComment(text: string, multiline?: boolean, trailingNewline?: boolean): LeadingComment;
 
-export declare type LegacyInputPartialMapping = string | [
-bindingPropertyName: string,
-classPropertyName: string,
-transformFunction?: outputAst.Expression
-];
+export declare type LegacyInputPartialMapping = string | [bindingPropertyName: string, classPropertyName: string, transformFunction?: outputAst.Expression];
 
 export declare class Lexer {
     tokenize(text: string): Token[];
