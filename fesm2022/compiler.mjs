@@ -1,5 +1,5 @@
 /**
- * @license Angular v17.3.7+sha-f978e9c
+ * @license Angular v17.3.7+sha-c21b459
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15381,6 +15381,36 @@ const SCHEMA = [
     'summary^[HTMLElement]|',
     'time^[HTMLElement]|dateTime',
     ':svg:cursor^:svg:|',
+    ':math:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforeinput,*beforematch,*beforetoggle,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contentvisibilityautostatechange,*contextlost,*contextmenu,*contextrestored,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*scrollend,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
+    ':math:math^:math:|',
+    ':math:maction^:math:|',
+    ':math:menclose^:math:|',
+    ':math:merror^:math:|',
+    ':math:mfenced^:math:|',
+    ':math:mfrac^:math:|',
+    ':math:mi^:math:|',
+    ':math:mmultiscripts^:math:|',
+    ':math:mn^:math:|',
+    ':math:mo^:math:|',
+    ':math:mover^:math:|',
+    ':math:mpadded^:math:|',
+    ':math:mphantom^:math:|',
+    ':math:mroot^:math:|',
+    ':math:mrow^:math:|',
+    ':math:ms^:math:|',
+    ':math:mspace^:math:|',
+    ':math:msqrt^:math:|',
+    ':math:mstyle^:math:|',
+    ':math:msub^:math:|',
+    ':math:msubsup^:math:|',
+    ':math:msup^:math:|',
+    ':math:mtable^:math:|',
+    ':math:mtd^:math:|',
+    ':math:mtext^:math:|',
+    ':math:mtr^:math:|',
+    ':math:munder^:math:|',
+    ':math:munderover^:math:|',
+    ':math:semantics^:math:|',
 ];
 const _ATTR_TO_PROP = new Map(Object.entries({
     'class': 'className',
@@ -32829,7 +32859,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('17.3.7+sha-f978e9c');
+const VERSION = new Version('17.3.7+sha-c21b459');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters } = {}) {
@@ -34397,7 +34427,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34493,7 +34523,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -34885,7 +34915,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34920,7 +34950,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34971,7 +35001,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -35004,7 +35034,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35055,7 +35085,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('17.3.7+sha-f978e9c'));
+    definitionMap.set('version', literal('17.3.7+sha-c21b459'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
