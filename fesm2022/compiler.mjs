@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-rc.0+sha-6baa3bc
+ * @license Angular v18.0.0-rc.0+sha-a040fb7
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7659,8 +7659,8 @@ class ShadowCss {
     }
     _scopeSelector(selector, scopeSelector, hostSelector) {
         return selector
-            .split(',')
-            .map((part) => part.trim().split(_shadowDeepSelectors))
+            .split(/ ?, ?/)
+            .map((part) => part.split(_shadowDeepSelectors))
             .map((deepParts) => {
             const [shallowPart, ...otherParts] = deepParts;
             const applyScope = (shallowPart) => {
@@ -7710,9 +7710,9 @@ class ShadowCss {
         const _scopeSelectorPart = (p) => {
             let scopedP = p.trim();
             if (!scopedP) {
-                return '';
+                return p;
             }
-            if (p.indexOf(_polyfillHostNoCombinator) > -1) {
+            if (p.includes(_polyfillHostNoCombinator)) {
                 scopedP = this._applySimpleSelectorScope(p, scopeSelector, hostSelector);
             }
             else {
@@ -7744,12 +7744,17 @@ class ShadowCss {
         // - `tag:host` -> `tag[h]` (this is to avoid breaking legacy apps, should not match anything)
         // - `tag :host` -> `tag [h]` (`tag` is not scoped because it's considered part of a
         //   `:host-context(tag)`)
-        const hasHost = selector.indexOf(_polyfillHostNoCombinator) > -1;
+        const hasHost = selector.includes(_polyfillHostNoCombinator);
         // Only scope parts after the first `-shadowcsshost-no-combinator` when it is present
         let shouldScope = !hasHost;
         while ((res = sep.exec(selector)) !== null) {
             const separator = res[1];
-            const part = selector.slice(startIndex, res.index).trim();
+            // Do not trim the selector, as otherwise this will break sourcemaps
+            // when they are defined on multiple lines
+            // Example:
+            //  div,
+            //  p { color: red}
+            const part = selector.slice(startIndex, res.index);
             // A space following an escaped hex value and followed by another hex character
             // (ie: ".\fc ber" for ".über") is not a separator between 2 selectors
             // also keep in mind that backslashes are replaced by a placeholder by SafeSelector
@@ -7757,13 +7762,13 @@ class ShadowCss {
             if (part.match(/__esc-ph-(\d+)__/) && selector[res.index + 1]?.match(/[a-fA-F\d]/)) {
                 continue;
             }
-            shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
+            shouldScope = shouldScope || part.includes(_polyfillHostNoCombinator);
             const scopedPart = shouldScope ? _scopeSelectorPart(part) : part;
             scopedSelector += `${scopedPart} ${separator} `;
             startIndex = sep.lastIndex;
         }
         const part = selector.substring(startIndex);
-        shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
+        shouldScope = shouldScope || part.includes(_polyfillHostNoCombinator);
         scopedSelector += shouldScope ? _scopeSelectorPart(part) : part;
         // replace the placeholders with their original values
         return safeContent.restore(scopedSelector);
@@ -29051,7 +29056,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-rc.0+sha-6baa3bc');
+const VERSION = new Version('18.0.0-rc.0+sha-a040fb7');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -30682,7 +30687,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30700,7 +30705,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30795,7 +30800,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31217,7 +31222,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31252,7 +31257,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31303,7 +31308,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31336,7 +31341,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31387,7 +31392,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-rc.0+sha-6baa3bc'));
+    definitionMap.set('version', literal('18.0.0-rc.0+sha-a040fb7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
