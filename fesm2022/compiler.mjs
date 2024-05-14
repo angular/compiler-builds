@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.1.0-next.0+sha-aea3b57
+ * @license Angular v18.1.0-next.0+sha-4c895c9
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -736,7 +736,6 @@ function hash32(view, length, c) {
     }
     return mix(a, b, c)[2];
 }
-// clang-format off
 function mix(a, b, c) {
     a -= b;
     a -= c;
@@ -767,7 +766,6 @@ function mix(a, b, c) {
     c ^= b >>> 15;
     return [a, b, c];
 }
-// clang-format on
 // Utils
 var Endian;
 (function (Endian) {
@@ -7659,8 +7657,8 @@ class ShadowCss {
     }
     _scopeSelector(selector, scopeSelector, hostSelector) {
         return selector
-            .split(',')
-            .map((part) => part.trim().split(_shadowDeepSelectors))
+            .split(/ ?, ?/)
+            .map((part) => part.split(_shadowDeepSelectors))
             .map((deepParts) => {
             const [shallowPart, ...otherParts] = deepParts;
             const applyScope = (shallowPart) => {
@@ -7710,9 +7708,9 @@ class ShadowCss {
         const _scopeSelectorPart = (p) => {
             let scopedP = p.trim();
             if (!scopedP) {
-                return '';
+                return p;
             }
-            if (p.indexOf(_polyfillHostNoCombinator) > -1) {
+            if (p.includes(_polyfillHostNoCombinator)) {
                 scopedP = this._applySimpleSelectorScope(p, scopeSelector, hostSelector);
             }
             else {
@@ -7744,12 +7742,17 @@ class ShadowCss {
         // - `tag:host` -> `tag[h]` (this is to avoid breaking legacy apps, should not match anything)
         // - `tag :host` -> `tag [h]` (`tag` is not scoped because it's considered part of a
         //   `:host-context(tag)`)
-        const hasHost = selector.indexOf(_polyfillHostNoCombinator) > -1;
+        const hasHost = selector.includes(_polyfillHostNoCombinator);
         // Only scope parts after the first `-shadowcsshost-no-combinator` when it is present
         let shouldScope = !hasHost;
         while ((res = sep.exec(selector)) !== null) {
             const separator = res[1];
-            const part = selector.slice(startIndex, res.index).trim();
+            // Do not trim the selector, as otherwise this will break sourcemaps
+            // when they are defined on multiple lines
+            // Example:
+            //  div,
+            //  p { color: red}
+            const part = selector.slice(startIndex, res.index);
             // A space following an escaped hex value and followed by another hex character
             // (ie: ".\fc ber" for ".über") is not a separator between 2 selectors
             // also keep in mind that backslashes are replaced by a placeholder by SafeSelector
@@ -7757,13 +7760,13 @@ class ShadowCss {
             if (part.match(/__esc-ph-(\d+)__/) && selector[res.index + 1]?.match(/[a-fA-F\d]/)) {
                 continue;
             }
-            shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
+            shouldScope = shouldScope || part.includes(_polyfillHostNoCombinator);
             const scopedPart = shouldScope ? _scopeSelectorPart(part) : part;
             scopedSelector += `${scopedPart} ${separator} `;
             startIndex = sep.lastIndex;
         }
         const part = selector.substring(startIndex);
-        shouldScope = shouldScope || part.indexOf(_polyfillHostNoCombinator) > -1;
+        shouldScope = shouldScope || part.includes(_polyfillHostNoCombinator);
         scopedSelector += shouldScope ? _scopeSelectorPart(part) : part;
         // replace the placeholders with their original values
         return safeContent.restore(scopedSelector);
@@ -14684,6 +14687,36 @@ const SCHEMA = [
     'summary^[HTMLElement]|',
     'time^[HTMLElement]|dateTime',
     ':svg:cursor^:svg:|',
+    ':math:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforeinput,*beforematch,*beforetoggle,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contentvisibilityautostatechange,*contextlost,*contextmenu,*contextrestored,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*scrollend,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
+    ':math:math^:math:|',
+    ':math:maction^:math:|',
+    ':math:menclose^:math:|',
+    ':math:merror^:math:|',
+    ':math:mfenced^:math:|',
+    ':math:mfrac^:math:|',
+    ':math:mi^:math:|',
+    ':math:mmultiscripts^:math:|',
+    ':math:mn^:math:|',
+    ':math:mo^:math:|',
+    ':math:mover^:math:|',
+    ':math:mpadded^:math:|',
+    ':math:mphantom^:math:|',
+    ':math:mroot^:math:|',
+    ':math:mrow^:math:|',
+    ':math:ms^:math:|',
+    ':math:mspace^:math:|',
+    ':math:msqrt^:math:|',
+    ':math:mstyle^:math:|',
+    ':math:msub^:math:|',
+    ':math:msubsup^:math:|',
+    ':math:msup^:math:|',
+    ':math:mtable^:math:|',
+    ':math:mtd^:math:|',
+    ':math:mtext^:math:|',
+    ':math:mtr^:math:|',
+    ':math:munder^:math:|',
+    ':math:munderover^:math:|',
+    ':math:semantics^:math:|',
 ];
 const _ATTR_TO_PROP = new Map(Object.entries({
     'class': 'className',
@@ -23597,6 +23630,7 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: generateNullishCoalesceExpressions },
     { kind: CompilationJobKind.Both, fn: expandSafeReads },
     { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
+    { kind: CompilationJobKind.Both, fn: optimizeVariables },
     { kind: CompilationJobKind.Tmpl, fn: allocateSlots },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
@@ -23608,7 +23642,6 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: removeI18nContexts },
     { kind: CompilationJobKind.Both, fn: countVariables },
     { kind: CompilationJobKind.Tmpl, fn: generateAdvance },
-    { kind: CompilationJobKind.Both, fn: optimizeVariables },
     { kind: CompilationJobKind.Both, fn: nameFunctionsAndVariables },
     { kind: CompilationJobKind.Tmpl, fn: resolveDeferDepsFns },
     { kind: CompilationJobKind.Tmpl, fn: mergeNextContextExpressions },
@@ -29021,7 +29054,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.1.0-next.0+sha-aea3b57');
+const VERSION = new Version('18.1.0-next.0+sha-4c895c9');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -30652,7 +30685,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30670,7 +30703,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30765,7 +30798,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31187,7 +31220,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31222,7 +31255,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31273,7 +31306,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31306,7 +31339,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31357,7 +31390,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.1.0-next.0+sha-aea3b57'));
+    definitionMap.set('version', literal('18.1.0-next.0+sha-4c895c9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
