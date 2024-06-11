@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-rc.2+sha-69a8399
+ * @license Angular v18.0.2+sha-ca78553
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5091,6 +5091,18 @@ class UnknownBlock {
         return visitor.visitUnknownBlock(this);
     }
 }
+class LetDeclaration$1 {
+    constructor(name, value, sourceSpan, nameSpan, valueSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.nameSpan = nameSpan;
+        this.valueSpan = valueSpan;
+    }
+    visit(visitor) {
+        return visitor.visitLetDeclaration(this);
+    }
+}
 class Template {
     constructor(
     // tagName is the name of the container element, if applicable.
@@ -5226,6 +5238,7 @@ class RecursiveVisitor$1 {
     visitIcu(icu) { }
     visitDeferredTrigger(trigger) { }
     visitUnknownBlock(block) { }
+    visitLetDeclaration(decl) { }
 }
 function visitAll$1(visitor, nodes) {
     const result = [];
@@ -14335,6 +14348,18 @@ class BlockParameter {
         return visitor.visitBlockParameter(this, context);
     }
 }
+class LetDeclaration {
+    constructor(name, value, sourceSpan, nameSpan, valueSpan) {
+        this.name = name;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.nameSpan = nameSpan;
+        this.valueSpan = valueSpan;
+    }
+    visit(visitor, context) {
+        return visitor.visitLetDeclaration(this, context);
+    }
+}
 function visitAll(visitor, nodes, context = null) {
     const result = [];
     const visit = visitor.visit
@@ -14372,6 +14397,7 @@ class RecursiveVisitor {
         });
     }
     visitBlockParameter(ast, context) { }
+    visitLetDeclaration(decl, context) { }
     visitChildren(context, cb) {
         let results = [];
         let t = this;
@@ -15334,6 +15360,9 @@ class _I18nVisitor {
     }
     visitBlockParameter(_parameter, _context) {
         throw new Error('Unreachable code');
+    }
+    visitLetDeclaration(decl, context) {
+        return null;
     }
     /**
      * Convert, text and interpolated tokens up into text and placeholder pieces.
@@ -17660,6 +17689,8 @@ class _Tokenizer {
         this._preserveLineEndings = options.preserveLineEndings || false;
         this._i18nNormalizeLineEndingsInICUs = options.i18nNormalizeLineEndingsInICUs || false;
         this._tokenizeBlocks = options.tokenizeBlocks ?? true;
+        // TODO(crisbeto): eventually set this to true.
+        this._tokenizeLet = options.tokenizeLet || false;
         try {
             this._cursor.init();
         }
@@ -17700,6 +17731,14 @@ class _Tokenizer {
                         this._consumeTagOpen(start);
                     }
                 }
+                else if (this._tokenizeLet &&
+                    // Use `peek` instead of `attempCharCode` since we
+                    // don't want to advance in case it's not `@let`.
+                    this._cursor.peek() === $AT &&
+                    !this._inInterpolation &&
+                    this._attemptStr('@let')) {
+                    this._consumeLetDeclaration(start);
+                }
                 else if (this._tokenizeBlocks && this._attemptCharCode($AT)) {
                     this._consumeBlockStart(start);
                 }
@@ -17720,7 +17759,7 @@ class _Tokenizer {
                 this.handleError(e);
             }
         }
-        this._beginToken(29 /* TokenType.EOF */);
+        this._beginToken(33 /* TokenType.EOF */);
         this._endToken([]);
     }
     _getBlockName() {
@@ -17810,6 +17849,77 @@ class _Tokenizer {
             // Skip to the next parameter.
             this._attemptCharCodeUntilFn(isBlockParameterChar);
         }
+    }
+    _consumeLetDeclaration(start) {
+        this._beginToken(29 /* TokenType.LET_START */, start);
+        // Require at least one white space after the `@let`.
+        if (isWhitespace(this._cursor.peek())) {
+            this._attemptCharCodeUntilFn(isNotWhitespace);
+        }
+        else {
+            const token = this._endToken([this._cursor.getChars(start)]);
+            token.type = 32 /* TokenType.INCOMPLETE_LET */;
+            return;
+        }
+        const startToken = this._endToken([this._getLetDeclarationName()]);
+        // Skip over white space before the equals character.
+        this._attemptCharCodeUntilFn(isNotWhitespace);
+        // Expect an equals sign.
+        if (!this._attemptCharCode($EQ)) {
+            startToken.type = 32 /* TokenType.INCOMPLETE_LET */;
+            return;
+        }
+        // Skip spaces after the equals.
+        this._attemptCharCodeUntilFn((code) => isNotWhitespace(code) && !isNewLine(code));
+        this._consumeLetDeclarationValue();
+        // Terminate the `@let` with a semicolon.
+        const endChar = this._cursor.peek();
+        if (endChar === $SEMICOLON) {
+            this._beginToken(31 /* TokenType.LET_END */);
+            this._endToken([]);
+            this._cursor.advance();
+        }
+        else {
+            startToken.type = 32 /* TokenType.INCOMPLETE_LET */;
+            startToken.sourceSpan = this._cursor.getSpan(start);
+        }
+    }
+    _getLetDeclarationName() {
+        const nameCursor = this._cursor.clone();
+        let allowDigit = false;
+        this._attemptCharCodeUntilFn((code) => {
+            // `@let` names can't start with a digit, but digits are valid anywhere else in the name.
+            if (isAsciiLetter(code) || code === $_ || (allowDigit && isDigit(code))) {
+                allowDigit = true;
+                return false;
+            }
+            return true;
+        });
+        return this._cursor.getChars(nameCursor).trim();
+    }
+    _consumeLetDeclarationValue() {
+        const start = this._cursor.clone();
+        this._beginToken(30 /* TokenType.LET_VALUE */, start);
+        while (this._cursor.peek() !== $EOF) {
+            const char = this._cursor.peek();
+            // `@let` declarations terminate with a semicolon.
+            if (char === $SEMICOLON) {
+                break;
+            }
+            // If we hit a quote, skip over its content since we don't care what's inside.
+            if (isQuote(char)) {
+                this._cursor.advance();
+                this._attemptCharCodeUntilFn((inner) => {
+                    if (inner === $BACKSLASH) {
+                        this._cursor.advance();
+                        return false;
+                    }
+                    return inner === char;
+                });
+            }
+            this._cursor.advance();
+        }
+        this._endToken([this._cursor.getChars(start)]);
     }
     /**
      * @returns whether an ICU token has been created
@@ -18741,7 +18851,7 @@ class _TreeBuilder {
         this._advance();
     }
     build() {
-        while (this._peek.type !== 29 /* TokenType.EOF */) {
+        while (this._peek.type !== 33 /* TokenType.EOF */) {
             if (this._peek.type === 0 /* TokenType.TAG_OPEN_START */ ||
                 this._peek.type === 4 /* TokenType.INCOMPLETE_TAG_OPEN */) {
                 this._consumeStartTag(this._advance());
@@ -18777,6 +18887,14 @@ class _TreeBuilder {
             else if (this._peek.type === 28 /* TokenType.INCOMPLETE_BLOCK_OPEN */) {
                 this._closeVoidElement();
                 this._consumeIncompleteBlock(this._advance());
+            }
+            else if (this._peek.type === 29 /* TokenType.LET_START */) {
+                this._closeVoidElement();
+                this._consumeLet(this._advance());
+            }
+            else if (this._peek.type === 32 /* TokenType.INCOMPLETE_LET */) {
+                this._closeVoidElement();
+                this._consumeIncompleteLet(this._advance());
             }
             else {
                 // Skip all other tokens...
@@ -18851,7 +18969,7 @@ class _TreeBuilder {
         if (!exp)
             return null;
         const end = this._advance();
-        exp.push({ type: 29 /* TokenType.EOF */, parts: [], sourceSpan: end.sourceSpan });
+        exp.push({ type: 33 /* TokenType.EOF */, parts: [], sourceSpan: end.sourceSpan });
         // parse everything in between { and }
         const expansionCaseParser = new _TreeBuilder(exp, this.getTagDefinition);
         expansionCaseParser.build();
@@ -18891,7 +19009,7 @@ class _TreeBuilder {
                     return null;
                 }
             }
-            if (this._peek.type === 29 /* TokenType.EOF */) {
+            if (this._peek.type === 33 /* TokenType.EOF */) {
                 this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
                 return null;
             }
@@ -19121,6 +19239,51 @@ class _TreeBuilder {
         this.errors.push(TreeError.create(token.parts[0], span, `Incomplete block "${token.parts[0]}". If you meant to write the @ character, ` +
             `you should use the "&#64;" HTML entity instead.`));
     }
+    _consumeLet(startToken) {
+        const name = startToken.parts[0];
+        let valueToken;
+        let endToken;
+        if (this._peek.type !== 30 /* TokenType.LET_VALUE */) {
+            this.errors.push(TreeError.create(startToken.parts[0], startToken.sourceSpan, `Invalid @let declaration "${name}". Declaration must have a value.`));
+            return;
+        }
+        else {
+            valueToken = this._advance();
+        }
+        // Type cast is necessary here since TS narrowed the type of `peek` above.
+        if (this._peek.type !== 31 /* TokenType.LET_END */) {
+            this.errors.push(TreeError.create(startToken.parts[0], startToken.sourceSpan, `Unterminated @let declaration "${name}". Declaration must be terminated with a semicolon.`));
+            return;
+        }
+        else {
+            endToken = this._advance();
+        }
+        const end = endToken.sourceSpan.fullStart;
+        const span = new ParseSourceSpan(startToken.sourceSpan.start, end, startToken.sourceSpan.fullStart);
+        // The start token usually captures the `@let`. Construct a name span by
+        // offsetting the start by the length of any text before the name.
+        const startOffset = startToken.sourceSpan.toString().lastIndexOf(name);
+        const nameStart = startToken.sourceSpan.start.moveBy(startOffset);
+        const nameSpan = new ParseSourceSpan(nameStart, startToken.sourceSpan.end);
+        const node = new LetDeclaration(name, valueToken.parts[0], span, nameSpan, valueToken.sourceSpan);
+        this._addToParent(node);
+    }
+    _consumeIncompleteLet(token) {
+        // Incomplete `@let` declaration may end up with an empty name.
+        const name = token.parts[0] ?? '';
+        const nameString = name ? ` "${name}"` : '';
+        // If there's at least a name, we can salvage an AST node that can be used for completions.
+        if (name.length > 0) {
+            const startOffset = token.sourceSpan.toString().lastIndexOf(name);
+            const nameStart = token.sourceSpan.start.moveBy(startOffset);
+            const nameSpan = new ParseSourceSpan(nameStart, token.sourceSpan.end);
+            const valueSpan = new ParseSourceSpan(token.sourceSpan.start, token.sourceSpan.start.moveBy(0));
+            const node = new LetDeclaration(name, '', token.sourceSpan, nameSpan, valueSpan);
+            this._addToParent(node);
+        }
+        this.errors.push(TreeError.create(token.parts[0], token.sourceSpan, `Incomplete @let declaration${nameString}. ` +
+            `@let declarations must be written as \`@let <name> = <value>;\``));
+    }
     _getContainer() {
         return this._containerStack.length > 0
             ? this._containerStack[this._containerStack.length - 1]
@@ -19348,6 +19511,9 @@ class I18nMetaVisitor {
     }
     visitBlockParameter(parameter, context) {
         return parameter;
+    }
+    visitLetDeclaration(decl, context) {
+        return decl;
     }
     /**
      * Parse the general form `meta` passed into extract the explicit metadata needed to create a
@@ -22951,7 +23117,7 @@ function optimizeTrackFns(job) {
     }
 }
 function isTrackByFunctionCall(rootView, expr) {
-    if (!(expr instanceof InvokeFunctionExpr) || expr.args.length !== 2) {
+    if (!(expr instanceof InvokeFunctionExpr) || expr.args.length === 0 || expr.args.length > 2) {
         return false;
     }
     if (!(expr.receiver instanceof ReadPropExpr && expr.receiver.receiver instanceof ContextExpr) ||
@@ -22961,6 +23127,9 @@ function isTrackByFunctionCall(rootView, expr) {
     const [arg0, arg1] = expr.args;
     if (!(arg0 instanceof ReadVarExpr) || arg0.name !== '$index') {
         return false;
+    }
+    else if (expr.args.length === 1) {
+        return true;
     }
     if (!(arg1 instanceof ReadVarExpr) || arg1.name !== '$item') {
         return false;
@@ -23867,6 +24036,9 @@ function ingestNodes(unit, template) {
         }
         else if (node instanceof ForLoopBlock) {
             ingestForBlock(unit, node);
+        }
+        else if (node instanceof LetDeclaration$1) {
+            // TODO(crisbeto): needs further integration
         }
         else {
             throw new Error(`Unsupported template node: ${node.constructor.name}`);
@@ -25030,6 +25202,9 @@ class WhitespaceVisitor {
     }
     visitBlockParameter(parameter, context) {
         return parameter;
+    }
+    visitLetDeclaration(decl, context) {
+        return decl;
     }
 }
 function createWhitespaceProcessedTextToken({ type, parts, sourceSpan }) {
@@ -26701,6 +26876,13 @@ class HtmlAstToIvyAst {
         }
         return null;
     }
+    visitLetDeclaration(decl, context) {
+        const value = this.bindingParser.parseBinding(decl.value, false, decl.valueSpan, decl.valueSpan.start.offset);
+        if (value.errors.length === 0 && value.ast instanceof EmptyExpr$1) {
+            this.reportError('@let declaration value cannot be empty', decl.valueSpan);
+        }
+        return new LetDeclaration$1(decl.name, value, decl.sourceSpan, decl.nameSpan, decl.valueSpan);
+    }
     visitBlockParameter() {
         return null;
     }
@@ -26757,6 +26939,10 @@ class HtmlAstToIvyAst {
         const relatedBlocks = [];
         for (let i = primaryBlockIndex + 1; i < siblings.length; i++) {
             const node = siblings[i];
+            // Skip over comments.
+            if (node instanceof Comment) {
+                continue;
+            }
             // Ignore empty text nodes between blocks.
             if (node instanceof Text && node.value.trim().length === 0) {
                 // Add the text node to the processed nodes since we don't want
@@ -26975,6 +27161,9 @@ class NonBindableVisitor {
     visitBlockParameter(parameter, context) {
         return null;
     }
+    visitLetDeclaration(decl, context) {
+        return new Text$3(`@let ${decl.name} = ${decl.value};`, decl.sourceSpan);
+    }
 }
 const NON_BINDABLE_VISITOR = new NonBindableVisitor();
 function normalizeAttributeName(attrName) {
@@ -27009,6 +27198,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         ...options,
         tokenizeExpansionForms: true,
         tokenizeBlocks: options.enableBlockSyntax ?? true,
+        tokenizeLet: options.enableLetSyntax ?? false,
     });
     if (!options.alwaysAttemptHtmlToR3AstConversion &&
         parseResult.errors &&
@@ -27778,6 +27968,9 @@ class Scope {
     visitContent(content) {
         this.ingestScopedNode(content);
     }
+    visitLetDeclaration(decl) {
+        this.maybeDeclare(decl);
+    }
     // Unused visitors.
     visitBoundAttribute(attr) { }
     visitBoundEvent(event) { }
@@ -27990,6 +28183,7 @@ class DirectiveBinder {
     visitIcu(icu) { }
     visitDeferredTrigger(trigger) { }
     visitUnknownBlock(block) { }
+    visitLetDeclaration(decl) { }
 }
 /**
  * Processes a template and extract metadata about expressions and symbols within.
@@ -28186,6 +28380,12 @@ class TemplateBinder extends RecursiveAstVisitor {
     visitBoundText(text) {
         text.value.visit(this);
     }
+    visitLetDeclaration(decl) {
+        decl.value.visit(this);
+        if (this.rootNode !== null) {
+            this.symbols.set(decl, this.rootNode);
+        }
+    }
     visitPipe(ast, context) {
         this.usedPipes.add(ast.name);
         if (!this.scope.isDeferred) {
@@ -28220,7 +28420,13 @@ class TemplateBinder extends RecursiveAstVisitor {
         }
         // Check whether the name exists in the current scope. If so, map it. Otherwise, the name is
         // probably a property on the top-level component context.
-        let target = this.scope.lookup(name);
+        const target = this.scope.lookup(name);
+        // It's not allowed to read template entities via `this`, however it previously worked by
+        // accident (see #55115). Since `@let` declarations are new, we can fix it from the beginning,
+        // whereas pre-existing template entities will be fixed in #55115.
+        if (target instanceof LetDeclaration$1 && ast.receiver instanceof ThisReceiver) {
+            return;
+        }
         if (target !== null) {
             this.bindings.set(ast, target);
         }
@@ -29055,7 +29261,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.0-rc.2+sha-69a8399');
+const VERSION = new Version('18.0.2+sha-ca78553');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -29280,6 +29486,7 @@ class _Visitor {
         visitAll(this, block.children, context);
     }
     visitBlockParameter(parameter, context) { }
+    visitLetDeclaration(decl, context) { }
     _init(mode, interpolationConfig) {
         this._mode = mode;
         this._inI18nBlock = false;
@@ -29492,8 +29699,8 @@ class XmlParser extends Parser {
         super(getXmlTagDefinition);
     }
     parse(source, url, options = {}) {
-        // Blocks aren't supported in an XML context.
-        return super.parse(source, url, { ...options, tokenizeBlocks: false });
+        // Blocks and let declarations aren't supported in an XML context.
+        return super.parse(source, url, { ...options, tokenizeBlocks: false, tokenizeLet: false });
     }
 }
 
@@ -29714,6 +29921,7 @@ class XliffParser {
     visitExpansionCase(expansionCase, context) { }
     visitBlock(block, context) { }
     visitBlockParameter(parameter, context) { }
+    visitLetDeclaration(decl, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -29766,6 +29974,7 @@ class XmlToI18n$2 {
     visitAttribute(attribute, context) { }
     visitBlock(block, context) { }
     visitBlockParameter(parameter, context) { }
+    visitLetDeclaration(decl, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -30025,6 +30234,7 @@ class Xliff2Parser {
     visitExpansionCase(expansionCase, context) { }
     visitBlock(block, context) { }
     visitBlockParameter(parameter, context) { }
+    visitLetDeclaration(decl, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -30094,6 +30304,7 @@ class XmlToI18n$1 {
     visitAttribute(attribute, context) { }
     visitBlock(block, context) { }
     visitBlockParameter(parameter, context) { }
+    visitLetDeclaration(decl, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -30230,6 +30441,7 @@ class XtbParser {
     visitExpansionCase(expansionCase, context) { }
     visitBlock(block, context) { }
     visitBlockParameter(block, context) { }
+    visitLetDeclaration(decl, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -30280,6 +30492,7 @@ class XmlToI18n {
     visitAttribute(attribute, context) { }
     visitBlock(block, context) { }
     visitBlockParameter(block, context) { }
+    visitLetDeclaration(decl, context) { }
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
@@ -30686,7 +30899,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30704,7 +30917,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30799,7 +31012,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31221,7 +31434,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31256,7 +31469,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31307,7 +31520,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31340,7 +31553,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31391,7 +31604,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.0-rc.2+sha-69a8399'));
+    definitionMap.set('version', literal('18.0.2+sha-ca78553'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -31424,5 +31637,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

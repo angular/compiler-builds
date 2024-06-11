@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.0-rc.2+sha-69a8399
+ * @license Angular v18.0.2+sha-ca78553
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -525,14 +525,14 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * This is only defined for `AST` expressions that read or write to a property of an
      * `ImplicitReceiver`.
      */
-    getExpressionTarget(expr: AST): TmplAstReference | TmplAstVariable | null;
+    getExpressionTarget(expr: AST): TemplateEntity | null;
     /**
      * Given a particular `Reference` or `Variable`, get the `ScopedNode` which created it.
      *
      * All `Variable`s are defined on node, so this will always return a value for a `Variable`
      * from the `Target`. Returns `null` otherwise.
      */
-    getDefinitionNodeOfSymbol(symbol: TmplAstReference | TmplAstVariable): ScopedNode | null;
+    getDefinitionNodeOfSymbol(symbol: TemplateEntity): ScopedNode | null;
     /**
      * Get the nesting level of a particular `ScopedNode`.
      *
@@ -544,7 +544,7 @@ export declare interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * Get all `Reference`s and `Variables` visible within the given `ScopedNode` (or at the top
      * level, if `null` is passed).
      */
-    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
+    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TemplateEntity>;
     /**
      * Get a list of all the directives used by the target,
      * including directives from `@defer` blocks.
@@ -1479,6 +1479,7 @@ declare namespace html {
         Comment_2 as Comment,
         Block,
         BlockParameter,
+        LetDeclaration,
         Visitor,
         RecursiveVisitor
     }
@@ -1804,6 +1805,16 @@ export declare function leadingComment(text: string, multiline?: boolean, traili
 
 export declare type LegacyInputPartialMapping = string | [bindingPropertyName: string, classPropertyName: string, transformFunction?: outputAst.Expression];
 
+export declare class LetDeclaration implements BaseNode {
+    name: string;
+    value: string;
+    sourceSpan: ParseSourceSpan;
+    readonly nameSpan: ParseSourceSpan;
+    valueSpan: ParseSourceSpan;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, valueSpan: ParseSourceSpan);
+    visit(visitor: Visitor, context: any): any;
+}
+
 export declare class Lexer {
     tokenize(text: string): Token[];
 }
@@ -1845,7 +1856,11 @@ export declare const enum LexerTokenType {
     BLOCK_CLOSE = 26,
     BLOCK_PARAMETER = 27,
     INCOMPLETE_BLOCK_OPEN = 28,
-    EOF = 29
+    LET_START = 29,
+    LET_VALUE = 30,
+    LET_END = 31,
+    INCOMPLETE_LET = 32,
+    EOF = 33
 }
 
 export declare function literal(value: any, type?: Type | null, sourceSpan?: ParseSourceSpan | null): LiteralExpr;
@@ -2614,6 +2629,8 @@ export declare interface ParseTemplateOptions {
     collectCommentNodes?: boolean;
     /** Whether the @ block syntax is enabled. */
     enableBlockSyntax?: boolean;
+    /** Whether the `@let` syntax is enabled. */
+    enableLetSyntax?: boolean;
     /**
      * Whether the parser should allow invalid two-way bindings.
      *
@@ -2712,13 +2729,13 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
         directive: DirectiveT;
         node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TmplAstReference | TmplAstVariable>, symbols: Map<TmplAstReference | TmplAstVariable, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TmplAstReference | TmplAstVariable>>, usedPipes: Set<string>, eagerPipes: Set<string>, rawDeferred: [TmplAstDeferredBlock, Scope][]);
-    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TmplAstReference | TmplAstVariable>;
+    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TemplateEntity>, symbols: Map<TemplateEntity, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TemplateEntity>>, usedPipes: Set<string>, eagerPipes: Set<string>, rawDeferred: [TmplAstDeferredBlock, Scope][]);
+    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TemplateEntity>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
     getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
     getConsumerOfBinding(binding: TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute): DirectiveT | TmplAstElement | TmplAstTemplate | null;
-    getExpressionTarget(expr: AST): TmplAstReference | TmplAstVariable | null;
-    getDefinitionNodeOfSymbol(symbol: TmplAstReference | TmplAstVariable): ScopedNode | null;
+    getExpressionTarget(expr: AST): TemplateEntity | null;
+    getDefinitionNodeOfSymbol(symbol: TemplateEntity): ScopedNode | null;
     getNestingLevel(node: ScopedNode): number;
     getUsedDirectives(): DirectiveT[];
     getEagerlyUsedDirectives(): DirectiveT[];
@@ -4369,6 +4386,7 @@ export declare class RecursiveVisitor implements Visitor {
     visitExpansionCase(ast: ExpansionCase, context: any): any;
     visitBlock(block: Block, context: any): any;
     visitBlockParameter(ast: BlockParameter, context: any): any;
+    visitLetDeclaration(decl: LetDeclaration, context: any): void;
     private visitChildren;
 }
 
@@ -4451,7 +4469,7 @@ declare class Scope implements TmplAstVisitor {
     /**
      * Named members of the `Scope`, such as `Reference`s or `Variable`s.
      */
-    readonly namedEntities: Map<string, TmplAstVariable | TmplAstReference>;
+    readonly namedEntities: Map<string, TemplateEntity>;
     /**
      * Set of elements that belong to this scope.
      */
@@ -4488,6 +4506,7 @@ declare class Scope implements TmplAstVisitor {
     visitIfBlock(block: TmplAstIfBlock): void;
     visitIfBlockBranch(block: TmplAstIfBlockBranch): void;
     visitContent(content: TmplAstContent): void;
+    visitLetDeclaration(decl: TmplAstLetDeclaration): void;
     visitBoundAttribute(attr: TmplAstBoundAttribute): void;
     visitBoundEvent(event: TmplAstBoundEvent): void;
     visitBoundText(text: TmplAstBoundText): void;
@@ -4502,7 +4521,7 @@ declare class Scope implements TmplAstVisitor {
      *
      * This can recurse into a parent `Scope` if it's available.
      */
-    lookup(name: string): TmplAstReference | TmplAstVariable | null;
+    lookup(name: string): TemplateEntity | null;
     /**
      * Get the child scope for a `ScopedNode`.
      *
@@ -4700,6 +4719,7 @@ declare namespace t {
         TmplAstIfBlock as IfBlock,
         TmplAstIfBlockBranch as IfBlockBranch,
         TmplAstUnknownBlock as UnknownBlock,
+        TmplAstLetDeclaration as LetDeclaration,
         TmplAstTemplate as Template,
         TmplAstContent as Content,
         TmplAstVariable as Variable,
@@ -4807,6 +4827,9 @@ export declare class TemplateBindingParseResult {
     errors: ParserError[];
     constructor(templateBindings: TemplateBinding[], warnings: string[], errors: ParserError[]);
 }
+
+/** Entity that is local to the template and defined within the template. */
+export declare type TemplateEntity = TmplAstReference | TmplAstVariable | TmplAstLetDeclaration;
 
 export declare class TemplateLiteral {
     elements: TemplateLiteralElement[];
@@ -5060,6 +5083,16 @@ export declare class TmplAstInteractionDeferredTrigger extends TmplAstDeferredTr
     constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null);
 }
 
+export declare class TmplAstLetDeclaration implements TmplAstNode {
+    name: string;
+    value: AST;
+    sourceSpan: ParseSourceSpan;
+    nameSpan: ParseSourceSpan;
+    valueSpan: ParseSourceSpan;
+    constructor(name: string, value: AST, sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, valueSpan: ParseSourceSpan);
+    visit<Result>(visitor: TmplAstVisitor<Result>): Result;
+}
+
 export declare interface TmplAstNode {
     sourceSpan: ParseSourceSpan;
     visit<Result>(visitor: TmplAstVisitor<Result>): Result;
@@ -5089,6 +5122,7 @@ export declare class TmplAstRecursiveVisitor implements TmplAstVisitor<void> {
     visitIcu(icu: TmplAstIcu): void;
     visitDeferredTrigger(trigger: TmplAstDeferredTrigger): void;
     visitUnknownBlock(block: TmplAstUnknownBlock): void;
+    visitLetDeclaration(decl: TmplAstLetDeclaration): void;
 }
 
 export declare class TmplAstReference implements TmplAstNode {
@@ -5222,6 +5256,7 @@ export declare interface TmplAstVisitor<Result = any> {
     visitIfBlock(block: TmplAstIfBlock): Result;
     visitIfBlockBranch(block: TmplAstIfBlockBranch): Result;
     visitUnknownBlock(block: TmplAstUnknownBlock): Result;
+    visitLetDeclaration(decl: TmplAstLetDeclaration): Result;
 }
 
 export declare class Token {
@@ -5317,6 +5352,11 @@ declare interface TokenizeOptions {
      * or ICU tokens if `tokenizeExpansionForms` is enabled.
      */
     tokenizeBlocks?: boolean;
+    /**
+     * Whether to tokenize the `@let` syntax. Otherwise will be considered either
+     * text or an incomplete block, depending on whether `tokenizeBlocks` is enabled.
+     */
+    tokenizeLet?: boolean;
 }
 
 
@@ -5481,6 +5521,7 @@ export declare interface Visitor {
     visitExpansionCase(expansionCase: ExpansionCase, context: any): any;
     visitBlock(block: Block, context: any): any;
     visitBlockParameter(parameter: BlockParameter, context: any): any;
+    visitLetDeclaration(decl: LetDeclaration, context: any): any;
 }
 
 declare interface Visitor_2 {
