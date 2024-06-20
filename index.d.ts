@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.1.0-next.2+sha-0bd55a6
+ * @license Angular v18.1.0-next.2+sha-0d52c6b
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3900,6 +3900,9 @@ export declare class R3Identifiers {
     static twoWayProperty: outputAst.ExternalReference;
     static twoWayBindingSet: outputAst.ExternalReference;
     static twoWayListener: outputAst.ExternalReference;
+    static declareLet: outputAst.ExternalReference;
+    static storeLet: outputAst.ExternalReference;
+    static readContextLet: outputAst.ExternalReference;
     static NgOnChangesFeature: outputAst.ExternalReference;
     static InheritDefinitionFeature: outputAst.ExternalReference;
     static CopyDefinitionFeature: outputAst.ExternalReference;
