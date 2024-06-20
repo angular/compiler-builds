@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.0.3+sha-cc6cd08
+ * @license Angular v18.0.3+sha-5f8f18d
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2884,6 +2884,9 @@ class Identifiers {
     static { this.twoWayProperty = { name: 'ɵɵtwoWayProperty', moduleName: CORE }; }
     static { this.twoWayBindingSet = { name: 'ɵɵtwoWayBindingSet', moduleName: CORE }; }
     static { this.twoWayListener = { name: 'ɵɵtwoWayListener', moduleName: CORE }; }
+    static { this.declareLet = { name: 'ɵɵdeclareLet', moduleName: CORE }; }
+    static { this.storeLet = { name: 'ɵɵstoreLet', moduleName: CORE }; }
+    static { this.readContextLet = { name: 'ɵɵreadContextLet', moduleName: CORE }; }
     static { this.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE }; }
     static { this.InheritDefinitionFeature = {
         name: 'ɵɵInheritDefinitionFeature',
@@ -8296,45 +8299,53 @@ var OpKind;
      */
     OpKind[OpKind["TwoWayListener"] = 37] = "TwoWayListener";
     /**
+     * A creation-time operation that initializes the slot for a `@let` declaration.
+     */
+    OpKind[OpKind["DeclareLet"] = 38] = "DeclareLet";
+    /**
+     * An update-time operation that stores the current value of a `@let` declaration.
+     */
+    OpKind[OpKind["StoreLet"] = 39] = "StoreLet";
+    /**
      * The start of an i18n block.
      */
-    OpKind[OpKind["I18nStart"] = 38] = "I18nStart";
+    OpKind[OpKind["I18nStart"] = 40] = "I18nStart";
     /**
      * A self-closing i18n on a single element.
      */
-    OpKind[OpKind["I18n"] = 39] = "I18n";
+    OpKind[OpKind["I18n"] = 41] = "I18n";
     /**
      * The end of an i18n block.
      */
-    OpKind[OpKind["I18nEnd"] = 40] = "I18nEnd";
+    OpKind[OpKind["I18nEnd"] = 42] = "I18nEnd";
     /**
      * An expression in an i18n message.
      */
-    OpKind[OpKind["I18nExpression"] = 41] = "I18nExpression";
+    OpKind[OpKind["I18nExpression"] = 43] = "I18nExpression";
     /**
      * An instruction that applies a set of i18n expressions.
      */
-    OpKind[OpKind["I18nApply"] = 42] = "I18nApply";
+    OpKind[OpKind["I18nApply"] = 44] = "I18nApply";
     /**
      * An instruction to create an ICU expression.
      */
-    OpKind[OpKind["IcuStart"] = 43] = "IcuStart";
+    OpKind[OpKind["IcuStart"] = 45] = "IcuStart";
     /**
      * An instruction to update an ICU expression.
      */
-    OpKind[OpKind["IcuEnd"] = 44] = "IcuEnd";
+    OpKind[OpKind["IcuEnd"] = 46] = "IcuEnd";
     /**
      * An instruction representing a placeholder in an ICU expression.
      */
-    OpKind[OpKind["IcuPlaceholder"] = 45] = "IcuPlaceholder";
+    OpKind[OpKind["IcuPlaceholder"] = 47] = "IcuPlaceholder";
     /**
      * An i18n context containing information needed to generate an i18n message.
      */
-    OpKind[OpKind["I18nContext"] = 46] = "I18nContext";
+    OpKind[OpKind["I18nContext"] = 48] = "I18nContext";
     /**
      * A creation op that corresponds to i18n attributes on an element.
      */
-    OpKind[OpKind["I18nAttributes"] = 47] = "I18nAttributes";
+    OpKind[OpKind["I18nAttributes"] = 49] = "I18nAttributes";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -8366,77 +8377,85 @@ var ExpressionKind;
      */
     ExpressionKind[ExpressionKind["Reference"] = 5] = "Reference";
     /**
+     * A call storing the value of a `@let` declaration.
+     */
+    ExpressionKind[ExpressionKind["StoreLet"] = 6] = "StoreLet";
+    /**
+     * A reference to a `@let` declaration read from the context view.
+     */
+    ExpressionKind[ExpressionKind["ContextLetReference"] = 7] = "ContextLetReference";
+    /**
      * Runtime operation to snapshot the current view context.
      */
-    ExpressionKind[ExpressionKind["GetCurrentView"] = 6] = "GetCurrentView";
+    ExpressionKind[ExpressionKind["GetCurrentView"] = 8] = "GetCurrentView";
     /**
      * Runtime operation to restore a snapshotted view.
      */
-    ExpressionKind[ExpressionKind["RestoreView"] = 7] = "RestoreView";
+    ExpressionKind[ExpressionKind["RestoreView"] = 9] = "RestoreView";
     /**
      * Runtime operation to reset the current view context after `RestoreView`.
      */
-    ExpressionKind[ExpressionKind["ResetView"] = 8] = "ResetView";
+    ExpressionKind[ExpressionKind["ResetView"] = 10] = "ResetView";
     /**
      * Defines and calls a function with change-detected arguments.
      */
-    ExpressionKind[ExpressionKind["PureFunctionExpr"] = 9] = "PureFunctionExpr";
+    ExpressionKind[ExpressionKind["PureFunctionExpr"] = 11] = "PureFunctionExpr";
     /**
      * Indicates a positional parameter to a pure function definition.
      */
-    ExpressionKind[ExpressionKind["PureFunctionParameterExpr"] = 10] = "PureFunctionParameterExpr";
+    ExpressionKind[ExpressionKind["PureFunctionParameterExpr"] = 12] = "PureFunctionParameterExpr";
     /**
      * Binding to a pipe transformation.
      */
-    ExpressionKind[ExpressionKind["PipeBinding"] = 11] = "PipeBinding";
+    ExpressionKind[ExpressionKind["PipeBinding"] = 13] = "PipeBinding";
     /**
      * Binding to a pipe transformation with a variable number of arguments.
      */
-    ExpressionKind[ExpressionKind["PipeBindingVariadic"] = 12] = "PipeBindingVariadic";
+    ExpressionKind[ExpressionKind["PipeBindingVariadic"] = 14] = "PipeBindingVariadic";
     /*
      * A safe property read requiring expansion into a null check.
      */
-    ExpressionKind[ExpressionKind["SafePropertyRead"] = 13] = "SafePropertyRead";
+    ExpressionKind[ExpressionKind["SafePropertyRead"] = 15] = "SafePropertyRead";
     /**
      * A safe keyed read requiring expansion into a null check.
      */
-    ExpressionKind[ExpressionKind["SafeKeyedRead"] = 14] = "SafeKeyedRead";
+    ExpressionKind[ExpressionKind["SafeKeyedRead"] = 16] = "SafeKeyedRead";
     /**
      * A safe function call requiring expansion into a null check.
      */
-    ExpressionKind[ExpressionKind["SafeInvokeFunction"] = 15] = "SafeInvokeFunction";
+    ExpressionKind[ExpressionKind["SafeInvokeFunction"] = 17] = "SafeInvokeFunction";
     /**
      * An intermediate expression that will be expanded from a safe read into an explicit ternary.
      */
-    ExpressionKind[ExpressionKind["SafeTernaryExpr"] = 16] = "SafeTernaryExpr";
+    ExpressionKind[ExpressionKind["SafeTernaryExpr"] = 18] = "SafeTernaryExpr";
     /**
      * An empty expression that will be stipped before generating the final output.
      */
-    ExpressionKind[ExpressionKind["EmptyExpr"] = 17] = "EmptyExpr";
+    ExpressionKind[ExpressionKind["EmptyExpr"] = 19] = "EmptyExpr";
     /*
      * An assignment to a temporary variable.
      */
-    ExpressionKind[ExpressionKind["AssignTemporaryExpr"] = 18] = "AssignTemporaryExpr";
+    ExpressionKind[ExpressionKind["AssignTemporaryExpr"] = 20] = "AssignTemporaryExpr";
     /**
      * A reference to a temporary variable.
      */
-    ExpressionKind[ExpressionKind["ReadTemporaryExpr"] = 19] = "ReadTemporaryExpr";
+    ExpressionKind[ExpressionKind["ReadTemporaryExpr"] = 21] = "ReadTemporaryExpr";
     /**
      * An expression that will cause a literal slot index to be emitted.
      */
-    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 20] = "SlotLiteralExpr";
+    ExpressionKind[ExpressionKind["SlotLiteralExpr"] = 22] = "SlotLiteralExpr";
     /**
      * A test expression for a conditional op.
      */
-    ExpressionKind[ExpressionKind["ConditionalCase"] = 21] = "ConditionalCase";
+    ExpressionKind[ExpressionKind["ConditionalCase"] = 23] = "ConditionalCase";
     /**
      * An expression that will be automatically extracted to the component const array.
      */
-    ExpressionKind[ExpressionKind["ConstCollected"] = 22] = "ConstCollected";
+    ExpressionKind[ExpressionKind["ConstCollected"] = 24] = "ConstCollected";
     /**
      * Operation that sets the value of a two-way binding.
      */
-    ExpressionKind[ExpressionKind["TwoWayBindingSet"] = 23] = "TwoWayBindingSet";
+    ExpressionKind[ExpressionKind["TwoWayBindingSet"] = 25] = "TwoWayBindingSet";
 })(ExpressionKind || (ExpressionKind = {}));
 var VariableFlags;
 (function (VariableFlags) {
@@ -8657,11 +8676,8 @@ const TRAIT_CONSUMES_VARS = {
 function hasConsumesSlotTrait(op) {
     return op[ConsumesSlot] === true;
 }
-/**
- * Test whether an operation implements `DependsOnSlotContextOpTrait`.
- */
-function hasDependsOnSlotContextTrait(op) {
-    return op[DependsOnSlotContext] === true;
+function hasDependsOnSlotContextTrait(value) {
+    return value[DependsOnSlotContext] === true;
 }
 function hasConsumesVarsTrait(value) {
     return value[ConsumesVarsTrait] === true;
@@ -8959,8 +8975,23 @@ function createI18nApplyOp(owner, handle, sourceSpan) {
         ...NEW_OP,
     };
 }
+/**
+ * Creates a `StoreLetOp`.
+ */
+function createStoreLetOp(target, declaredName, value, sourceSpan) {
+    return {
+        kind: OpKind.StoreLet,
+        target,
+        declaredName,
+        value,
+        sourceSpan,
+        ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+        ...TRAIT_CONSUMES_VARS,
+        ...NEW_OP,
+    };
+}
 
-var _a, _b, _c, _d, _e, _f;
+var _a, _b, _c, _d, _e, _f, _g, _h;
 /**
  * Check whether a given `o.Expression` is a logical IR expression type.
  */
@@ -9020,6 +9051,50 @@ class ReferenceExpr extends ExpressionBase {
     transformInternalExpressions() { }
     clone() {
         return new ReferenceExpr(this.target, this.targetSlot, this.offset);
+    }
+}
+class StoreLetExpr extends ExpressionBase {
+    static { _a = ConsumesVarsTrait, _b = DependsOnSlotContext; }
+    constructor(target, value, sourceSpan) {
+        super();
+        this.target = target;
+        this.value = value;
+        this.sourceSpan = sourceSpan;
+        this.kind = ExpressionKind.StoreLet;
+        this[_a] = true;
+        this[_b] = true;
+    }
+    visitExpression() { }
+    isEquivalent(e) {
+        return (e instanceof StoreLetExpr && e.target === this.target && e.value.isEquivalent(this.value));
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions(transform, flags) {
+        this.value = transformExpressionsInExpression(this.value, transform, flags);
+    }
+    clone() {
+        return new StoreLetExpr(this.target, this.value, this.sourceSpan);
+    }
+}
+class ContextLetReferenceExpr extends ExpressionBase {
+    constructor(target, targetSlot) {
+        super();
+        this.target = target;
+        this.targetSlot = targetSlot;
+        this.kind = ExpressionKind.ContextLetReference;
+    }
+    visitExpression() { }
+    isEquivalent(e) {
+        return e instanceof ContextLetReferenceExpr && e.target === this.target;
+    }
+    isConstant() {
+        return false;
+    }
+    transformInternalExpressions() { }
+    clone() {
+        return new ContextLetReferenceExpr(this.target, this.targetSlot);
     }
 }
 /**
@@ -9222,12 +9297,12 @@ class ReadVariableExpr extends ExpressionBase {
     }
 }
 class PureFunctionExpr extends ExpressionBase {
-    static { _a = ConsumesVarsTrait, _b = UsesVarOffset; }
+    static { _c = ConsumesVarsTrait, _d = UsesVarOffset; }
     constructor(expression, args) {
         super();
         this.kind = ExpressionKind.PureFunctionExpr;
-        this[_a] = true;
-        this[_b] = true;
+        this[_c] = true;
+        this[_d] = true;
         this.varOffset = null;
         /**
          * Once extracted to the `ConstantPool`, a reference to the function which defines the computation
@@ -9293,7 +9368,7 @@ class PureFunctionParameterExpr extends ExpressionBase {
     }
 }
 class PipeBindingExpr extends ExpressionBase {
-    static { _c = ConsumesVarsTrait, _d = UsesVarOffset; }
+    static { _e = ConsumesVarsTrait, _f = UsesVarOffset; }
     constructor(target, targetSlot, name, args) {
         super();
         this.target = target;
@@ -9301,8 +9376,8 @@ class PipeBindingExpr extends ExpressionBase {
         this.name = name;
         this.args = args;
         this.kind = ExpressionKind.PipeBinding;
-        this[_c] = true;
-        this[_d] = true;
+        this[_e] = true;
+        this[_f] = true;
         this.varOffset = null;
     }
     visitExpression(visitor, context) {
@@ -9328,7 +9403,7 @@ class PipeBindingExpr extends ExpressionBase {
     }
 }
 class PipeBindingVariadicExpr extends ExpressionBase {
-    static { _e = ConsumesVarsTrait, _f = UsesVarOffset; }
+    static { _g = ConsumesVarsTrait, _h = UsesVarOffset; }
     constructor(target, targetSlot, name, args, numArgs) {
         super();
         this.target = target;
@@ -9337,8 +9412,8 @@ class PipeBindingVariadicExpr extends ExpressionBase {
         this.args = args;
         this.numArgs = numArgs;
         this.kind = ExpressionKind.PipeBindingVariadic;
-        this[_e] = true;
-        this[_f] = true;
+        this[_g] = true;
+        this[_h] = true;
         this.varOffset = null;
     }
     visitExpression(visitor, context) {
@@ -9732,6 +9807,9 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.DeferWhen:
             op.expr = transformExpressionsInExpression(op.expr, transform, flags);
             break;
+        case OpKind.StoreLet:
+            op.value = transformExpressionsInExpression(op.value, transform, flags);
+            break;
         case OpKind.Advance:
         case OpKind.Container:
         case OpKind.ContainerEnd:
@@ -9757,6 +9835,7 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.Text:
         case OpKind.I18nAttributes:
         case OpKind.IcuPlaceholder:
+        case OpKind.DeclareLet:
             // These operations contain no expressions.
             break;
         default:
@@ -10421,6 +10500,20 @@ function createDeferOnOp(defer, trigger, prefetch, sourceSpan) {
         trigger,
         prefetch,
         sourceSpan,
+        ...NEW_OP,
+    };
+}
+/**
+ * Creates a `DeclareLetOp`.
+ */
+function createDeclareLetOp(xref, declaredName, sourceSpan) {
+    return {
+        kind: OpKind.DeclareLet,
+        xref,
+        declaredName,
+        sourceSpan,
+        handle: new SlotHandle(),
+        ...TRAIT_CONSUMES_SLOT,
         ...NEW_OP,
     };
 }
@@ -11117,6 +11210,7 @@ const CHAINABLE = new Set([
     Identifiers.templateCreate,
     Identifiers.twoWayProperty,
     Identifiers.twoWayListener,
+    Identifiers.declareLet,
 ]);
 /**
  * Post-process a reified view compilation and convert sequential calls to chainable instructions
@@ -12287,16 +12381,26 @@ function generateAdvance(job) {
         // To do that, we track what the runtime's slot counter will be through the update operations.
         let slotContext = 0;
         for (const op of unit.update) {
-            if (!hasDependsOnSlotContextTrait(op)) {
-                // `op` doesn't depend on the slot counter, so it can be skipped.
+            let consumer = null;
+            if (hasDependsOnSlotContextTrait(op)) {
+                consumer = op;
+            }
+            else {
+                visitExpressionsInOp(op, (expr) => {
+                    if (consumer === null && hasDependsOnSlotContextTrait(expr)) {
+                        consumer = expr;
+                    }
+                });
+            }
+            if (consumer === null) {
                 continue;
             }
-            else if (!slotMap.has(op.target)) {
+            if (!slotMap.has(consumer.target)) {
                 // We expect ops that _do_ depend on the slot counter to point at declarations that exist in
                 // the `slotMap`.
-                throw new Error(`AssertionError: reference to unknown slot for target ${op.target}`);
+                throw new Error(`AssertionError: reference to unknown slot for target ${consumer.target}`);
             }
-            const slot = slotMap.get(op.target);
+            const slot = slotMap.get(consumer.target);
             // Does the slot counter need to be adjusted?
             if (slotContext !== slot) {
                 // If so, generate an `ir.AdvanceOp` to advance the counter.
@@ -12304,7 +12408,7 @@ function generateAdvance(job) {
                 if (delta < 0) {
                     throw new Error(`AssertionError: slot counter should never need to move backwards`);
                 }
-                OpList.insertBefore(createAdvanceOp(delta, op.sourceSpan), op);
+                OpList.insertBefore(createAdvanceOp(delta, consumer.sourceSpan), op);
                 slotContext = slot;
             }
         }
@@ -12395,13 +12499,11 @@ function recursivelyProcessView(view, parentScope) {
             case OpKind.Listener:
             case OpKind.TwoWayListener:
                 // Prepend variables to listener handler functions.
-                op.handlerOps.prepend(generateVariablesInScopeForView(view, scope));
+                op.handlerOps.prepend(generateVariablesInScopeForView(view, scope, true));
                 break;
         }
     }
-    // Prepend the declarations for all available variables in scope to the `update` block.
-    const preambleOps = generateVariablesInScopeForView(view, scope);
-    view.update.prepend(preambleOps);
+    view.update.prepend(generateVariablesInScopeForView(view, scope, false));
 }
 /**
  * Process a view and generate a `Scope` representing the variables available for reference within
@@ -12418,6 +12520,7 @@ function getScopeForView(view, parent) {
         contextVariables: new Map(),
         aliases: view.aliases,
         references: [],
+        letDeclarations: [],
         parent,
     };
     for (const identifier of view.contextVariables.keys()) {
@@ -12449,6 +12552,17 @@ function getScopeForView(view, parent) {
                     });
                 }
                 break;
+            case OpKind.DeclareLet:
+                scope.letDeclarations.push({
+                    targetId: op.xref,
+                    targetSlot: op.handle,
+                    variable: {
+                        kind: SemanticVariableKind.Identifier,
+                        name: null,
+                        identifier: op.declaredName,
+                    },
+                });
+                break;
         }
     }
     return scope;
@@ -12459,7 +12573,7 @@ function getScopeForView(view, parent) {
  * This is a recursive process, as views inherit variables available from their parent view, which
  * itself may have inherited variables, etc.
  */
-function generateVariablesInScopeForView(view, scope) {
+function generateVariablesInScopeForView(view, scope, isListener) {
     const newOps = [];
     if (scope.view !== view.xref) {
         // Before generating variables for a parent view, we need to switch to the context of the parent
@@ -12483,9 +12597,14 @@ function generateVariablesInScopeForView(view, scope) {
     for (const ref of scope.references) {
         newOps.push(createVariableOp(view.job.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.targetSlot, ref.offset), VariableFlags.None));
     }
+    if (scope.view !== view.xref || isListener) {
+        for (const decl of scope.letDeclarations) {
+            newOps.push(createVariableOp(view.job.allocateXrefId(), decl.variable, new ContextLetReferenceExpr(decl.targetId, decl.targetSlot), VariableFlags.None));
+        }
+    }
     if (scope.parent !== null) {
         // Recursively add variables from the parent scope.
-        newOps.push(...generateVariablesInScopeForView(view, scope.parent));
+        newOps.push(...generateVariablesInScopeForView(view, scope.parent, false));
     }
     return newOps;
 }
@@ -20625,6 +20744,7 @@ function mergeNextContextsInOps(ops) {
                         break;
                     case ExpressionKind.GetCurrentView:
                     case ExpressionKind.Reference:
+                    case ExpressionKind.ContextLetReference:
                         // Can't merge past a dependency on the context.
                         tryToMerge = false;
                         break;
@@ -21350,6 +21470,15 @@ function repeater(collection, sourceSpan) {
 function deferWhen(prefetch, expr, sourceSpan) {
     return call(prefetch ? Identifiers.deferPrefetchWhen : Identifiers.deferWhen, [expr], sourceSpan);
 }
+function declareLet(slot, sourceSpan) {
+    return call(Identifiers.declareLet, [literal(slot)], sourceSpan);
+}
+function storeLet(value, sourceSpan) {
+    return importExpr(Identifiers.storeLet).callFn([value], sourceSpan);
+}
+function readContextLet(slot) {
+    return importExpr(Identifiers.readContextLet).callFn([literal(slot)]);
+}
 function i18n(slot, constIndex, subTemplateIndex, sourceSpan) {
     const args = [literal(slot), literal(constIndex)];
     if (subTemplateIndex) {
@@ -21786,6 +21915,9 @@ function reifyCreateOperations(unit, ops) {
             case OpKind.Pipe:
                 OpList.replace(op, pipe(op.handle.slot, op.name));
                 break;
+            case OpKind.DeclareLet:
+                OpList.replace(op, declareLet(op.handle.slot, op.sourceSpan));
+                break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
                 const eventTargetResolver = op.eventTarget
@@ -22005,6 +22137,8 @@ function reifyUpdateOperations(_unit, ops) {
             case OpKind.DeferWhen:
                 OpList.replace(op, deferWhen(op.prefetch, op.expr, op.sourceSpan));
                 break;
+            case OpKind.StoreLet:
+                throw new Error(`AssertionError: unexpected storeLet ${op.declaredName}`);
             case OpKind.Statement:
                 // Pass statement operations directly through.
                 break;
@@ -22063,6 +22197,10 @@ function reifyIrExpression(expr) {
             return pipeBindV(expr.targetSlot.slot, expr.varOffset, expr.args);
         case ExpressionKind.SlotLiteralExpr:
             return literal(expr.slot.slot);
+        case ExpressionKind.ContextLetReference:
+            return readContextLet(expr.targetSlot.slot);
+        case ExpressionKind.StoreLet:
+            return storeLet(expr.value, expr.sourceSpan);
         default:
             throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
     }
@@ -22821,7 +22959,7 @@ function saveAndRestoreView(job) {
             if (!needsRestoreView) {
                 for (const handlerOp of op.handlerOps) {
                     visitExpressionsInOp(handlerOp, (expr) => {
-                        if (expr instanceof ReferenceExpr) {
+                        if (expr instanceof ReferenceExpr || expr instanceof ContextLetReferenceExpr) {
                             // Listeners that reference() a local ref need the save/restore view operation.
                             needsRestoreView = true;
                         }
@@ -23276,6 +23414,7 @@ function varsUsedByOp(op) {
         case OpKind.I18nExpression:
         case OpKind.Conditional:
         case OpKind.DeferWhen:
+        case OpKind.StoreLet:
             return 1;
         case OpKind.RepeaterCreate:
             // Repeaters may require an extra variable binding slot, if they have an empty view, for the
@@ -23295,6 +23434,8 @@ function varsUsedByIrExpression(expr) {
             return 1 + expr.args.length;
         case ExpressionKind.PipeBindingVariadic:
             return 1 + expr.numArgs;
+        case ExpressionKind.StoreLet:
+            return 1;
         default:
             throw new Error(`AssertionError: unhandled ConsumesVarsTrait expression ${expr.constructor.name}`);
     }
@@ -23551,7 +23692,10 @@ function fencesForIrExpression(expr) {
             return Fence.ViewContextRead | Fence.ViewContextWrite;
         case ExpressionKind.RestoreView:
             return Fence.ViewContextRead | Fence.ViewContextWrite | Fence.SideEffectful;
+        case ExpressionKind.StoreLet:
+            return Fence.SideEffectful;
         case ExpressionKind.Reference:
+        case ExpressionKind.ContextLetReference:
             return Fence.ViewContextRead;
         default:
             return Fence.None;
@@ -23753,6 +23897,87 @@ function wrapI18nIcus(job) {
     }
 }
 
+/*!
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * Removes any `storeLet` calls that aren't referenced outside of the current view.
+ */
+function optimizeStoreLet(job) {
+    const letUsedExternally = new Set();
+    // Since `@let` declarations can be referenced in child views, both in
+    // the creation block (via listeners) and in the update block, we have
+    // to look through all the ops to find the references.
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            visitExpressionsInOp(op, (expr) => {
+                if (expr instanceof ContextLetReferenceExpr) {
+                    letUsedExternally.add(expr.target);
+                }
+            });
+        }
+    }
+    // TODO(crisbeto): potentially remove the unused calls completely, pending discussion.
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            transformExpressionsInOp(op, (expression) => expression instanceof StoreLetExpr && !letUsedExternally.has(expression.target)
+                ? expression.value
+                : expression, VisitorContextFlag.None);
+        }
+    }
+}
+
+/**
+ * It's not allowed to access a `@let` declaration before it has been defined. This is enforced
+ * already via template type checking, however it can trip some of the assertions in the pipeline.
+ * E.g. the naming phase can fail because we resolved the variable here, but the variable doesn't
+ * exist anymore because the optimization phase removed it since it's invalid. To avoid surfacing
+ * confusing errors to users in the case where template type checking isn't running (e.g. in JIT
+ * mode) this phase detects illegal forward references and replaces them with `undefined`.
+ * Eventually users will see the proper error from the template type checker.
+ */
+function removeIllegalLetReferences(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            if (op.kind !== OpKind.Variable ||
+                op.variable.kind !== SemanticVariableKind.Identifier ||
+                !(op.initializer instanceof StoreLetExpr)) {
+                continue;
+            }
+            const name = op.variable.identifier;
+            let current = op;
+            while (current && current.kind !== OpKind.ListEnd) {
+                transformExpressionsInOp(current, (expr) => expr instanceof LexicalReadExpr && expr.name === name ? literal(undefined) : expr, VisitorContextFlag.None);
+                current = current.prev;
+            }
+        }
+    }
+}
+
+/**
+ * Replaces the `storeLet` ops with variables that can be
+ * used to reference the value within the same view.
+ */
+function generateLocalLetReferences(job) {
+    for (const unit of job.units) {
+        for (const op of unit.update) {
+            if (op.kind !== OpKind.StoreLet) {
+                continue;
+            }
+            const variable = {
+                kind: SemanticVariableKind.Identifier,
+                name: null,
+                identifier: op.declaredName,
+            };
+            OpList.replace(op, createVariableOp(job.allocateXrefId(), variable, new StoreLetExpr(op.target, op.value, op.sourceSpan), VariableFlags.None));
+        }
+    }
+}
+
 /**
  *
  * @license
@@ -23787,11 +24012,13 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
     { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
     { kind: CompilationJobKind.Tmpl, fn: generateProjectionDefs },
+    { kind: CompilationJobKind.Tmpl, fn: generateLocalLetReferences },
     { kind: CompilationJobKind.Tmpl, fn: generateVariables },
     { kind: CompilationJobKind.Tmpl, fn: saveAndRestoreView },
     { kind: CompilationJobKind.Both, fn: deleteAnyCasts },
     { kind: CompilationJobKind.Both, fn: resolveDollarEvent },
     { kind: CompilationJobKind.Tmpl, fn: generateTrackVariables },
+    { kind: CompilationJobKind.Tmpl, fn: removeIllegalLetReferences },
     { kind: CompilationJobKind.Both, fn: resolveNames },
     { kind: CompilationJobKind.Tmpl, fn: resolveDeferTargetNames },
     { kind: CompilationJobKind.Tmpl, fn: transformTwoWayBindingSet },
@@ -23803,6 +24030,7 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: expandSafeReads },
     { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
     { kind: CompilationJobKind.Both, fn: optimizeVariables },
+    { kind: CompilationJobKind.Both, fn: optimizeStoreLet },
     { kind: CompilationJobKind.Tmpl, fn: allocateSlots },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
@@ -24040,7 +24268,7 @@ function ingestNodes(unit, template) {
             ingestForBlock(unit, node);
         }
         else if (node instanceof LetDeclaration$1) {
-            // TODO(crisbeto): needs further integration
+            ingestLetDeclaration(unit, node);
         }
         else {
             throw new Error(`Unsupported template node: ${node.constructor.name}`);
@@ -24455,6 +24683,11 @@ function getComputedForLoopVariableExpression(variable, indexName, countName) {
         default:
             throw new Error(`AssertionError: unknown @for loop variable ${variable.value}`);
     }
+}
+function ingestLetDeclaration(unit, node) {
+    const target = unit.job.allocateXrefId();
+    unit.create.push(createDeclareLetOp(target, node.name, node.sourceSpan));
+    unit.update.push(createStoreLetOp(target, node.name, convertAst(node.value, unit.job, node.valueSpan), node.sourceSpan));
 }
 /**
  * Convert a template AST expression into an output AST expression.
@@ -29263,7 +29496,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.0.3+sha-cc6cd08');
+const VERSION = new Version('18.0.3+sha-5f8f18d');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -30901,7 +31134,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -30919,7 +31152,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31014,7 +31247,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31436,7 +31669,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31471,7 +31704,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31522,7 +31755,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31555,7 +31788,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31606,7 +31839,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.0.3+sha-cc6cd08'));
+    definitionMap.set('version', literal('18.0.3+sha-5f8f18d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
