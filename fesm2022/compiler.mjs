@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.1.0-next.4+sha-5dc6dec
+ * @license Angular v18.1.0-next.4+sha-2a1291e
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -12528,6 +12528,7 @@ function getScopeForView(view, parent) {
             kind: SemanticVariableKind.Identifier,
             name: null,
             identifier,
+            local: false,
         });
     }
     for (const op of view.create) {
@@ -12548,6 +12549,7 @@ function getScopeForView(view, parent) {
                             kind: SemanticVariableKind.Identifier,
                             name: null,
                             identifier: op.localRefs[offset].name,
+                            local: false,
                         },
                     });
                 }
@@ -12560,6 +12562,7 @@ function getScopeForView(view, parent) {
                         kind: SemanticVariableKind.Identifier,
                         name: null,
                         identifier: op.declaredName,
+                        local: false,
                     },
                 });
                 break;
@@ -22714,6 +22717,8 @@ function processLexicalScope(unit, ops, savedView) {
     // Since variables are generated in each view for the entire lexical scope (including any
     // identifiers from parent templates) only local variables need be considered here.
     const scope = new Map();
+    // Symbols defined within the current scope. They take precedence over ones defined outside.
+    const localDefinitions = new Map();
     // First, step through the operations list and:
     // 1) build up the `scope` mapping
     // 2) recurse into any listener functions
@@ -22722,6 +22727,17 @@ function processLexicalScope(unit, ops, savedView) {
             case OpKind.Variable:
                 switch (op.variable.kind) {
                     case SemanticVariableKind.Identifier:
+                        if (op.variable.local) {
+                            if (localDefinitions.has(op.variable.identifier)) {
+                                continue;
+                            }
+                            localDefinitions.set(op.variable.identifier, op.xref);
+                        }
+                        else if (scope.has(op.variable.identifier)) {
+                            continue;
+                        }
+                        scope.set(op.variable.identifier, op.xref);
+                        break;
                     case SemanticVariableKind.Alias:
                         // This variable represents some kind of identifier which can be used in the template.
                         if (scope.has(op.variable.identifier)) {
@@ -22760,7 +22776,10 @@ function processLexicalScope(unit, ops, savedView) {
                 // `expr` is a read of a name within the lexical scope of this view.
                 // Either that name is defined within the current view, or it represents a property from the
                 // main component context.
-                if (scope.has(expr.name)) {
+                if (localDefinitions.has(expr.name)) {
+                    return new ReadVariableExpr(localDefinitions.get(expr.name));
+                }
+                else if (scope.has(expr.name)) {
                     // This was a defined variable in the current scope.
                     return new ReadVariableExpr(scope.get(expr.name));
                 }
@@ -23971,6 +23990,7 @@ function generateLocalLetReferences(job) {
                 kind: SemanticVariableKind.Identifier,
                 name: null,
                 identifier: op.declaredName,
+                local: true,
             };
             OpList.replace(op, createVariableOp(job.allocateXrefId(), variable, new StoreLetExpr(op.target, op.value, op.sourceSpan), VariableFlags.None));
         }
@@ -29498,7 +29518,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.1.0-next.4+sha-5dc6dec');
+const VERSION = new Version('18.1.0-next.4+sha-2a1291e');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -31136,7 +31156,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31154,7 +31174,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31249,7 +31269,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31671,7 +31691,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31706,7 +31726,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31757,7 +31777,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31790,7 +31810,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31841,7 +31861,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.1.0-next.4+sha-5dc6dec'));
+    definitionMap.set('version', literal('18.1.0-next.4+sha-2a1291e'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
