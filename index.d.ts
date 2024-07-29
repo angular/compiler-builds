@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.2.0-next.2+sha-d108320
+ * @license Angular v18.2.0-next.2+sha-dd56270
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1381,8 +1381,8 @@ export declare class ExternalExpr extends Expression {
 export declare class ExternalReference {
     moduleName: string | null;
     name: string | null;
-    runtime?: (any | null) | undefined;
-    constructor(moduleName: string | null, name: string | null, runtime?: (any | null) | undefined);
+    runtime?: any | null;
+    constructor(moduleName: string | null, name: string | null, runtime?: any | null);
 }
 
 declare interface ExternalReferenceResolver {
@@ -2474,9 +2474,9 @@ declare class Parser_2 {
 export declare class ParserError {
     input: string;
     errLocation: string;
-    ctxLocation?: any | undefined;
+    ctxLocation?: any;
     message: string;
-    constructor(message: string, input: string, errLocation: string, ctxLocation?: any | undefined);
+    constructor(message: string, input: string, errLocation: string, ctxLocation?: any);
 }
 
 declare function parseSelectorToR3Selector(selector: string | null): R3CssSelectorList;
