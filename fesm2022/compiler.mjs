@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.1.2+sha-481092d
+ * @license Angular v18.1.2+sha-9304c45
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3809,7 +3809,7 @@ var FactoryTarget$1;
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
 function compileFactoryFunction(meta) {
-    const t = variable('t');
+    const t = variable('ɵt');
     let baseFactoryVar = null;
     // The type to instantiate via constructor invocation. If there is no delegated factory, meaning
     // this type is always created by constructor invocation, then this is the type-to-create
@@ -3834,7 +3834,7 @@ function compileFactoryFunction(meta) {
     const body = [];
     let retExpr = null;
     function makeConditionalFactory(nonCtorExpr) {
-        const r = variable('r');
+        const r = variable('ɵr');
         body.push(r.set(NULL_EXPR).toDeclStmt());
         const ctorStmt = ctorExpr !== null
             ? r.set(ctorExpr).toStmt()
@@ -3872,7 +3872,7 @@ function compileFactoryFunction(meta) {
         // This is straightforward factory, just return it.
         body.push(new ReturnStatement(retExpr));
     }
-    let factoryFn = fn([new FnParam('t', DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
+    let factoryFn = fn([new FnParam(t.name, DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
     if (baseFactoryVar !== null) {
         // There is a base factory variable so wrap its declaration along with the factory function into
         // an IIFE.
@@ -6167,7 +6167,8 @@ function delegateToFactory(type, useType, unwrapForwardRefs) {
     return createFactoryFunction(unwrappedType);
 }
 function createFactoryFunction(type) {
-    return arrowFn([new FnParam('t', DYNAMIC_TYPE)], type.prop('ɵfac').callFn([variable('t')]));
+    const t = new FnParam('ɵt', DYNAMIC_TYPE);
+    return arrowFn([t], type.prop('ɵfac').callFn([variable(t.name)]));
 }
 
 const UNUSABLE_INTERPOLATION_REGEXPS = [
@@ -29548,7 +29549,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('18.1.2+sha-481092d');
+const VERSION = new Version('18.1.2+sha-9304c45');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -31186,7 +31187,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31204,7 +31205,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31299,7 +31300,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31721,7 +31722,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31756,7 +31757,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31807,7 +31808,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31840,7 +31841,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31891,7 +31892,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('18.1.2+sha-481092d'));
+    definitionMap.set('version', literal('18.1.2+sha-9304c45'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
