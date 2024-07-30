@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "18.1.2+sha-81b30dc",
+  "version": "18.1.2+sha-130ff94",
   "description": "Angular - the compiler library",
   "author": "angular",
   "license": "MIT",
@@ -11,7 +11,7 @@
     "tslib": "^2.3.0"
   },
   "peerDependencies": {
-    "@angular/core": "18.1.2+sha-81b30dc"
+    "@angular/core": "18.1.2+sha-130ff94"
   },
   "peerDependenciesMeta": {
     "@angular/core": {
