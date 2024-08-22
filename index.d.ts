@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.2.0+sha-69b20d8
+ * @license Angular v18.2.1+sha-09deb24
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1404,6 +1404,31 @@ declare enum FactoryTarget_2 {
     Pipe = 3,
     NgModule = 4
 }
+
+/**
+ * Given a template string and a set of available directive selectors,
+ * computes a list of matching selectors and splits them into 2 buckets:
+ * (1) eagerly used in a template and (2) directives used only in defer
+ * blocks. Similarly, returns 2 lists of pipes (eager and deferrable).
+ *
+ * Note: deferrable directives selectors and pipes names used in `@defer`
+ * blocks are **candidates** and API caller should make sure that:
+ *
+ *  * A Component where a given template is defined is standalone
+ *  * Underlying dependency classes are also standalone
+ *  * Dependency class symbols are not eagerly used in a TS file
+ *    where a host component (that owns the template) is located
+ */
+export declare function findMatchingDirectivesAndPipes(template: string, directiveSelectors: string[]): {
+    directives: {
+        regular: string[];
+        deferCandidates: string[];
+    };
+    pipes: {
+        regular: string[];
+        deferCandidates: string[];
+    };
+};
 
 declare function fn(params: FnParam[], body: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null): FunctionExpr;
 
