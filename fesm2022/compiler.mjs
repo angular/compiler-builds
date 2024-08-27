@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.1+sha-564a8d5
+ * @license Angular v19.0.0-next.1+sha-21445a2
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -514,14 +514,14 @@ function computeDigest(message) {
 /**
  * Return the message id or compute it using the XLIFF2/XMB/$localize digest.
  */
-function decimalDigest(message) {
-    return message.id || computeDecimalDigest(message);
+function decimalDigest(message, preservePlaceholders) {
+    return message.id || computeDecimalDigest(message, preservePlaceholders);
 }
 /**
  * Compute the message id using the XLIFF2/XMB/$localize digest.
  */
-function computeDecimalDigest(message) {
-    const visitor = new _SerializerIgnoreIcuExpVisitor();
+function computeDecimalDigest(message, preservePlaceholders) {
+    const visitor = new _SerializerIgnoreExpVisitor(preservePlaceholders);
     const parts = message.nodes.map((a) => a.visit(visitor, null));
     return computeMsgId(parts.join(''), message.meaning);
 }
@@ -569,12 +569,22 @@ function serializeNodes(nodes) {
 /**
  * Serialize the i18n ast to something xml-like in order to generate an UID.
  *
- * Ignore the ICU expressions so that message IDs stays identical if only the expression changes.
+ * Ignore the expressions so that message IDs stays identical if only the expression changes.
  *
  * @internal
  */
-class _SerializerIgnoreIcuExpVisitor extends _SerializerVisitor {
-    visitIcu(icu, context) {
+class _SerializerIgnoreExpVisitor extends _SerializerVisitor {
+    constructor(preservePlaceholders) {
+        super();
+        this.preservePlaceholders = preservePlaceholders;
+    }
+    visitPlaceholder(ph, context) {
+        // Do not take the expression into account when `preservePlaceholders` is disabled.
+        return this.preservePlaceholders
+            ? super.visitPlaceholder(ph, context)
+            : `<ph name="${ph.name}"/>`;
+    }
+    visitIcu(icu) {
         let strCases = Object.keys(icu.cases).map((k) => `${k} {${icu.cases[k].visit(this)}}`);
         // Do not take the expression into account
         return `{${icu.type}, ${strCases.join(', ')}}`;
@@ -5655,6 +5665,10 @@ const _DOCTYPE = `<!ELEMENT messagebundle (msg)*>
 
 <!ELEMENT ex (#PCDATA)>`;
 class Xmb extends Serializer {
+    constructor(preservePlaceholders = true) {
+        super();
+        this.preservePlaceholders = preservePlaceholders;
+    }
     write(messages, locale) {
         const exampleVisitor = new ExampleVisitor();
         const visitor = new _Visitor$1();
@@ -5690,7 +5704,7 @@ class Xmb extends Serializer {
         throw new Error('Unsupported');
     }
     digest(message) {
-        return digest(message);
+        return digest(message, this.preservePlaceholders);
     }
     createNameMapper(message) {
         return new SimplePlaceholderMapper(message, toPublicName);
@@ -5771,8 +5785,8 @@ class _Visitor$1 {
         return [].concat(...nodes.map((node) => node.visit(this)));
     }
 }
-function digest(message) {
-    return decimalDigest(message);
+function digest(message, preservePlaceholders) {
+    return decimalDigest(message, preservePlaceholders);
 }
 // TC requires at least one non-empty example on placeholders
 class ExampleVisitor {
@@ -12759,1630 +12773,6 @@ function serializeIcuNode(icu) {
     return icu.visit(serializer);
 }
 
-var TokenType;
-(function (TokenType) {
-    TokenType[TokenType["Character"] = 0] = "Character";
-    TokenType[TokenType["Identifier"] = 1] = "Identifier";
-    TokenType[TokenType["PrivateIdentifier"] = 2] = "PrivateIdentifier";
-    TokenType[TokenType["Keyword"] = 3] = "Keyword";
-    TokenType[TokenType["String"] = 4] = "String";
-    TokenType[TokenType["Operator"] = 5] = "Operator";
-    TokenType[TokenType["Number"] = 6] = "Number";
-    TokenType[TokenType["Error"] = 7] = "Error";
-})(TokenType || (TokenType = {}));
-const KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
-class Lexer {
-    tokenize(text) {
-        const scanner = new _Scanner(text);
-        const tokens = [];
-        let token = scanner.scanToken();
-        while (token != null) {
-            tokens.push(token);
-            token = scanner.scanToken();
-        }
-        return tokens;
-    }
-}
-class Token {
-    constructor(index, end, type, numValue, strValue) {
-        this.index = index;
-        this.end = end;
-        this.type = type;
-        this.numValue = numValue;
-        this.strValue = strValue;
-    }
-    isCharacter(code) {
-        return this.type == TokenType.Character && this.numValue == code;
-    }
-    isNumber() {
-        return this.type == TokenType.Number;
-    }
-    isString() {
-        return this.type == TokenType.String;
-    }
-    isOperator(operator) {
-        return this.type == TokenType.Operator && this.strValue == operator;
-    }
-    isIdentifier() {
-        return this.type == TokenType.Identifier;
-    }
-    isPrivateIdentifier() {
-        return this.type == TokenType.PrivateIdentifier;
-    }
-    isKeyword() {
-        return this.type == TokenType.Keyword;
-    }
-    isKeywordLet() {
-        return this.type == TokenType.Keyword && this.strValue == 'let';
-    }
-    isKeywordAs() {
-        return this.type == TokenType.Keyword && this.strValue == 'as';
-    }
-    isKeywordNull() {
-        return this.type == TokenType.Keyword && this.strValue == 'null';
-    }
-    isKeywordUndefined() {
-        return this.type == TokenType.Keyword && this.strValue == 'undefined';
-    }
-    isKeywordTrue() {
-        return this.type == TokenType.Keyword && this.strValue == 'true';
-    }
-    isKeywordFalse() {
-        return this.type == TokenType.Keyword && this.strValue == 'false';
-    }
-    isKeywordThis() {
-        return this.type == TokenType.Keyword && this.strValue == 'this';
-    }
-    isError() {
-        return this.type == TokenType.Error;
-    }
-    toNumber() {
-        return this.type == TokenType.Number ? this.numValue : -1;
-    }
-    toString() {
-        switch (this.type) {
-            case TokenType.Character:
-            case TokenType.Identifier:
-            case TokenType.Keyword:
-            case TokenType.Operator:
-            case TokenType.PrivateIdentifier:
-            case TokenType.String:
-            case TokenType.Error:
-                return this.strValue;
-            case TokenType.Number:
-                return this.numValue.toString();
-            default:
-                return null;
-        }
-    }
-}
-function newCharacterToken(index, end, code) {
-    return new Token(index, end, TokenType.Character, code, String.fromCharCode(code));
-}
-function newIdentifierToken(index, end, text) {
-    return new Token(index, end, TokenType.Identifier, 0, text);
-}
-function newPrivateIdentifierToken(index, end, text) {
-    return new Token(index, end, TokenType.PrivateIdentifier, 0, text);
-}
-function newKeywordToken(index, end, text) {
-    return new Token(index, end, TokenType.Keyword, 0, text);
-}
-function newOperatorToken(index, end, text) {
-    return new Token(index, end, TokenType.Operator, 0, text);
-}
-function newStringToken(index, end, text) {
-    return new Token(index, end, TokenType.String, 0, text);
-}
-function newNumberToken(index, end, n) {
-    return new Token(index, end, TokenType.Number, n, '');
-}
-function newErrorToken(index, end, message) {
-    return new Token(index, end, TokenType.Error, 0, message);
-}
-const EOF = new Token(-1, -1, TokenType.Character, 0, '');
-class _Scanner {
-    constructor(input) {
-        this.input = input;
-        this.peek = 0;
-        this.index = -1;
-        this.length = input.length;
-        this.advance();
-    }
-    advance() {
-        this.peek = ++this.index >= this.length ? $EOF : this.input.charCodeAt(this.index);
-    }
-    scanToken() {
-        const input = this.input, length = this.length;
-        let peek = this.peek, index = this.index;
-        // Skip whitespace.
-        while (peek <= $SPACE) {
-            if (++index >= length) {
-                peek = $EOF;
-                break;
-            }
-            else {
-                peek = input.charCodeAt(index);
-            }
-        }
-        this.peek = peek;
-        this.index = index;
-        if (index >= length) {
-            return null;
-        }
-        // Handle identifiers and numbers.
-        if (isIdentifierStart(peek))
-            return this.scanIdentifier();
-        if (isDigit(peek))
-            return this.scanNumber(index);
-        const start = index;
-        switch (peek) {
-            case $PERIOD:
-                this.advance();
-                return isDigit(this.peek)
-                    ? this.scanNumber(start)
-                    : newCharacterToken(start, this.index, $PERIOD);
-            case $LPAREN:
-            case $RPAREN:
-            case $LBRACE:
-            case $RBRACE:
-            case $LBRACKET:
-            case $RBRACKET:
-            case $COMMA:
-            case $COLON:
-            case $SEMICOLON:
-                return this.scanCharacter(start, peek);
-            case $SQ:
-            case $DQ:
-                return this.scanString();
-            case $HASH:
-                return this.scanPrivateIdentifier();
-            case $PLUS:
-            case $MINUS:
-            case $STAR:
-            case $SLASH:
-            case $PERCENT:
-            case $CARET:
-                return this.scanOperator(start, String.fromCharCode(peek));
-            case $QUESTION:
-                return this.scanQuestion(start);
-            case $LT:
-            case $GT:
-                return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=');
-            case $BANG:
-            case $EQ:
-                return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=', $EQ, '=');
-            case $AMPERSAND:
-                return this.scanComplexOperator(start, '&', $AMPERSAND, '&');
-            case $BAR:
-                return this.scanComplexOperator(start, '|', $BAR, '|');
-            case $NBSP:
-                while (isWhitespace(this.peek))
-                    this.advance();
-                return this.scanToken();
-        }
-        this.advance();
-        return this.error(`Unexpected character [${String.fromCharCode(peek)}]`, 0);
-    }
-    scanCharacter(start, code) {
-        this.advance();
-        return newCharacterToken(start, this.index, code);
-    }
-    scanOperator(start, str) {
-        this.advance();
-        return newOperatorToken(start, this.index, str);
-    }
-    /**
-     * Tokenize a 2/3 char long operator
-     *
-     * @param start start index in the expression
-     * @param one first symbol (always part of the operator)
-     * @param twoCode code point for the second symbol
-     * @param two second symbol (part of the operator when the second code point matches)
-     * @param threeCode code point for the third symbol
-     * @param three third symbol (part of the operator when provided and matches source expression)
-     */
-    scanComplexOperator(start, one, twoCode, two, threeCode, three) {
-        this.advance();
-        let str = one;
-        if (this.peek == twoCode) {
-            this.advance();
-            str += two;
-        }
-        if (threeCode != null && this.peek == threeCode) {
-            this.advance();
-            str += three;
-        }
-        return newOperatorToken(start, this.index, str);
-    }
-    scanIdentifier() {
-        const start = this.index;
-        this.advance();
-        while (isIdentifierPart(this.peek))
-            this.advance();
-        const str = this.input.substring(start, this.index);
-        return KEYWORDS.indexOf(str) > -1
-            ? newKeywordToken(start, this.index, str)
-            : newIdentifierToken(start, this.index, str);
-    }
-    /** Scans an ECMAScript private identifier. */
-    scanPrivateIdentifier() {
-        const start = this.index;
-        this.advance();
-        if (!isIdentifierStart(this.peek)) {
-            return this.error('Invalid character [#]', -1);
-        }
-        while (isIdentifierPart(this.peek))
-            this.advance();
-        const identifierName = this.input.substring(start, this.index);
-        return newPrivateIdentifierToken(start, this.index, identifierName);
-    }
-    scanNumber(start) {
-        let simple = this.index === start;
-        let hasSeparators = false;
-        this.advance(); // Skip initial digit.
-        while (true) {
-            if (isDigit(this.peek)) {
-                // Do nothing.
-            }
-            else if (this.peek === $_) {
-                // Separators are only valid when they're surrounded by digits. E.g. `1_0_1` is
-                // valid while `_101` and `101_` are not. The separator can't be next to the decimal
-                // point or another separator either. Note that it's unlikely that we'll hit a case where
-                // the underscore is at the start, because that's a valid identifier and it will be picked
-                // up earlier in the parsing. We validate for it anyway just in case.
-                if (!isDigit(this.input.charCodeAt(this.index - 1)) ||
-                    !isDigit(this.input.charCodeAt(this.index + 1))) {
-                    return this.error('Invalid numeric separator', 0);
-                }
-                hasSeparators = true;
-            }
-            else if (this.peek === $PERIOD) {
-                simple = false;
-            }
-            else if (isExponentStart(this.peek)) {
-                this.advance();
-                if (isExponentSign(this.peek))
-                    this.advance();
-                if (!isDigit(this.peek))
-                    return this.error('Invalid exponent', -1);
-                simple = false;
-            }
-            else {
-                break;
-            }
-            this.advance();
-        }
-        let str = this.input.substring(start, this.index);
-        if (hasSeparators) {
-            str = str.replace(/_/g, '');
-        }
-        const value = simple ? parseIntAutoRadix(str) : parseFloat(str);
-        return newNumberToken(start, this.index, value);
-    }
-    scanString() {
-        const start = this.index;
-        const quote = this.peek;
-        this.advance(); // Skip initial quote.
-        let buffer = '';
-        let marker = this.index;
-        const input = this.input;
-        while (this.peek != quote) {
-            if (this.peek == $BACKSLASH) {
-                buffer += input.substring(marker, this.index);
-                let unescapedCode;
-                this.advance(); // mutates this.peek
-                // @ts-expect-error see microsoft/TypeScript#9998
-                if (this.peek == $u) {
-                    // 4 character hex code for unicode character.
-                    const hex = input.substring(this.index + 1, this.index + 5);
-                    if (/^[0-9a-f]+$/i.test(hex)) {
-                        unescapedCode = parseInt(hex, 16);
-                    }
-                    else {
-                        return this.error(`Invalid unicode escape [\\u${hex}]`, 0);
-                    }
-                    for (let i = 0; i < 5; i++) {
-                        this.advance();
-                    }
-                }
-                else {
-                    unescapedCode = unescape(this.peek);
-                    this.advance();
-                }
-                buffer += String.fromCharCode(unescapedCode);
-                marker = this.index;
-            }
-            else if (this.peek == $EOF) {
-                return this.error('Unterminated quote', 0);
-            }
-            else {
-                this.advance();
-            }
-        }
-        const last = input.substring(marker, this.index);
-        this.advance(); // Skip terminating quote.
-        return newStringToken(start, this.index, buffer + last);
-    }
-    scanQuestion(start) {
-        this.advance();
-        let str = '?';
-        // Either `a ?? b` or 'a?.b'.
-        if (this.peek === $QUESTION || this.peek === $PERIOD) {
-            str += this.peek === $PERIOD ? '.' : '?';
-            this.advance();
-        }
-        return newOperatorToken(start, this.index, str);
-    }
-    error(message, offset) {
-        const position = this.index + offset;
-        return newErrorToken(position, this.index, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
-    }
-}
-function isIdentifierStart(code) {
-    return (($a <= code && code <= $z) ||
-        ($A <= code && code <= $Z) ||
-        code == $_ ||
-        code == $$);
-}
-function isIdentifier(input) {
-    if (input.length == 0)
-        return false;
-    const scanner = new _Scanner(input);
-    if (!isIdentifierStart(scanner.peek))
-        return false;
-    scanner.advance();
-    while (scanner.peek !== $EOF) {
-        if (!isIdentifierPart(scanner.peek))
-            return false;
-        scanner.advance();
-    }
-    return true;
-}
-function isIdentifierPart(code) {
-    return isAsciiLetter(code) || isDigit(code) || code == $_ || code == $$;
-}
-function isExponentStart(code) {
-    return code == $e || code == $E;
-}
-function isExponentSign(code) {
-    return code == $MINUS || code == $PLUS;
-}
-function unescape(code) {
-    switch (code) {
-        case $n:
-            return $LF;
-        case $f:
-            return $FF;
-        case $r:
-            return $CR;
-        case $t:
-            return $TAB;
-        case $v:
-            return $VTAB;
-        default:
-            return code;
-    }
-}
-function parseIntAutoRadix(text) {
-    const result = parseInt(text);
-    if (isNaN(result)) {
-        throw new Error('Invalid integer literal when parsing ' + text);
-    }
-    return result;
-}
-
-class SplitInterpolation {
-    constructor(strings, expressions, offsets) {
-        this.strings = strings;
-        this.expressions = expressions;
-        this.offsets = offsets;
-    }
-}
-class TemplateBindingParseResult {
-    constructor(templateBindings, warnings, errors) {
-        this.templateBindings = templateBindings;
-        this.warnings = warnings;
-        this.errors = errors;
-    }
-}
-class Parser$1 {
-    constructor(_lexer) {
-        this._lexer = _lexer;
-        this.errors = [];
-    }
-    parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        this._checkNoInterpolation(input, location, interpolationConfig);
-        const sourceToLex = this._stripComments(input);
-        const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(input, location, absoluteOffset, tokens, 1 /* ParseFlags.Action */, this.errors, 0).parseChain();
-        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
-    }
-    parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
-        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
-    }
-    checkSimpleExpression(ast) {
-        const checker = new SimpleExpressionChecker();
-        ast.visit(checker);
-        return checker.errors;
-    }
-    // Host bindings parsed here
-    parseSimpleBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
-        const errors = this.checkSimpleExpression(ast);
-        if (errors.length > 0) {
-            this._reportError(`Host binding expression cannot contain ${errors.join(' ')}`, input, location);
-        }
-        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
-    }
-    _reportError(message, input, errLocation, ctxLocation) {
-        this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
-    }
-    _parseBindingAst(input, location, absoluteOffset, interpolationConfig) {
-        this._checkNoInterpolation(input, location, interpolationConfig);
-        const sourceToLex = this._stripComments(input);
-        const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0).parseChain();
-    }
-    /**
-     * Parse microsyntax template expression and return a list of bindings or
-     * parsing errors in case the given expression is invalid.
-     *
-     * For example,
-     * ```
-     *   <div *ngFor="let item of items">
-     *         ^      ^ absoluteValueOffset for `templateValue`
-     *         absoluteKeyOffset for `templateKey`
-     * ```
-     * contains three bindings:
-     * 1. ngFor -> null
-     * 2. item -> NgForOfContext.$implicit
-     * 3. ngForOf -> items
-     *
-     * This is apparent from the de-sugared template:
-     * ```
-     *   <ng-template ngFor let-item [ngForOf]="items">
-     * ```
-     *
-     * @param templateKey name of directive, without the * prefix. For example: ngIf, ngFor
-     * @param templateValue RHS of the microsyntax attribute
-     * @param templateUrl template filename if it's external, component filename if it's inline
-     * @param absoluteKeyOffset start of the `templateKey`
-     * @param absoluteValueOffset start of the `templateValue`
-     */
-    parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
-        const tokens = this._lexer.tokenize(templateValue);
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0 /* relative offset */);
-        return parser.parseTemplateBindings({
-            source: templateKey,
-            span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
-        });
-    }
-    parseInterpolation(input, location, absoluteOffset, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const { strings, expressions, offsets } = this.splitInterpolation(input, location, interpolatedTokens, interpolationConfig);
-        if (expressions.length === 0)
-            return null;
-        const expressionNodes = [];
-        for (let i = 0; i < expressions.length; ++i) {
-            const expressionText = expressions[i].text;
-            const sourceToLex = this._stripComments(expressionText);
-            const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, offsets[i]).parseChain();
-            expressionNodes.push(ast);
-        }
-        return this.createInterpolationAst(strings.map((s) => s.text), expressionNodes, input, location, absoluteOffset);
-    }
-    /**
-     * Similar to `parseInterpolation`, but treats the provided string as a single expression
-     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
-     * This is used for parsing the switch expression in ICUs.
-     */
-    parseInterpolationExpression(expression, location, absoluteOffset) {
-        const sourceToLex = this._stripComments(expression);
-        const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0).parseChain();
-        const strings = ['', '']; // The prefix and suffix strings are both empty
-        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
-    }
-    createInterpolationAst(strings, expressions, input, location, absoluteOffset) {
-        const span = new ParseSpan(0, input.length);
-        const interpolation = new Interpolation$1(span, span.toAbsolute(absoluteOffset), strings, expressions);
-        return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
-    }
-    /**
-     * Splits a string of text into "raw" text segments and expressions present in interpolations in
-     * the string.
-     * Returns `null` if there are no interpolations, otherwise a
-     * `SplitInterpolation` with splits that look like
-     *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
-     */
-    splitInterpolation(input, location, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const strings = [];
-        const expressions = [];
-        const offsets = [];
-        const inputToTemplateIndexMap = interpolatedTokens
-            ? getIndexMapForOriginalTemplate(interpolatedTokens)
-            : null;
-        let i = 0;
-        let atInterpolation = false;
-        let extendLastString = false;
-        let { start: interpStart, end: interpEnd } = interpolationConfig;
-        while (i < input.length) {
-            if (!atInterpolation) {
-                // parse until starting {{
-                const start = i;
-                i = input.indexOf(interpStart, i);
-                if (i === -1) {
-                    i = input.length;
-                }
-                const text = input.substring(start, i);
-                strings.push({ text, start, end: i });
-                atInterpolation = true;
-            }
-            else {
-                // parse from starting {{ to ending }} while ignoring content inside quotes.
-                const fullStart = i;
-                const exprStart = fullStart + interpStart.length;
-                const exprEnd = this._getInterpolationEndIndex(input, interpEnd, exprStart);
-                if (exprEnd === -1) {
-                    // Could not find the end of the interpolation; do not parse an expression.
-                    // Instead we should extend the content on the last raw string.
-                    atInterpolation = false;
-                    extendLastString = true;
-                    break;
-                }
-                const fullEnd = exprEnd + interpEnd.length;
-                const text = input.substring(exprStart, exprEnd);
-                if (text.trim().length === 0) {
-                    this._reportError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location);
-                }
-                expressions.push({ text, start: fullStart, end: fullEnd });
-                const startInOriginalTemplate = inputToTemplateIndexMap?.get(fullStart) ?? fullStart;
-                const offset = startInOriginalTemplate + interpStart.length;
-                offsets.push(offset);
-                i = fullEnd;
-                atInterpolation = false;
-            }
-        }
-        if (!atInterpolation) {
-            // If we are now at a text section, add the remaining content as a raw string.
-            if (extendLastString) {
-                const piece = strings[strings.length - 1];
-                piece.text += input.substring(i);
-                piece.end = input.length;
-            }
-            else {
-                strings.push({ text: input.substring(i), start: i, end: input.length });
-            }
-        }
-        return new SplitInterpolation(strings, expressions, offsets);
-    }
-    wrapLiteralPrimitive(input, location, absoluteOffset) {
-        const span = new ParseSpan(0, input == null ? 0 : input.length);
-        return new ASTWithSource(new LiteralPrimitive(span, span.toAbsolute(absoluteOffset), input), input, location, absoluteOffset, this.errors);
-    }
-    _stripComments(input) {
-        const i = this._commentStart(input);
-        return i != null ? input.substring(0, i) : input;
-    }
-    _commentStart(input) {
-        let outerQuote = null;
-        for (let i = 0; i < input.length - 1; i++) {
-            const char = input.charCodeAt(i);
-            const nextChar = input.charCodeAt(i + 1);
-            if (char === $SLASH && nextChar == $SLASH && outerQuote == null)
-                return i;
-            if (outerQuote === char) {
-                outerQuote = null;
-            }
-            else if (outerQuote == null && isQuote(char)) {
-                outerQuote = char;
-            }
-        }
-        return null;
-    }
-    _checkNoInterpolation(input, location, { start, end }) {
-        let startIndex = -1;
-        let endIndex = -1;
-        for (const charIndex of this._forEachUnquotedChar(input, 0)) {
-            if (startIndex === -1) {
-                if (input.startsWith(start)) {
-                    startIndex = charIndex;
-                }
-            }
-            else {
-                endIndex = this._getInterpolationEndIndex(input, end, charIndex);
-                if (endIndex > -1) {
-                    break;
-                }
-            }
-        }
-        if (startIndex > -1 && endIndex > -1) {
-            this._reportError(`Got interpolation (${start}${end}) where expression was expected`, input, `at column ${startIndex} in`, location);
-        }
-    }
-    /**
-     * Finds the index of the end of an interpolation expression
-     * while ignoring comments and quoted content.
-     */
-    _getInterpolationEndIndex(input, expressionEnd, start) {
-        for (const charIndex of this._forEachUnquotedChar(input, start)) {
-            if (input.startsWith(expressionEnd, charIndex)) {
-                return charIndex;
-            }
-            // Nothing else in the expression matters after we've
-            // hit a comment so look directly for the end token.
-            if (input.startsWith('//', charIndex)) {
-                return input.indexOf(expressionEnd, charIndex);
-            }
-        }
-        return -1;
-    }
-    /**
-     * Generator used to iterate over the character indexes of a string that are outside of quotes.
-     * @param input String to loop through.
-     * @param start Index within the string at which to start.
-     */
-    *_forEachUnquotedChar(input, start) {
-        let currentQuote = null;
-        let escapeCount = 0;
-        for (let i = start; i < input.length; i++) {
-            const char = input[i];
-            // Skip the characters inside quotes. Note that we only care about the outer-most
-            // quotes matching up and we need to account for escape characters.
-            if (isQuote(input.charCodeAt(i)) &&
-                (currentQuote === null || currentQuote === char) &&
-                escapeCount % 2 === 0) {
-                currentQuote = currentQuote === null ? char : null;
-            }
-            else if (currentQuote === null) {
-                yield i;
-            }
-            escapeCount = char === '\\' ? escapeCount + 1 : 0;
-        }
-    }
-}
-/** Describes a stateful context an expression parser is in. */
-var ParseContextFlags;
-(function (ParseContextFlags) {
-    ParseContextFlags[ParseContextFlags["None"] = 0] = "None";
-    /**
-     * A Writable context is one in which a value may be written to an lvalue.
-     * For example, after we see a property access, we may expect a write to the
-     * property via the "=" operator.
-     *   prop
-     *        ^ possible "=" after
-     */
-    ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
-})(ParseContextFlags || (ParseContextFlags = {}));
-class _ParseAST {
-    constructor(input, location, absoluteOffset, tokens, parseFlags, errors, offset) {
-        this.input = input;
-        this.location = location;
-        this.absoluteOffset = absoluteOffset;
-        this.tokens = tokens;
-        this.parseFlags = parseFlags;
-        this.errors = errors;
-        this.offset = offset;
-        this.rparensExpected = 0;
-        this.rbracketsExpected = 0;
-        this.rbracesExpected = 0;
-        this.context = ParseContextFlags.None;
-        // Cache of expression start and input indeces to the absolute source span they map to, used to
-        // prevent creating superfluous source spans in `sourceSpan`.
-        // A serial of the expression start and input index is used for mapping because both are stateful
-        // and may change for subsequent expressions visited by the parser.
-        this.sourceSpanCache = new Map();
-        this.index = 0;
-    }
-    peek(offset) {
-        const i = this.index + offset;
-        return i < this.tokens.length ? this.tokens[i] : EOF;
-    }
-    get next() {
-        return this.peek(0);
-    }
-    /** Whether all the parser input has been processed. */
-    get atEOF() {
-        return this.index >= this.tokens.length;
-    }
-    /**
-     * Index of the next token to be processed, or the end of the last token if all have been
-     * processed.
-     */
-    get inputIndex() {
-        return this.atEOF ? this.currentEndIndex : this.next.index + this.offset;
-    }
-    /**
-     * End index of the last processed token, or the start of the first token if none have been
-     * processed.
-     */
-    get currentEndIndex() {
-        if (this.index > 0) {
-            const curToken = this.peek(-1);
-            return curToken.end + this.offset;
-        }
-        // No tokens have been processed yet; return the next token's start or the length of the input
-        // if there is no token.
-        if (this.tokens.length === 0) {
-            return this.input.length + this.offset;
-        }
-        return this.next.index + this.offset;
-    }
-    /**
-     * Returns the absolute offset of the start of the current token.
-     */
-    get currentAbsoluteOffset() {
-        return this.absoluteOffset + this.inputIndex;
-    }
-    /**
-     * Retrieve a `ParseSpan` from `start` to the current position (or to `artificialEndIndex` if
-     * provided).
-     *
-     * @param start Position from which the `ParseSpan` will start.
-     * @param artificialEndIndex Optional ending index to be used if provided (and if greater than the
-     *     natural ending index)
-     */
-    span(start, artificialEndIndex) {
-        let endIndex = this.currentEndIndex;
-        if (artificialEndIndex !== undefined && artificialEndIndex > this.currentEndIndex) {
-            endIndex = artificialEndIndex;
-        }
-        // In some unusual parsing scenarios (like when certain tokens are missing and an `EmptyExpr` is
-        // being created), the current token may already be advanced beyond the `currentEndIndex`. This
-        // appears to be a deep-seated parser bug.
-        //
-        // As a workaround for now, swap the start and end indices to ensure a valid `ParseSpan`.
-        // TODO(alxhub): fix the bug upstream in the parser state, and remove this workaround.
-        if (start > endIndex) {
-            const tmp = endIndex;
-            endIndex = start;
-            start = tmp;
-        }
-        return new ParseSpan(start, endIndex);
-    }
-    sourceSpan(start, artificialEndIndex) {
-        const serial = `${start}@${this.inputIndex}:${artificialEndIndex}`;
-        if (!this.sourceSpanCache.has(serial)) {
-            this.sourceSpanCache.set(serial, this.span(start, artificialEndIndex).toAbsolute(this.absoluteOffset));
-        }
-        return this.sourceSpanCache.get(serial);
-    }
-    advance() {
-        this.index++;
-    }
-    /**
-     * Executes a callback in the provided context.
-     */
-    withContext(context, cb) {
-        this.context |= context;
-        const ret = cb();
-        this.context ^= context;
-        return ret;
-    }
-    consumeOptionalCharacter(code) {
-        if (this.next.isCharacter(code)) {
-            this.advance();
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    peekKeywordLet() {
-        return this.next.isKeywordLet();
-    }
-    peekKeywordAs() {
-        return this.next.isKeywordAs();
-    }
-    /**
-     * Consumes an expected character, otherwise emits an error about the missing expected character
-     * and skips over the token stream until reaching a recoverable point.
-     *
-     * See `this.error` and `this.skip` for more details.
-     */
-    expectCharacter(code) {
-        if (this.consumeOptionalCharacter(code))
-            return;
-        this.error(`Missing expected ${String.fromCharCode(code)}`);
-    }
-    consumeOptionalOperator(op) {
-        if (this.next.isOperator(op)) {
-            this.advance();
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-    expectOperator(operator) {
-        if (this.consumeOptionalOperator(operator))
-            return;
-        this.error(`Missing expected operator ${operator}`);
-    }
-    prettyPrintToken(tok) {
-        return tok === EOF ? 'end of input' : `token ${tok}`;
-    }
-    expectIdentifierOrKeyword() {
-        const n = this.next;
-        if (!n.isIdentifier() && !n.isKeyword()) {
-            if (n.isPrivateIdentifier()) {
-                this._reportErrorForPrivateIdentifier(n, 'expected identifier or keyword');
-            }
-            else {
-                this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier or keyword`);
-            }
-            return null;
-        }
-        this.advance();
-        return n.toString();
-    }
-    expectIdentifierOrKeywordOrString() {
-        const n = this.next;
-        if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
-            if (n.isPrivateIdentifier()) {
-                this._reportErrorForPrivateIdentifier(n, 'expected identifier, keyword or string');
-            }
-            else {
-                this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier, keyword, or string`);
-            }
-            return '';
-        }
-        this.advance();
-        return n.toString();
-    }
-    parseChain() {
-        const exprs = [];
-        const start = this.inputIndex;
-        while (this.index < this.tokens.length) {
-            const expr = this.parsePipe();
-            exprs.push(expr);
-            if (this.consumeOptionalCharacter($SEMICOLON)) {
-                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
-                    this.error('Binding expression cannot contain chained expression');
-                }
-                while (this.consumeOptionalCharacter($SEMICOLON)) { } // read all semicolons
-            }
-            else if (this.index < this.tokens.length) {
-                const errorIndex = this.index;
-                this.error(`Unexpected token '${this.next}'`);
-                // The `error` call above will skip ahead to the next recovery point in an attempt to
-                // recover part of the expression, but that might be the token we started from which will
-                // lead to an infinite loop. If that's the case, break the loop assuming that we can't
-                // parse further.
-                if (this.index === errorIndex) {
-                    break;
-                }
-            }
-        }
-        if (exprs.length === 0) {
-            // We have no expressions so create an empty expression that spans the entire input length
-            const artificialStart = this.offset;
-            const artificialEnd = this.offset + this.input.length;
-            return new EmptyExpr$1(this.span(artificialStart, artificialEnd), this.sourceSpan(artificialStart, artificialEnd));
-        }
-        if (exprs.length == 1)
-            return exprs[0];
-        return new Chain(this.span(start), this.sourceSpan(start), exprs);
-    }
-    parsePipe() {
-        const start = this.inputIndex;
-        let result = this.parseExpression();
-        if (this.consumeOptionalOperator('|')) {
-            if (this.parseFlags & 1 /* ParseFlags.Action */) {
-                this.error(`Cannot have a pipe in an action expression`);
-            }
-            do {
-                const nameStart = this.inputIndex;
-                let nameId = this.expectIdentifierOrKeyword();
-                let nameSpan;
-                let fullSpanEnd = undefined;
-                if (nameId !== null) {
-                    nameSpan = this.sourceSpan(nameStart);
-                }
-                else {
-                    // No valid identifier was found, so we'll assume an empty pipe name ('').
-                    nameId = '';
-                    // However, there may have been whitespace present between the pipe character and the next
-                    // token in the sequence (or the end of input). We want to track this whitespace so that
-                    // the `BindingPipe` we produce covers not just the pipe character, but any trailing
-                    // whitespace beyond it. Another way of thinking about this is that the zero-length name
-                    // is assumed to be at the end of any whitespace beyond the pipe character.
-                    //
-                    // Therefore, we push the end of the `ParseSpan` for this pipe all the way up to the
-                    // beginning of the next token, or until the end of input if the next token is EOF.
-                    fullSpanEnd = this.next.index !== -1 ? this.next.index : this.input.length + this.offset;
-                    // The `nameSpan` for an empty pipe name is zero-length at the end of any whitespace
-                    // beyond the pipe character.
-                    nameSpan = new ParseSpan(fullSpanEnd, fullSpanEnd).toAbsolute(this.absoluteOffset);
-                }
-                const args = [];
-                while (this.consumeOptionalCharacter($COLON)) {
-                    args.push(this.parseExpression());
-                    // If there are additional expressions beyond the name, then the artificial end for the
-                    // name is no longer relevant.
-                }
-                result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
-            } while (this.consumeOptionalOperator('|'));
-        }
-        return result;
-    }
-    parseExpression() {
-        return this.parseConditional();
-    }
-    parseConditional() {
-        const start = this.inputIndex;
-        const result = this.parseLogicalOr();
-        if (this.consumeOptionalOperator('?')) {
-            const yes = this.parsePipe();
-            let no;
-            if (!this.consumeOptionalCharacter($COLON)) {
-                const end = this.inputIndex;
-                const expression = this.input.substring(start, end);
-                this.error(`Conditional expression ${expression} requires all 3 expressions`);
-                no = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-            }
-            else {
-                no = this.parsePipe();
-            }
-            return new Conditional(this.span(start), this.sourceSpan(start), result, yes, no);
-        }
-        else {
-            return result;
-        }
-    }
-    parseLogicalOr() {
-        // '||'
-        const start = this.inputIndex;
-        let result = this.parseLogicalAnd();
-        while (this.consumeOptionalOperator('||')) {
-            const right = this.parseLogicalAnd();
-            result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
-        }
-        return result;
-    }
-    parseLogicalAnd() {
-        // '&&'
-        const start = this.inputIndex;
-        let result = this.parseNullishCoalescing();
-        while (this.consumeOptionalOperator('&&')) {
-            const right = this.parseNullishCoalescing();
-            result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
-        }
-        return result;
-    }
-    parseNullishCoalescing() {
-        // '??'
-        const start = this.inputIndex;
-        let result = this.parseEquality();
-        while (this.consumeOptionalOperator('??')) {
-            const right = this.parseEquality();
-            result = new Binary(this.span(start), this.sourceSpan(start), '??', result, right);
-        }
-        return result;
-    }
-    parseEquality() {
-        // '==','!=','===','!=='
-        const start = this.inputIndex;
-        let result = this.parseRelational();
-        while (this.next.type == TokenType.Operator) {
-            const operator = this.next.strValue;
-            switch (operator) {
-                case '==':
-                case '===':
-                case '!=':
-                case '!==':
-                    this.advance();
-                    const right = this.parseRelational();
-                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
-                    continue;
-            }
-            break;
-        }
-        return result;
-    }
-    parseRelational() {
-        // '<', '>', '<=', '>='
-        const start = this.inputIndex;
-        let result = this.parseAdditive();
-        while (this.next.type == TokenType.Operator) {
-            const operator = this.next.strValue;
-            switch (operator) {
-                case '<':
-                case '>':
-                case '<=':
-                case '>=':
-                    this.advance();
-                    const right = this.parseAdditive();
-                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
-                    continue;
-            }
-            break;
-        }
-        return result;
-    }
-    parseAdditive() {
-        // '+', '-'
-        const start = this.inputIndex;
-        let result = this.parseMultiplicative();
-        while (this.next.type == TokenType.Operator) {
-            const operator = this.next.strValue;
-            switch (operator) {
-                case '+':
-                case '-':
-                    this.advance();
-                    let right = this.parseMultiplicative();
-                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
-                    continue;
-            }
-            break;
-        }
-        return result;
-    }
-    parseMultiplicative() {
-        // '*', '%', '/'
-        const start = this.inputIndex;
-        let result = this.parsePrefix();
-        while (this.next.type == TokenType.Operator) {
-            const operator = this.next.strValue;
-            switch (operator) {
-                case '*':
-                case '%':
-                case '/':
-                    this.advance();
-                    let right = this.parsePrefix();
-                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
-                    continue;
-            }
-            break;
-        }
-        return result;
-    }
-    parsePrefix() {
-        if (this.next.type == TokenType.Operator) {
-            const start = this.inputIndex;
-            const operator = this.next.strValue;
-            let result;
-            switch (operator) {
-                case '+':
-                    this.advance();
-                    result = this.parsePrefix();
-                    return Unary.createPlus(this.span(start), this.sourceSpan(start), result);
-                case '-':
-                    this.advance();
-                    result = this.parsePrefix();
-                    return Unary.createMinus(this.span(start), this.sourceSpan(start), result);
-                case '!':
-                    this.advance();
-                    result = this.parsePrefix();
-                    return new PrefixNot(this.span(start), this.sourceSpan(start), result);
-            }
-        }
-        return this.parseCallChain();
-    }
-    parseCallChain() {
-        const start = this.inputIndex;
-        let result = this.parsePrimary();
-        while (true) {
-            if (this.consumeOptionalCharacter($PERIOD)) {
-                result = this.parseAccessMember(result, start, false);
-            }
-            else if (this.consumeOptionalOperator('?.')) {
-                if (this.consumeOptionalCharacter($LPAREN)) {
-                    result = this.parseCall(result, start, true);
-                }
-                else {
-                    result = this.consumeOptionalCharacter($LBRACKET)
-                        ? this.parseKeyedReadOrWrite(result, start, true)
-                        : this.parseAccessMember(result, start, true);
-                }
-            }
-            else if (this.consumeOptionalCharacter($LBRACKET)) {
-                result = this.parseKeyedReadOrWrite(result, start, false);
-            }
-            else if (this.consumeOptionalCharacter($LPAREN)) {
-                result = this.parseCall(result, start, false);
-            }
-            else if (this.consumeOptionalOperator('!')) {
-                result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
-            }
-            else {
-                return result;
-            }
-        }
-    }
-    parsePrimary() {
-        const start = this.inputIndex;
-        if (this.consumeOptionalCharacter($LPAREN)) {
-            this.rparensExpected++;
-            const result = this.parsePipe();
-            this.rparensExpected--;
-            this.expectCharacter($RPAREN);
-            return result;
-        }
-        else if (this.next.isKeywordNull()) {
-            this.advance();
-            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), null);
-        }
-        else if (this.next.isKeywordUndefined()) {
-            this.advance();
-            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), void 0);
-        }
-        else if (this.next.isKeywordTrue()) {
-            this.advance();
-            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), true);
-        }
-        else if (this.next.isKeywordFalse()) {
-            this.advance();
-            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), false);
-        }
-        else if (this.next.isKeywordThis()) {
-            this.advance();
-            return new ThisReceiver(this.span(start), this.sourceSpan(start));
-        }
-        else if (this.consumeOptionalCharacter($LBRACKET)) {
-            this.rbracketsExpected++;
-            const elements = this.parseExpressionList($RBRACKET);
-            this.rbracketsExpected--;
-            this.expectCharacter($RBRACKET);
-            return new LiteralArray(this.span(start), this.sourceSpan(start), elements);
-        }
-        else if (this.next.isCharacter($LBRACE)) {
-            return this.parseLiteralMap();
-        }
-        else if (this.next.isIdentifier()) {
-            return this.parseAccessMember(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
-        }
-        else if (this.next.isNumber()) {
-            const value = this.next.toNumber();
-            this.advance();
-            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), value);
-        }
-        else if (this.next.isString()) {
-            const literalValue = this.next.toString();
-            this.advance();
-            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), literalValue);
-        }
-        else if (this.next.isPrivateIdentifier()) {
-            this._reportErrorForPrivateIdentifier(this.next, null);
-            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-        }
-        else if (this.index >= this.tokens.length) {
-            this.error(`Unexpected end of expression: ${this.input}`);
-            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-        }
-        else {
-            this.error(`Unexpected token ${this.next}`);
-            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-        }
-    }
-    parseExpressionList(terminator) {
-        const result = [];
-        do {
-            if (!this.next.isCharacter(terminator)) {
-                result.push(this.parsePipe());
-            }
-            else {
-                break;
-            }
-        } while (this.consumeOptionalCharacter($COMMA));
-        return result;
-    }
-    parseLiteralMap() {
-        const keys = [];
-        const values = [];
-        const start = this.inputIndex;
-        this.expectCharacter($LBRACE);
-        if (!this.consumeOptionalCharacter($RBRACE)) {
-            this.rbracesExpected++;
-            do {
-                const keyStart = this.inputIndex;
-                const quoted = this.next.isString();
-                const key = this.expectIdentifierOrKeywordOrString();
-                const literalMapKey = { key, quoted };
-                keys.push(literalMapKey);
-                // Properties with quoted keys can't use the shorthand syntax.
-                if (quoted) {
-                    this.expectCharacter($COLON);
-                    values.push(this.parsePipe());
-                }
-                else if (this.consumeOptionalCharacter($COLON)) {
-                    values.push(this.parsePipe());
-                }
-                else {
-                    literalMapKey.isShorthandInitialized = true;
-                    const span = this.span(keyStart);
-                    const sourceSpan = this.sourceSpan(keyStart);
-                    values.push(new PropertyRead(span, sourceSpan, sourceSpan, new ImplicitReceiver(span, sourceSpan), key));
-                }
-            } while (this.consumeOptionalCharacter($COMMA) &&
-                !this.next.isCharacter($RBRACE));
-            this.rbracesExpected--;
-            this.expectCharacter($RBRACE);
-        }
-        return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
-    }
-    parseAccessMember(readReceiver, start, isSafe) {
-        const nameStart = this.inputIndex;
-        const id = this.withContext(ParseContextFlags.Writable, () => {
-            const id = this.expectIdentifierOrKeyword() ?? '';
-            if (id.length === 0) {
-                this.error(`Expected identifier for property access`, readReceiver.span.end);
-            }
-            return id;
-        });
-        const nameSpan = this.sourceSpan(nameStart);
-        let receiver;
-        if (isSafe) {
-            if (this.consumeOptionalOperator('=')) {
-                this.error("The '?.' operator cannot be used in the assignment");
-                receiver = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-            }
-            else {
-                receiver = new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
-            }
-        }
-        else {
-            if (this.consumeOptionalOperator('=')) {
-                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
-                    this.error('Bindings cannot contain assignments');
-                    return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-                }
-                const value = this.parseConditional();
-                receiver = new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id, value);
-            }
-            else {
-                receiver = new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
-            }
-        }
-        return receiver;
-    }
-    parseCall(receiver, start, isSafe) {
-        const argumentStart = this.inputIndex;
-        this.rparensExpected++;
-        const args = this.parseCallArguments();
-        const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
-        this.expectCharacter($RPAREN);
-        this.rparensExpected--;
-        const span = this.span(start);
-        const sourceSpan = this.sourceSpan(start);
-        return isSafe
-            ? new SafeCall(span, sourceSpan, receiver, args, argumentSpan)
-            : new Call(span, sourceSpan, receiver, args, argumentSpan);
-    }
-    parseCallArguments() {
-        if (this.next.isCharacter($RPAREN))
-            return [];
-        const positionals = [];
-        do {
-            positionals.push(this.parsePipe());
-        } while (this.consumeOptionalCharacter($COMMA));
-        return positionals;
-    }
-    /**
-     * Parses an identifier, a keyword, a string with an optional `-` in between,
-     * and returns the string along with its absolute source span.
-     */
-    expectTemplateBindingKey() {
-        let result = '';
-        let operatorFound = false;
-        const start = this.currentAbsoluteOffset;
-        do {
-            result += this.expectIdentifierOrKeywordOrString();
-            operatorFound = this.consumeOptionalOperator('-');
-            if (operatorFound) {
-                result += '-';
-            }
-        } while (operatorFound);
-        return {
-            source: result,
-            span: new AbsoluteSourceSpan(start, start + result.length),
-        };
-    }
-    /**
-     * Parse microsyntax template expression and return a list of bindings or
-     * parsing errors in case the given expression is invalid.
-     *
-     * For example,
-     * ```
-     *   <div *ngFor="let item of items; index as i; trackBy: func">
-     * ```
-     * contains five bindings:
-     * 1. ngFor -> null
-     * 2. item -> NgForOfContext.$implicit
-     * 3. ngForOf -> items
-     * 4. i -> NgForOfContext.index
-     * 5. ngForTrackBy -> func
-     *
-     * For a full description of the microsyntax grammar, see
-     * https://gist.github.com/mhevery/d3530294cff2e4a1b3fe15ff75d08855
-     *
-     * @param templateKey name of the microsyntax directive, like ngIf, ngFor,
-     * without the *, along with its absolute span.
-     */
-    parseTemplateBindings(templateKey) {
-        const bindings = [];
-        // The first binding is for the template key itself
-        // In *ngFor="let item of items", key = "ngFor", value = null
-        // In *ngIf="cond | pipe", key = "ngIf", value = "cond | pipe"
-        bindings.push(...this.parseDirectiveKeywordBindings(templateKey));
-        while (this.index < this.tokens.length) {
-            // If it starts with 'let', then this must be variable declaration
-            const letBinding = this.parseLetBinding();
-            if (letBinding) {
-                bindings.push(letBinding);
-            }
-            else {
-                // Two possible cases here, either `value "as" key` or
-                // "directive-keyword expression". We don't know which case, but both
-                // "value" and "directive-keyword" are template binding key, so consume
-                // the key first.
-                const key = this.expectTemplateBindingKey();
-                // Peek at the next token, if it is "as" then this must be variable
-                // declaration.
-                const binding = this.parseAsBinding(key);
-                if (binding) {
-                    bindings.push(binding);
-                }
-                else {
-                    // Otherwise the key must be a directive keyword, like "of". Transform
-                    // the key to actual key. Eg. of -> ngForOf, trackBy -> ngForTrackBy
-                    key.source =
-                        templateKey.source + key.source.charAt(0).toUpperCase() + key.source.substring(1);
-                    bindings.push(...this.parseDirectiveKeywordBindings(key));
-                }
-            }
-            this.consumeStatementTerminator();
-        }
-        return new TemplateBindingParseResult(bindings, [] /* warnings */, this.errors);
-    }
-    parseKeyedReadOrWrite(receiver, start, isSafe) {
-        return this.withContext(ParseContextFlags.Writable, () => {
-            this.rbracketsExpected++;
-            const key = this.parsePipe();
-            if (key instanceof EmptyExpr$1) {
-                this.error(`Key access cannot be empty`);
-            }
-            this.rbracketsExpected--;
-            this.expectCharacter($RBRACKET);
-            if (this.consumeOptionalOperator('=')) {
-                if (isSafe) {
-                    this.error("The '?.' operator cannot be used in the assignment");
-                }
-                else {
-                    const value = this.parseConditional();
-                    return new KeyedWrite(this.span(start), this.sourceSpan(start), receiver, key, value);
-                }
-            }
-            else {
-                return isSafe
-                    ? new SafeKeyedRead(this.span(start), this.sourceSpan(start), receiver, key)
-                    : new KeyedRead(this.span(start), this.sourceSpan(start), receiver, key);
-            }
-            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
-        });
-    }
-    /**
-     * Parse a directive keyword, followed by a mandatory expression.
-     * For example, "of items", "trackBy: func".
-     * The bindings are: ngForOf -> items, ngForTrackBy -> func
-     * There could be an optional "as" binding that follows the expression.
-     * For example,
-     * ```
-     *   *ngFor="let item of items | slice:0:1 as collection".
-     *                    ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
-     *               keyword    bound target   optional 'as' binding
-     * ```
-     *
-     * @param key binding key, for example, ngFor, ngIf, ngForOf, along with its
-     * absolute span.
-     */
-    parseDirectiveKeywordBindings(key) {
-        const bindings = [];
-        this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
-        const value = this.getDirectiveBoundTarget();
-        let spanEnd = this.currentAbsoluteOffset;
-        // The binding could optionally be followed by "as". For example,
-        // *ngIf="cond | pipe as x". In this case, the key in the "as" binding
-        // is "x" and the value is the template key itself ("ngIf"). Note that the
-        // 'key' in the current context now becomes the "value" in the next binding.
-        const asBinding = this.parseAsBinding(key);
-        if (!asBinding) {
-            this.consumeStatementTerminator();
-            spanEnd = this.currentAbsoluteOffset;
-        }
-        const sourceSpan = new AbsoluteSourceSpan(key.span.start, spanEnd);
-        bindings.push(new ExpressionBinding(sourceSpan, key, value));
-        if (asBinding) {
-            bindings.push(asBinding);
-        }
-        return bindings;
-    }
-    /**
-     * Return the expression AST for the bound target of a directive keyword
-     * binding. For example,
-     * ```
-     *   *ngIf="condition | pipe"
-     *          ^^^^^^^^^^^^^^^^ bound target for "ngIf"
-     *   *ngFor="let item of items"
-     *                       ^^^^^ bound target for "ngForOf"
-     * ```
-     */
-    getDirectiveBoundTarget() {
-        if (this.next === EOF || this.peekKeywordAs() || this.peekKeywordLet()) {
-            return null;
-        }
-        const ast = this.parsePipe(); // example: "condition | async"
-        const { start, end } = ast.span;
-        const value = this.input.substring(start, end);
-        return new ASTWithSource(ast, value, this.location, this.absoluteOffset + start, this.errors);
-    }
-    /**
-     * Return the binding for a variable declared using `as`. Note that the order
-     * of the key-value pair in this declaration is reversed. For example,
-     * ```
-     *   *ngFor="let item of items; index as i"
-     *                              ^^^^^    ^
-     *                              value    key
-     * ```
-     *
-     * @param value name of the value in the declaration, "ngIf" in the example
-     * above, along with its absolute span.
-     */
-    parseAsBinding(value) {
-        if (!this.peekKeywordAs()) {
-            return null;
-        }
-        this.advance(); // consume the 'as' keyword
-        const key = this.expectTemplateBindingKey();
-        this.consumeStatementTerminator();
-        const sourceSpan = new AbsoluteSourceSpan(value.span.start, this.currentAbsoluteOffset);
-        return new VariableBinding(sourceSpan, key, value);
-    }
-    /**
-     * Return the binding for a variable declared using `let`. For example,
-     * ```
-     *   *ngFor="let item of items; let i=index;"
-     *           ^^^^^^^^           ^^^^^^^^^^^
-     * ```
-     * In the first binding, `item` is bound to `NgForOfContext.$implicit`.
-     * In the second binding, `i` is bound to `NgForOfContext.index`.
-     */
-    parseLetBinding() {
-        if (!this.peekKeywordLet()) {
-            return null;
-        }
-        const spanStart = this.currentAbsoluteOffset;
-        this.advance(); // consume the 'let' keyword
-        const key = this.expectTemplateBindingKey();
-        let value = null;
-        if (this.consumeOptionalOperator('=')) {
-            value = this.expectTemplateBindingKey();
-        }
-        this.consumeStatementTerminator();
-        const sourceSpan = new AbsoluteSourceSpan(spanStart, this.currentAbsoluteOffset);
-        return new VariableBinding(sourceSpan, key, value);
-    }
-    /**
-     * Consume the optional statement terminator: semicolon or comma.
-     */
-    consumeStatementTerminator() {
-        this.consumeOptionalCharacter($SEMICOLON) || this.consumeOptionalCharacter($COMMA);
-    }
-    /**
-     * Records an error and skips over the token stream until reaching a recoverable point. See
-     * `this.skip` for more details on token skipping.
-     */
-    error(message, index = null) {
-        this.errors.push(new ParserError(message, this.input, this.locationText(index), this.location));
-        this.skip();
-    }
-    locationText(index = null) {
-        if (index == null)
-            index = this.index;
-        return index < this.tokens.length
-            ? `at column ${this.tokens[index].index + 1} in`
-            : `at the end of the expression`;
-    }
-    /**
-     * Records an error for an unexpected private identifier being discovered.
-     * @param token Token representing a private identifier.
-     * @param extraMessage Optional additional message being appended to the error.
-     */
-    _reportErrorForPrivateIdentifier(token, extraMessage) {
-        let errorMessage = `Private identifiers are not supported. Unexpected private identifier: ${token}`;
-        if (extraMessage !== null) {
-            errorMessage += `, ${extraMessage}`;
-        }
-        this.error(errorMessage);
-    }
-    /**
-     * Error recovery should skip tokens until it encounters a recovery point.
-     *
-     * The following are treated as unconditional recovery points:
-     *   - end of input
-     *   - ';' (parseChain() is always the root production, and it expects a ';')
-     *   - '|' (since pipes may be chained and each pipe expression may be treated independently)
-     *
-     * The following are conditional recovery points:
-     *   - ')', '}', ']' if one of calling productions is expecting one of these symbols
-     *     - This allows skip() to recover from errors such as '(a.) + 1' allowing more of the AST to
-     *       be retained (it doesn't skip any tokens as the ')' is retained because of the '(' begins
-     *       an '(' <expr> ')' production).
-     *       The recovery points of grouping symbols must be conditional as they must be skipped if
-     *       none of the calling productions are not expecting the closing token else we will never
-     *       make progress in the case of an extraneous group closing symbol (such as a stray ')').
-     *       That is, we skip a closing symbol if we are not in a grouping production.
-     *   - '=' in a `Writable` context
-     *     - In this context, we are able to recover after seeing the `=` operator, which
-     *       signals the presence of an independent rvalue expression following the `=` operator.
-     *
-     * If a production expects one of these token it increments the corresponding nesting count,
-     * and then decrements it just prior to checking if the token is in the input.
-     */
-    skip() {
-        let n = this.next;
-        while (this.index < this.tokens.length &&
-            !n.isCharacter($SEMICOLON) &&
-            !n.isOperator('|') &&
-            (this.rparensExpected <= 0 || !n.isCharacter($RPAREN)) &&
-            (this.rbracesExpected <= 0 || !n.isCharacter($RBRACE)) &&
-            (this.rbracketsExpected <= 0 || !n.isCharacter($RBRACKET)) &&
-            (!(this.context & ParseContextFlags.Writable) || !n.isOperator('='))) {
-            if (this.next.isError()) {
-                this.errors.push(new ParserError(this.next.toString(), this.input, this.locationText(), this.location));
-            }
-            this.advance();
-            n = this.next;
-        }
-    }
-}
-class SimpleExpressionChecker extends RecursiveAstVisitor {
-    constructor() {
-        super(...arguments);
-        this.errors = [];
-    }
-    visitPipe() {
-        this.errors.push('pipes');
-    }
-}
-/**
- * Computes the real offset in the original template for indexes in an interpolation.
- *
- * Because templates can have encoded HTML entities and the input passed to the parser at this stage
- * of the compiler is the _decoded_ value, we need to compute the real offset using the original
- * encoded values in the interpolated tokens. Note that this is only a special case handling for
- * `MlParserTokenType.ENCODED_ENTITY` token types. All other interpolated tokens are expected to
- * have parts which exactly match the input string for parsing the interpolation.
- *
- * @param interpolatedTokens The tokens for the interpolated value.
- *
- * @returns A map of index locations in the decoded template to indexes in the original template
- */
-function getIndexMapForOriginalTemplate(interpolatedTokens) {
-    let offsetMap = new Map();
-    let consumedInOriginalTemplate = 0;
-    let consumedInInput = 0;
-    let tokenIndex = 0;
-    while (tokenIndex < interpolatedTokens.length) {
-        const currentToken = interpolatedTokens[tokenIndex];
-        if (currentToken.type === 9 /* MlParserTokenType.ENCODED_ENTITY */) {
-            const [decoded, encoded] = currentToken.parts;
-            consumedInOriginalTemplate += encoded.length;
-            consumedInInput += decoded.length;
-        }
-        else {
-            const lengthOfParts = currentToken.parts.reduce((sum, current) => sum + current.length, 0);
-            consumedInInput += lengthOfParts;
-            consumedInOriginalTemplate += lengthOfParts;
-        }
-        offsetMap.set(consumedInInput, consumedInOriginalTemplate);
-        tokenIndex++;
-    }
-    return offsetMap;
-}
-
 class NodeWithI18n {
     constructor(sourceSpan, i18n) {
         this.sourceSpan = sourceSpan;
@@ -14540,1077 +12930,6 @@ class RecursiveVisitor {
         }
         cb(visit);
         return Array.prototype.concat.apply([], results);
-    }
-}
-
-// =================================================================================================
-// =================================================================================================
-// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
-// =================================================================================================
-// =================================================================================================
-//
-//        DO NOT EDIT THIS LIST OF SECURITY SENSITIVE PROPERTIES WITHOUT A SECURITY REVIEW!
-//                               Reach out to mprobst for details.
-//
-// =================================================================================================
-/** Map from tagName|propertyName to SecurityContext. Properties applying to all tags use '*'. */
-let _SECURITY_SCHEMA;
-function SECURITY_SCHEMA() {
-    if (!_SECURITY_SCHEMA) {
-        _SECURITY_SCHEMA = {};
-        // Case is insignificant below, all element and attribute names are lower-cased for lookup.
-        registerContext(SecurityContext.HTML, ['iframe|srcdoc', '*|innerHTML', '*|outerHTML']);
-        registerContext(SecurityContext.STYLE, ['*|style']);
-        // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
-        registerContext(SecurityContext.URL, [
-            '*|formAction',
-            'area|href',
-            'area|ping',
-            'audio|src',
-            'a|href',
-            'a|ping',
-            'blockquote|cite',
-            'body|background',
-            'del|cite',
-            'form|action',
-            'img|src',
-            'input|src',
-            'ins|cite',
-            'q|cite',
-            'source|src',
-            'track|src',
-            'video|poster',
-            'video|src',
-        ]);
-        registerContext(SecurityContext.RESOURCE_URL, [
-            'applet|code',
-            'applet|codebase',
-            'base|href',
-            'embed|src',
-            'frame|src',
-            'head|profile',
-            'html|manifest',
-            'iframe|src',
-            'link|href',
-            'media|src',
-            'object|codebase',
-            'object|data',
-            'script|src',
-        ]);
-    }
-    return _SECURITY_SCHEMA;
-}
-function registerContext(ctx, specs) {
-    for (const spec of specs)
-        _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
-}
-/**
- * The set of security-sensitive attributes of an `<iframe>` that *must* be
- * applied as a static attribute only. This ensures that all security-sensitive
- * attributes are taken into account while creating an instance of an `<iframe>`
- * at runtime.
- *
- * Note: avoid using this set directly, use the `isIframeSecuritySensitiveAttr` function
- * in the code instead.
- */
-const IFRAME_SECURITY_SENSITIVE_ATTRS = new Set([
-    'sandbox',
-    'allow',
-    'allowfullscreen',
-    'referrerpolicy',
-    'csp',
-    'fetchpriority',
-]);
-/**
- * Checks whether a given attribute name might represent a security-sensitive
- * attribute of an <iframe>.
- */
-function isIframeSecuritySensitiveAttr(attrName) {
-    // The `setAttribute` DOM API is case-insensitive, so we lowercase the value
-    // before checking it against a known security-sensitive attributes.
-    return IFRAME_SECURITY_SENSITIVE_ATTRS.has(attrName.toLowerCase());
-}
-
-class ElementSchemaRegistry {
-}
-
-const BOOLEAN = 'boolean';
-const NUMBER = 'number';
-const STRING = 'string';
-const OBJECT = 'object';
-/**
- * This array represents the DOM schema. It encodes inheritance, properties, and events.
- *
- * ## Overview
- *
- * Each line represents one kind of element. The `element_inheritance` and properties are joined
- * using `element_inheritance|properties` syntax.
- *
- * ## Element Inheritance
- *
- * The `element_inheritance` can be further subdivided as `element1,element2,...^parentElement`.
- * Here the individual elements are separated by `,` (commas). Every element in the list
- * has identical properties.
- *
- * An `element` may inherit additional properties from `parentElement` If no `^parentElement` is
- * specified then `""` (blank) element is assumed.
- *
- * NOTE: The blank element inherits from root `[Element]` element, the super element of all
- * elements.
- *
- * NOTE an element prefix such as `:svg:` has no special meaning to the schema.
- *
- * ## Properties
- *
- * Each element has a set of properties separated by `,` (commas). Each property can be prefixed
- * by a special character designating its type:
- *
- * - (no prefix): property is a string.
- * - `*`: property represents an event.
- * - `!`: property is a boolean.
- * - `#`: property is a number.
- * - `%`: property is an object.
- *
- * ## Query
- *
- * The class creates an internal squas representation which allows to easily answer the query of
- * if a given property exist on a given element.
- *
- * NOTE: We don't yet support querying for types or events.
- * NOTE: This schema is auto extracted from `schema_extractor.ts` located in the test folder,
- *       see dom_element_schema_registry_spec.ts
- */
-// =================================================================================================
-// =================================================================================================
-// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
-// =================================================================================================
-// =================================================================================================
-//
-//                       DO NOT EDIT THIS DOM SCHEMA WITHOUT A SECURITY REVIEW!
-//
-// Newly added properties must be security reviewed and assigned an appropriate SecurityContext in
-// dom_security_schema.ts. Reach out to mprobst & rjamet for details.
-//
-// =================================================================================================
-const SCHEMA = [
-    '[Element]|textContent,%ariaAtomic,%ariaAutoComplete,%ariaBusy,%ariaChecked,%ariaColCount,%ariaColIndex,%ariaColSpan,%ariaCurrent,%ariaDescription,%ariaDisabled,%ariaExpanded,%ariaHasPopup,%ariaHidden,%ariaKeyShortcuts,%ariaLabel,%ariaLevel,%ariaLive,%ariaModal,%ariaMultiLine,%ariaMultiSelectable,%ariaOrientation,%ariaPlaceholder,%ariaPosInSet,%ariaPressed,%ariaReadOnly,%ariaRelevant,%ariaRequired,%ariaRoleDescription,%ariaRowCount,%ariaRowIndex,%ariaRowSpan,%ariaSelected,%ariaSetSize,%ariaSort,%ariaValueMax,%ariaValueMin,%ariaValueNow,%ariaValueText,%classList,className,elementTiming,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*fullscreenchange,*fullscreenerror,*search,*webkitfullscreenchange,*webkitfullscreenerror,outerHTML,%part,#scrollLeft,#scrollTop,slot' +
-        /* added manually to avoid breaking changes */
-        ',*message,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored',
-    '[HTMLElement]^[Element]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,!inert,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
-    'abbr,address,article,aside,b,bdi,bdo,cite,content,code,dd,dfn,dt,em,figcaption,figure,footer,header,hgroup,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
-    'media^[HTMLElement]|!autoplay,!controls,%controlsList,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,*waitingforkey,#playbackRate,preload,!preservesPitch,src,%srcObject,#volume',
-    ':svg:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
-    ':svg:graphics^:svg:|',
-    ':svg:animation^:svg:|*begin,*end,*repeat',
-    ':svg:geometry^:svg:|',
-    ':svg:componentTransferFunction^:svg:|',
-    ':svg:gradient^:svg:|',
-    ':svg:textContent^:svg:graphics|',
-    ':svg:textPositioning^:svg:textContent|',
-    'a^[HTMLElement]|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,rev,search,shape,target,text,type,username',
-    'area^[HTMLElement]|alt,coords,download,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,search,shape,target,username',
-    'audio^media|',
-    'br^[HTMLElement]|clear',
-    'base^[HTMLElement]|href,target',
-    'body^[HTMLElement]|aLink,background,bgColor,link,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink',
-    'button^[HTMLElement]|!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value',
-    'canvas^[HTMLElement]|#height,#width',
-    'content^[HTMLElement]|select',
-    'dl^[HTMLElement]|!compact',
-    'data^[HTMLElement]|value',
-    'datalist^[HTMLElement]|',
-    'details^[HTMLElement]|!open',
-    'dialog^[HTMLElement]|!open,returnValue',
-    'dir^[HTMLElement]|!compact',
-    'div^[HTMLElement]|align',
-    'embed^[HTMLElement]|align,height,name,src,type,width',
-    'fieldset^[HTMLElement]|!disabled,name',
-    'font^[HTMLElement]|color,face,size',
-    'form^[HTMLElement]|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target',
-    'frame^[HTMLElement]|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src',
-    'frameset^[HTMLElement]|cols,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows',
-    'hr^[HTMLElement]|align,color,!noShade,size,width',
-    'head^[HTMLElement]|',
-    'h1,h2,h3,h4,h5,h6^[HTMLElement]|align',
-    'html^[HTMLElement]|version',
-    'iframe^[HTMLElement]|align,allow,!allowFullscreen,!allowPaymentRequest,csp,frameBorder,height,loading,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width',
-    'img^[HTMLElement]|align,alt,border,%crossOrigin,decoding,#height,#hspace,!isMap,loading,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width',
-    'input^[HTMLElement]|accept,align,alt,autocomplete,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width',
-    'li^[HTMLElement]|type,#value',
-    'label^[HTMLElement]|htmlFor',
-    'legend^[HTMLElement]|align',
-    'link^[HTMLElement]|as,charset,%crossOrigin,!disabled,href,hreflang,imageSizes,imageSrcset,integrity,media,referrerPolicy,rel,%relList,rev,%sizes,target,type',
-    'map^[HTMLElement]|name',
-    'marquee^[HTMLElement]|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width',
-    'menu^[HTMLElement]|!compact',
-    'meta^[HTMLElement]|content,httpEquiv,media,name,scheme',
-    'meter^[HTMLElement]|#high,#low,#max,#min,#optimum,#value',
-    'ins,del^[HTMLElement]|cite,dateTime',
-    'ol^[HTMLElement]|!compact,!reversed,#start,type',
-    'object^[HTMLElement]|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width',
-    'optgroup^[HTMLElement]|!disabled,label',
-    'option^[HTMLElement]|!defaultSelected,!disabled,label,!selected,text,value',
-    'output^[HTMLElement]|defaultValue,%htmlFor,name,value',
-    'p^[HTMLElement]|align',
-    'param^[HTMLElement]|name,type,value,valueType',
-    'picture^[HTMLElement]|',
-    'pre^[HTMLElement]|#width',
-    'progress^[HTMLElement]|#max,#value',
-    'q,blockquote,cite^[HTMLElement]|',
-    'script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,!noModule,%referrerPolicy,src,text,type',
-    'select^[HTMLElement]|autocomplete,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
-    'slot^[HTMLElement]|name',
-    'source^[HTMLElement]|#height,media,sizes,src,srcset,type,#width',
-    'span^[HTMLElement]|',
-    'style^[HTMLElement]|!disabled,media,type',
-    'caption^[HTMLElement]|align',
-    'th,td^[HTMLElement]|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width',
-    'col,colgroup^[HTMLElement]|align,ch,chOff,#span,vAlign,width',
-    'table^[HTMLElement]|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width',
-    'tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign',
-    'tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign',
-    'template^[HTMLElement]|',
-    'textarea^[HTMLElement]|autocomplete,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
-    'time^[HTMLElement]|dateTime',
-    'title^[HTMLElement]|text',
-    'track^[HTMLElement]|!default,kind,label,src,srclang',
-    'ul^[HTMLElement]|!compact,type',
-    'unknown^[HTMLElement]|',
-    'video^media|!disablePictureInPicture,#height,*enterpictureinpicture,*leavepictureinpicture,!playsInline,poster,#width',
-    ':svg:a^:svg:graphics|',
-    ':svg:animate^:svg:animation|',
-    ':svg:animateMotion^:svg:animation|',
-    ':svg:animateTransform^:svg:animation|',
-    ':svg:circle^:svg:geometry|',
-    ':svg:clipPath^:svg:graphics|',
-    ':svg:defs^:svg:graphics|',
-    ':svg:desc^:svg:|',
-    ':svg:discard^:svg:|',
-    ':svg:ellipse^:svg:geometry|',
-    ':svg:feBlend^:svg:|',
-    ':svg:feColorMatrix^:svg:|',
-    ':svg:feComponentTransfer^:svg:|',
-    ':svg:feComposite^:svg:|',
-    ':svg:feConvolveMatrix^:svg:|',
-    ':svg:feDiffuseLighting^:svg:|',
-    ':svg:feDisplacementMap^:svg:|',
-    ':svg:feDistantLight^:svg:|',
-    ':svg:feDropShadow^:svg:|',
-    ':svg:feFlood^:svg:|',
-    ':svg:feFuncA^:svg:componentTransferFunction|',
-    ':svg:feFuncB^:svg:componentTransferFunction|',
-    ':svg:feFuncG^:svg:componentTransferFunction|',
-    ':svg:feFuncR^:svg:componentTransferFunction|',
-    ':svg:feGaussianBlur^:svg:|',
-    ':svg:feImage^:svg:|',
-    ':svg:feMerge^:svg:|',
-    ':svg:feMergeNode^:svg:|',
-    ':svg:feMorphology^:svg:|',
-    ':svg:feOffset^:svg:|',
-    ':svg:fePointLight^:svg:|',
-    ':svg:feSpecularLighting^:svg:|',
-    ':svg:feSpotLight^:svg:|',
-    ':svg:feTile^:svg:|',
-    ':svg:feTurbulence^:svg:|',
-    ':svg:filter^:svg:|',
-    ':svg:foreignObject^:svg:graphics|',
-    ':svg:g^:svg:graphics|',
-    ':svg:image^:svg:graphics|decoding',
-    ':svg:line^:svg:geometry|',
-    ':svg:linearGradient^:svg:gradient|',
-    ':svg:mpath^:svg:|',
-    ':svg:marker^:svg:|',
-    ':svg:mask^:svg:|',
-    ':svg:metadata^:svg:|',
-    ':svg:path^:svg:geometry|',
-    ':svg:pattern^:svg:|',
-    ':svg:polygon^:svg:geometry|',
-    ':svg:polyline^:svg:geometry|',
-    ':svg:radialGradient^:svg:gradient|',
-    ':svg:rect^:svg:geometry|',
-    ':svg:svg^:svg:graphics|#currentScale,#zoomAndPan',
-    ':svg:script^:svg:|type',
-    ':svg:set^:svg:animation|',
-    ':svg:stop^:svg:|',
-    ':svg:style^:svg:|!disabled,media,title,type',
-    ':svg:switch^:svg:graphics|',
-    ':svg:symbol^:svg:|',
-    ':svg:tspan^:svg:textPositioning|',
-    ':svg:text^:svg:textPositioning|',
-    ':svg:textPath^:svg:textContent|',
-    ':svg:title^:svg:|',
-    ':svg:use^:svg:graphics|',
-    ':svg:view^:svg:|#zoomAndPan',
-    'data^[HTMLElement]|value',
-    'keygen^[HTMLElement]|!autofocus,challenge,!disabled,form,keytype,name',
-    'menuitem^[HTMLElement]|type,label,icon,!disabled,!checked,radiogroup,!default',
-    'summary^[HTMLElement]|',
-    'time^[HTMLElement]|dateTime',
-    ':svg:cursor^:svg:|',
-    ':math:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforeinput,*beforematch,*beforetoggle,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contentvisibilityautostatechange,*contextlost,*contextmenu,*contextrestored,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*scrollend,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
-    ':math:math^:math:|',
-    ':math:maction^:math:|',
-    ':math:menclose^:math:|',
-    ':math:merror^:math:|',
-    ':math:mfenced^:math:|',
-    ':math:mfrac^:math:|',
-    ':math:mi^:math:|',
-    ':math:mmultiscripts^:math:|',
-    ':math:mn^:math:|',
-    ':math:mo^:math:|',
-    ':math:mover^:math:|',
-    ':math:mpadded^:math:|',
-    ':math:mphantom^:math:|',
-    ':math:mroot^:math:|',
-    ':math:mrow^:math:|',
-    ':math:ms^:math:|',
-    ':math:mspace^:math:|',
-    ':math:msqrt^:math:|',
-    ':math:mstyle^:math:|',
-    ':math:msub^:math:|',
-    ':math:msubsup^:math:|',
-    ':math:msup^:math:|',
-    ':math:mtable^:math:|',
-    ':math:mtd^:math:|',
-    ':math:mtext^:math:|',
-    ':math:mtr^:math:|',
-    ':math:munder^:math:|',
-    ':math:munderover^:math:|',
-    ':math:semantics^:math:|',
-];
-const _ATTR_TO_PROP = new Map(Object.entries({
-    'class': 'className',
-    'for': 'htmlFor',
-    'formaction': 'formAction',
-    'innerHtml': 'innerHTML',
-    'readonly': 'readOnly',
-    'tabindex': 'tabIndex',
-}));
-// Invert _ATTR_TO_PROP.
-const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName, attributeName]) => {
-    inverted.set(propertyName, attributeName);
-    return inverted;
-}, new Map());
-class DomElementSchemaRegistry extends ElementSchemaRegistry {
-    constructor() {
-        super();
-        this._schema = new Map();
-        // We don't allow binding to events for security reasons. Allowing event bindings would almost
-        // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
-        this._eventSchema = new Map();
-        SCHEMA.forEach((encodedType) => {
-            const type = new Map();
-            const events = new Set();
-            const [strType, strProperties] = encodedType.split('|');
-            const properties = strProperties.split(',');
-            const [typeNames, superName] = strType.split('^');
-            typeNames.split(',').forEach((tag) => {
-                this._schema.set(tag.toLowerCase(), type);
-                this._eventSchema.set(tag.toLowerCase(), events);
-            });
-            const superType = superName && this._schema.get(superName.toLowerCase());
-            if (superType) {
-                for (const [prop, value] of superType) {
-                    type.set(prop, value);
-                }
-                for (const superEvent of this._eventSchema.get(superName.toLowerCase())) {
-                    events.add(superEvent);
-                }
-            }
-            properties.forEach((property) => {
-                if (property.length > 0) {
-                    switch (property[0]) {
-                        case '*':
-                            events.add(property.substring(1));
-                            break;
-                        case '!':
-                            type.set(property.substring(1), BOOLEAN);
-                            break;
-                        case '#':
-                            type.set(property.substring(1), NUMBER);
-                            break;
-                        case '%':
-                            type.set(property.substring(1), OBJECT);
-                            break;
-                        default:
-                            type.set(property, STRING);
-                    }
-                }
-            });
-        });
-    }
-    hasProperty(tagName, propName, schemaMetas) {
-        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
-            return true;
-        }
-        if (tagName.indexOf('-') > -1) {
-            if (isNgContainer(tagName) || isNgContent(tagName)) {
-                return false;
-            }
-            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
-                // Can't tell now as we don't know which properties a custom element will get
-                // once it is instantiated
-                return true;
-            }
-        }
-        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
-        return elementProperties.has(propName);
-    }
-    hasElement(tagName, schemaMetas) {
-        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
-            return true;
-        }
-        if (tagName.indexOf('-') > -1) {
-            if (isNgContainer(tagName) || isNgContent(tagName)) {
-                return true;
-            }
-            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
-                // Allow any custom elements
-                return true;
-            }
-        }
-        return this._schema.has(tagName.toLowerCase());
-    }
-    /**
-     * securityContext returns the security context for the given property on the given DOM tag.
-     *
-     * Tag and property name are statically known and cannot change at runtime, i.e. it is not
-     * possible to bind a value into a changing attribute or tag name.
-     *
-     * The filtering is based on a list of allowed tags|attributes. All attributes in the schema
-     * above are assumed to have the 'NONE' security context, i.e. that they are safe inert
-     * string values. Only specific well known attack vectors are assigned their appropriate context.
-     */
-    securityContext(tagName, propName, isAttribute) {
-        if (isAttribute) {
-            // NB: For security purposes, use the mapped property name, not the attribute name.
-            propName = this.getMappedPropName(propName);
-        }
-        // Make sure comparisons are case insensitive, so that case differences between attribute and
-        // property names do not have a security impact.
-        tagName = tagName.toLowerCase();
-        propName = propName.toLowerCase();
-        let ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
-        if (ctx) {
-            return ctx;
-        }
-        ctx = SECURITY_SCHEMA()['*|' + propName];
-        return ctx ? ctx : SecurityContext.NONE;
-    }
-    getMappedPropName(propName) {
-        return _ATTR_TO_PROP.get(propName) ?? propName;
-    }
-    getDefaultComponentElementName() {
-        return 'ng-component';
-    }
-    validateProperty(name) {
-        if (name.toLowerCase().startsWith('on')) {
-            const msg = `Binding to event property '${name}' is disallowed for security reasons, ` +
-                `please use (${name.slice(2)})=...` +
-                `\nIf '${name}' is a directive input, make sure the directive is imported by the` +
-                ` current module.`;
-            return { error: true, msg: msg };
-        }
-        else {
-            return { error: false };
-        }
-    }
-    validateAttribute(name) {
-        if (name.toLowerCase().startsWith('on')) {
-            const msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` +
-                `please use (${name.slice(2)})=...`;
-            return { error: true, msg: msg };
-        }
-        else {
-            return { error: false };
-        }
-    }
-    allKnownElementNames() {
-        return Array.from(this._schema.keys());
-    }
-    allKnownAttributesOfElement(tagName) {
-        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
-        // Convert properties to attributes.
-        return Array.from(elementProperties.keys()).map((prop) => _PROP_TO_ATTR.get(prop) ?? prop);
-    }
-    allKnownEventsOfElement(tagName) {
-        return Array.from(this._eventSchema.get(tagName.toLowerCase()) ?? []);
-    }
-    normalizeAnimationStyleProperty(propName) {
-        return dashCaseToCamelCase(propName);
-    }
-    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
-        let unit = '';
-        const strVal = val.toString().trim();
-        let errorMsg = null;
-        if (_isPixelDimensionStyle(camelCaseProp) && val !== 0 && val !== '0') {
-            if (typeof val === 'number') {
-                unit = 'px';
-            }
-            else {
-                const valAndSuffixMatch = val.match(/^[+-]?[\d\.]+([a-z]*)$/);
-                if (valAndSuffixMatch && valAndSuffixMatch[1].length == 0) {
-                    errorMsg = `Please provide a CSS unit value for ${userProvidedProp}:${val}`;
-                }
-            }
-        }
-        return { error: errorMsg, value: strVal + unit };
-    }
-}
-function _isPixelDimensionStyle(prop) {
-    switch (prop) {
-        case 'width':
-        case 'height':
-        case 'minWidth':
-        case 'minHeight':
-        case 'maxWidth':
-        case 'maxHeight':
-        case 'left':
-        case 'top':
-        case 'bottom':
-        case 'right':
-        case 'fontSize':
-        case 'outlineWidth':
-        case 'outlineOffset':
-        case 'paddingTop':
-        case 'paddingLeft':
-        case 'paddingBottom':
-        case 'paddingRight':
-        case 'marginTop':
-        case 'marginLeft':
-        case 'marginBottom':
-        case 'marginRight':
-        case 'borderRadius':
-        case 'borderWidth':
-        case 'borderTopWidth':
-        case 'borderLeftWidth':
-        case 'borderRightWidth':
-        case 'borderBottomWidth':
-        case 'textIndent':
-            return true;
-        default:
-            return false;
-    }
-}
-
-class HtmlTagDefinition {
-    constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false, preventNamespaceInheritance = false, canSelfClose = false, } = {}) {
-        this.closedByChildren = {};
-        this.closedByParent = false;
-        if (closedByChildren && closedByChildren.length > 0) {
-            closedByChildren.forEach((tagName) => (this.closedByChildren[tagName] = true));
-        }
-        this.isVoid = isVoid;
-        this.closedByParent = closedByParent || isVoid;
-        this.implicitNamespacePrefix = implicitNamespacePrefix || null;
-        this.contentType = contentType;
-        this.ignoreFirstLf = ignoreFirstLf;
-        this.preventNamespaceInheritance = preventNamespaceInheritance;
-        this.canSelfClose = canSelfClose ?? isVoid;
-    }
-    isClosedByChild(name) {
-        return this.isVoid || name.toLowerCase() in this.closedByChildren;
-    }
-    getContentType(prefix) {
-        if (typeof this.contentType === 'object') {
-            const overrideType = prefix === undefined ? undefined : this.contentType[prefix];
-            return overrideType ?? this.contentType.default;
-        }
-        return this.contentType;
-    }
-}
-let DEFAULT_TAG_DEFINITION;
-// see https://www.w3.org/TR/html51/syntax.html#optional-tags
-// This implementation does not fully conform to the HTML5 spec.
-let TAG_DEFINITIONS;
-function getHtmlTagDefinition(tagName) {
-    if (!TAG_DEFINITIONS) {
-        DEFAULT_TAG_DEFINITION = new HtmlTagDefinition({ canSelfClose: true });
-        TAG_DEFINITIONS = Object.assign(Object.create(null), {
-            'base': new HtmlTagDefinition({ isVoid: true }),
-            'meta': new HtmlTagDefinition({ isVoid: true }),
-            'area': new HtmlTagDefinition({ isVoid: true }),
-            'embed': new HtmlTagDefinition({ isVoid: true }),
-            'link': new HtmlTagDefinition({ isVoid: true }),
-            'img': new HtmlTagDefinition({ isVoid: true }),
-            'input': new HtmlTagDefinition({ isVoid: true }),
-            'param': new HtmlTagDefinition({ isVoid: true }),
-            'hr': new HtmlTagDefinition({ isVoid: true }),
-            'br': new HtmlTagDefinition({ isVoid: true }),
-            'source': new HtmlTagDefinition({ isVoid: true }),
-            'track': new HtmlTagDefinition({ isVoid: true }),
-            'wbr': new HtmlTagDefinition({ isVoid: true }),
-            'p': new HtmlTagDefinition({
-                closedByChildren: [
-                    'address',
-                    'article',
-                    'aside',
-                    'blockquote',
-                    'div',
-                    'dl',
-                    'fieldset',
-                    'footer',
-                    'form',
-                    'h1',
-                    'h2',
-                    'h3',
-                    'h4',
-                    'h5',
-                    'h6',
-                    'header',
-                    'hgroup',
-                    'hr',
-                    'main',
-                    'nav',
-                    'ol',
-                    'p',
-                    'pre',
-                    'section',
-                    'table',
-                    'ul',
-                ],
-                closedByParent: true,
-            }),
-            'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
-            'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
-            'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
-            'tr': new HtmlTagDefinition({ closedByChildren: ['tr'], closedByParent: true }),
-            'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-            'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
-            'col': new HtmlTagDefinition({ isVoid: true }),
-            'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
-            'foreignObject': new HtmlTagDefinition({
-                // Usually the implicit namespace here would be redundant since it will be inherited from
-                // the parent `svg`, but we have to do it for `foreignObject`, because the way the parser
-                // works is that the parent node of an end tag is its own start tag which means that
-                // the `preventNamespaceInheritance` on `foreignObject` would have it default to the
-                // implicit namespace which is `html`, unless specified otherwise.
-                implicitNamespacePrefix: 'svg',
-                // We want to prevent children of foreignObject from inheriting its namespace, because
-                // the point of the element is to allow nodes from other namespaces to be inserted.
-                preventNamespaceInheritance: true,
-            }),
-            'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
-            'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
-            'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
-            'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
-            'rb': new HtmlTagDefinition({
-                closedByChildren: ['rb', 'rt', 'rtc', 'rp'],
-                closedByParent: true,
-            }),
-            'rt': new HtmlTagDefinition({
-                closedByChildren: ['rb', 'rt', 'rtc', 'rp'],
-                closedByParent: true,
-            }),
-            'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
-            'rp': new HtmlTagDefinition({
-                closedByChildren: ['rb', 'rt', 'rtc', 'rp'],
-                closedByParent: true,
-            }),
-            'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
-            'option': new HtmlTagDefinition({
-                closedByChildren: ['option', 'optgroup'],
-                closedByParent: true,
-            }),
-            'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
-            'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
-            'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-            'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
-            'title': new HtmlTagDefinition({
-                // The browser supports two separate `title` tags which have to use
-                // a different content type: `HTMLTitleElement` and `SVGTitleElement`
-                contentType: {
-                    default: TagContentType.ESCAPABLE_RAW_TEXT,
-                    svg: TagContentType.PARSABLE_DATA,
-                },
-            }),
-            'textarea': new HtmlTagDefinition({
-                contentType: TagContentType.ESCAPABLE_RAW_TEXT,
-                ignoreFirstLf: true,
-            }),
-        });
-        new DomElementSchemaRegistry().allKnownElementNames().forEach((knownTagName) => {
-            if (!TAG_DEFINITIONS[knownTagName] && getNsPrefix(knownTagName) === null) {
-                TAG_DEFINITIONS[knownTagName] = new HtmlTagDefinition({ canSelfClose: false });
-            }
-        });
-    }
-    // We have to make both a case-sensitive and a case-insensitive lookup, because
-    // HTML tag names are case insensitive, whereas some SVG tags are case sensitive.
-    return (TAG_DEFINITIONS[tagName] ?? TAG_DEFINITIONS[tagName.toLowerCase()] ?? DEFAULT_TAG_DEFINITION);
-}
-
-const TAG_TO_PLACEHOLDER_NAMES = {
-    'A': 'LINK',
-    'B': 'BOLD_TEXT',
-    'BR': 'LINE_BREAK',
-    'EM': 'EMPHASISED_TEXT',
-    'H1': 'HEADING_LEVEL1',
-    'H2': 'HEADING_LEVEL2',
-    'H3': 'HEADING_LEVEL3',
-    'H4': 'HEADING_LEVEL4',
-    'H5': 'HEADING_LEVEL5',
-    'H6': 'HEADING_LEVEL6',
-    'HR': 'HORIZONTAL_RULE',
-    'I': 'ITALIC_TEXT',
-    'LI': 'LIST_ITEM',
-    'LINK': 'MEDIA_LINK',
-    'OL': 'ORDERED_LIST',
-    'P': 'PARAGRAPH',
-    'Q': 'QUOTATION',
-    'S': 'STRIKETHROUGH_TEXT',
-    'SMALL': 'SMALL_TEXT',
-    'SUB': 'SUBSTRIPT',
-    'SUP': 'SUPERSCRIPT',
-    'TBODY': 'TABLE_BODY',
-    'TD': 'TABLE_CELL',
-    'TFOOT': 'TABLE_FOOTER',
-    'TH': 'TABLE_HEADER_CELL',
-    'THEAD': 'TABLE_HEADER',
-    'TR': 'TABLE_ROW',
-    'TT': 'MONOSPACED_TEXT',
-    'U': 'UNDERLINED_TEXT',
-    'UL': 'UNORDERED_LIST',
-};
-/**
- * Creates unique names for placeholder with different content.
- *
- * Returns the same placeholder name when the content is identical.
- */
-class PlaceholderRegistry {
-    constructor() {
-        // Count the occurrence of the base name top generate a unique name
-        this._placeHolderNameCounts = {};
-        // Maps signature to placeholder names
-        this._signatureToName = {};
-    }
-    getStartTagPlaceholderName(tag, attrs, isVoid) {
-        const signature = this._hashTag(tag, attrs, isVoid);
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const upperTag = tag.toUpperCase();
-        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
-        const name = this._generateUniqueName(isVoid ? baseName : `START_${baseName}`);
-        this._signatureToName[signature] = name;
-        return name;
-    }
-    getCloseTagPlaceholderName(tag) {
-        const signature = this._hashClosingTag(tag);
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const upperTag = tag.toUpperCase();
-        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
-        const name = this._generateUniqueName(`CLOSE_${baseName}`);
-        this._signatureToName[signature] = name;
-        return name;
-    }
-    getPlaceholderName(name, content) {
-        const upperName = name.toUpperCase();
-        const signature = `PH: ${upperName}=${content}`;
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const uniqueName = this._generateUniqueName(upperName);
-        this._signatureToName[signature] = uniqueName;
-        return uniqueName;
-    }
-    getUniquePlaceholder(name) {
-        return this._generateUniqueName(name.toUpperCase());
-    }
-    getStartBlockPlaceholderName(name, parameters) {
-        const signature = this._hashBlock(name, parameters);
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const placeholder = this._generateUniqueName(`START_BLOCK_${this._toSnakeCase(name)}`);
-        this._signatureToName[signature] = placeholder;
-        return placeholder;
-    }
-    getCloseBlockPlaceholderName(name) {
-        const signature = this._hashClosingBlock(name);
-        if (this._signatureToName[signature]) {
-            return this._signatureToName[signature];
-        }
-        const placeholder = this._generateUniqueName(`CLOSE_BLOCK_${this._toSnakeCase(name)}`);
-        this._signatureToName[signature] = placeholder;
-        return placeholder;
-    }
-    // Generate a hash for a tag - does not take attribute order into account
-    _hashTag(tag, attrs, isVoid) {
-        const start = `<${tag}`;
-        const strAttrs = Object.keys(attrs)
-            .sort()
-            .map((name) => ` ${name}=${attrs[name]}`)
-            .join('');
-        const end = isVoid ? '/>' : `></${tag}>`;
-        return start + strAttrs + end;
-    }
-    _hashClosingTag(tag) {
-        return this._hashTag(`/${tag}`, {}, false);
-    }
-    _hashBlock(name, parameters) {
-        const params = parameters.length === 0 ? '' : ` (${parameters.sort().join('; ')})`;
-        return `@${name}${params} {}`;
-    }
-    _hashClosingBlock(name) {
-        return this._hashBlock(`close_${name}`, []);
-    }
-    _toSnakeCase(name) {
-        return name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-    }
-    _generateUniqueName(base) {
-        const seen = this._placeHolderNameCounts.hasOwnProperty(base);
-        if (!seen) {
-            this._placeHolderNameCounts[base] = 1;
-            return base;
-        }
-        const id = this._placeHolderNameCounts[base];
-        this._placeHolderNameCounts[base] = id + 1;
-        return `${base}_${id}`;
-    }
-}
-
-const _expParser = new Parser$1(new Lexer());
-/**
- * Returns a function converting html nodes to an i18n Message given an interpolationConfig
- */
-function createI18nMessageFactory(interpolationConfig, containerBlocks) {
-    const visitor = new _I18nVisitor(_expParser, interpolationConfig, containerBlocks);
-    return (nodes, meaning, description, customId, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
-}
-function noopVisitNodeFn(_html, i18n) {
-    return i18n;
-}
-class _I18nVisitor {
-    constructor(_expressionParser, _interpolationConfig, _containerBlocks) {
-        this._expressionParser = _expressionParser;
-        this._interpolationConfig = _interpolationConfig;
-        this._containerBlocks = _containerBlocks;
-    }
-    toI18nMessage(nodes, meaning = '', description = '', customId = '', visitNodeFn) {
-        const context = {
-            isIcu: nodes.length == 1 && nodes[0] instanceof Expansion,
-            icuDepth: 0,
-            placeholderRegistry: new PlaceholderRegistry(),
-            placeholderToContent: {},
-            placeholderToMessage: {},
-            visitNodeFn: visitNodeFn || noopVisitNodeFn,
-        };
-        const i18nodes = visitAll(this, nodes, context);
-        return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
-    }
-    visitElement(el, context) {
-        const children = visitAll(this, el.children, context);
-        const attrs = {};
-        el.attrs.forEach((attr) => {
-            // Do not visit the attributes, translatable ones are top-level ASTs
-            attrs[attr.name] = attr.value;
-        });
-        const isVoid = getHtmlTagDefinition(el.name).isVoid;
-        const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
-        context.placeholderToContent[startPhName] = {
-            text: el.startSourceSpan.toString(),
-            sourceSpan: el.startSourceSpan,
-        };
-        let closePhName = '';
-        if (!isVoid) {
-            closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
-            context.placeholderToContent[closePhName] = {
-                text: `</${el.name}>`,
-                sourceSpan: el.endSourceSpan ?? el.sourceSpan,
-            };
-        }
-        const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
-        return context.visitNodeFn(el, node);
-    }
-    visitAttribute(attribute, context) {
-        const node = attribute.valueTokens === undefined || attribute.valueTokens.length === 1
-            ? new Text$2(attribute.value, attribute.valueSpan || attribute.sourceSpan)
-            : this._visitTextWithInterpolation(attribute.valueTokens, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
-        return context.visitNodeFn(attribute, node);
-    }
-    visitText(text, context) {
-        const node = text.tokens.length === 1
-            ? new Text$2(text.value, text.sourceSpan)
-            : this._visitTextWithInterpolation(text.tokens, text.sourceSpan, context, text.i18n);
-        return context.visitNodeFn(text, node);
-    }
-    visitComment(comment, context) {
-        return null;
-    }
-    visitExpansion(icu, context) {
-        context.icuDepth++;
-        const i18nIcuCases = {};
-        const i18nIcu = new Icu(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
-        icu.cases.forEach((caze) => {
-            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, context)), caze.expSourceSpan);
-        });
-        context.icuDepth--;
-        if (context.isIcu || context.icuDepth > 0) {
-            // Returns an ICU node when:
-            // - the message (vs a part of the message) is an ICU message, or
-            // - the ICU message is nested.
-            const expPh = context.placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
-            i18nIcu.expressionPlaceholder = expPh;
-            context.placeholderToContent[expPh] = {
-                text: icu.switchValue,
-                sourceSpan: icu.switchValueSourceSpan,
-            };
-            return context.visitNodeFn(icu, i18nIcu);
-        }
-        // Else returns a placeholder
-        // ICU placeholders should not be replaced with their original content but with the their
-        // translations.
-        // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
-        const phName = context.placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
-        context.placeholderToMessage[phName] = this.toI18nMessage([icu], '', '', '', undefined);
-        const node = new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
-        return context.visitNodeFn(icu, node);
-    }
-    visitExpansionCase(_icuCase, _context) {
-        throw new Error('Unreachable code');
-    }
-    visitBlock(block, context) {
-        const children = visitAll(this, block.children, context);
-        if (this._containerBlocks.has(block.name)) {
-            return new Container(children, block.sourceSpan);
-        }
-        const parameters = block.parameters.map((param) => param.expression);
-        const startPhName = context.placeholderRegistry.getStartBlockPlaceholderName(block.name, parameters);
-        const closePhName = context.placeholderRegistry.getCloseBlockPlaceholderName(block.name);
-        context.placeholderToContent[startPhName] = {
-            text: block.startSourceSpan.toString(),
-            sourceSpan: block.startSourceSpan,
-        };
-        context.placeholderToContent[closePhName] = {
-            text: block.endSourceSpan ? block.endSourceSpan.toString() : '}',
-            sourceSpan: block.endSourceSpan ?? block.sourceSpan,
-        };
-        const node = new BlockPlaceholder(block.name, parameters, startPhName, closePhName, children, block.sourceSpan, block.startSourceSpan, block.endSourceSpan);
-        return context.visitNodeFn(block, node);
-    }
-    visitBlockParameter(_parameter, _context) {
-        throw new Error('Unreachable code');
-    }
-    visitLetDeclaration(decl, context) {
-        return null;
-    }
-    /**
-     * Convert, text and interpolated tokens up into text and placeholder pieces.
-     *
-     * @param tokens The text and interpolated tokens.
-     * @param sourceSpan The span of the whole of the `text` string.
-     * @param context The current context of the visitor, used to compute and store placeholders.
-     * @param previousI18n Any i18n metadata associated with this `text` from a previous pass.
-     */
-    _visitTextWithInterpolation(tokens, sourceSpan, context, previousI18n) {
-        // Return a sequence of `Text` and `Placeholder` nodes grouped in a `Container`.
-        const nodes = [];
-        // We will only create a container if there are actually interpolations,
-        // so this flag tracks that.
-        let hasInterpolation = false;
-        for (const token of tokens) {
-            switch (token.type) {
-                case 8 /* TokenType.INTERPOLATION */:
-                case 17 /* TokenType.ATTR_VALUE_INTERPOLATION */:
-                    hasInterpolation = true;
-                    const expression = token.parts[1];
-                    const baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
-                    const phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
-                    context.placeholderToContent[phName] = {
-                        text: token.parts.join(''),
-                        sourceSpan: token.sourceSpan,
-                    };
-                    nodes.push(new Placeholder(expression, phName, token.sourceSpan));
-                    break;
-                default:
-                    if (token.parts[0].length > 0) {
-                        // This token is text or an encoded entity.
-                        // If it is following on from a previous text node then merge it into that node
-                        // Otherwise, if it is following an interpolation, then add a new node.
-                        const previous = nodes[nodes.length - 1];
-                        if (previous instanceof Text$2) {
-                            previous.value += token.parts[0];
-                            previous.sourceSpan = new ParseSourceSpan(previous.sourceSpan.start, token.sourceSpan.end, previous.sourceSpan.fullStart, previous.sourceSpan.details);
-                        }
-                        else {
-                            nodes.push(new Text$2(token.parts[0], token.sourceSpan));
-                        }
-                    }
-                    break;
-            }
-        }
-        if (hasInterpolation) {
-            // Whitespace removal may have invalidated the interpolation source-spans.
-            reusePreviousSourceSpans(nodes, previousI18n);
-            return new Container(nodes, sourceSpan);
-        }
-        else {
-            return nodes[0];
-        }
-    }
-}
-/**
- * Re-use the source-spans from `previousI18n` metadata for the `nodes`.
- *
- * Whitespace removal can invalidate the source-spans of interpolation nodes, so we
- * reuse the source-span stored from a previous pass before the whitespace was removed.
- *
- * @param nodes The `Text` and `Placeholder` nodes to be processed.
- * @param previousI18n Any i18n metadata for these `nodes` stored from a previous pass.
- */
-function reusePreviousSourceSpans(nodes, previousI18n) {
-    if (previousI18n instanceof Message) {
-        // The `previousI18n` is an i18n `Message`, so we are processing an `Attribute` with i18n
-        // metadata. The `Message` should consist only of a single `Container` that contains the
-        // parts (`Text` and `Placeholder`) to process.
-        assertSingleContainerMessage(previousI18n);
-        previousI18n = previousI18n.nodes[0];
-    }
-    if (previousI18n instanceof Container) {
-        // The `previousI18n` is a `Container`, which means that this is a second i18n extraction pass
-        // after whitespace has been removed from the AST nodes.
-        assertEquivalentNodes(previousI18n.children, nodes);
-        // Reuse the source-spans from the first pass.
-        for (let i = 0; i < nodes.length; i++) {
-            nodes[i].sourceSpan = previousI18n.children[i].sourceSpan;
-        }
-    }
-}
-/**
- * Asserts that the `message` contains exactly one `Container` node.
- */
-function assertSingleContainerMessage(message) {
-    const nodes = message.nodes;
-    if (nodes.length !== 1 || !(nodes[0] instanceof Container)) {
-        throw new Error('Unexpected previous i18n message - expected it to consist of only a single `Container` node.');
-    }
-}
-/**
- * Asserts that the `previousNodes` and `node` collections have the same number of elements and
- * corresponding elements have the same node type.
- */
-function assertEquivalentNodes(previousNodes, nodes) {
-    if (previousNodes.length !== nodes.length) {
-        throw new Error('The number of i18n message children changed between first and second pass.');
-    }
-    if (previousNodes.some((node, i) => nodes[i].constructor !== node.constructor)) {
-        throw new Error('The types of the i18n message children changed between first and second pass.');
-    }
-}
-const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
-function extractPlaceholderName(input) {
-    return input.split(_CUSTOM_PH_EXP)[2];
-}
-
-/**
- * An i18n error.
- */
-class I18nError extends ParseError {
-    constructor(span, msg) {
-        super(span, msg);
     }
 }
 
@@ -18964,7 +16283,7 @@ class ParseTreeResult {
         this.errors = errors;
     }
 }
-class Parser {
+class Parser$1 {
     constructor(getTagDefinition) {
         this.getTagDefinition = getTagDefinition;
     }
@@ -19476,6 +16795,2916 @@ function decodeEntity(match, entity) {
     return match;
 }
 
+const PRESERVE_WS_ATTR_NAME = 'ngPreserveWhitespaces';
+const SKIP_WS_TRIM_TAGS = new Set(['pre', 'template', 'textarea', 'script', 'style']);
+// Equivalent to \s with \u00a0 (non-breaking space) excluded.
+// Based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp
+const WS_CHARS = ' \f\n\r\t\v\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff';
+const NO_WS_REGEXP = new RegExp(`[^${WS_CHARS}]`);
+const WS_REPLACE_REGEXP = new RegExp(`[${WS_CHARS}]{2,}`, 'g');
+function hasPreserveWhitespacesAttr(attrs) {
+    return attrs.some((attr) => attr.name === PRESERVE_WS_ATTR_NAME);
+}
+/**
+ * &ngsp; is a placeholder for non-removable space
+ * &ngsp; is converted to the 0xE500 PUA (Private Use Areas) unicode character
+ * and later on replaced by a space.
+ */
+function replaceNgsp(value) {
+    // lexer is replacing the &ngsp; pseudo-entity with NGSP_UNICODE
+    return value.replace(new RegExp(NGSP_UNICODE, 'g'), ' ');
+}
+/**
+ * This visitor can walk HTML parse tree and remove / trim text nodes using the following rules:
+ * - consider spaces, tabs and new lines as whitespace characters;
+ * - drop text nodes consisting of whitespace characters only;
+ * - for all other text nodes replace consecutive whitespace characters with one space;
+ * - convert &ngsp; pseudo-entity to a single space;
+ *
+ * Removal and trimming of whitespaces have positive performance impact (less code to generate
+ * while compiling templates, faster view creation). At the same time it can be "destructive"
+ * in some cases (whitespaces can influence layout). Because of the potential of breaking layout
+ * this visitor is not activated by default in Angular 5 and people need to explicitly opt-in for
+ * whitespace removal. The default option for whitespace removal will be revisited in Angular 6
+ * and might be changed to "on" by default.
+ *
+ * If `originalNodeMap` is provided, the transformed nodes will be mapped back to their original
+ * inputs. Any output nodes not in the map were not transformed. This supports correlating and
+ * porting information between the trimmed nodes and original nodes (such as `i18n` properties)
+ * such that trimming whitespace does not does not drop required information from the node.
+ */
+class WhitespaceVisitor {
+    constructor(preserveSignificantWhitespace, originalNodeMap, requireContext = true) {
+        this.preserveSignificantWhitespace = preserveSignificantWhitespace;
+        this.originalNodeMap = originalNodeMap;
+        this.requireContext = requireContext;
+        // How many ICU expansions which are currently being visited. ICUs can be nested, so this
+        // tracks the current depth of nesting. If this depth is greater than 0, then this visitor is
+        // currently processing content inside an ICU expansion.
+        this.icuExpansionDepth = 0;
+    }
+    visitElement(element, context) {
+        if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
+            // don't descent into elements where we need to preserve whitespaces
+            // but still visit all attributes to eliminate one used as a market to preserve WS
+            const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            this.originalNodeMap?.set(newElement, element);
+            return newElement;
+        }
+        const newElement = new Element(element.name, element.attrs, visitAllWithSiblings(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+        this.originalNodeMap?.set(newElement, element);
+        return newElement;
+    }
+    visitAttribute(attribute, context) {
+        return attribute.name !== PRESERVE_WS_ATTR_NAME ? attribute : null;
+    }
+    visitText(text, context) {
+        const isNotBlank = text.value.match(NO_WS_REGEXP);
+        const hasExpansionSibling = context && (context.prev instanceof Expansion || context.next instanceof Expansion);
+        // Do not trim whitespace within ICU expansions when preserving significant whitespace.
+        // Historically, ICU whitespace was never trimmed and this is really a bug. However fixing it
+        // would change message IDs which we can't easily do. Instead we only trim ICU whitespace within
+        // ICU expansions when not preserving significant whitespace, which is the new behavior where it
+        // most matters.
+        const inIcuExpansion = this.icuExpansionDepth > 0;
+        if (inIcuExpansion && this.preserveSignificantWhitespace)
+            return text;
+        if (isNotBlank || hasExpansionSibling) {
+            // Process the whitespace in the tokens of this Text node
+            const tokens = text.tokens.map((token) => token.type === 5 /* TokenType.TEXT */ ? createWhitespaceProcessedTextToken(token) : token);
+            // Fully trim message when significant whitespace is not preserved.
+            if (!this.preserveSignificantWhitespace && tokens.length > 0) {
+                // The first token should only call `.trimStart()` and the last token
+                // should only call `.trimEnd()`, but there might be only one token which
+                // needs to call both.
+                const firstToken = tokens[0];
+                tokens.splice(0, 1, trimLeadingWhitespace(firstToken, context));
+                const lastToken = tokens[tokens.length - 1]; // Could be the same as the first token.
+                tokens.splice(tokens.length - 1, 1, trimTrailingWhitespace(lastToken, context));
+            }
+            // Process the whitespace of the value of this Text node. Also trim the leading/trailing
+            // whitespace when we don't need to preserve significant whitespace.
+            const processed = processWhitespace(text.value);
+            const value = this.preserveSignificantWhitespace
+                ? processed
+                : trimLeadingAndTrailingWhitespace(processed, context);
+            const result = new Text(value, text.sourceSpan, tokens, text.i18n);
+            this.originalNodeMap?.set(result, text);
+            return result;
+        }
+        return null;
+    }
+    visitComment(comment, context) {
+        return comment;
+    }
+    visitExpansion(expansion, context) {
+        this.icuExpansionDepth++;
+        let newExpansion;
+        try {
+            newExpansion = new Expansion(expansion.switchValue, expansion.type, visitAllWithSiblings(this, expansion.cases), expansion.sourceSpan, expansion.switchValueSourceSpan, expansion.i18n);
+        }
+        finally {
+            this.icuExpansionDepth--;
+        }
+        this.originalNodeMap?.set(newExpansion, expansion);
+        return newExpansion;
+    }
+    visitExpansionCase(expansionCase, context) {
+        const newExpansionCase = new ExpansionCase(expansionCase.value, visitAllWithSiblings(this, expansionCase.expression), expansionCase.sourceSpan, expansionCase.valueSourceSpan, expansionCase.expSourceSpan);
+        this.originalNodeMap?.set(newExpansionCase, expansionCase);
+        return newExpansionCase;
+    }
+    visitBlock(block, context) {
+        const newBlock = new Block(block.name, block.parameters, visitAllWithSiblings(this, block.children), block.sourceSpan, block.nameSpan, block.startSourceSpan, block.endSourceSpan);
+        this.originalNodeMap?.set(newBlock, block);
+        return newBlock;
+    }
+    visitBlockParameter(parameter, context) {
+        return parameter;
+    }
+    visitLetDeclaration(decl, context) {
+        return decl;
+    }
+    visit(_node, context) {
+        // `visitAllWithSiblings` provides context necessary for ICU messages to be handled correctly.
+        // Prefer that over calling `html.visitAll` directly on this visitor.
+        if (this.requireContext && !context) {
+            throw new Error(`WhitespaceVisitor requires context. Visit via \`visitAllWithSiblings\` to get this context.`);
+        }
+        return false;
+    }
+}
+function trimLeadingWhitespace(token, context) {
+    if (token.type !== 5 /* TokenType.TEXT */)
+        return token;
+    const isFirstTokenInTag = !context?.prev;
+    if (!isFirstTokenInTag)
+        return token;
+    return transformTextToken(token, (text) => text.trimStart());
+}
+function trimTrailingWhitespace(token, context) {
+    if (token.type !== 5 /* TokenType.TEXT */)
+        return token;
+    const isLastTokenInTag = !context?.next;
+    if (!isLastTokenInTag)
+        return token;
+    return transformTextToken(token, (text) => text.trimEnd());
+}
+function trimLeadingAndTrailingWhitespace(text, context) {
+    const isFirstTokenInTag = !context?.prev;
+    const isLastTokenInTag = !context?.next;
+    const maybeTrimmedStart = isFirstTokenInTag ? text.trimStart() : text;
+    const maybeTrimmed = isLastTokenInTag ? maybeTrimmedStart.trimEnd() : maybeTrimmedStart;
+    return maybeTrimmed;
+}
+function createWhitespaceProcessedTextToken({ type, parts, sourceSpan }) {
+    return { type, parts: [processWhitespace(parts[0])], sourceSpan };
+}
+function transformTextToken({ type, parts, sourceSpan }, transform) {
+    // `TextToken` only ever has one part as defined in its type, so we just transform the first element.
+    return { type, parts: [transform(parts[0])], sourceSpan };
+}
+function processWhitespace(text) {
+    return replaceNgsp(text).replace(WS_REPLACE_REGEXP, ' ');
+}
+function removeWhitespaces(htmlAstWithErrors, preserveSignificantWhitespace) {
+    return new ParseTreeResult(visitAllWithSiblings(new WhitespaceVisitor(preserveSignificantWhitespace), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
+}
+function visitAllWithSiblings(visitor, nodes) {
+    const result = [];
+    nodes.forEach((ast, i) => {
+        const context = { prev: nodes[i - 1], next: nodes[i + 1] };
+        const astResult = ast.visit(visitor, context);
+        if (astResult) {
+            result.push(astResult);
+        }
+    });
+    return result;
+}
+
+var TokenType;
+(function (TokenType) {
+    TokenType[TokenType["Character"] = 0] = "Character";
+    TokenType[TokenType["Identifier"] = 1] = "Identifier";
+    TokenType[TokenType["PrivateIdentifier"] = 2] = "PrivateIdentifier";
+    TokenType[TokenType["Keyword"] = 3] = "Keyword";
+    TokenType[TokenType["String"] = 4] = "String";
+    TokenType[TokenType["Operator"] = 5] = "Operator";
+    TokenType[TokenType["Number"] = 6] = "Number";
+    TokenType[TokenType["Error"] = 7] = "Error";
+})(TokenType || (TokenType = {}));
+const KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this'];
+class Lexer {
+    tokenize(text) {
+        const scanner = new _Scanner(text);
+        const tokens = [];
+        let token = scanner.scanToken();
+        while (token != null) {
+            tokens.push(token);
+            token = scanner.scanToken();
+        }
+        return tokens;
+    }
+}
+class Token {
+    constructor(index, end, type, numValue, strValue) {
+        this.index = index;
+        this.end = end;
+        this.type = type;
+        this.numValue = numValue;
+        this.strValue = strValue;
+    }
+    isCharacter(code) {
+        return this.type == TokenType.Character && this.numValue == code;
+    }
+    isNumber() {
+        return this.type == TokenType.Number;
+    }
+    isString() {
+        return this.type == TokenType.String;
+    }
+    isOperator(operator) {
+        return this.type == TokenType.Operator && this.strValue == operator;
+    }
+    isIdentifier() {
+        return this.type == TokenType.Identifier;
+    }
+    isPrivateIdentifier() {
+        return this.type == TokenType.PrivateIdentifier;
+    }
+    isKeyword() {
+        return this.type == TokenType.Keyword;
+    }
+    isKeywordLet() {
+        return this.type == TokenType.Keyword && this.strValue == 'let';
+    }
+    isKeywordAs() {
+        return this.type == TokenType.Keyword && this.strValue == 'as';
+    }
+    isKeywordNull() {
+        return this.type == TokenType.Keyword && this.strValue == 'null';
+    }
+    isKeywordUndefined() {
+        return this.type == TokenType.Keyword && this.strValue == 'undefined';
+    }
+    isKeywordTrue() {
+        return this.type == TokenType.Keyword && this.strValue == 'true';
+    }
+    isKeywordFalse() {
+        return this.type == TokenType.Keyword && this.strValue == 'false';
+    }
+    isKeywordThis() {
+        return this.type == TokenType.Keyword && this.strValue == 'this';
+    }
+    isError() {
+        return this.type == TokenType.Error;
+    }
+    toNumber() {
+        return this.type == TokenType.Number ? this.numValue : -1;
+    }
+    toString() {
+        switch (this.type) {
+            case TokenType.Character:
+            case TokenType.Identifier:
+            case TokenType.Keyword:
+            case TokenType.Operator:
+            case TokenType.PrivateIdentifier:
+            case TokenType.String:
+            case TokenType.Error:
+                return this.strValue;
+            case TokenType.Number:
+                return this.numValue.toString();
+            default:
+                return null;
+        }
+    }
+}
+function newCharacterToken(index, end, code) {
+    return new Token(index, end, TokenType.Character, code, String.fromCharCode(code));
+}
+function newIdentifierToken(index, end, text) {
+    return new Token(index, end, TokenType.Identifier, 0, text);
+}
+function newPrivateIdentifierToken(index, end, text) {
+    return new Token(index, end, TokenType.PrivateIdentifier, 0, text);
+}
+function newKeywordToken(index, end, text) {
+    return new Token(index, end, TokenType.Keyword, 0, text);
+}
+function newOperatorToken(index, end, text) {
+    return new Token(index, end, TokenType.Operator, 0, text);
+}
+function newStringToken(index, end, text) {
+    return new Token(index, end, TokenType.String, 0, text);
+}
+function newNumberToken(index, end, n) {
+    return new Token(index, end, TokenType.Number, n, '');
+}
+function newErrorToken(index, end, message) {
+    return new Token(index, end, TokenType.Error, 0, message);
+}
+const EOF = new Token(-1, -1, TokenType.Character, 0, '');
+class _Scanner {
+    constructor(input) {
+        this.input = input;
+        this.peek = 0;
+        this.index = -1;
+        this.length = input.length;
+        this.advance();
+    }
+    advance() {
+        this.peek = ++this.index >= this.length ? $EOF : this.input.charCodeAt(this.index);
+    }
+    scanToken() {
+        const input = this.input, length = this.length;
+        let peek = this.peek, index = this.index;
+        // Skip whitespace.
+        while (peek <= $SPACE) {
+            if (++index >= length) {
+                peek = $EOF;
+                break;
+            }
+            else {
+                peek = input.charCodeAt(index);
+            }
+        }
+        this.peek = peek;
+        this.index = index;
+        if (index >= length) {
+            return null;
+        }
+        // Handle identifiers and numbers.
+        if (isIdentifierStart(peek))
+            return this.scanIdentifier();
+        if (isDigit(peek))
+            return this.scanNumber(index);
+        const start = index;
+        switch (peek) {
+            case $PERIOD:
+                this.advance();
+                return isDigit(this.peek)
+                    ? this.scanNumber(start)
+                    : newCharacterToken(start, this.index, $PERIOD);
+            case $LPAREN:
+            case $RPAREN:
+            case $LBRACE:
+            case $RBRACE:
+            case $LBRACKET:
+            case $RBRACKET:
+            case $COMMA:
+            case $COLON:
+            case $SEMICOLON:
+                return this.scanCharacter(start, peek);
+            case $SQ:
+            case $DQ:
+                return this.scanString();
+            case $HASH:
+                return this.scanPrivateIdentifier();
+            case $PLUS:
+            case $MINUS:
+            case $STAR:
+            case $SLASH:
+            case $PERCENT:
+            case $CARET:
+                return this.scanOperator(start, String.fromCharCode(peek));
+            case $QUESTION:
+                return this.scanQuestion(start);
+            case $LT:
+            case $GT:
+                return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=');
+            case $BANG:
+            case $EQ:
+                return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=', $EQ, '=');
+            case $AMPERSAND:
+                return this.scanComplexOperator(start, '&', $AMPERSAND, '&');
+            case $BAR:
+                return this.scanComplexOperator(start, '|', $BAR, '|');
+            case $NBSP:
+                while (isWhitespace(this.peek))
+                    this.advance();
+                return this.scanToken();
+        }
+        this.advance();
+        return this.error(`Unexpected character [${String.fromCharCode(peek)}]`, 0);
+    }
+    scanCharacter(start, code) {
+        this.advance();
+        return newCharacterToken(start, this.index, code);
+    }
+    scanOperator(start, str) {
+        this.advance();
+        return newOperatorToken(start, this.index, str);
+    }
+    /**
+     * Tokenize a 2/3 char long operator
+     *
+     * @param start start index in the expression
+     * @param one first symbol (always part of the operator)
+     * @param twoCode code point for the second symbol
+     * @param two second symbol (part of the operator when the second code point matches)
+     * @param threeCode code point for the third symbol
+     * @param three third symbol (part of the operator when provided and matches source expression)
+     */
+    scanComplexOperator(start, one, twoCode, two, threeCode, three) {
+        this.advance();
+        let str = one;
+        if (this.peek == twoCode) {
+            this.advance();
+            str += two;
+        }
+        if (threeCode != null && this.peek == threeCode) {
+            this.advance();
+            str += three;
+        }
+        return newOperatorToken(start, this.index, str);
+    }
+    scanIdentifier() {
+        const start = this.index;
+        this.advance();
+        while (isIdentifierPart(this.peek))
+            this.advance();
+        const str = this.input.substring(start, this.index);
+        return KEYWORDS.indexOf(str) > -1
+            ? newKeywordToken(start, this.index, str)
+            : newIdentifierToken(start, this.index, str);
+    }
+    /** Scans an ECMAScript private identifier. */
+    scanPrivateIdentifier() {
+        const start = this.index;
+        this.advance();
+        if (!isIdentifierStart(this.peek)) {
+            return this.error('Invalid character [#]', -1);
+        }
+        while (isIdentifierPart(this.peek))
+            this.advance();
+        const identifierName = this.input.substring(start, this.index);
+        return newPrivateIdentifierToken(start, this.index, identifierName);
+    }
+    scanNumber(start) {
+        let simple = this.index === start;
+        let hasSeparators = false;
+        this.advance(); // Skip initial digit.
+        while (true) {
+            if (isDigit(this.peek)) {
+                // Do nothing.
+            }
+            else if (this.peek === $_) {
+                // Separators are only valid when they're surrounded by digits. E.g. `1_0_1` is
+                // valid while `_101` and `101_` are not. The separator can't be next to the decimal
+                // point or another separator either. Note that it's unlikely that we'll hit a case where
+                // the underscore is at the start, because that's a valid identifier and it will be picked
+                // up earlier in the parsing. We validate for it anyway just in case.
+                if (!isDigit(this.input.charCodeAt(this.index - 1)) ||
+                    !isDigit(this.input.charCodeAt(this.index + 1))) {
+                    return this.error('Invalid numeric separator', 0);
+                }
+                hasSeparators = true;
+            }
+            else if (this.peek === $PERIOD) {
+                simple = false;
+            }
+            else if (isExponentStart(this.peek)) {
+                this.advance();
+                if (isExponentSign(this.peek))
+                    this.advance();
+                if (!isDigit(this.peek))
+                    return this.error('Invalid exponent', -1);
+                simple = false;
+            }
+            else {
+                break;
+            }
+            this.advance();
+        }
+        let str = this.input.substring(start, this.index);
+        if (hasSeparators) {
+            str = str.replace(/_/g, '');
+        }
+        const value = simple ? parseIntAutoRadix(str) : parseFloat(str);
+        return newNumberToken(start, this.index, value);
+    }
+    scanString() {
+        const start = this.index;
+        const quote = this.peek;
+        this.advance(); // Skip initial quote.
+        let buffer = '';
+        let marker = this.index;
+        const input = this.input;
+        while (this.peek != quote) {
+            if (this.peek == $BACKSLASH) {
+                buffer += input.substring(marker, this.index);
+                let unescapedCode;
+                this.advance(); // mutates this.peek
+                // @ts-expect-error see microsoft/TypeScript#9998
+                if (this.peek == $u) {
+                    // 4 character hex code for unicode character.
+                    const hex = input.substring(this.index + 1, this.index + 5);
+                    if (/^[0-9a-f]+$/i.test(hex)) {
+                        unescapedCode = parseInt(hex, 16);
+                    }
+                    else {
+                        return this.error(`Invalid unicode escape [\\u${hex}]`, 0);
+                    }
+                    for (let i = 0; i < 5; i++) {
+                        this.advance();
+                    }
+                }
+                else {
+                    unescapedCode = unescape(this.peek);
+                    this.advance();
+                }
+                buffer += String.fromCharCode(unescapedCode);
+                marker = this.index;
+            }
+            else if (this.peek == $EOF) {
+                return this.error('Unterminated quote', 0);
+            }
+            else {
+                this.advance();
+            }
+        }
+        const last = input.substring(marker, this.index);
+        this.advance(); // Skip terminating quote.
+        return newStringToken(start, this.index, buffer + last);
+    }
+    scanQuestion(start) {
+        this.advance();
+        let str = '?';
+        // Either `a ?? b` or 'a?.b'.
+        if (this.peek === $QUESTION || this.peek === $PERIOD) {
+            str += this.peek === $PERIOD ? '.' : '?';
+            this.advance();
+        }
+        return newOperatorToken(start, this.index, str);
+    }
+    error(message, offset) {
+        const position = this.index + offset;
+        return newErrorToken(position, this.index, `Lexer Error: ${message} at column ${position} in expression [${this.input}]`);
+    }
+}
+function isIdentifierStart(code) {
+    return (($a <= code && code <= $z) ||
+        ($A <= code && code <= $Z) ||
+        code == $_ ||
+        code == $$);
+}
+function isIdentifier(input) {
+    if (input.length == 0)
+        return false;
+    const scanner = new _Scanner(input);
+    if (!isIdentifierStart(scanner.peek))
+        return false;
+    scanner.advance();
+    while (scanner.peek !== $EOF) {
+        if (!isIdentifierPart(scanner.peek))
+            return false;
+        scanner.advance();
+    }
+    return true;
+}
+function isIdentifierPart(code) {
+    return isAsciiLetter(code) || isDigit(code) || code == $_ || code == $$;
+}
+function isExponentStart(code) {
+    return code == $e || code == $E;
+}
+function isExponentSign(code) {
+    return code == $MINUS || code == $PLUS;
+}
+function unescape(code) {
+    switch (code) {
+        case $n:
+            return $LF;
+        case $f:
+            return $FF;
+        case $r:
+            return $CR;
+        case $t:
+            return $TAB;
+        case $v:
+            return $VTAB;
+        default:
+            return code;
+    }
+}
+function parseIntAutoRadix(text) {
+    const result = parseInt(text);
+    if (isNaN(result)) {
+        throw new Error('Invalid integer literal when parsing ' + text);
+    }
+    return result;
+}
+
+class SplitInterpolation {
+    constructor(strings, expressions, offsets) {
+        this.strings = strings;
+        this.expressions = expressions;
+        this.offsets = offsets;
+    }
+}
+class TemplateBindingParseResult {
+    constructor(templateBindings, warnings, errors) {
+        this.templateBindings = templateBindings;
+        this.warnings = warnings;
+        this.errors = errors;
+    }
+}
+class Parser {
+    constructor(_lexer) {
+        this._lexer = _lexer;
+        this.errors = [];
+    }
+    parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        this._checkNoInterpolation(input, location, interpolationConfig);
+        const sourceToLex = this._stripComments(input);
+        const tokens = this._lexer.tokenize(sourceToLex);
+        const ast = new _ParseAST(input, location, absoluteOffset, tokens, 1 /* ParseFlags.Action */, this.errors, 0).parseChain();
+        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
+    }
+    parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
+        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
+    }
+    checkSimpleExpression(ast) {
+        const checker = new SimpleExpressionChecker();
+        ast.visit(checker);
+        return checker.errors;
+    }
+    // Host bindings parsed here
+    parseSimpleBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
+        const errors = this.checkSimpleExpression(ast);
+        if (errors.length > 0) {
+            this._reportError(`Host binding expression cannot contain ${errors.join(' ')}`, input, location);
+        }
+        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
+    }
+    _reportError(message, input, errLocation, ctxLocation) {
+        this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
+    }
+    _parseBindingAst(input, location, absoluteOffset, interpolationConfig) {
+        this._checkNoInterpolation(input, location, interpolationConfig);
+        const sourceToLex = this._stripComments(input);
+        const tokens = this._lexer.tokenize(sourceToLex);
+        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0).parseChain();
+    }
+    /**
+     * Parse microsyntax template expression and return a list of bindings or
+     * parsing errors in case the given expression is invalid.
+     *
+     * For example,
+     * ```
+     *   <div *ngFor="let item of items">
+     *         ^      ^ absoluteValueOffset for `templateValue`
+     *         absoluteKeyOffset for `templateKey`
+     * ```
+     * contains three bindings:
+     * 1. ngFor -> null
+     * 2. item -> NgForOfContext.$implicit
+     * 3. ngForOf -> items
+     *
+     * This is apparent from the de-sugared template:
+     * ```
+     *   <ng-template ngFor let-item [ngForOf]="items">
+     * ```
+     *
+     * @param templateKey name of directive, without the * prefix. For example: ngIf, ngFor
+     * @param templateValue RHS of the microsyntax attribute
+     * @param templateUrl template filename if it's external, component filename if it's inline
+     * @param absoluteKeyOffset start of the `templateKey`
+     * @param absoluteValueOffset start of the `templateValue`
+     */
+    parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
+        const tokens = this._lexer.tokenize(templateValue);
+        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0 /* relative offset */);
+        return parser.parseTemplateBindings({
+            source: templateKey,
+            span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
+        });
+    }
+    parseInterpolation(input, location, absoluteOffset, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const { strings, expressions, offsets } = this.splitInterpolation(input, location, interpolatedTokens, interpolationConfig);
+        if (expressions.length === 0)
+            return null;
+        const expressionNodes = [];
+        for (let i = 0; i < expressions.length; ++i) {
+            const expressionText = expressions[i].text;
+            const sourceToLex = this._stripComments(expressionText);
+            const tokens = this._lexer.tokenize(sourceToLex);
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, offsets[i]).parseChain();
+            expressionNodes.push(ast);
+        }
+        return this.createInterpolationAst(strings.map((s) => s.text), expressionNodes, input, location, absoluteOffset);
+    }
+    /**
+     * Similar to `parseInterpolation`, but treats the provided string as a single expression
+     * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
+     * This is used for parsing the switch expression in ICUs.
+     */
+    parseInterpolationExpression(expression, location, absoluteOffset) {
+        const sourceToLex = this._stripComments(expression);
+        const tokens = this._lexer.tokenize(sourceToLex);
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0).parseChain();
+        const strings = ['', '']; // The prefix and suffix strings are both empty
+        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
+    }
+    createInterpolationAst(strings, expressions, input, location, absoluteOffset) {
+        const span = new ParseSpan(0, input.length);
+        const interpolation = new Interpolation$1(span, span.toAbsolute(absoluteOffset), strings, expressions);
+        return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
+    }
+    /**
+     * Splits a string of text into "raw" text segments and expressions present in interpolations in
+     * the string.
+     * Returns `null` if there are no interpolations, otherwise a
+     * `SplitInterpolation` with splits that look like
+     *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
+     */
+    splitInterpolation(input, location, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+        const strings = [];
+        const expressions = [];
+        const offsets = [];
+        const inputToTemplateIndexMap = interpolatedTokens
+            ? getIndexMapForOriginalTemplate(interpolatedTokens)
+            : null;
+        let i = 0;
+        let atInterpolation = false;
+        let extendLastString = false;
+        let { start: interpStart, end: interpEnd } = interpolationConfig;
+        while (i < input.length) {
+            if (!atInterpolation) {
+                // parse until starting {{
+                const start = i;
+                i = input.indexOf(interpStart, i);
+                if (i === -1) {
+                    i = input.length;
+                }
+                const text = input.substring(start, i);
+                strings.push({ text, start, end: i });
+                atInterpolation = true;
+            }
+            else {
+                // parse from starting {{ to ending }} while ignoring content inside quotes.
+                const fullStart = i;
+                const exprStart = fullStart + interpStart.length;
+                const exprEnd = this._getInterpolationEndIndex(input, interpEnd, exprStart);
+                if (exprEnd === -1) {
+                    // Could not find the end of the interpolation; do not parse an expression.
+                    // Instead we should extend the content on the last raw string.
+                    atInterpolation = false;
+                    extendLastString = true;
+                    break;
+                }
+                const fullEnd = exprEnd + interpEnd.length;
+                const text = input.substring(exprStart, exprEnd);
+                if (text.trim().length === 0) {
+                    this._reportError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location);
+                }
+                expressions.push({ text, start: fullStart, end: fullEnd });
+                const startInOriginalTemplate = inputToTemplateIndexMap?.get(fullStart) ?? fullStart;
+                const offset = startInOriginalTemplate + interpStart.length;
+                offsets.push(offset);
+                i = fullEnd;
+                atInterpolation = false;
+            }
+        }
+        if (!atInterpolation) {
+            // If we are now at a text section, add the remaining content as a raw string.
+            if (extendLastString) {
+                const piece = strings[strings.length - 1];
+                piece.text += input.substring(i);
+                piece.end = input.length;
+            }
+            else {
+                strings.push({ text: input.substring(i), start: i, end: input.length });
+            }
+        }
+        return new SplitInterpolation(strings, expressions, offsets);
+    }
+    wrapLiteralPrimitive(input, location, absoluteOffset) {
+        const span = new ParseSpan(0, input == null ? 0 : input.length);
+        return new ASTWithSource(new LiteralPrimitive(span, span.toAbsolute(absoluteOffset), input), input, location, absoluteOffset, this.errors);
+    }
+    _stripComments(input) {
+        const i = this._commentStart(input);
+        return i != null ? input.substring(0, i) : input;
+    }
+    _commentStart(input) {
+        let outerQuote = null;
+        for (let i = 0; i < input.length - 1; i++) {
+            const char = input.charCodeAt(i);
+            const nextChar = input.charCodeAt(i + 1);
+            if (char === $SLASH && nextChar == $SLASH && outerQuote == null)
+                return i;
+            if (outerQuote === char) {
+                outerQuote = null;
+            }
+            else if (outerQuote == null && isQuote(char)) {
+                outerQuote = char;
+            }
+        }
+        return null;
+    }
+    _checkNoInterpolation(input, location, { start, end }) {
+        let startIndex = -1;
+        let endIndex = -1;
+        for (const charIndex of this._forEachUnquotedChar(input, 0)) {
+            if (startIndex === -1) {
+                if (input.startsWith(start)) {
+                    startIndex = charIndex;
+                }
+            }
+            else {
+                endIndex = this._getInterpolationEndIndex(input, end, charIndex);
+                if (endIndex > -1) {
+                    break;
+                }
+            }
+        }
+        if (startIndex > -1 && endIndex > -1) {
+            this._reportError(`Got interpolation (${start}${end}) where expression was expected`, input, `at column ${startIndex} in`, location);
+        }
+    }
+    /**
+     * Finds the index of the end of an interpolation expression
+     * while ignoring comments and quoted content.
+     */
+    _getInterpolationEndIndex(input, expressionEnd, start) {
+        for (const charIndex of this._forEachUnquotedChar(input, start)) {
+            if (input.startsWith(expressionEnd, charIndex)) {
+                return charIndex;
+            }
+            // Nothing else in the expression matters after we've
+            // hit a comment so look directly for the end token.
+            if (input.startsWith('//', charIndex)) {
+                return input.indexOf(expressionEnd, charIndex);
+            }
+        }
+        return -1;
+    }
+    /**
+     * Generator used to iterate over the character indexes of a string that are outside of quotes.
+     * @param input String to loop through.
+     * @param start Index within the string at which to start.
+     */
+    *_forEachUnquotedChar(input, start) {
+        let currentQuote = null;
+        let escapeCount = 0;
+        for (let i = start; i < input.length; i++) {
+            const char = input[i];
+            // Skip the characters inside quotes. Note that we only care about the outer-most
+            // quotes matching up and we need to account for escape characters.
+            if (isQuote(input.charCodeAt(i)) &&
+                (currentQuote === null || currentQuote === char) &&
+                escapeCount % 2 === 0) {
+                currentQuote = currentQuote === null ? char : null;
+            }
+            else if (currentQuote === null) {
+                yield i;
+            }
+            escapeCount = char === '\\' ? escapeCount + 1 : 0;
+        }
+    }
+}
+/** Describes a stateful context an expression parser is in. */
+var ParseContextFlags;
+(function (ParseContextFlags) {
+    ParseContextFlags[ParseContextFlags["None"] = 0] = "None";
+    /**
+     * A Writable context is one in which a value may be written to an lvalue.
+     * For example, after we see a property access, we may expect a write to the
+     * property via the "=" operator.
+     *   prop
+     *        ^ possible "=" after
+     */
+    ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
+})(ParseContextFlags || (ParseContextFlags = {}));
+class _ParseAST {
+    constructor(input, location, absoluteOffset, tokens, parseFlags, errors, offset) {
+        this.input = input;
+        this.location = location;
+        this.absoluteOffset = absoluteOffset;
+        this.tokens = tokens;
+        this.parseFlags = parseFlags;
+        this.errors = errors;
+        this.offset = offset;
+        this.rparensExpected = 0;
+        this.rbracketsExpected = 0;
+        this.rbracesExpected = 0;
+        this.context = ParseContextFlags.None;
+        // Cache of expression start and input indeces to the absolute source span they map to, used to
+        // prevent creating superfluous source spans in `sourceSpan`.
+        // A serial of the expression start and input index is used for mapping because both are stateful
+        // and may change for subsequent expressions visited by the parser.
+        this.sourceSpanCache = new Map();
+        this.index = 0;
+    }
+    peek(offset) {
+        const i = this.index + offset;
+        return i < this.tokens.length ? this.tokens[i] : EOF;
+    }
+    get next() {
+        return this.peek(0);
+    }
+    /** Whether all the parser input has been processed. */
+    get atEOF() {
+        return this.index >= this.tokens.length;
+    }
+    /**
+     * Index of the next token to be processed, or the end of the last token if all have been
+     * processed.
+     */
+    get inputIndex() {
+        return this.atEOF ? this.currentEndIndex : this.next.index + this.offset;
+    }
+    /**
+     * End index of the last processed token, or the start of the first token if none have been
+     * processed.
+     */
+    get currentEndIndex() {
+        if (this.index > 0) {
+            const curToken = this.peek(-1);
+            return curToken.end + this.offset;
+        }
+        // No tokens have been processed yet; return the next token's start or the length of the input
+        // if there is no token.
+        if (this.tokens.length === 0) {
+            return this.input.length + this.offset;
+        }
+        return this.next.index + this.offset;
+    }
+    /**
+     * Returns the absolute offset of the start of the current token.
+     */
+    get currentAbsoluteOffset() {
+        return this.absoluteOffset + this.inputIndex;
+    }
+    /**
+     * Retrieve a `ParseSpan` from `start` to the current position (or to `artificialEndIndex` if
+     * provided).
+     *
+     * @param start Position from which the `ParseSpan` will start.
+     * @param artificialEndIndex Optional ending index to be used if provided (and if greater than the
+     *     natural ending index)
+     */
+    span(start, artificialEndIndex) {
+        let endIndex = this.currentEndIndex;
+        if (artificialEndIndex !== undefined && artificialEndIndex > this.currentEndIndex) {
+            endIndex = artificialEndIndex;
+        }
+        // In some unusual parsing scenarios (like when certain tokens are missing and an `EmptyExpr` is
+        // being created), the current token may already be advanced beyond the `currentEndIndex`. This
+        // appears to be a deep-seated parser bug.
+        //
+        // As a workaround for now, swap the start and end indices to ensure a valid `ParseSpan`.
+        // TODO(alxhub): fix the bug upstream in the parser state, and remove this workaround.
+        if (start > endIndex) {
+            const tmp = endIndex;
+            endIndex = start;
+            start = tmp;
+        }
+        return new ParseSpan(start, endIndex);
+    }
+    sourceSpan(start, artificialEndIndex) {
+        const serial = `${start}@${this.inputIndex}:${artificialEndIndex}`;
+        if (!this.sourceSpanCache.has(serial)) {
+            this.sourceSpanCache.set(serial, this.span(start, artificialEndIndex).toAbsolute(this.absoluteOffset));
+        }
+        return this.sourceSpanCache.get(serial);
+    }
+    advance() {
+        this.index++;
+    }
+    /**
+     * Executes a callback in the provided context.
+     */
+    withContext(context, cb) {
+        this.context |= context;
+        const ret = cb();
+        this.context ^= context;
+        return ret;
+    }
+    consumeOptionalCharacter(code) {
+        if (this.next.isCharacter(code)) {
+            this.advance();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    peekKeywordLet() {
+        return this.next.isKeywordLet();
+    }
+    peekKeywordAs() {
+        return this.next.isKeywordAs();
+    }
+    /**
+     * Consumes an expected character, otherwise emits an error about the missing expected character
+     * and skips over the token stream until reaching a recoverable point.
+     *
+     * See `this.error` and `this.skip` for more details.
+     */
+    expectCharacter(code) {
+        if (this.consumeOptionalCharacter(code))
+            return;
+        this.error(`Missing expected ${String.fromCharCode(code)}`);
+    }
+    consumeOptionalOperator(op) {
+        if (this.next.isOperator(op)) {
+            this.advance();
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    expectOperator(operator) {
+        if (this.consumeOptionalOperator(operator))
+            return;
+        this.error(`Missing expected operator ${operator}`);
+    }
+    prettyPrintToken(tok) {
+        return tok === EOF ? 'end of input' : `token ${tok}`;
+    }
+    expectIdentifierOrKeyword() {
+        const n = this.next;
+        if (!n.isIdentifier() && !n.isKeyword()) {
+            if (n.isPrivateIdentifier()) {
+                this._reportErrorForPrivateIdentifier(n, 'expected identifier or keyword');
+            }
+            else {
+                this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier or keyword`);
+            }
+            return null;
+        }
+        this.advance();
+        return n.toString();
+    }
+    expectIdentifierOrKeywordOrString() {
+        const n = this.next;
+        if (!n.isIdentifier() && !n.isKeyword() && !n.isString()) {
+            if (n.isPrivateIdentifier()) {
+                this._reportErrorForPrivateIdentifier(n, 'expected identifier, keyword or string');
+            }
+            else {
+                this.error(`Unexpected ${this.prettyPrintToken(n)}, expected identifier, keyword, or string`);
+            }
+            return '';
+        }
+        this.advance();
+        return n.toString();
+    }
+    parseChain() {
+        const exprs = [];
+        const start = this.inputIndex;
+        while (this.index < this.tokens.length) {
+            const expr = this.parsePipe();
+            exprs.push(expr);
+            if (this.consumeOptionalCharacter($SEMICOLON)) {
+                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
+                    this.error('Binding expression cannot contain chained expression');
+                }
+                while (this.consumeOptionalCharacter($SEMICOLON)) { } // read all semicolons
+            }
+            else if (this.index < this.tokens.length) {
+                const errorIndex = this.index;
+                this.error(`Unexpected token '${this.next}'`);
+                // The `error` call above will skip ahead to the next recovery point in an attempt to
+                // recover part of the expression, but that might be the token we started from which will
+                // lead to an infinite loop. If that's the case, break the loop assuming that we can't
+                // parse further.
+                if (this.index === errorIndex) {
+                    break;
+                }
+            }
+        }
+        if (exprs.length === 0) {
+            // We have no expressions so create an empty expression that spans the entire input length
+            const artificialStart = this.offset;
+            const artificialEnd = this.offset + this.input.length;
+            return new EmptyExpr$1(this.span(artificialStart, artificialEnd), this.sourceSpan(artificialStart, artificialEnd));
+        }
+        if (exprs.length == 1)
+            return exprs[0];
+        return new Chain(this.span(start), this.sourceSpan(start), exprs);
+    }
+    parsePipe() {
+        const start = this.inputIndex;
+        let result = this.parseExpression();
+        if (this.consumeOptionalOperator('|')) {
+            if (this.parseFlags & 1 /* ParseFlags.Action */) {
+                this.error(`Cannot have a pipe in an action expression`);
+            }
+            do {
+                const nameStart = this.inputIndex;
+                let nameId = this.expectIdentifierOrKeyword();
+                let nameSpan;
+                let fullSpanEnd = undefined;
+                if (nameId !== null) {
+                    nameSpan = this.sourceSpan(nameStart);
+                }
+                else {
+                    // No valid identifier was found, so we'll assume an empty pipe name ('').
+                    nameId = '';
+                    // However, there may have been whitespace present between the pipe character and the next
+                    // token in the sequence (or the end of input). We want to track this whitespace so that
+                    // the `BindingPipe` we produce covers not just the pipe character, but any trailing
+                    // whitespace beyond it. Another way of thinking about this is that the zero-length name
+                    // is assumed to be at the end of any whitespace beyond the pipe character.
+                    //
+                    // Therefore, we push the end of the `ParseSpan` for this pipe all the way up to the
+                    // beginning of the next token, or until the end of input if the next token is EOF.
+                    fullSpanEnd = this.next.index !== -1 ? this.next.index : this.input.length + this.offset;
+                    // The `nameSpan` for an empty pipe name is zero-length at the end of any whitespace
+                    // beyond the pipe character.
+                    nameSpan = new ParseSpan(fullSpanEnd, fullSpanEnd).toAbsolute(this.absoluteOffset);
+                }
+                const args = [];
+                while (this.consumeOptionalCharacter($COLON)) {
+                    args.push(this.parseExpression());
+                    // If there are additional expressions beyond the name, then the artificial end for the
+                    // name is no longer relevant.
+                }
+                result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
+            } while (this.consumeOptionalOperator('|'));
+        }
+        return result;
+    }
+    parseExpression() {
+        return this.parseConditional();
+    }
+    parseConditional() {
+        const start = this.inputIndex;
+        const result = this.parseLogicalOr();
+        if (this.consumeOptionalOperator('?')) {
+            const yes = this.parsePipe();
+            let no;
+            if (!this.consumeOptionalCharacter($COLON)) {
+                const end = this.inputIndex;
+                const expression = this.input.substring(start, end);
+                this.error(`Conditional expression ${expression} requires all 3 expressions`);
+                no = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+            }
+            else {
+                no = this.parsePipe();
+            }
+            return new Conditional(this.span(start), this.sourceSpan(start), result, yes, no);
+        }
+        else {
+            return result;
+        }
+    }
+    parseLogicalOr() {
+        // '||'
+        const start = this.inputIndex;
+        let result = this.parseLogicalAnd();
+        while (this.consumeOptionalOperator('||')) {
+            const right = this.parseLogicalAnd();
+            result = new Binary(this.span(start), this.sourceSpan(start), '||', result, right);
+        }
+        return result;
+    }
+    parseLogicalAnd() {
+        // '&&'
+        const start = this.inputIndex;
+        let result = this.parseNullishCoalescing();
+        while (this.consumeOptionalOperator('&&')) {
+            const right = this.parseNullishCoalescing();
+            result = new Binary(this.span(start), this.sourceSpan(start), '&&', result, right);
+        }
+        return result;
+    }
+    parseNullishCoalescing() {
+        // '??'
+        const start = this.inputIndex;
+        let result = this.parseEquality();
+        while (this.consumeOptionalOperator('??')) {
+            const right = this.parseEquality();
+            result = new Binary(this.span(start), this.sourceSpan(start), '??', result, right);
+        }
+        return result;
+    }
+    parseEquality() {
+        // '==','!=','===','!=='
+        const start = this.inputIndex;
+        let result = this.parseRelational();
+        while (this.next.type == TokenType.Operator) {
+            const operator = this.next.strValue;
+            switch (operator) {
+                case '==':
+                case '===':
+                case '!=':
+                case '!==':
+                    this.advance();
+                    const right = this.parseRelational();
+                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
+                    continue;
+            }
+            break;
+        }
+        return result;
+    }
+    parseRelational() {
+        // '<', '>', '<=', '>='
+        const start = this.inputIndex;
+        let result = this.parseAdditive();
+        while (this.next.type == TokenType.Operator) {
+            const operator = this.next.strValue;
+            switch (operator) {
+                case '<':
+                case '>':
+                case '<=':
+                case '>=':
+                    this.advance();
+                    const right = this.parseAdditive();
+                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
+                    continue;
+            }
+            break;
+        }
+        return result;
+    }
+    parseAdditive() {
+        // '+', '-'
+        const start = this.inputIndex;
+        let result = this.parseMultiplicative();
+        while (this.next.type == TokenType.Operator) {
+            const operator = this.next.strValue;
+            switch (operator) {
+                case '+':
+                case '-':
+                    this.advance();
+                    let right = this.parseMultiplicative();
+                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
+                    continue;
+            }
+            break;
+        }
+        return result;
+    }
+    parseMultiplicative() {
+        // '*', '%', '/'
+        const start = this.inputIndex;
+        let result = this.parsePrefix();
+        while (this.next.type == TokenType.Operator) {
+            const operator = this.next.strValue;
+            switch (operator) {
+                case '*':
+                case '%':
+                case '/':
+                    this.advance();
+                    let right = this.parsePrefix();
+                    result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
+                    continue;
+            }
+            break;
+        }
+        return result;
+    }
+    parsePrefix() {
+        if (this.next.type == TokenType.Operator) {
+            const start = this.inputIndex;
+            const operator = this.next.strValue;
+            let result;
+            switch (operator) {
+                case '+':
+                    this.advance();
+                    result = this.parsePrefix();
+                    return Unary.createPlus(this.span(start), this.sourceSpan(start), result);
+                case '-':
+                    this.advance();
+                    result = this.parsePrefix();
+                    return Unary.createMinus(this.span(start), this.sourceSpan(start), result);
+                case '!':
+                    this.advance();
+                    result = this.parsePrefix();
+                    return new PrefixNot(this.span(start), this.sourceSpan(start), result);
+            }
+        }
+        return this.parseCallChain();
+    }
+    parseCallChain() {
+        const start = this.inputIndex;
+        let result = this.parsePrimary();
+        while (true) {
+            if (this.consumeOptionalCharacter($PERIOD)) {
+                result = this.parseAccessMember(result, start, false);
+            }
+            else if (this.consumeOptionalOperator('?.')) {
+                if (this.consumeOptionalCharacter($LPAREN)) {
+                    result = this.parseCall(result, start, true);
+                }
+                else {
+                    result = this.consumeOptionalCharacter($LBRACKET)
+                        ? this.parseKeyedReadOrWrite(result, start, true)
+                        : this.parseAccessMember(result, start, true);
+                }
+            }
+            else if (this.consumeOptionalCharacter($LBRACKET)) {
+                result = this.parseKeyedReadOrWrite(result, start, false);
+            }
+            else if (this.consumeOptionalCharacter($LPAREN)) {
+                result = this.parseCall(result, start, false);
+            }
+            else if (this.consumeOptionalOperator('!')) {
+                result = new NonNullAssert(this.span(start), this.sourceSpan(start), result);
+            }
+            else {
+                return result;
+            }
+        }
+    }
+    parsePrimary() {
+        const start = this.inputIndex;
+        if (this.consumeOptionalCharacter($LPAREN)) {
+            this.rparensExpected++;
+            const result = this.parsePipe();
+            this.rparensExpected--;
+            this.expectCharacter($RPAREN);
+            return result;
+        }
+        else if (this.next.isKeywordNull()) {
+            this.advance();
+            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), null);
+        }
+        else if (this.next.isKeywordUndefined()) {
+            this.advance();
+            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), void 0);
+        }
+        else if (this.next.isKeywordTrue()) {
+            this.advance();
+            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), true);
+        }
+        else if (this.next.isKeywordFalse()) {
+            this.advance();
+            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), false);
+        }
+        else if (this.next.isKeywordThis()) {
+            this.advance();
+            return new ThisReceiver(this.span(start), this.sourceSpan(start));
+        }
+        else if (this.consumeOptionalCharacter($LBRACKET)) {
+            this.rbracketsExpected++;
+            const elements = this.parseExpressionList($RBRACKET);
+            this.rbracketsExpected--;
+            this.expectCharacter($RBRACKET);
+            return new LiteralArray(this.span(start), this.sourceSpan(start), elements);
+        }
+        else if (this.next.isCharacter($LBRACE)) {
+            return this.parseLiteralMap();
+        }
+        else if (this.next.isIdentifier()) {
+            return this.parseAccessMember(new ImplicitReceiver(this.span(start), this.sourceSpan(start)), start, false);
+        }
+        else if (this.next.isNumber()) {
+            const value = this.next.toNumber();
+            this.advance();
+            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), value);
+        }
+        else if (this.next.isString()) {
+            const literalValue = this.next.toString();
+            this.advance();
+            return new LiteralPrimitive(this.span(start), this.sourceSpan(start), literalValue);
+        }
+        else if (this.next.isPrivateIdentifier()) {
+            this._reportErrorForPrivateIdentifier(this.next, null);
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+        }
+        else if (this.index >= this.tokens.length) {
+            this.error(`Unexpected end of expression: ${this.input}`);
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+        }
+        else {
+            this.error(`Unexpected token ${this.next}`);
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+        }
+    }
+    parseExpressionList(terminator) {
+        const result = [];
+        do {
+            if (!this.next.isCharacter(terminator)) {
+                result.push(this.parsePipe());
+            }
+            else {
+                break;
+            }
+        } while (this.consumeOptionalCharacter($COMMA));
+        return result;
+    }
+    parseLiteralMap() {
+        const keys = [];
+        const values = [];
+        const start = this.inputIndex;
+        this.expectCharacter($LBRACE);
+        if (!this.consumeOptionalCharacter($RBRACE)) {
+            this.rbracesExpected++;
+            do {
+                const keyStart = this.inputIndex;
+                const quoted = this.next.isString();
+                const key = this.expectIdentifierOrKeywordOrString();
+                const literalMapKey = { key, quoted };
+                keys.push(literalMapKey);
+                // Properties with quoted keys can't use the shorthand syntax.
+                if (quoted) {
+                    this.expectCharacter($COLON);
+                    values.push(this.parsePipe());
+                }
+                else if (this.consumeOptionalCharacter($COLON)) {
+                    values.push(this.parsePipe());
+                }
+                else {
+                    literalMapKey.isShorthandInitialized = true;
+                    const span = this.span(keyStart);
+                    const sourceSpan = this.sourceSpan(keyStart);
+                    values.push(new PropertyRead(span, sourceSpan, sourceSpan, new ImplicitReceiver(span, sourceSpan), key));
+                }
+            } while (this.consumeOptionalCharacter($COMMA) &&
+                !this.next.isCharacter($RBRACE));
+            this.rbracesExpected--;
+            this.expectCharacter($RBRACE);
+        }
+        return new LiteralMap(this.span(start), this.sourceSpan(start), keys, values);
+    }
+    parseAccessMember(readReceiver, start, isSafe) {
+        const nameStart = this.inputIndex;
+        const id = this.withContext(ParseContextFlags.Writable, () => {
+            const id = this.expectIdentifierOrKeyword() ?? '';
+            if (id.length === 0) {
+                this.error(`Expected identifier for property access`, readReceiver.span.end);
+            }
+            return id;
+        });
+        const nameSpan = this.sourceSpan(nameStart);
+        let receiver;
+        if (isSafe) {
+            if (this.consumeOptionalOperator('=')) {
+                this.error("The '?.' operator cannot be used in the assignment");
+                receiver = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+            }
+            else {
+                receiver = new SafePropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
+            }
+        }
+        else {
+            if (this.consumeOptionalOperator('=')) {
+                if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
+                    this.error('Bindings cannot contain assignments');
+                    return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+                }
+                const value = this.parseConditional();
+                receiver = new PropertyWrite(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id, value);
+            }
+            else {
+                receiver = new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
+            }
+        }
+        return receiver;
+    }
+    parseCall(receiver, start, isSafe) {
+        const argumentStart = this.inputIndex;
+        this.rparensExpected++;
+        const args = this.parseCallArguments();
+        const argumentSpan = this.span(argumentStart, this.inputIndex).toAbsolute(this.absoluteOffset);
+        this.expectCharacter($RPAREN);
+        this.rparensExpected--;
+        const span = this.span(start);
+        const sourceSpan = this.sourceSpan(start);
+        return isSafe
+            ? new SafeCall(span, sourceSpan, receiver, args, argumentSpan)
+            : new Call(span, sourceSpan, receiver, args, argumentSpan);
+    }
+    parseCallArguments() {
+        if (this.next.isCharacter($RPAREN))
+            return [];
+        const positionals = [];
+        do {
+            positionals.push(this.parsePipe());
+        } while (this.consumeOptionalCharacter($COMMA));
+        return positionals;
+    }
+    /**
+     * Parses an identifier, a keyword, a string with an optional `-` in between,
+     * and returns the string along with its absolute source span.
+     */
+    expectTemplateBindingKey() {
+        let result = '';
+        let operatorFound = false;
+        const start = this.currentAbsoluteOffset;
+        do {
+            result += this.expectIdentifierOrKeywordOrString();
+            operatorFound = this.consumeOptionalOperator('-');
+            if (operatorFound) {
+                result += '-';
+            }
+        } while (operatorFound);
+        return {
+            source: result,
+            span: new AbsoluteSourceSpan(start, start + result.length),
+        };
+    }
+    /**
+     * Parse microsyntax template expression and return a list of bindings or
+     * parsing errors in case the given expression is invalid.
+     *
+     * For example,
+     * ```
+     *   <div *ngFor="let item of items; index as i; trackBy: func">
+     * ```
+     * contains five bindings:
+     * 1. ngFor -> null
+     * 2. item -> NgForOfContext.$implicit
+     * 3. ngForOf -> items
+     * 4. i -> NgForOfContext.index
+     * 5. ngForTrackBy -> func
+     *
+     * For a full description of the microsyntax grammar, see
+     * https://gist.github.com/mhevery/d3530294cff2e4a1b3fe15ff75d08855
+     *
+     * @param templateKey name of the microsyntax directive, like ngIf, ngFor,
+     * without the *, along with its absolute span.
+     */
+    parseTemplateBindings(templateKey) {
+        const bindings = [];
+        // The first binding is for the template key itself
+        // In *ngFor="let item of items", key = "ngFor", value = null
+        // In *ngIf="cond | pipe", key = "ngIf", value = "cond | pipe"
+        bindings.push(...this.parseDirectiveKeywordBindings(templateKey));
+        while (this.index < this.tokens.length) {
+            // If it starts with 'let', then this must be variable declaration
+            const letBinding = this.parseLetBinding();
+            if (letBinding) {
+                bindings.push(letBinding);
+            }
+            else {
+                // Two possible cases here, either `value "as" key` or
+                // "directive-keyword expression". We don't know which case, but both
+                // "value" and "directive-keyword" are template binding key, so consume
+                // the key first.
+                const key = this.expectTemplateBindingKey();
+                // Peek at the next token, if it is "as" then this must be variable
+                // declaration.
+                const binding = this.parseAsBinding(key);
+                if (binding) {
+                    bindings.push(binding);
+                }
+                else {
+                    // Otherwise the key must be a directive keyword, like "of". Transform
+                    // the key to actual key. Eg. of -> ngForOf, trackBy -> ngForTrackBy
+                    key.source =
+                        templateKey.source + key.source.charAt(0).toUpperCase() + key.source.substring(1);
+                    bindings.push(...this.parseDirectiveKeywordBindings(key));
+                }
+            }
+            this.consumeStatementTerminator();
+        }
+        return new TemplateBindingParseResult(bindings, [] /* warnings */, this.errors);
+    }
+    parseKeyedReadOrWrite(receiver, start, isSafe) {
+        return this.withContext(ParseContextFlags.Writable, () => {
+            this.rbracketsExpected++;
+            const key = this.parsePipe();
+            if (key instanceof EmptyExpr$1) {
+                this.error(`Key access cannot be empty`);
+            }
+            this.rbracketsExpected--;
+            this.expectCharacter($RBRACKET);
+            if (this.consumeOptionalOperator('=')) {
+                if (isSafe) {
+                    this.error("The '?.' operator cannot be used in the assignment");
+                }
+                else {
+                    const value = this.parseConditional();
+                    return new KeyedWrite(this.span(start), this.sourceSpan(start), receiver, key, value);
+                }
+            }
+            else {
+                return isSafe
+                    ? new SafeKeyedRead(this.span(start), this.sourceSpan(start), receiver, key)
+                    : new KeyedRead(this.span(start), this.sourceSpan(start), receiver, key);
+            }
+            return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+        });
+    }
+    /**
+     * Parse a directive keyword, followed by a mandatory expression.
+     * For example, "of items", "trackBy: func".
+     * The bindings are: ngForOf -> items, ngForTrackBy -> func
+     * There could be an optional "as" binding that follows the expression.
+     * For example,
+     * ```
+     *   *ngFor="let item of items | slice:0:1 as collection".
+     *                    ^^ ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
+     *               keyword    bound target   optional 'as' binding
+     * ```
+     *
+     * @param key binding key, for example, ngFor, ngIf, ngForOf, along with its
+     * absolute span.
+     */
+    parseDirectiveKeywordBindings(key) {
+        const bindings = [];
+        this.consumeOptionalCharacter($COLON); // trackBy: trackByFunction
+        const value = this.getDirectiveBoundTarget();
+        let spanEnd = this.currentAbsoluteOffset;
+        // The binding could optionally be followed by "as". For example,
+        // *ngIf="cond | pipe as x". In this case, the key in the "as" binding
+        // is "x" and the value is the template key itself ("ngIf"). Note that the
+        // 'key' in the current context now becomes the "value" in the next binding.
+        const asBinding = this.parseAsBinding(key);
+        if (!asBinding) {
+            this.consumeStatementTerminator();
+            spanEnd = this.currentAbsoluteOffset;
+        }
+        const sourceSpan = new AbsoluteSourceSpan(key.span.start, spanEnd);
+        bindings.push(new ExpressionBinding(sourceSpan, key, value));
+        if (asBinding) {
+            bindings.push(asBinding);
+        }
+        return bindings;
+    }
+    /**
+     * Return the expression AST for the bound target of a directive keyword
+     * binding. For example,
+     * ```
+     *   *ngIf="condition | pipe"
+     *          ^^^^^^^^^^^^^^^^ bound target for "ngIf"
+     *   *ngFor="let item of items"
+     *                       ^^^^^ bound target for "ngForOf"
+     * ```
+     */
+    getDirectiveBoundTarget() {
+        if (this.next === EOF || this.peekKeywordAs() || this.peekKeywordLet()) {
+            return null;
+        }
+        const ast = this.parsePipe(); // example: "condition | async"
+        const { start, end } = ast.span;
+        const value = this.input.substring(start, end);
+        return new ASTWithSource(ast, value, this.location, this.absoluteOffset + start, this.errors);
+    }
+    /**
+     * Return the binding for a variable declared using `as`. Note that the order
+     * of the key-value pair in this declaration is reversed. For example,
+     * ```
+     *   *ngFor="let item of items; index as i"
+     *                              ^^^^^    ^
+     *                              value    key
+     * ```
+     *
+     * @param value name of the value in the declaration, "ngIf" in the example
+     * above, along with its absolute span.
+     */
+    parseAsBinding(value) {
+        if (!this.peekKeywordAs()) {
+            return null;
+        }
+        this.advance(); // consume the 'as' keyword
+        const key = this.expectTemplateBindingKey();
+        this.consumeStatementTerminator();
+        const sourceSpan = new AbsoluteSourceSpan(value.span.start, this.currentAbsoluteOffset);
+        return new VariableBinding(sourceSpan, key, value);
+    }
+    /**
+     * Return the binding for a variable declared using `let`. For example,
+     * ```
+     *   *ngFor="let item of items; let i=index;"
+     *           ^^^^^^^^           ^^^^^^^^^^^
+     * ```
+     * In the first binding, `item` is bound to `NgForOfContext.$implicit`.
+     * In the second binding, `i` is bound to `NgForOfContext.index`.
+     */
+    parseLetBinding() {
+        if (!this.peekKeywordLet()) {
+            return null;
+        }
+        const spanStart = this.currentAbsoluteOffset;
+        this.advance(); // consume the 'let' keyword
+        const key = this.expectTemplateBindingKey();
+        let value = null;
+        if (this.consumeOptionalOperator('=')) {
+            value = this.expectTemplateBindingKey();
+        }
+        this.consumeStatementTerminator();
+        const sourceSpan = new AbsoluteSourceSpan(spanStart, this.currentAbsoluteOffset);
+        return new VariableBinding(sourceSpan, key, value);
+    }
+    /**
+     * Consume the optional statement terminator: semicolon or comma.
+     */
+    consumeStatementTerminator() {
+        this.consumeOptionalCharacter($SEMICOLON) || this.consumeOptionalCharacter($COMMA);
+    }
+    /**
+     * Records an error and skips over the token stream until reaching a recoverable point. See
+     * `this.skip` for more details on token skipping.
+     */
+    error(message, index = null) {
+        this.errors.push(new ParserError(message, this.input, this.locationText(index), this.location));
+        this.skip();
+    }
+    locationText(index = null) {
+        if (index == null)
+            index = this.index;
+        return index < this.tokens.length
+            ? `at column ${this.tokens[index].index + 1} in`
+            : `at the end of the expression`;
+    }
+    /**
+     * Records an error for an unexpected private identifier being discovered.
+     * @param token Token representing a private identifier.
+     * @param extraMessage Optional additional message being appended to the error.
+     */
+    _reportErrorForPrivateIdentifier(token, extraMessage) {
+        let errorMessage = `Private identifiers are not supported. Unexpected private identifier: ${token}`;
+        if (extraMessage !== null) {
+            errorMessage += `, ${extraMessage}`;
+        }
+        this.error(errorMessage);
+    }
+    /**
+     * Error recovery should skip tokens until it encounters a recovery point.
+     *
+     * The following are treated as unconditional recovery points:
+     *   - end of input
+     *   - ';' (parseChain() is always the root production, and it expects a ';')
+     *   - '|' (since pipes may be chained and each pipe expression may be treated independently)
+     *
+     * The following are conditional recovery points:
+     *   - ')', '}', ']' if one of calling productions is expecting one of these symbols
+     *     - This allows skip() to recover from errors such as '(a.) + 1' allowing more of the AST to
+     *       be retained (it doesn't skip any tokens as the ')' is retained because of the '(' begins
+     *       an '(' <expr> ')' production).
+     *       The recovery points of grouping symbols must be conditional as they must be skipped if
+     *       none of the calling productions are not expecting the closing token else we will never
+     *       make progress in the case of an extraneous group closing symbol (such as a stray ')').
+     *       That is, we skip a closing symbol if we are not in a grouping production.
+     *   - '=' in a `Writable` context
+     *     - In this context, we are able to recover after seeing the `=` operator, which
+     *       signals the presence of an independent rvalue expression following the `=` operator.
+     *
+     * If a production expects one of these token it increments the corresponding nesting count,
+     * and then decrements it just prior to checking if the token is in the input.
+     */
+    skip() {
+        let n = this.next;
+        while (this.index < this.tokens.length &&
+            !n.isCharacter($SEMICOLON) &&
+            !n.isOperator('|') &&
+            (this.rparensExpected <= 0 || !n.isCharacter($RPAREN)) &&
+            (this.rbracesExpected <= 0 || !n.isCharacter($RBRACE)) &&
+            (this.rbracketsExpected <= 0 || !n.isCharacter($RBRACKET)) &&
+            (!(this.context & ParseContextFlags.Writable) || !n.isOperator('='))) {
+            if (this.next.isError()) {
+                this.errors.push(new ParserError(this.next.toString(), this.input, this.locationText(), this.location));
+            }
+            this.advance();
+            n = this.next;
+        }
+    }
+}
+class SimpleExpressionChecker extends RecursiveAstVisitor {
+    constructor() {
+        super(...arguments);
+        this.errors = [];
+    }
+    visitPipe() {
+        this.errors.push('pipes');
+    }
+}
+/**
+ * Computes the real offset in the original template for indexes in an interpolation.
+ *
+ * Because templates can have encoded HTML entities and the input passed to the parser at this stage
+ * of the compiler is the _decoded_ value, we need to compute the real offset using the original
+ * encoded values in the interpolated tokens. Note that this is only a special case handling for
+ * `MlParserTokenType.ENCODED_ENTITY` token types. All other interpolated tokens are expected to
+ * have parts which exactly match the input string for parsing the interpolation.
+ *
+ * @param interpolatedTokens The tokens for the interpolated value.
+ *
+ * @returns A map of index locations in the decoded template to indexes in the original template
+ */
+function getIndexMapForOriginalTemplate(interpolatedTokens) {
+    let offsetMap = new Map();
+    let consumedInOriginalTemplate = 0;
+    let consumedInInput = 0;
+    let tokenIndex = 0;
+    while (tokenIndex < interpolatedTokens.length) {
+        const currentToken = interpolatedTokens[tokenIndex];
+        if (currentToken.type === 9 /* MlParserTokenType.ENCODED_ENTITY */) {
+            const [decoded, encoded] = currentToken.parts;
+            consumedInOriginalTemplate += encoded.length;
+            consumedInInput += decoded.length;
+        }
+        else {
+            const lengthOfParts = currentToken.parts.reduce((sum, current) => sum + current.length, 0);
+            consumedInInput += lengthOfParts;
+            consumedInOriginalTemplate += lengthOfParts;
+        }
+        offsetMap.set(consumedInInput, consumedInOriginalTemplate);
+        tokenIndex++;
+    }
+    return offsetMap;
+}
+
+// =================================================================================================
+// =================================================================================================
+// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
+// =================================================================================================
+// =================================================================================================
+//
+//        DO NOT EDIT THIS LIST OF SECURITY SENSITIVE PROPERTIES WITHOUT A SECURITY REVIEW!
+//                               Reach out to mprobst for details.
+//
+// =================================================================================================
+/** Map from tagName|propertyName to SecurityContext. Properties applying to all tags use '*'. */
+let _SECURITY_SCHEMA;
+function SECURITY_SCHEMA() {
+    if (!_SECURITY_SCHEMA) {
+        _SECURITY_SCHEMA = {};
+        // Case is insignificant below, all element and attribute names are lower-cased for lookup.
+        registerContext(SecurityContext.HTML, ['iframe|srcdoc', '*|innerHTML', '*|outerHTML']);
+        registerContext(SecurityContext.STYLE, ['*|style']);
+        // NB: no SCRIPT contexts here, they are never allowed due to the parser stripping them.
+        registerContext(SecurityContext.URL, [
+            '*|formAction',
+            'area|href',
+            'area|ping',
+            'audio|src',
+            'a|href',
+            'a|ping',
+            'blockquote|cite',
+            'body|background',
+            'del|cite',
+            'form|action',
+            'img|src',
+            'input|src',
+            'ins|cite',
+            'q|cite',
+            'source|src',
+            'track|src',
+            'video|poster',
+            'video|src',
+        ]);
+        registerContext(SecurityContext.RESOURCE_URL, [
+            'applet|code',
+            'applet|codebase',
+            'base|href',
+            'embed|src',
+            'frame|src',
+            'head|profile',
+            'html|manifest',
+            'iframe|src',
+            'link|href',
+            'media|src',
+            'object|codebase',
+            'object|data',
+            'script|src',
+        ]);
+    }
+    return _SECURITY_SCHEMA;
+}
+function registerContext(ctx, specs) {
+    for (const spec of specs)
+        _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
+}
+/**
+ * The set of security-sensitive attributes of an `<iframe>` that *must* be
+ * applied as a static attribute only. This ensures that all security-sensitive
+ * attributes are taken into account while creating an instance of an `<iframe>`
+ * at runtime.
+ *
+ * Note: avoid using this set directly, use the `isIframeSecuritySensitiveAttr` function
+ * in the code instead.
+ */
+const IFRAME_SECURITY_SENSITIVE_ATTRS = new Set([
+    'sandbox',
+    'allow',
+    'allowfullscreen',
+    'referrerpolicy',
+    'csp',
+    'fetchpriority',
+]);
+/**
+ * Checks whether a given attribute name might represent a security-sensitive
+ * attribute of an <iframe>.
+ */
+function isIframeSecuritySensitiveAttr(attrName) {
+    // The `setAttribute` DOM API is case-insensitive, so we lowercase the value
+    // before checking it against a known security-sensitive attributes.
+    return IFRAME_SECURITY_SENSITIVE_ATTRS.has(attrName.toLowerCase());
+}
+
+class ElementSchemaRegistry {
+}
+
+const BOOLEAN = 'boolean';
+const NUMBER = 'number';
+const STRING = 'string';
+const OBJECT = 'object';
+/**
+ * This array represents the DOM schema. It encodes inheritance, properties, and events.
+ *
+ * ## Overview
+ *
+ * Each line represents one kind of element. The `element_inheritance` and properties are joined
+ * using `element_inheritance|properties` syntax.
+ *
+ * ## Element Inheritance
+ *
+ * The `element_inheritance` can be further subdivided as `element1,element2,...^parentElement`.
+ * Here the individual elements are separated by `,` (commas). Every element in the list
+ * has identical properties.
+ *
+ * An `element` may inherit additional properties from `parentElement` If no `^parentElement` is
+ * specified then `""` (blank) element is assumed.
+ *
+ * NOTE: The blank element inherits from root `[Element]` element, the super element of all
+ * elements.
+ *
+ * NOTE an element prefix such as `:svg:` has no special meaning to the schema.
+ *
+ * ## Properties
+ *
+ * Each element has a set of properties separated by `,` (commas). Each property can be prefixed
+ * by a special character designating its type:
+ *
+ * - (no prefix): property is a string.
+ * - `*`: property represents an event.
+ * - `!`: property is a boolean.
+ * - `#`: property is a number.
+ * - `%`: property is an object.
+ *
+ * ## Query
+ *
+ * The class creates an internal squas representation which allows to easily answer the query of
+ * if a given property exist on a given element.
+ *
+ * NOTE: We don't yet support querying for types or events.
+ * NOTE: This schema is auto extracted from `schema_extractor.ts` located in the test folder,
+ *       see dom_element_schema_registry_spec.ts
+ */
+// =================================================================================================
+// =================================================================================================
+// =========== S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P   -  S T O P  ===========
+// =================================================================================================
+// =================================================================================================
+//
+//                       DO NOT EDIT THIS DOM SCHEMA WITHOUT A SECURITY REVIEW!
+//
+// Newly added properties must be security reviewed and assigned an appropriate SecurityContext in
+// dom_security_schema.ts. Reach out to mprobst & rjamet for details.
+//
+// =================================================================================================
+const SCHEMA = [
+    '[Element]|textContent,%ariaAtomic,%ariaAutoComplete,%ariaBusy,%ariaChecked,%ariaColCount,%ariaColIndex,%ariaColSpan,%ariaCurrent,%ariaDescription,%ariaDisabled,%ariaExpanded,%ariaHasPopup,%ariaHidden,%ariaKeyShortcuts,%ariaLabel,%ariaLevel,%ariaLive,%ariaModal,%ariaMultiLine,%ariaMultiSelectable,%ariaOrientation,%ariaPlaceholder,%ariaPosInSet,%ariaPressed,%ariaReadOnly,%ariaRelevant,%ariaRequired,%ariaRoleDescription,%ariaRowCount,%ariaRowIndex,%ariaRowSpan,%ariaSelected,%ariaSetSize,%ariaSort,%ariaValueMax,%ariaValueMin,%ariaValueNow,%ariaValueText,%classList,className,elementTiming,id,innerHTML,*beforecopy,*beforecut,*beforepaste,*fullscreenchange,*fullscreenerror,*search,*webkitfullscreenchange,*webkitfullscreenerror,outerHTML,%part,#scrollLeft,#scrollTop,slot' +
+        /* added manually to avoid breaking changes */
+        ',*message,*mozfullscreenchange,*mozfullscreenerror,*mozpointerlockchange,*mozpointerlockerror,*webglcontextcreationerror,*webglcontextlost,*webglcontextrestored',
+    '[HTMLElement]^[Element]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,!inert,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
+    'abbr,address,article,aside,b,bdi,bdo,cite,content,code,dd,dfn,dt,em,figcaption,figure,footer,header,hgroup,i,kbd,main,mark,nav,noscript,rb,rp,rt,rtc,ruby,s,samp,section,small,strong,sub,sup,u,var,wbr^[HTMLElement]|accessKey,autocapitalize,!autofocus,contentEditable,dir,!draggable,enterKeyHint,!hidden,innerText,inputMode,lang,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,outerText,!spellcheck,%style,#tabIndex,title,!translate,virtualKeyboardPolicy',
+    'media^[HTMLElement]|!autoplay,!controls,%controlsList,%crossOrigin,#currentTime,!defaultMuted,#defaultPlaybackRate,!disableRemotePlayback,!loop,!muted,*encrypted,*waitingforkey,#playbackRate,preload,!preservesPitch,src,%srcObject,#volume',
+    ':svg:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contextmenu,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
+    ':svg:graphics^:svg:|',
+    ':svg:animation^:svg:|*begin,*end,*repeat',
+    ':svg:geometry^:svg:|',
+    ':svg:componentTransferFunction^:svg:|',
+    ':svg:gradient^:svg:|',
+    ':svg:textContent^:svg:graphics|',
+    ':svg:textPositioning^:svg:textContent|',
+    'a^[HTMLElement]|charset,coords,download,hash,host,hostname,href,hreflang,name,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,rev,search,shape,target,text,type,username',
+    'area^[HTMLElement]|alt,coords,download,hash,host,hostname,href,!noHref,password,pathname,ping,port,protocol,referrerPolicy,rel,%relList,search,shape,target,username',
+    'audio^media|',
+    'br^[HTMLElement]|clear',
+    'base^[HTMLElement]|href,target',
+    'body^[HTMLElement]|aLink,background,bgColor,link,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,text,vLink',
+    'button^[HTMLElement]|!disabled,formAction,formEnctype,formMethod,!formNoValidate,formTarget,name,type,value',
+    'canvas^[HTMLElement]|#height,#width',
+    'content^[HTMLElement]|select',
+    'dl^[HTMLElement]|!compact',
+    'data^[HTMLElement]|value',
+    'datalist^[HTMLElement]|',
+    'details^[HTMLElement]|!open',
+    'dialog^[HTMLElement]|!open,returnValue',
+    'dir^[HTMLElement]|!compact',
+    'div^[HTMLElement]|align',
+    'embed^[HTMLElement]|align,height,name,src,type,width',
+    'fieldset^[HTMLElement]|!disabled,name',
+    'font^[HTMLElement]|color,face,size',
+    'form^[HTMLElement]|acceptCharset,action,autocomplete,encoding,enctype,method,name,!noValidate,target',
+    'frame^[HTMLElement]|frameBorder,longDesc,marginHeight,marginWidth,name,!noResize,scrolling,src',
+    'frameset^[HTMLElement]|cols,*afterprint,*beforeprint,*beforeunload,*blur,*error,*focus,*hashchange,*languagechange,*load,*message,*messageerror,*offline,*online,*pagehide,*pageshow,*popstate,*rejectionhandled,*resize,*scroll,*storage,*unhandledrejection,*unload,rows',
+    'hr^[HTMLElement]|align,color,!noShade,size,width',
+    'head^[HTMLElement]|',
+    'h1,h2,h3,h4,h5,h6^[HTMLElement]|align',
+    'html^[HTMLElement]|version',
+    'iframe^[HTMLElement]|align,allow,!allowFullscreen,!allowPaymentRequest,csp,frameBorder,height,loading,longDesc,marginHeight,marginWidth,name,referrerPolicy,%sandbox,scrolling,src,srcdoc,width',
+    'img^[HTMLElement]|align,alt,border,%crossOrigin,decoding,#height,#hspace,!isMap,loading,longDesc,lowsrc,name,referrerPolicy,sizes,src,srcset,useMap,#vspace,#width',
+    'input^[HTMLElement]|accept,align,alt,autocomplete,!checked,!defaultChecked,defaultValue,dirName,!disabled,%files,formAction,formEnctype,formMethod,!formNoValidate,formTarget,#height,!incremental,!indeterminate,max,#maxLength,min,#minLength,!multiple,name,pattern,placeholder,!readOnly,!required,selectionDirection,#selectionEnd,#selectionStart,#size,src,step,type,useMap,value,%valueAsDate,#valueAsNumber,#width',
+    'li^[HTMLElement]|type,#value',
+    'label^[HTMLElement]|htmlFor',
+    'legend^[HTMLElement]|align',
+    'link^[HTMLElement]|as,charset,%crossOrigin,!disabled,href,hreflang,imageSizes,imageSrcset,integrity,media,referrerPolicy,rel,%relList,rev,%sizes,target,type',
+    'map^[HTMLElement]|name',
+    'marquee^[HTMLElement]|behavior,bgColor,direction,height,#hspace,#loop,#scrollAmount,#scrollDelay,!trueSpeed,#vspace,width',
+    'menu^[HTMLElement]|!compact',
+    'meta^[HTMLElement]|content,httpEquiv,media,name,scheme',
+    'meter^[HTMLElement]|#high,#low,#max,#min,#optimum,#value',
+    'ins,del^[HTMLElement]|cite,dateTime',
+    'ol^[HTMLElement]|!compact,!reversed,#start,type',
+    'object^[HTMLElement]|align,archive,border,code,codeBase,codeType,data,!declare,height,#hspace,name,standby,type,useMap,#vspace,width',
+    'optgroup^[HTMLElement]|!disabled,label',
+    'option^[HTMLElement]|!defaultSelected,!disabled,label,!selected,text,value',
+    'output^[HTMLElement]|defaultValue,%htmlFor,name,value',
+    'p^[HTMLElement]|align',
+    'param^[HTMLElement]|name,type,value,valueType',
+    'picture^[HTMLElement]|',
+    'pre^[HTMLElement]|#width',
+    'progress^[HTMLElement]|#max,#value',
+    'q,blockquote,cite^[HTMLElement]|',
+    'script^[HTMLElement]|!async,charset,%crossOrigin,!defer,event,htmlFor,integrity,!noModule,%referrerPolicy,src,text,type',
+    'select^[HTMLElement]|autocomplete,!disabled,#length,!multiple,name,!required,#selectedIndex,#size,value',
+    'slot^[HTMLElement]|name',
+    'source^[HTMLElement]|#height,media,sizes,src,srcset,type,#width',
+    'span^[HTMLElement]|',
+    'style^[HTMLElement]|!disabled,media,type',
+    'caption^[HTMLElement]|align',
+    'th,td^[HTMLElement]|abbr,align,axis,bgColor,ch,chOff,#colSpan,headers,height,!noWrap,#rowSpan,scope,vAlign,width',
+    'col,colgroup^[HTMLElement]|align,ch,chOff,#span,vAlign,width',
+    'table^[HTMLElement]|align,bgColor,border,%caption,cellPadding,cellSpacing,frame,rules,summary,%tFoot,%tHead,width',
+    'tr^[HTMLElement]|align,bgColor,ch,chOff,vAlign',
+    'tfoot,thead,tbody^[HTMLElement]|align,ch,chOff,vAlign',
+    'template^[HTMLElement]|',
+    'textarea^[HTMLElement]|autocomplete,#cols,defaultValue,dirName,!disabled,#maxLength,#minLength,name,placeholder,!readOnly,!required,#rows,selectionDirection,#selectionEnd,#selectionStart,value,wrap',
+    'time^[HTMLElement]|dateTime',
+    'title^[HTMLElement]|text',
+    'track^[HTMLElement]|!default,kind,label,src,srclang',
+    'ul^[HTMLElement]|!compact,type',
+    'unknown^[HTMLElement]|',
+    'video^media|!disablePictureInPicture,#height,*enterpictureinpicture,*leavepictureinpicture,!playsInline,poster,#width',
+    ':svg:a^:svg:graphics|',
+    ':svg:animate^:svg:animation|',
+    ':svg:animateMotion^:svg:animation|',
+    ':svg:animateTransform^:svg:animation|',
+    ':svg:circle^:svg:geometry|',
+    ':svg:clipPath^:svg:graphics|',
+    ':svg:defs^:svg:graphics|',
+    ':svg:desc^:svg:|',
+    ':svg:discard^:svg:|',
+    ':svg:ellipse^:svg:geometry|',
+    ':svg:feBlend^:svg:|',
+    ':svg:feColorMatrix^:svg:|',
+    ':svg:feComponentTransfer^:svg:|',
+    ':svg:feComposite^:svg:|',
+    ':svg:feConvolveMatrix^:svg:|',
+    ':svg:feDiffuseLighting^:svg:|',
+    ':svg:feDisplacementMap^:svg:|',
+    ':svg:feDistantLight^:svg:|',
+    ':svg:feDropShadow^:svg:|',
+    ':svg:feFlood^:svg:|',
+    ':svg:feFuncA^:svg:componentTransferFunction|',
+    ':svg:feFuncB^:svg:componentTransferFunction|',
+    ':svg:feFuncG^:svg:componentTransferFunction|',
+    ':svg:feFuncR^:svg:componentTransferFunction|',
+    ':svg:feGaussianBlur^:svg:|',
+    ':svg:feImage^:svg:|',
+    ':svg:feMerge^:svg:|',
+    ':svg:feMergeNode^:svg:|',
+    ':svg:feMorphology^:svg:|',
+    ':svg:feOffset^:svg:|',
+    ':svg:fePointLight^:svg:|',
+    ':svg:feSpecularLighting^:svg:|',
+    ':svg:feSpotLight^:svg:|',
+    ':svg:feTile^:svg:|',
+    ':svg:feTurbulence^:svg:|',
+    ':svg:filter^:svg:|',
+    ':svg:foreignObject^:svg:graphics|',
+    ':svg:g^:svg:graphics|',
+    ':svg:image^:svg:graphics|decoding',
+    ':svg:line^:svg:geometry|',
+    ':svg:linearGradient^:svg:gradient|',
+    ':svg:mpath^:svg:|',
+    ':svg:marker^:svg:|',
+    ':svg:mask^:svg:|',
+    ':svg:metadata^:svg:|',
+    ':svg:path^:svg:geometry|',
+    ':svg:pattern^:svg:|',
+    ':svg:polygon^:svg:geometry|',
+    ':svg:polyline^:svg:geometry|',
+    ':svg:radialGradient^:svg:gradient|',
+    ':svg:rect^:svg:geometry|',
+    ':svg:svg^:svg:graphics|#currentScale,#zoomAndPan',
+    ':svg:script^:svg:|type',
+    ':svg:set^:svg:animation|',
+    ':svg:stop^:svg:|',
+    ':svg:style^:svg:|!disabled,media,title,type',
+    ':svg:switch^:svg:graphics|',
+    ':svg:symbol^:svg:|',
+    ':svg:tspan^:svg:textPositioning|',
+    ':svg:text^:svg:textPositioning|',
+    ':svg:textPath^:svg:textContent|',
+    ':svg:title^:svg:|',
+    ':svg:use^:svg:graphics|',
+    ':svg:view^:svg:|#zoomAndPan',
+    'data^[HTMLElement]|value',
+    'keygen^[HTMLElement]|!autofocus,challenge,!disabled,form,keytype,name',
+    'menuitem^[HTMLElement]|type,label,icon,!disabled,!checked,radiogroup,!default',
+    'summary^[HTMLElement]|',
+    'time^[HTMLElement]|dateTime',
+    ':svg:cursor^:svg:|',
+    ':math:^[HTMLElement]|!autofocus,nonce,*abort,*animationend,*animationiteration,*animationstart,*auxclick,*beforeinput,*beforematch,*beforetoggle,*beforexrselect,*blur,*cancel,*canplay,*canplaythrough,*change,*click,*close,*contentvisibilityautostatechange,*contextlost,*contextmenu,*contextrestored,*copy,*cuechange,*cut,*dblclick,*drag,*dragend,*dragenter,*dragleave,*dragover,*dragstart,*drop,*durationchange,*emptied,*ended,*error,*focus,*formdata,*gotpointercapture,*input,*invalid,*keydown,*keypress,*keyup,*load,*loadeddata,*loadedmetadata,*loadstart,*lostpointercapture,*mousedown,*mouseenter,*mouseleave,*mousemove,*mouseout,*mouseover,*mouseup,*mousewheel,*paste,*pause,*play,*playing,*pointercancel,*pointerdown,*pointerenter,*pointerleave,*pointermove,*pointerout,*pointerover,*pointerrawupdate,*pointerup,*progress,*ratechange,*reset,*resize,*scroll,*scrollend,*securitypolicyviolation,*seeked,*seeking,*select,*selectionchange,*selectstart,*slotchange,*stalled,*submit,*suspend,*timeupdate,*toggle,*transitioncancel,*transitionend,*transitionrun,*transitionstart,*volumechange,*waiting,*webkitanimationend,*webkitanimationiteration,*webkitanimationstart,*webkittransitionend,*wheel,%style,#tabIndex',
+    ':math:math^:math:|',
+    ':math:maction^:math:|',
+    ':math:menclose^:math:|',
+    ':math:merror^:math:|',
+    ':math:mfenced^:math:|',
+    ':math:mfrac^:math:|',
+    ':math:mi^:math:|',
+    ':math:mmultiscripts^:math:|',
+    ':math:mn^:math:|',
+    ':math:mo^:math:|',
+    ':math:mover^:math:|',
+    ':math:mpadded^:math:|',
+    ':math:mphantom^:math:|',
+    ':math:mroot^:math:|',
+    ':math:mrow^:math:|',
+    ':math:ms^:math:|',
+    ':math:mspace^:math:|',
+    ':math:msqrt^:math:|',
+    ':math:mstyle^:math:|',
+    ':math:msub^:math:|',
+    ':math:msubsup^:math:|',
+    ':math:msup^:math:|',
+    ':math:mtable^:math:|',
+    ':math:mtd^:math:|',
+    ':math:mtext^:math:|',
+    ':math:mtr^:math:|',
+    ':math:munder^:math:|',
+    ':math:munderover^:math:|',
+    ':math:semantics^:math:|',
+];
+const _ATTR_TO_PROP = new Map(Object.entries({
+    'class': 'className',
+    'for': 'htmlFor',
+    'formaction': 'formAction',
+    'innerHtml': 'innerHTML',
+    'readonly': 'readOnly',
+    'tabindex': 'tabIndex',
+}));
+// Invert _ATTR_TO_PROP.
+const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName, attributeName]) => {
+    inverted.set(propertyName, attributeName);
+    return inverted;
+}, new Map());
+class DomElementSchemaRegistry extends ElementSchemaRegistry {
+    constructor() {
+        super();
+        this._schema = new Map();
+        // We don't allow binding to events for security reasons. Allowing event bindings would almost
+        // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
+        this._eventSchema = new Map();
+        SCHEMA.forEach((encodedType) => {
+            const type = new Map();
+            const events = new Set();
+            const [strType, strProperties] = encodedType.split('|');
+            const properties = strProperties.split(',');
+            const [typeNames, superName] = strType.split('^');
+            typeNames.split(',').forEach((tag) => {
+                this._schema.set(tag.toLowerCase(), type);
+                this._eventSchema.set(tag.toLowerCase(), events);
+            });
+            const superType = superName && this._schema.get(superName.toLowerCase());
+            if (superType) {
+                for (const [prop, value] of superType) {
+                    type.set(prop, value);
+                }
+                for (const superEvent of this._eventSchema.get(superName.toLowerCase())) {
+                    events.add(superEvent);
+                }
+            }
+            properties.forEach((property) => {
+                if (property.length > 0) {
+                    switch (property[0]) {
+                        case '*':
+                            events.add(property.substring(1));
+                            break;
+                        case '!':
+                            type.set(property.substring(1), BOOLEAN);
+                            break;
+                        case '#':
+                            type.set(property.substring(1), NUMBER);
+                            break;
+                        case '%':
+                            type.set(property.substring(1), OBJECT);
+                            break;
+                        default:
+                            type.set(property, STRING);
+                    }
+                }
+            });
+        });
+    }
+    hasProperty(tagName, propName, schemaMetas) {
+        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
+            return true;
+        }
+        if (tagName.indexOf('-') > -1) {
+            if (isNgContainer(tagName) || isNgContent(tagName)) {
+                return false;
+            }
+            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
+                // Can't tell now as we don't know which properties a custom element will get
+                // once it is instantiated
+                return true;
+            }
+        }
+        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
+        return elementProperties.has(propName);
+    }
+    hasElement(tagName, schemaMetas) {
+        if (schemaMetas.some((schema) => schema.name === NO_ERRORS_SCHEMA.name)) {
+            return true;
+        }
+        if (tagName.indexOf('-') > -1) {
+            if (isNgContainer(tagName) || isNgContent(tagName)) {
+                return true;
+            }
+            if (schemaMetas.some((schema) => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
+                // Allow any custom elements
+                return true;
+            }
+        }
+        return this._schema.has(tagName.toLowerCase());
+    }
+    /**
+     * securityContext returns the security context for the given property on the given DOM tag.
+     *
+     * Tag and property name are statically known and cannot change at runtime, i.e. it is not
+     * possible to bind a value into a changing attribute or tag name.
+     *
+     * The filtering is based on a list of allowed tags|attributes. All attributes in the schema
+     * above are assumed to have the 'NONE' security context, i.e. that they are safe inert
+     * string values. Only specific well known attack vectors are assigned their appropriate context.
+     */
+    securityContext(tagName, propName, isAttribute) {
+        if (isAttribute) {
+            // NB: For security purposes, use the mapped property name, not the attribute name.
+            propName = this.getMappedPropName(propName);
+        }
+        // Make sure comparisons are case insensitive, so that case differences between attribute and
+        // property names do not have a security impact.
+        tagName = tagName.toLowerCase();
+        propName = propName.toLowerCase();
+        let ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
+        if (ctx) {
+            return ctx;
+        }
+        ctx = SECURITY_SCHEMA()['*|' + propName];
+        return ctx ? ctx : SecurityContext.NONE;
+    }
+    getMappedPropName(propName) {
+        return _ATTR_TO_PROP.get(propName) ?? propName;
+    }
+    getDefaultComponentElementName() {
+        return 'ng-component';
+    }
+    validateProperty(name) {
+        if (name.toLowerCase().startsWith('on')) {
+            const msg = `Binding to event property '${name}' is disallowed for security reasons, ` +
+                `please use (${name.slice(2)})=...` +
+                `\nIf '${name}' is a directive input, make sure the directive is imported by the` +
+                ` current module.`;
+            return { error: true, msg: msg };
+        }
+        else {
+            return { error: false };
+        }
+    }
+    validateAttribute(name) {
+        if (name.toLowerCase().startsWith('on')) {
+            const msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` +
+                `please use (${name.slice(2)})=...`;
+            return { error: true, msg: msg };
+        }
+        else {
+            return { error: false };
+        }
+    }
+    allKnownElementNames() {
+        return Array.from(this._schema.keys());
+    }
+    allKnownAttributesOfElement(tagName) {
+        const elementProperties = this._schema.get(tagName.toLowerCase()) || this._schema.get('unknown');
+        // Convert properties to attributes.
+        return Array.from(elementProperties.keys()).map((prop) => _PROP_TO_ATTR.get(prop) ?? prop);
+    }
+    allKnownEventsOfElement(tagName) {
+        return Array.from(this._eventSchema.get(tagName.toLowerCase()) ?? []);
+    }
+    normalizeAnimationStyleProperty(propName) {
+        return dashCaseToCamelCase(propName);
+    }
+    normalizeAnimationStyleValue(camelCaseProp, userProvidedProp, val) {
+        let unit = '';
+        const strVal = val.toString().trim();
+        let errorMsg = null;
+        if (_isPixelDimensionStyle(camelCaseProp) && val !== 0 && val !== '0') {
+            if (typeof val === 'number') {
+                unit = 'px';
+            }
+            else {
+                const valAndSuffixMatch = val.match(/^[+-]?[\d\.]+([a-z]*)$/);
+                if (valAndSuffixMatch && valAndSuffixMatch[1].length == 0) {
+                    errorMsg = `Please provide a CSS unit value for ${userProvidedProp}:${val}`;
+                }
+            }
+        }
+        return { error: errorMsg, value: strVal + unit };
+    }
+}
+function _isPixelDimensionStyle(prop) {
+    switch (prop) {
+        case 'width':
+        case 'height':
+        case 'minWidth':
+        case 'minHeight':
+        case 'maxWidth':
+        case 'maxHeight':
+        case 'left':
+        case 'top':
+        case 'bottom':
+        case 'right':
+        case 'fontSize':
+        case 'outlineWidth':
+        case 'outlineOffset':
+        case 'paddingTop':
+        case 'paddingLeft':
+        case 'paddingBottom':
+        case 'paddingRight':
+        case 'marginTop':
+        case 'marginLeft':
+        case 'marginBottom':
+        case 'marginRight':
+        case 'borderRadius':
+        case 'borderWidth':
+        case 'borderTopWidth':
+        case 'borderLeftWidth':
+        case 'borderRightWidth':
+        case 'borderBottomWidth':
+        case 'textIndent':
+            return true;
+        default:
+            return false;
+    }
+}
+
+class HtmlTagDefinition {
+    constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false, preventNamespaceInheritance = false, canSelfClose = false, } = {}) {
+        this.closedByChildren = {};
+        this.closedByParent = false;
+        if (closedByChildren && closedByChildren.length > 0) {
+            closedByChildren.forEach((tagName) => (this.closedByChildren[tagName] = true));
+        }
+        this.isVoid = isVoid;
+        this.closedByParent = closedByParent || isVoid;
+        this.implicitNamespacePrefix = implicitNamespacePrefix || null;
+        this.contentType = contentType;
+        this.ignoreFirstLf = ignoreFirstLf;
+        this.preventNamespaceInheritance = preventNamespaceInheritance;
+        this.canSelfClose = canSelfClose ?? isVoid;
+    }
+    isClosedByChild(name) {
+        return this.isVoid || name.toLowerCase() in this.closedByChildren;
+    }
+    getContentType(prefix) {
+        if (typeof this.contentType === 'object') {
+            const overrideType = prefix === undefined ? undefined : this.contentType[prefix];
+            return overrideType ?? this.contentType.default;
+        }
+        return this.contentType;
+    }
+}
+let DEFAULT_TAG_DEFINITION;
+// see https://www.w3.org/TR/html51/syntax.html#optional-tags
+// This implementation does not fully conform to the HTML5 spec.
+let TAG_DEFINITIONS;
+function getHtmlTagDefinition(tagName) {
+    if (!TAG_DEFINITIONS) {
+        DEFAULT_TAG_DEFINITION = new HtmlTagDefinition({ canSelfClose: true });
+        TAG_DEFINITIONS = Object.assign(Object.create(null), {
+            'base': new HtmlTagDefinition({ isVoid: true }),
+            'meta': new HtmlTagDefinition({ isVoid: true }),
+            'area': new HtmlTagDefinition({ isVoid: true }),
+            'embed': new HtmlTagDefinition({ isVoid: true }),
+            'link': new HtmlTagDefinition({ isVoid: true }),
+            'img': new HtmlTagDefinition({ isVoid: true }),
+            'input': new HtmlTagDefinition({ isVoid: true }),
+            'param': new HtmlTagDefinition({ isVoid: true }),
+            'hr': new HtmlTagDefinition({ isVoid: true }),
+            'br': new HtmlTagDefinition({ isVoid: true }),
+            'source': new HtmlTagDefinition({ isVoid: true }),
+            'track': new HtmlTagDefinition({ isVoid: true }),
+            'wbr': new HtmlTagDefinition({ isVoid: true }),
+            'p': new HtmlTagDefinition({
+                closedByChildren: [
+                    'address',
+                    'article',
+                    'aside',
+                    'blockquote',
+                    'div',
+                    'dl',
+                    'fieldset',
+                    'footer',
+                    'form',
+                    'h1',
+                    'h2',
+                    'h3',
+                    'h4',
+                    'h5',
+                    'h6',
+                    'header',
+                    'hgroup',
+                    'hr',
+                    'main',
+                    'nav',
+                    'ol',
+                    'p',
+                    'pre',
+                    'section',
+                    'table',
+                    'ul',
+                ],
+                closedByParent: true,
+            }),
+            'thead': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'] }),
+            'tbody': new HtmlTagDefinition({ closedByChildren: ['tbody', 'tfoot'], closedByParent: true }),
+            'tfoot': new HtmlTagDefinition({ closedByChildren: ['tbody'], closedByParent: true }),
+            'tr': new HtmlTagDefinition({ closedByChildren: ['tr'], closedByParent: true }),
+            'td': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+            'th': new HtmlTagDefinition({ closedByChildren: ['td', 'th'], closedByParent: true }),
+            'col': new HtmlTagDefinition({ isVoid: true }),
+            'svg': new HtmlTagDefinition({ implicitNamespacePrefix: 'svg' }),
+            'foreignObject': new HtmlTagDefinition({
+                // Usually the implicit namespace here would be redundant since it will be inherited from
+                // the parent `svg`, but we have to do it for `foreignObject`, because the way the parser
+                // works is that the parent node of an end tag is its own start tag which means that
+                // the `preventNamespaceInheritance` on `foreignObject` would have it default to the
+                // implicit namespace which is `html`, unless specified otherwise.
+                implicitNamespacePrefix: 'svg',
+                // We want to prevent children of foreignObject from inheriting its namespace, because
+                // the point of the element is to allow nodes from other namespaces to be inserted.
+                preventNamespaceInheritance: true,
+            }),
+            'math': new HtmlTagDefinition({ implicitNamespacePrefix: 'math' }),
+            'li': new HtmlTagDefinition({ closedByChildren: ['li'], closedByParent: true }),
+            'dt': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'] }),
+            'dd': new HtmlTagDefinition({ closedByChildren: ['dt', 'dd'], closedByParent: true }),
+            'rb': new HtmlTagDefinition({
+                closedByChildren: ['rb', 'rt', 'rtc', 'rp'],
+                closedByParent: true,
+            }),
+            'rt': new HtmlTagDefinition({
+                closedByChildren: ['rb', 'rt', 'rtc', 'rp'],
+                closedByParent: true,
+            }),
+            'rtc': new HtmlTagDefinition({ closedByChildren: ['rb', 'rtc', 'rp'], closedByParent: true }),
+            'rp': new HtmlTagDefinition({
+                closedByChildren: ['rb', 'rt', 'rtc', 'rp'],
+                closedByParent: true,
+            }),
+            'optgroup': new HtmlTagDefinition({ closedByChildren: ['optgroup'], closedByParent: true }),
+            'option': new HtmlTagDefinition({
+                closedByChildren: ['option', 'optgroup'],
+                closedByParent: true,
+            }),
+            'pre': new HtmlTagDefinition({ ignoreFirstLf: true }),
+            'listing': new HtmlTagDefinition({ ignoreFirstLf: true }),
+            'style': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
+            'script': new HtmlTagDefinition({ contentType: TagContentType.RAW_TEXT }),
+            'title': new HtmlTagDefinition({
+                // The browser supports two separate `title` tags which have to use
+                // a different content type: `HTMLTitleElement` and `SVGTitleElement`
+                contentType: {
+                    default: TagContentType.ESCAPABLE_RAW_TEXT,
+                    svg: TagContentType.PARSABLE_DATA,
+                },
+            }),
+            'textarea': new HtmlTagDefinition({
+                contentType: TagContentType.ESCAPABLE_RAW_TEXT,
+                ignoreFirstLf: true,
+            }),
+        });
+        new DomElementSchemaRegistry().allKnownElementNames().forEach((knownTagName) => {
+            if (!TAG_DEFINITIONS[knownTagName] && getNsPrefix(knownTagName) === null) {
+                TAG_DEFINITIONS[knownTagName] = new HtmlTagDefinition({ canSelfClose: false });
+            }
+        });
+    }
+    // We have to make both a case-sensitive and a case-insensitive lookup, because
+    // HTML tag names are case insensitive, whereas some SVG tags are case sensitive.
+    return (TAG_DEFINITIONS[tagName] ?? TAG_DEFINITIONS[tagName.toLowerCase()] ?? DEFAULT_TAG_DEFINITION);
+}
+
+const TAG_TO_PLACEHOLDER_NAMES = {
+    'A': 'LINK',
+    'B': 'BOLD_TEXT',
+    'BR': 'LINE_BREAK',
+    'EM': 'EMPHASISED_TEXT',
+    'H1': 'HEADING_LEVEL1',
+    'H2': 'HEADING_LEVEL2',
+    'H3': 'HEADING_LEVEL3',
+    'H4': 'HEADING_LEVEL4',
+    'H5': 'HEADING_LEVEL5',
+    'H6': 'HEADING_LEVEL6',
+    'HR': 'HORIZONTAL_RULE',
+    'I': 'ITALIC_TEXT',
+    'LI': 'LIST_ITEM',
+    'LINK': 'MEDIA_LINK',
+    'OL': 'ORDERED_LIST',
+    'P': 'PARAGRAPH',
+    'Q': 'QUOTATION',
+    'S': 'STRIKETHROUGH_TEXT',
+    'SMALL': 'SMALL_TEXT',
+    'SUB': 'SUBSTRIPT',
+    'SUP': 'SUPERSCRIPT',
+    'TBODY': 'TABLE_BODY',
+    'TD': 'TABLE_CELL',
+    'TFOOT': 'TABLE_FOOTER',
+    'TH': 'TABLE_HEADER_CELL',
+    'THEAD': 'TABLE_HEADER',
+    'TR': 'TABLE_ROW',
+    'TT': 'MONOSPACED_TEXT',
+    'U': 'UNDERLINED_TEXT',
+    'UL': 'UNORDERED_LIST',
+};
+/**
+ * Creates unique names for placeholder with different content.
+ *
+ * Returns the same placeholder name when the content is identical.
+ */
+class PlaceholderRegistry {
+    constructor() {
+        // Count the occurrence of the base name top generate a unique name
+        this._placeHolderNameCounts = {};
+        // Maps signature to placeholder names
+        this._signatureToName = {};
+    }
+    getStartTagPlaceholderName(tag, attrs, isVoid) {
+        const signature = this._hashTag(tag, attrs, isVoid);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const upperTag = tag.toUpperCase();
+        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
+        const name = this._generateUniqueName(isVoid ? baseName : `START_${baseName}`);
+        this._signatureToName[signature] = name;
+        return name;
+    }
+    getCloseTagPlaceholderName(tag) {
+        const signature = this._hashClosingTag(tag);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const upperTag = tag.toUpperCase();
+        const baseName = TAG_TO_PLACEHOLDER_NAMES[upperTag] || `TAG_${upperTag}`;
+        const name = this._generateUniqueName(`CLOSE_${baseName}`);
+        this._signatureToName[signature] = name;
+        return name;
+    }
+    getPlaceholderName(name, content) {
+        const upperName = name.toUpperCase();
+        const signature = `PH: ${upperName}=${content}`;
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const uniqueName = this._generateUniqueName(upperName);
+        this._signatureToName[signature] = uniqueName;
+        return uniqueName;
+    }
+    getUniquePlaceholder(name) {
+        return this._generateUniqueName(name.toUpperCase());
+    }
+    getStartBlockPlaceholderName(name, parameters) {
+        const signature = this._hashBlock(name, parameters);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const placeholder = this._generateUniqueName(`START_BLOCK_${this._toSnakeCase(name)}`);
+        this._signatureToName[signature] = placeholder;
+        return placeholder;
+    }
+    getCloseBlockPlaceholderName(name) {
+        const signature = this._hashClosingBlock(name);
+        if (this._signatureToName[signature]) {
+            return this._signatureToName[signature];
+        }
+        const placeholder = this._generateUniqueName(`CLOSE_BLOCK_${this._toSnakeCase(name)}`);
+        this._signatureToName[signature] = placeholder;
+        return placeholder;
+    }
+    // Generate a hash for a tag - does not take attribute order into account
+    _hashTag(tag, attrs, isVoid) {
+        const start = `<${tag}`;
+        const strAttrs = Object.keys(attrs)
+            .sort()
+            .map((name) => ` ${name}=${attrs[name]}`)
+            .join('');
+        const end = isVoid ? '/>' : `></${tag}>`;
+        return start + strAttrs + end;
+    }
+    _hashClosingTag(tag) {
+        return this._hashTag(`/${tag}`, {}, false);
+    }
+    _hashBlock(name, parameters) {
+        const params = parameters.length === 0 ? '' : ` (${parameters.sort().join('; ')})`;
+        return `@${name}${params} {}`;
+    }
+    _hashClosingBlock(name) {
+        return this._hashBlock(`close_${name}`, []);
+    }
+    _toSnakeCase(name) {
+        return name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    }
+    _generateUniqueName(base) {
+        const seen = this._placeHolderNameCounts.hasOwnProperty(base);
+        if (!seen) {
+            this._placeHolderNameCounts[base] = 1;
+            return base;
+        }
+        const id = this._placeHolderNameCounts[base];
+        this._placeHolderNameCounts[base] = id + 1;
+        return `${base}_${id}`;
+    }
+}
+
+const _expParser = new Parser(new Lexer());
+/**
+ * Returns a function converting html nodes to an i18n Message given an interpolationConfig
+ */
+function createI18nMessageFactory(interpolationConfig, containerBlocks, retainEmptyTokens) {
+    const visitor = new _I18nVisitor(_expParser, interpolationConfig, containerBlocks, retainEmptyTokens);
+    return (nodes, meaning, description, customId, visitNodeFn) => visitor.toI18nMessage(nodes, meaning, description, customId, visitNodeFn);
+}
+function noopVisitNodeFn(_html, i18n) {
+    return i18n;
+}
+class _I18nVisitor {
+    constructor(_expressionParser, _interpolationConfig, _containerBlocks, _retainEmptyTokens) {
+        this._expressionParser = _expressionParser;
+        this._interpolationConfig = _interpolationConfig;
+        this._containerBlocks = _containerBlocks;
+        this._retainEmptyTokens = _retainEmptyTokens;
+    }
+    toI18nMessage(nodes, meaning = '', description = '', customId = '', visitNodeFn) {
+        const context = {
+            isIcu: nodes.length == 1 && nodes[0] instanceof Expansion,
+            icuDepth: 0,
+            placeholderRegistry: new PlaceholderRegistry(),
+            placeholderToContent: {},
+            placeholderToMessage: {},
+            visitNodeFn: visitNodeFn || noopVisitNodeFn,
+        };
+        const i18nodes = visitAll(this, nodes, context);
+        return new Message(i18nodes, context.placeholderToContent, context.placeholderToMessage, meaning, description, customId);
+    }
+    visitElement(el, context) {
+        const children = visitAll(this, el.children, context);
+        const attrs = {};
+        el.attrs.forEach((attr) => {
+            // Do not visit the attributes, translatable ones are top-level ASTs
+            attrs[attr.name] = attr.value;
+        });
+        const isVoid = getHtmlTagDefinition(el.name).isVoid;
+        const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(el.name, attrs, isVoid);
+        context.placeholderToContent[startPhName] = {
+            text: el.startSourceSpan.toString(),
+            sourceSpan: el.startSourceSpan,
+        };
+        let closePhName = '';
+        if (!isVoid) {
+            closePhName = context.placeholderRegistry.getCloseTagPlaceholderName(el.name);
+            context.placeholderToContent[closePhName] = {
+                text: `</${el.name}>`,
+                sourceSpan: el.endSourceSpan ?? el.sourceSpan,
+            };
+        }
+        const node = new TagPlaceholder(el.name, attrs, startPhName, closePhName, children, isVoid, el.sourceSpan, el.startSourceSpan, el.endSourceSpan);
+        return context.visitNodeFn(el, node);
+    }
+    visitAttribute(attribute, context) {
+        const node = attribute.valueTokens === undefined || attribute.valueTokens.length === 1
+            ? new Text$2(attribute.value, attribute.valueSpan || attribute.sourceSpan)
+            : this._visitTextWithInterpolation(attribute.valueTokens, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
+        return context.visitNodeFn(attribute, node);
+    }
+    visitText(text, context) {
+        const node = text.tokens.length === 1
+            ? new Text$2(text.value, text.sourceSpan)
+            : this._visitTextWithInterpolation(text.tokens, text.sourceSpan, context, text.i18n);
+        return context.visitNodeFn(text, node);
+    }
+    visitComment(comment, context) {
+        return null;
+    }
+    visitExpansion(icu, context) {
+        context.icuDepth++;
+        const i18nIcuCases = {};
+        const i18nIcu = new Icu(icu.switchValue, icu.type, i18nIcuCases, icu.sourceSpan);
+        icu.cases.forEach((caze) => {
+            i18nIcuCases[caze.value] = new Container(caze.expression.map((node) => node.visit(this, context)), caze.expSourceSpan);
+        });
+        context.icuDepth--;
+        if (context.isIcu || context.icuDepth > 0) {
+            // Returns an ICU node when:
+            // - the message (vs a part of the message) is an ICU message, or
+            // - the ICU message is nested.
+            const expPh = context.placeholderRegistry.getUniquePlaceholder(`VAR_${icu.type}`);
+            i18nIcu.expressionPlaceholder = expPh;
+            context.placeholderToContent[expPh] = {
+                text: icu.switchValue,
+                sourceSpan: icu.switchValueSourceSpan,
+            };
+            return context.visitNodeFn(icu, i18nIcu);
+        }
+        // Else returns a placeholder
+        // ICU placeholders should not be replaced with their original content but with the their
+        // translations.
+        // TODO(vicb): add a html.Node -> i18n.Message cache to avoid having to re-create the msg
+        const phName = context.placeholderRegistry.getPlaceholderName('ICU', icu.sourceSpan.toString());
+        context.placeholderToMessage[phName] = this.toI18nMessage([icu], '', '', '', undefined);
+        const node = new IcuPlaceholder(i18nIcu, phName, icu.sourceSpan);
+        return context.visitNodeFn(icu, node);
+    }
+    visitExpansionCase(_icuCase, _context) {
+        throw new Error('Unreachable code');
+    }
+    visitBlock(block, context) {
+        const children = visitAll(this, block.children, context);
+        if (this._containerBlocks.has(block.name)) {
+            return new Container(children, block.sourceSpan);
+        }
+        const parameters = block.parameters.map((param) => param.expression);
+        const startPhName = context.placeholderRegistry.getStartBlockPlaceholderName(block.name, parameters);
+        const closePhName = context.placeholderRegistry.getCloseBlockPlaceholderName(block.name);
+        context.placeholderToContent[startPhName] = {
+            text: block.startSourceSpan.toString(),
+            sourceSpan: block.startSourceSpan,
+        };
+        context.placeholderToContent[closePhName] = {
+            text: block.endSourceSpan ? block.endSourceSpan.toString() : '}',
+            sourceSpan: block.endSourceSpan ?? block.sourceSpan,
+        };
+        const node = new BlockPlaceholder(block.name, parameters, startPhName, closePhName, children, block.sourceSpan, block.startSourceSpan, block.endSourceSpan);
+        return context.visitNodeFn(block, node);
+    }
+    visitBlockParameter(_parameter, _context) {
+        throw new Error('Unreachable code');
+    }
+    visitLetDeclaration(decl, context) {
+        return null;
+    }
+    /**
+     * Convert, text and interpolated tokens up into text and placeholder pieces.
+     *
+     * @param tokens The text and interpolated tokens.
+     * @param sourceSpan The span of the whole of the `text` string.
+     * @param context The current context of the visitor, used to compute and store placeholders.
+     * @param previousI18n Any i18n metadata associated with this `text` from a previous pass.
+     */
+    _visitTextWithInterpolation(tokens, sourceSpan, context, previousI18n) {
+        // Return a sequence of `Text` and `Placeholder` nodes grouped in a `Container`.
+        const nodes = [];
+        // We will only create a container if there are actually interpolations,
+        // so this flag tracks that.
+        let hasInterpolation = false;
+        for (const token of tokens) {
+            switch (token.type) {
+                case 8 /* TokenType.INTERPOLATION */:
+                case 17 /* TokenType.ATTR_VALUE_INTERPOLATION */:
+                    hasInterpolation = true;
+                    const expression = token.parts[1];
+                    const baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
+                    const phName = context.placeholderRegistry.getPlaceholderName(baseName, expression);
+                    context.placeholderToContent[phName] = {
+                        text: token.parts.join(''),
+                        sourceSpan: token.sourceSpan,
+                    };
+                    nodes.push(new Placeholder(expression, phName, token.sourceSpan));
+                    break;
+                default:
+                    // Try to merge text tokens with previous tokens. We do this even for all tokens
+                    // when `retainEmptyTokens == true` because whitespace tokens may have non-zero
+                    // length, but will be trimmed by `WhitespaceVisitor` in one extraction pass and
+                    // be considered "empty" there. Therefore a whitespace token with
+                    // `retainEmptyTokens === true` should be treated like an empty token and either
+                    // retained or merged into the previous node. Since extraction does two passes with
+                    // different trimming behavior, the second pass needs to have identical node count
+                    // to reuse source spans, so we need this check to get the same answer when both
+                    // trimming and not trimming.
+                    if (token.parts[0].length > 0 || this._retainEmptyTokens) {
+                        // This token is text or an encoded entity.
+                        // If it is following on from a previous text node then merge it into that node
+                        // Otherwise, if it is following an interpolation, then add a new node.
+                        const previous = nodes[nodes.length - 1];
+                        if (previous instanceof Text$2) {
+                            previous.value += token.parts[0];
+                            previous.sourceSpan = new ParseSourceSpan(previous.sourceSpan.start, token.sourceSpan.end, previous.sourceSpan.fullStart, previous.sourceSpan.details);
+                        }
+                        else {
+                            nodes.push(new Text$2(token.parts[0], token.sourceSpan));
+                        }
+                    }
+                    else {
+                        // Retain empty tokens to avoid breaking dropping entire nodes such that source
+                        // spans should not be reusable across multiple parses of a template. We *should*
+                        // do this all the time, however we need to maintain backwards compatibility
+                        // with existing message IDs so we can't do it by default and should only enable
+                        // this when removing significant whitespace.
+                        if (this._retainEmptyTokens) {
+                            nodes.push(new Text$2(token.parts[0], token.sourceSpan));
+                        }
+                    }
+                    break;
+            }
+        }
+        if (hasInterpolation) {
+            // Whitespace removal may have invalidated the interpolation source-spans.
+            reusePreviousSourceSpans(nodes, previousI18n);
+            return new Container(nodes, sourceSpan);
+        }
+        else {
+            return nodes[0];
+        }
+    }
+}
+/**
+ * Re-use the source-spans from `previousI18n` metadata for the `nodes`.
+ *
+ * Whitespace removal can invalidate the source-spans of interpolation nodes, so we
+ * reuse the source-span stored from a previous pass before the whitespace was removed.
+ *
+ * @param nodes The `Text` and `Placeholder` nodes to be processed.
+ * @param previousI18n Any i18n metadata for these `nodes` stored from a previous pass.
+ */
+function reusePreviousSourceSpans(nodes, previousI18n) {
+    if (previousI18n instanceof Message) {
+        // The `previousI18n` is an i18n `Message`, so we are processing an `Attribute` with i18n
+        // metadata. The `Message` should consist only of a single `Container` that contains the
+        // parts (`Text` and `Placeholder`) to process.
+        assertSingleContainerMessage(previousI18n);
+        previousI18n = previousI18n.nodes[0];
+    }
+    if (previousI18n instanceof Container) {
+        // The `previousI18n` is a `Container`, which means that this is a second i18n extraction pass
+        // after whitespace has been removed from the AST nodes.
+        assertEquivalentNodes(previousI18n.children, nodes);
+        // Reuse the source-spans from the first pass.
+        for (let i = 0; i < nodes.length; i++) {
+            nodes[i].sourceSpan = previousI18n.children[i].sourceSpan;
+        }
+    }
+}
+/**
+ * Asserts that the `message` contains exactly one `Container` node.
+ */
+function assertSingleContainerMessage(message) {
+    const nodes = message.nodes;
+    if (nodes.length !== 1 || !(nodes[0] instanceof Container)) {
+        throw new Error('Unexpected previous i18n message - expected it to consist of only a single `Container` node.');
+    }
+}
+/**
+ * Asserts that the `previousNodes` and `node` collections have the same number of elements and
+ * corresponding elements have the same node type.
+ */
+function assertEquivalentNodes(previousNodes, nodes) {
+    if (previousNodes.length !== nodes.length) {
+        throw new Error(`
+The number of i18n message children changed between first and second pass.
+
+First pass (${previousNodes.length} tokens):
+${previousNodes.map((node) => `"${node.sourceSpan.toString()}"`).join('\n')}
+
+Second pass (${nodes.length} tokens):
+${nodes.map((node) => `"${node.sourceSpan.toString()}"`).join('\n')}
+    `.trim());
+    }
+    if (previousNodes.some((node, i) => nodes[i].constructor !== node.constructor)) {
+        throw new Error('The types of the i18n message children changed between first and second pass.');
+    }
+}
+const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
+function extractPlaceholderName(input) {
+    return input.split(_CUSTOM_PH_EXP)[2];
+}
+
+/**
+ * An i18n error.
+ */
+class I18nError extends ParseError {
+    constructor(span, msg) {
+        super(span, msg);
+    }
+}
+
 /**
  * Set of tagName|propertyName corresponding to Trusted Types sinks. Properties applying to all
  * tags use '*'.
@@ -19510,18 +19739,26 @@ function isTrustedTypesSink(tagName, propName) {
     return (TRUSTED_TYPES_SINKS.has(tagName + '|' + propName) || TRUSTED_TYPES_SINKS.has('*|' + propName));
 }
 
-const setI18nRefs = (htmlNode, i18nNode) => {
-    if (htmlNode instanceof NodeWithI18n) {
-        if (i18nNode instanceof IcuPlaceholder && htmlNode.i18n instanceof Message) {
-            // This html node represents an ICU but this is a second processing pass, and the legacy id
-            // was computed in the previous pass and stored in the `i18n` property as a message.
-            // We are about to wipe out that property so capture the previous message to be reused when
-            // generating the message for this ICU later. See `_generateI18nMessage()`.
-            i18nNode.previousMessage = htmlNode.i18n;
+const setI18nRefs = (originalNodeMap) => {
+    return (trimmedNode, i18nNode) => {
+        // We need to set i18n properties on the original, untrimmed AST nodes. The i18n nodes needs to
+        // use the trimmed content for message IDs to make messages more stable to whitespace changes.
+        // But we don't want to actually trim the content, so we can't use the trimmed HTML AST for
+        // general code gen. Instead we map the trimmed HTML AST back to the original AST and then
+        // attach the i18n nodes so we get trimmed i18n nodes on the original (untrimmed) HTML AST.
+        const originalNode = originalNodeMap.get(trimmedNode) ?? trimmedNode;
+        if (originalNode instanceof NodeWithI18n) {
+            if (i18nNode instanceof IcuPlaceholder && originalNode.i18n instanceof Message) {
+                // This html node represents an ICU but this is a second processing pass, and the legacy id
+                // was computed in the previous pass and stored in the `i18n` property as a message.
+                // We are about to wipe out that property so capture the previous message to be reused when
+                // generating the message for this ICU later. See `_generateI18nMessage()`.
+                i18nNode.previousMessage = originalNode.i18n;
+            }
+            originalNode.i18n = i18nNode;
         }
-        htmlNode.i18n = i18nNode;
-    }
-    return i18nNode;
+        return i18nNode;
+    };
 };
 /**
  * This visitor walks over HTML parse tree and converts information stored in
@@ -19529,18 +19766,27 @@ const setI18nRefs = (htmlNode, i18nNode) => {
  * stored with other element's and attribute's information.
  */
 class I18nMetaVisitor {
-    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, enableI18nLegacyMessageIdFormat = false, containerBlocks = DEFAULT_CONTAINER_BLOCKS) {
+    constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, enableI18nLegacyMessageIdFormat = false, containerBlocks = DEFAULT_CONTAINER_BLOCKS, preserveSignificantWhitespace = true, 
+    // When dropping significant whitespace we need to retain empty tokens or
+    // else we won't be able to reuse source spans because empty tokens would be
+    // removed and cause a mismatch. Unfortunately this still needs to be
+    // configurable and sometimes needs to be set independently in order to make
+    // sure the number of nodes don't change between parses, even when
+    // `preserveSignificantWhitespace` changes.
+    retainEmptyTokens = !preserveSignificantWhitespace) {
         this.interpolationConfig = interpolationConfig;
         this.keepI18nAttrs = keepI18nAttrs;
         this.enableI18nLegacyMessageIdFormat = enableI18nLegacyMessageIdFormat;
         this.containerBlocks = containerBlocks;
+        this.preserveSignificantWhitespace = preserveSignificantWhitespace;
+        this.retainEmptyTokens = retainEmptyTokens;
         // whether visited nodes contain i18n information
         this.hasI18nMeta = false;
         this._errors = [];
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const { meaning, description, customId } = this._parseMetadata(meta);
-        const createI18nMessage = createI18nMessageFactory(this.interpolationConfig, this.containerBlocks);
+        const createI18nMessage = createI18nMessageFactory(this.interpolationConfig, this.containerBlocks, this.retainEmptyTokens);
         const message = createI18nMessage(nodes, meaning, description, customId, visitNodeFn);
         this._setMessageId(message, meta);
         this._setLegacyIds(message, meta);
@@ -19560,7 +19806,22 @@ class I18nMetaVisitor {
                 if (attr.name === I18N_ATTR) {
                     // root 'i18n' node attribute
                     const i18n = element.i18n || attr.value;
-                    message = this._generateI18nMessage(element.children, i18n, setI18nRefs);
+                    // Generate a new AST with whitespace trimmed, but also generate a map
+                    // to correlate each new node to its original so we can apply i18n
+                    // information to the original node based on the trimmed content.
+                    //
+                    // `WhitespaceVisitor` removes *insignificant* whitespace as well as
+                    // significant whitespace. Enabling this visitor should be conditional
+                    // on `preserveWhitespace` rather than `preserveSignificantWhitespace`,
+                    // however this would be a breaking change for existing behavior where
+                    // `preserveWhitespace` was not respected correctly when generating
+                    // message IDs. This is really a bug but one we need to keep to maintain
+                    // backwards compatibility.
+                    const originalNodeMap = new Map();
+                    const trimmedNodes = this.preserveSignificantWhitespace
+                        ? element.children
+                        : visitAllWithSiblings(new WhitespaceVisitor(false /* preserveSignificantWhitespace */, originalNodeMap), element.children);
+                    message = this._generateI18nMessage(trimmedNodes, i18n, setI18nRefs(originalNodeMap));
                     if (message.nodes.length === 0) {
                         // Ignore the message if it is empty.
                         message = undefined;
@@ -19674,7 +19935,9 @@ class I18nMetaVisitor {
      */
     _setMessageId(message, meta) {
         if (!message.id) {
-            message.id = (meta instanceof Message && meta.id) || decimalDigest(message);
+            message.id =
+                (meta instanceof Message && meta.id) ||
+                    decimalDigest(message, /* preservePlaceholders */ this.preserveSignificantWhitespace);
         }
     }
     /**
@@ -19685,7 +19948,11 @@ class I18nMetaVisitor {
      */
     _setLegacyIds(message, meta) {
         if (this.enableI18nLegacyMessageIdFormat) {
-            message.legacyIds = [computeDigest(message), computeDecimalDigest(message)];
+            message.legacyIds = [
+                computeDigest(message),
+                computeDecimalDigest(message, 
+                /* preservePlaceholders */ this.preserveSignificantWhitespace),
+            ];
         }
         else if (typeof meta !== 'string') {
             // This occurs if we are doing the 2nd pass after whitespace removal (see `parseTemplate()` in
@@ -25388,110 +25655,13 @@ function createContentQueriesFunction(queries, constantPool, name) {
     ], INFERRED_TYPE, null, contentQueriesFnName);
 }
 
-class HtmlParser extends Parser {
+class HtmlParser extends Parser$1 {
     constructor() {
         super(getHtmlTagDefinition);
     }
     parse(source, url, options) {
         return super.parse(source, url, options);
     }
-}
-
-const PRESERVE_WS_ATTR_NAME = 'ngPreserveWhitespaces';
-const SKIP_WS_TRIM_TAGS = new Set(['pre', 'template', 'textarea', 'script', 'style']);
-// Equivalent to \s with \u00a0 (non-breaking space) excluded.
-// Based on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp
-const WS_CHARS = ' \f\n\r\t\v\u1680\u180e\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff';
-const NO_WS_REGEXP = new RegExp(`[^${WS_CHARS}]`);
-const WS_REPLACE_REGEXP = new RegExp(`[${WS_CHARS}]{2,}`, 'g');
-function hasPreserveWhitespacesAttr(attrs) {
-    return attrs.some((attr) => attr.name === PRESERVE_WS_ATTR_NAME);
-}
-/**
- * &ngsp; is a placeholder for non-removable space
- * &ngsp; is converted to the 0xE500 PUA (Private Use Areas) unicode character
- * and later on replaced by a space.
- */
-function replaceNgsp(value) {
-    // lexer is replacing the &ngsp; pseudo-entity with NGSP_UNICODE
-    return value.replace(new RegExp(NGSP_UNICODE, 'g'), ' ');
-}
-/**
- * This visitor can walk HTML parse tree and remove / trim text nodes using the following rules:
- * - consider spaces, tabs and new lines as whitespace characters;
- * - drop text nodes consisting of whitespace characters only;
- * - for all other text nodes replace consecutive whitespace characters with one space;
- * - convert &ngsp; pseudo-entity to a single space;
- *
- * Removal and trimming of whitespaces have positive performance impact (less code to generate
- * while compiling templates, faster view creation). At the same time it can be "destructive"
- * in some cases (whitespaces can influence layout). Because of the potential of breaking layout
- * this visitor is not activated by default in Angular 5 and people need to explicitly opt-in for
- * whitespace removal. The default option for whitespace removal will be revisited in Angular 6
- * and might be changed to "on" by default.
- */
-class WhitespaceVisitor {
-    visitElement(element, context) {
-        if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
-            // don't descent into elements where we need to preserve whitespaces
-            // but still visit all attributes to eliminate one used as a market to preserve WS
-            return new Element(element.name, visitAll(this, element.attrs), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
-        }
-        return new Element(element.name, element.attrs, visitAllWithSiblings(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
-    }
-    visitAttribute(attribute, context) {
-        return attribute.name !== PRESERVE_WS_ATTR_NAME ? attribute : null;
-    }
-    visitText(text, context) {
-        const isNotBlank = text.value.match(NO_WS_REGEXP);
-        const hasExpansionSibling = context && (context.prev instanceof Expansion || context.next instanceof Expansion);
-        if (isNotBlank || hasExpansionSibling) {
-            // Process the whitespace in the tokens of this Text node
-            const tokens = text.tokens.map((token) => token.type === 5 /* TokenType.TEXT */ ? createWhitespaceProcessedTextToken(token) : token);
-            // Process the whitespace of the value of this Text node
-            const value = processWhitespace(text.value);
-            return new Text(value, text.sourceSpan, tokens, text.i18n);
-        }
-        return null;
-    }
-    visitComment(comment, context) {
-        return comment;
-    }
-    visitExpansion(expansion, context) {
-        return expansion;
-    }
-    visitExpansionCase(expansionCase, context) {
-        return expansionCase;
-    }
-    visitBlock(block, context) {
-        return new Block(block.name, block.parameters, visitAllWithSiblings(this, block.children), block.sourceSpan, block.nameSpan, block.startSourceSpan, block.endSourceSpan);
-    }
-    visitBlockParameter(parameter, context) {
-        return parameter;
-    }
-    visitLetDeclaration(decl, context) {
-        return decl;
-    }
-}
-function createWhitespaceProcessedTextToken({ type, parts, sourceSpan }) {
-    return { type, parts: [processWhitespace(parts[0])], sourceSpan };
-}
-function processWhitespace(text) {
-    return replaceNgsp(text).replace(WS_REPLACE_REGEXP, ' ');
-}
-function removeWhitespaces(htmlAstWithErrors) {
-    return new ParseTreeResult(visitAll(new WhitespaceVisitor(), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
-}
-function visitAllWithSiblings(visitor, nodes) {
-    const result = [];
-    nodes.forEach((ast, i) => {
-        const context = { prev: nodes[i - 1], next: nodes[i + 1] };
-        const astResult = ast.visit(visitor, context);
-        if (astResult) {
-            result.push(astResult);
-        }
-    });
-    return result;
 }
 
 const PROPERTY_PARTS_SEPARATOR = '.';
@@ -27484,12 +27654,18 @@ function parseTemplate(template, templateUrl, options = {}) {
         return parsedTemplate;
     }
     let rootNodes = parseResult.rootNodes;
+    // We need to use the same `retainEmptyTokens` value for both parses to avoid
+    // causing a mismatch when reusing source spans, even if the
+    // `preserveSignificantWhitespace` behavior is different between the two
+    // parses.
+    const retainEmptyTokens = !(options.preserveSignificantWhitespace ?? true);
     // process i18n meta information (scan attributes, generate ids)
     // before we run whitespace removal process, because existing i18n
     // extraction process (ng extract-i18n) relies on a raw content to generate
     // message ids
     const i18nMetaVisitor = new I18nMetaVisitor(interpolationConfig, 
-    /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat);
+    /* keepI18nAttrs */ !preserveWhitespaces, enableI18nLegacyMessageIdFormat, 
+    /* containerBlocks */ undefined, options.preserveSignificantWhitespace, retainEmptyTokens);
     const i18nMetaResult = i18nMetaVisitor.visitAllWithErrors(rootNodes);
     if (!options.alwaysAttemptHtmlToR3AstConversion &&
         i18nMetaResult.errors &&
@@ -27510,13 +27686,31 @@ function parseTemplate(template, templateUrl, options = {}) {
     }
     rootNodes = i18nMetaResult.rootNodes;
     if (!preserveWhitespaces) {
-        rootNodes = visitAll(new WhitespaceVisitor(), rootNodes);
+        // Always preserve significant whitespace here because this is used to generate the `goog.getMsg`
+        // and `$localize` calls which should retain significant whitespace in order to render the
+        // correct output. We let this diverge from the message IDs generated earlier which might not
+        // have preserved significant whitespace.
+        //
+        // This should use `visitAllWithSiblings` to set `WhitespaceVisitor` context correctly, however
+        // there is an existing bug where significant whitespace is not properly retained in the JS
+        // output of leading/trailing whitespace for ICU messages due to the existing lack of context\
+        // in `WhitespaceVisitor`. Using `visitAllWithSiblings` here would fix that bug and retain the
+        // whitespace, however it would also change the runtime representation which we don't want to do
+        // right now.
+        rootNodes = visitAll(new WhitespaceVisitor(
+        /* preserveSignificantWhitespace */ true, 
+        /* originalNodeMap */ undefined, 
+        /* requireContext */ false), rootNodes);
         // run i18n meta visitor again in case whitespaces are removed (because that might affect
         // generated i18n message content) and first pass indicated that i18n content is present in a
         // template. During this pass i18n IDs generated at the first pass will be preserved, so we can
         // mimic existing extraction process (ng extract-i18n)
         if (i18nMetaVisitor.hasI18nMeta) {
-            rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, /* keepI18nAttrs */ false), rootNodes);
+            rootNodes = visitAll(new I18nMetaVisitor(interpolationConfig, 
+            /* keepI18nAttrs */ false, 
+            /* enableI18nLegacyMessageIdFormat */ undefined, 
+            /* containerBlocks */ undefined, 
+            /* preserveSignificantWhitespace */ true, retainEmptyTokens), rootNodes);
         }
     }
     const { nodes, errors, styleUrls, styles, ngContentSelectors, commentNodes } = htmlAstToRender3Ast(rootNodes, bindingParser, { collectCommentNodes: !!options.collectCommentNodes });
@@ -27540,7 +27734,7 @@ const elementRegistry = new DomElementSchemaRegistry();
  * Construct a `BindingParser` with a default configuration.
  */
 function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, allowInvalidAssignmentEvents = false) {
-    return new BindingParser(new Parser$1(new Lexer()), interpolationConfig, elementRegistry, [], allowInvalidAssignmentEvents);
+    return new BindingParser(new Parser(new Lexer()), interpolationConfig, elementRegistry, [], allowInvalidAssignmentEvents);
 }
 
 const COMPONENT_VARIABLE = '%COMP%';
@@ -28098,6 +28292,7 @@ function findMatchingDirectivesAndPipes(template, directiveSelectors) {
         // function internally).
         const fakeDirective = {
             selector,
+            exportAs: null,
             inputs: {
                 hasBindingPropertyName() {
                     return false;
@@ -29610,7 +29805,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.0.0-next.1+sha-564a8d5');
+const VERSION = new Version('19.0.0-next.1+sha-21445a2');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -29632,8 +29827,8 @@ let i18nCommentsWarned = false;
 /**
  * Extract translatable messages from an html AST
  */
-function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs) {
-    const visitor = new _Visitor(implicitTags, implicitAttrs);
+function extractMessages(nodes, interpolationConfig, implicitTags, implicitAttrs, preserveSignificantWhitespace) {
+    const visitor = new _Visitor(implicitTags, implicitAttrs, preserveSignificantWhitespace);
     return visitor.extract(nodes, interpolationConfig);
 }
 function mergeTranslations(nodes, translations, interpolationConfig, implicitTags, implicitAttrs) {
@@ -29659,9 +29854,10 @@ var _VisitorMode;
  * @internal
  */
 class _Visitor {
-    constructor(_implicitTags, _implicitAttrs) {
+    constructor(_implicitTags, _implicitAttrs, _preserveSignificantWhitespace = true) {
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
+        this._preserveSignificantWhitespace = _preserveSignificantWhitespace;
     }
     /**
      * Extracts the messages from the tree
@@ -29846,7 +30042,11 @@ class _Visitor {
         this._errors = [];
         this._messages = [];
         this._inImplicitNode = false;
-        this._createI18nMessage = createI18nMessageFactory(interpolationConfig, DEFAULT_CONTAINER_BLOCKS);
+        this._createI18nMessage = createI18nMessageFactory(interpolationConfig, DEFAULT_CONTAINER_BLOCKS, 
+        // When dropping significant whitespace we need to retain whitespace tokens or
+        // else we won't be able to reuse source spans because empty tokens would be
+        // removed and cause a mismatch.
+        !this._preserveSignificantWhitespace /* retainEmptyTokens */);
     }
     // looks for translatable attributes
     _visitAttributesOf(el) {
@@ -30043,7 +30243,7 @@ function getXmlTagDefinition(tagName) {
     return _TAG_DEFINITION;
 }
 
-class XmlParser extends Parser {
+class XmlParser extends Parser$1 {
     constructor() {
         super(getXmlTagDefinition);
     }
@@ -30408,7 +30608,7 @@ class Xliff2 extends Serializer {
         return { locale: locale, i18nNodesByMsgId };
     }
     digest(message) {
-        return decimalDigest(message);
+        return decimalDigest(message, /* preservePlaceholders */ true);
     }
 }
 class _WriteVisitor {
@@ -30707,7 +30907,7 @@ class Xtb extends Serializer {
         return { locale: locale, i18nNodesByMsgId };
     }
     digest(message) {
-        return digest(message);
+        return digest(message, /* preservePlaceholders */ true);
     }
     createNameMapper(message) {
         return new SimplePlaceholderMapper(message, toPublicName);
@@ -31024,7 +31224,7 @@ function createSerializer(format) {
     format = (format || 'xlf').toLowerCase();
     switch (format) {
         case 'xmb':
-            return new Xmb();
+            return new Xmb(/* preservePlaceholders */ true);
         case 'xtb':
             return new Xtb();
         case 'xliff2':
@@ -31041,22 +31241,30 @@ function createSerializer(format) {
  * A container for message extracted from the templates.
  */
 class MessageBundle {
-    constructor(_htmlParser, _implicitTags, _implicitAttrs, _locale = null) {
+    constructor(_htmlParser, _implicitTags, _implicitAttrs, _locale = null, _preserveWhitespace = true) {
         this._htmlParser = _htmlParser;
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
         this._locale = _locale;
+        this._preserveWhitespace = _preserveWhitespace;
         this._messages = [];
     }
-    updateFromTemplate(html, url, interpolationConfig) {
-        const htmlParserResult = this._htmlParser.parse(html, url, {
+    updateFromTemplate(source, url, interpolationConfig) {
+        const htmlParserResult = this._htmlParser.parse(source, url, {
             tokenizeExpansionForms: true,
             interpolationConfig,
         });
         if (htmlParserResult.errors.length) {
             return htmlParserResult.errors;
         }
-        const i18nParserResult = extractMessages(htmlParserResult.rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs);
+        // Trim unnecessary whitespace from extracted messages if requested. This
+        // makes the messages more durable to trivial whitespace changes without
+        // affected message IDs.
+        const rootNodes = this._preserveWhitespace
+            ? htmlParserResult.rootNodes
+            : visitAllWithSiblings(new WhitespaceVisitor(/* preserveSignificantWhitespace */ false), htmlParserResult.rootNodes);
+        const i18nParserResult = extractMessages(rootNodes, interpolationConfig, this._implicitTags, this._implicitAttrs, 
+        /* preserveSignificantWhitespace */ this._preserveWhitespace);
         if (i18nParserResult.errors.length) {
             return i18nParserResult.errors;
         }
@@ -31248,7 +31456,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31266,7 +31474,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31361,7 +31569,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31783,7 +31991,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -31818,7 +32026,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -31869,7 +32077,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -31902,7 +32110,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -31953,7 +32161,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.1+sha-564a8d5'));
+    definitionMap.set('version', literal('19.0.0-next.1+sha-21445a2'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -31986,5 +32194,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser$1 as Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
