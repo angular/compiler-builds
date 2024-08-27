@@ -1,5 +1,5 @@
 /**
- * @license Angular v18.2.1+sha-3067633
+ * @license Angular v18.2.1+sha-5d2e243
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2088,11 +2088,12 @@ export declare class MessageBundle {
     private _implicitTags;
     private _implicitAttrs;
     private _locale;
+    private readonly _preserveWhitespace;
     private _messages;
     constructor(_htmlParser: HtmlParser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
-    }, _locale?: string | null);
-    updateFromTemplate(html: string, url: string, interpolationConfig: InterpolationConfig): ParseError[];
+    }, _locale?: string | null, _preserveWhitespace?: boolean);
+    updateFromTemplate(source: string, url: string, interpolationConfig: InterpolationConfig): ParseError[];
     getMessages(): i18n.Message[];
     write(serializer: Serializer, filterSources?: (path: string) => string): string;
 }
@@ -2572,6 +2573,10 @@ export declare interface ParseTemplateOptions {
      * Preserve original line endings instead of normalizing '\r\n' endings to '\n'.
      */
     preserveLineEndings?: boolean;
+    /**
+     * Preserve whitespace significant to rendering.
+     */
+    preserveSignificantWhitespace?: boolean;
     /**
      * How to parse interpolation markers.
      */
@@ -5629,6 +5634,8 @@ export declare class Xliff2 extends Serializer {
 }
 
 export declare class Xmb extends Serializer {
+    private readonly preservePlaceholders;
+    constructor(preservePlaceholders?: boolean);
     write(messages: i18n.Message[], locale: string | null): string;
     load(content: string, url: string): {
         locale: string;
