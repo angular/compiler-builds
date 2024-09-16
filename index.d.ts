@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.5+sha-6b066f3
+ * @license Angular v19.0.0-next.5+sha-e5adf92
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1232,9 +1232,10 @@ export declare class EmptyExpr extends AST {
  * is using the `ViewEncapsulation.Emulated` mode.
  *
  * @param style The content of a CSS stylesheet.
+ * @param componentIdentifier The identifier to use within the CSS rules.
  * @returns The encapsulated content for the style.
  */
-export declare function encapsulateStyle(style: string): string;
+export declare function encapsulateStyle(style: string, componentIdentifier?: string): string;
 
 declare interface EncodedEntityToken extends TokenBase {
     type: LexerTokenType.ENCODED_ENTITY;
