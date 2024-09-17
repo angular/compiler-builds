@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.5+sha-59fe9bc
+ * @license Angular v19.0.0-next.5+sha-8ecafce
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3816,6 +3816,14 @@ export declare class R3Identifiers {
     static deferPrefetchOnHover: outputAst.ExternalReference;
     static deferPrefetchOnInteraction: outputAst.ExternalReference;
     static deferPrefetchOnViewport: outputAst.ExternalReference;
+    static deferHydrateWhen: outputAst.ExternalReference;
+    static deferHydrateNever: outputAst.ExternalReference;
+    static deferHydrateOnIdle: outputAst.ExternalReference;
+    static deferHydrateOnImmediate: outputAst.ExternalReference;
+    static deferHydrateOnTimer: outputAst.ExternalReference;
+    static deferHydrateOnHover: outputAst.ExternalReference;
+    static deferHydrateOnInteraction: outputAst.ExternalReference;
+    static deferHydrateOnViewport: outputAst.ExternalReference;
     static deferEnableTimerScheduling: outputAst.ExternalReference;
     static conditional: outputAst.ExternalReference;
     static repeater: outputAst.ExternalReference;
@@ -4735,6 +4743,7 @@ declare namespace t {
         TmplAstElement as Element,
         TmplAstDeferredTrigger as DeferredTrigger,
         TmplAstBoundDeferredTrigger as BoundDeferredTrigger,
+        TmplAstNeverDeferredTrigger as NeverDeferredTrigger,
         TmplAstIdleDeferredTrigger as IdleDeferredTrigger,
         TmplAstImmediateDeferredTrigger as ImmediateDeferredTrigger,
         TmplAstHoverDeferredTrigger as HoverDeferredTrigger,
@@ -4938,7 +4947,7 @@ export declare class TmplAstBoundAttribute implements TmplAstNode {
 
 export declare class TmplAstBoundDeferredTrigger extends TmplAstDeferredTrigger {
     value: AST;
-    constructor(value: AST, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, whenSourceSpan: ParseSourceSpan);
+    constructor(value: AST, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, whenSourceSpan: ParseSourceSpan, hydrateSpan: ParseSourceSpan | null);
 }
 
 export declare class TmplAstBoundEvent implements TmplAstNode {
@@ -4983,9 +4992,11 @@ export declare class TmplAstDeferredBlock extends TmplAstBlockNode implements Tm
     i18n?: I18nMeta_2 | undefined;
     readonly triggers: Readonly<TmplAstDeferredBlockTriggers>;
     readonly prefetchTriggers: Readonly<TmplAstDeferredBlockTriggers>;
+    readonly hydrateTriggers: Readonly<TmplAstDeferredBlockTriggers>;
     private readonly definedTriggers;
     private readonly definedPrefetchTriggers;
-    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
+    private readonly definedHydrateTriggers;
+    constructor(children: TmplAstNode[], triggers: TmplAstDeferredBlockTriggers, prefetchTriggers: TmplAstDeferredBlockTriggers, hydrateTriggers: TmplAstDeferredBlockTriggers, placeholder: TmplAstDeferredBlockPlaceholder | null, loading: TmplAstDeferredBlockLoading | null, error: TmplAstDeferredBlockError | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, mainBlockSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta_2 | undefined);
     visit<Result>(visitor: TmplAstVisitor<Result>): Result;
     visitAll(visitor: TmplAstVisitor<unknown>): void;
     private visitTriggers;
@@ -5023,6 +5034,7 @@ export declare interface TmplAstDeferredBlockTriggers {
     timer?: TmplAstTimerDeferredTrigger;
     interaction?: TmplAstInteractionDeferredTrigger;
     viewport?: TmplAstViewportDeferredTrigger;
+    never?: TmplAstNeverDeferredTrigger;
 }
 
 export declare abstract class TmplAstDeferredTrigger implements TmplAstNode {
@@ -5030,7 +5042,8 @@ export declare abstract class TmplAstDeferredTrigger implements TmplAstNode {
     sourceSpan: ParseSourceSpan;
     prefetchSpan: ParseSourceSpan | null;
     whenOrOnSourceSpan: ParseSourceSpan | null;
-    constructor(nameSpan: ParseSourceSpan | null, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, whenOrOnSourceSpan: ParseSourceSpan | null);
+    hydrateSpan: ParseSourceSpan | null;
+    constructor(nameSpan: ParseSourceSpan | null, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, whenOrOnSourceSpan: ParseSourceSpan | null, hydrateSpan: ParseSourceSpan | null);
     visit<Result>(visitor: TmplAstVisitor<Result>): Result;
 }
 
@@ -5072,7 +5085,7 @@ export declare class TmplAstForLoopBlockEmpty extends TmplAstBlockNode implement
 
 export declare class TmplAstHoverDeferredTrigger extends TmplAstDeferredTrigger {
     reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null);
+    constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null, hydrateSpan: ParseSourceSpan | null);
 }
 
 export declare class TmplAstIcu implements TmplAstNode {
@@ -5115,7 +5128,7 @@ export declare class TmplAstImmediateDeferredTrigger extends TmplAstDeferredTrig
 
 export declare class TmplAstInteractionDeferredTrigger extends TmplAstDeferredTrigger {
     reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null);
+    constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null, hydrateSpan: ParseSourceSpan | null);
 }
 
 export declare class TmplAstLetDeclaration implements TmplAstNode {
@@ -5126,6 +5139,9 @@ export declare class TmplAstLetDeclaration implements TmplAstNode {
     valueSpan: ParseSourceSpan;
     constructor(name: string, value: AST, sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, valueSpan: ParseSourceSpan);
     visit<Result>(visitor: TmplAstVisitor<Result>): Result;
+}
+
+export declare class TmplAstNeverDeferredTrigger extends TmplAstDeferredTrigger {
 }
 
 export declare interface TmplAstNode {
@@ -5238,7 +5254,7 @@ export declare class TmplAstTextAttribute implements TmplAstNode {
 
 export declare class TmplAstTimerDeferredTrigger extends TmplAstDeferredTrigger {
     delay: number;
-    constructor(delay: number, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null);
+    constructor(delay: number, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null, hydrateSpan: ParseSourceSpan | null);
 }
 
 export declare class TmplAstUnknownBlock implements TmplAstNode {
@@ -5261,7 +5277,7 @@ export declare class TmplAstVariable implements TmplAstNode {
 
 export declare class TmplAstViewportDeferredTrigger extends TmplAstDeferredTrigger {
     reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null);
+    constructor(reference: string | null, nameSpan: ParseSourceSpan, sourceSpan: ParseSourceSpan, prefetchSpan: ParseSourceSpan | null, onSourceSpan: ParseSourceSpan | null, hydrateSpan: ParseSourceSpan | null);
 }
 
 export declare function tmplAstVisitAll<Result>(visitor: TmplAstVisitor<Result>, nodes: TmplAstNode[]): Result[];

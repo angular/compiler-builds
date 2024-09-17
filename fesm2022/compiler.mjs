@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.5+sha-59fe9bc
+ * @license Angular v19.0.0-next.5+sha-8ecafce
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2693,6 +2693,32 @@ class Identifiers {
         name: 'ɵɵdeferPrefetchOnViewport',
         moduleName: CORE,
     }; }
+    static { this.deferHydrateWhen = { name: 'ɵɵdeferHydrateWhen', moduleName: CORE }; }
+    static { this.deferHydrateNever = { name: 'ɵɵdeferHydrateNever', moduleName: CORE }; }
+    static { this.deferHydrateOnIdle = {
+        name: 'ɵɵdeferHydrateOnIdle',
+        moduleName: CORE,
+    }; }
+    static { this.deferHydrateOnImmediate = {
+        name: 'ɵɵdeferHydrateOnImmediate',
+        moduleName: CORE,
+    }; }
+    static { this.deferHydrateOnTimer = {
+        name: 'ɵɵdeferHydrateOnTimer',
+        moduleName: CORE,
+    }; }
+    static { this.deferHydrateOnHover = {
+        name: 'ɵɵdeferHydrateOnHover',
+        moduleName: CORE,
+    }; }
+    static { this.deferHydrateOnInteraction = {
+        name: 'ɵɵdeferHydrateOnInteraction',
+        moduleName: CORE,
+    }; }
+    static { this.deferHydrateOnViewport = {
+        name: 'ɵɵdeferHydrateOnViewport',
+        moduleName: CORE,
+    }; }
     static { this.deferEnableTimerScheduling = {
         name: 'ɵɵdeferEnableTimerScheduling',
         moduleName: CORE,
@@ -4902,49 +4928,52 @@ class Element$1 {
     }
 }
 class DeferredTrigger {
-    constructor(nameSpan, sourceSpan, prefetchSpan, whenOrOnSourceSpan) {
+    constructor(nameSpan, sourceSpan, prefetchSpan, whenOrOnSourceSpan, hydrateSpan) {
         this.nameSpan = nameSpan;
         this.sourceSpan = sourceSpan;
         this.prefetchSpan = prefetchSpan;
         this.whenOrOnSourceSpan = whenOrOnSourceSpan;
+        this.hydrateSpan = hydrateSpan;
     }
     visit(visitor) {
         return visitor.visitDeferredTrigger(this);
     }
 }
 class BoundDeferredTrigger extends DeferredTrigger {
-    constructor(value, sourceSpan, prefetchSpan, whenSourceSpan) {
+    constructor(value, sourceSpan, prefetchSpan, whenSourceSpan, hydrateSpan) {
         // BoundDeferredTrigger is for 'when' triggers. These aren't really "triggers" and don't have a
         // nameSpan. Trigger names are the built in event triggers like hover, interaction, etc.
-        super(/** nameSpan */ null, sourceSpan, prefetchSpan, whenSourceSpan);
+        super(/** nameSpan */ null, sourceSpan, prefetchSpan, whenSourceSpan, hydrateSpan);
         this.value = value;
     }
+}
+class NeverDeferredTrigger extends DeferredTrigger {
 }
 class IdleDeferredTrigger extends DeferredTrigger {
 }
 class ImmediateDeferredTrigger extends DeferredTrigger {
 }
 class HoverDeferredTrigger extends DeferredTrigger {
-    constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
-        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
+        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.reference = reference;
     }
 }
 class TimerDeferredTrigger extends DeferredTrigger {
-    constructor(delay, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
-        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    constructor(delay, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
+        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.delay = delay;
     }
 }
 class InteractionDeferredTrigger extends DeferredTrigger {
-    constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
-        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
+        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.reference = reference;
     }
 }
 class ViewportDeferredTrigger extends DeferredTrigger {
-    constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
-        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
+        super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.reference = reference;
     }
 }
@@ -4990,7 +5019,7 @@ class DeferredBlockError extends BlockNode {
     }
 }
 class DeferredBlock extends BlockNode {
-    constructor(children, triggers, prefetchTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, i18n) {
+    constructor(children, triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
         this.placeholder = placeholder;
@@ -5000,15 +5029,19 @@ class DeferredBlock extends BlockNode {
         this.i18n = i18n;
         this.triggers = triggers;
         this.prefetchTriggers = prefetchTriggers;
+        this.hydrateTriggers = hydrateTriggers;
         // We cache the keys since we know that they won't change and we
         // don't want to enumarate them every time we're traversing the AST.
         this.definedTriggers = Object.keys(triggers);
         this.definedPrefetchTriggers = Object.keys(prefetchTriggers);
+        this.definedHydrateTriggers = Object.keys(hydrateTriggers);
     }
     visit(visitor) {
         return visitor.visitDeferredBlock(this);
     }
     visitAll(visitor) {
+        // Visit the hydrate triggers first to match their insertion order.
+        this.visitTriggers(this.definedHydrateTriggers, this.hydrateTriggers, visitor);
         this.visitTriggers(this.definedTriggers, this.triggers, visitor);
         this.visitTriggers(this.definedPrefetchTriggers, this.prefetchTriggers, visitor);
         visitAll$1(visitor, this.children);
@@ -8630,6 +8663,7 @@ var DeferTriggerKind;
     DeferTriggerKind[DeferTriggerKind["Hover"] = 3] = "Hover";
     DeferTriggerKind[DeferTriggerKind["Interaction"] = 4] = "Interaction";
     DeferTriggerKind[DeferTriggerKind["Viewport"] = 5] = "Viewport";
+    DeferTriggerKind[DeferTriggerKind["Never"] = 6] = "Never";
 })(DeferTriggerKind || (DeferTriggerKind = {}));
 /**
  * Kinds of i18n contexts. They can be created because of root i18n blocks, or ICUs.
@@ -8944,12 +8978,12 @@ function createRepeaterOp(repeaterCreate, targetSlot, collection, sourceSpan) {
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
     };
 }
-function createDeferWhenOp(target, expr, prefetch, sourceSpan) {
+function createDeferWhenOp(target, expr, modifier, sourceSpan) {
     return {
         kind: OpKind.DeferWhen,
         target,
         expr,
-        prefetch,
+        modifier,
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
@@ -10508,12 +10542,12 @@ function createDeferOp(xref, main, mainSlot, ownResolverFn, resolverFn, sourceSp
         numSlotsUsed: 2,
     };
 }
-function createDeferOnOp(defer, trigger, prefetch, sourceSpan) {
+function createDeferOnOp(defer, trigger, modifier, sourceSpan) {
     return {
         kind: OpKind.DeferOn,
         defer,
         trigger,
-        prefetch,
+        modifier,
         sourceSpan,
         ...NEW_OP,
     };
@@ -11878,6 +11912,7 @@ function resolveDeferTargetNames(job) {
     function resolveTrigger(deferOwnerView, op, placeholderView) {
         switch (op.trigger.kind) {
             case DeferTriggerKind.Idle:
+            case DeferTriggerKind.Never:
             case DeferTriggerKind.Immediate:
             case DeferTriggerKind.Timer:
                 return;
@@ -11937,7 +11972,9 @@ function resolveDeferTargetNames(job) {
                     break;
                 case OpKind.DeferOn:
                     const deferOp = defers.get(op.defer);
-                    resolveTrigger(unit, op, deferOp.placeholderView);
+                    resolveTrigger(unit, op, op.modifier === "hydrate" /* ir.DeferOpModifierKind.HYDRATE */
+                        ? deferOp.mainView
+                        : deferOp.placeholderView);
                     break;
             }
         }
@@ -21671,28 +21708,68 @@ function defer(selfSlot, primarySlot, dependencyResolverFn, loadingSlot, placeho
     return call(Identifiers.defer, args, sourceSpan);
 }
 const deferTriggerToR3TriggerInstructionsMap = new Map([
-    [DeferTriggerKind.Idle, [Identifiers.deferOnIdle, Identifiers.deferPrefetchOnIdle]],
+    [
+        DeferTriggerKind.Idle,
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferOnIdle,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferPrefetchOnIdle,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateOnIdle,
+        },
+    ],
     [
         DeferTriggerKind.Immediate,
-        [Identifiers.deferOnImmediate, Identifiers.deferPrefetchOnImmediate],
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferOnImmediate,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferPrefetchOnImmediate,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateOnImmediate,
+        },
     ],
-    [DeferTriggerKind.Timer, [Identifiers.deferOnTimer, Identifiers.deferPrefetchOnTimer]],
-    [DeferTriggerKind.Hover, [Identifiers.deferOnHover, Identifiers.deferPrefetchOnHover]],
+    [
+        DeferTriggerKind.Timer,
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferOnTimer,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferPrefetchOnTimer,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateOnTimer,
+        },
+    ],
+    [
+        DeferTriggerKind.Hover,
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferOnHover,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferPrefetchOnHover,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateOnHover,
+        },
+    ],
     [
         DeferTriggerKind.Interaction,
-        [Identifiers.deferOnInteraction, Identifiers.deferPrefetchOnInteraction],
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferOnInteraction,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferPrefetchOnInteraction,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateOnInteraction,
+        },
     ],
     [
         DeferTriggerKind.Viewport,
-        [Identifiers.deferOnViewport, Identifiers.deferPrefetchOnViewport],
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferOnViewport,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferPrefetchOnViewport,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateOnViewport,
+        },
+    ],
+    [
+        DeferTriggerKind.Never,
+        {
+            ["none" /* ir.DeferOpModifierKind.NONE */]: Identifiers.deferHydrateNever,
+            ["prefetch" /* ir.DeferOpModifierKind.PREFETCH */]: Identifiers.deferHydrateNever,
+            ["hydrate" /* ir.DeferOpModifierKind.HYDRATE */]: Identifiers.deferHydrateNever,
+        },
     ],
 ]);
-function deferOn(trigger, args, prefetch, sourceSpan) {
-    const instructions = deferTriggerToR3TriggerInstructionsMap.get(trigger);
-    if (instructions === undefined) {
+function deferOn(trigger, args, modifier, sourceSpan) {
+    const instructionToCall = deferTriggerToR3TriggerInstructionsMap.get(trigger)?.[modifier];
+    if (instructionToCall === undefined) {
         throw new Error(`Unable to determine instruction for trigger ${trigger}`);
     }
-    const instructionToCall = prefetch ? instructions[1] : instructions[0];
     return call(instructionToCall, args.map((a) => literal(a)), sourceSpan);
 }
 function projectionDef(def) {
@@ -21748,8 +21825,14 @@ function repeaterCreate(slot, viewFnName, decls, vars, tag, constIndex, trackByF
 function repeater(collection, sourceSpan) {
     return call(Identifiers.repeater, [collection], sourceSpan);
 }
-function deferWhen(prefetch, expr, sourceSpan) {
-    return call(prefetch ? Identifiers.deferPrefetchWhen : Identifiers.deferWhen, [expr], sourceSpan);
+function deferWhen(modifier, expr, sourceSpan) {
+    if (modifier === "prefetch" /* ir.DeferOpModifierKind.PREFETCH */) {
+        return call(Identifiers.deferPrefetchWhen, [expr], sourceSpan);
+    }
+    else if (modifier === "hydrate" /* ir.DeferOpModifierKind.HYDRATE */) {
+        return call(Identifiers.deferHydrateWhen, [expr], sourceSpan);
+    }
+    return call(Identifiers.deferWhen, [expr], sourceSpan);
 }
 function declareLet(slot, sourceSpan) {
     return call(Identifiers.declareLet, [literal(slot)], sourceSpan);
@@ -22238,6 +22321,7 @@ function reifyCreateOperations(unit, ops) {
             case OpKind.DeferOn:
                 let args = [];
                 switch (op.trigger.kind) {
+                    case DeferTriggerKind.Never:
                     case DeferTriggerKind.Idle:
                     case DeferTriggerKind.Immediate:
                         break;
@@ -22247,18 +22331,24 @@ function reifyCreateOperations(unit, ops) {
                     case DeferTriggerKind.Interaction:
                     case DeferTriggerKind.Hover:
                     case DeferTriggerKind.Viewport:
-                        if (op.trigger.targetSlot?.slot == null || op.trigger.targetSlotViewSteps === null) {
-                            throw new Error(`Slot or view steps not set in trigger reification for trigger kind ${op.trigger.kind}`);
+                        // `hydrate` triggers don't support targets.
+                        if (op.modifier === "hydrate" /* ir.DeferOpModifierKind.HYDRATE */) {
+                            args = [];
                         }
-                        args = [op.trigger.targetSlot.slot];
-                        if (op.trigger.targetSlotViewSteps !== 0) {
-                            args.push(op.trigger.targetSlotViewSteps);
+                        else {
+                            if (op.trigger.targetSlot?.slot == null || op.trigger.targetSlotViewSteps === null) {
+                                throw new Error(`Slot or view steps not set in trigger reification for trigger kind ${op.trigger.kind}`);
+                            }
+                            args = [op.trigger.targetSlot.slot];
+                            if (op.trigger.targetSlotViewSteps !== 0) {
+                                args.push(op.trigger.targetSlotViewSteps);
+                            }
                         }
                         break;
                     default:
                         throw new Error(`AssertionError: Unsupported reification of defer trigger kind ${op.trigger.kind}`);
                 }
-                OpList.replace(op, deferOn(op.trigger.kind, args, op.prefetch, op.sourceSpan));
+                OpList.replace(op, deferOn(op.trigger.kind, args, op.modifier, op.sourceSpan));
                 break;
             case OpKind.ProjectionDef:
                 OpList.replace(op, projectionDef(op.def));
@@ -22416,7 +22506,7 @@ function reifyUpdateOperations(_unit, ops) {
                 OpList.replace(op, repeater(op.collection, op.sourceSpan));
                 break;
             case OpKind.DeferWhen:
-                OpList.replace(op, deferWhen(op.prefetch, op.expr, op.sourceSpan));
+                OpList.replace(op, deferWhen(op.modifier, op.expr, op.sourceSpan));
                 break;
             case OpKind.StoreLet:
                 throw new Error(`AssertionError: unexpected storeLet ${op.declaredName}`);
@@ -24809,72 +24899,80 @@ function ingestDeferBlock(unit, deferBlock) {
     // Configure all defer `on` conditions.
     // TODO: refactor prefetch triggers to use a separate op type, with a shared superclass. This will
     // make it easier to refactor prefetch behavior in the future.
-    let prefetch = false;
-    let deferOnOps = [];
-    let deferWhenOps = [];
-    for (const triggers of [deferBlock.triggers, deferBlock.prefetchTriggers]) {
-        if (triggers.idle !== undefined) {
-            const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Idle }, prefetch, triggers.idle.sourceSpan);
-            deferOnOps.push(deferOnOp);
-        }
-        if (triggers.immediate !== undefined) {
-            const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Immediate }, prefetch, triggers.immediate.sourceSpan);
-            deferOnOps.push(deferOnOp);
-        }
-        if (triggers.timer !== undefined) {
-            const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Timer, delay: triggers.timer.delay }, prefetch, triggers.timer.sourceSpan);
-            deferOnOps.push(deferOnOp);
-        }
-        if (triggers.hover !== undefined) {
-            const deferOnOp = createDeferOnOp(deferXref, {
-                kind: DeferTriggerKind.Hover,
-                targetName: triggers.hover.reference,
-                targetXref: null,
-                targetSlot: null,
-                targetView: null,
-                targetSlotViewSteps: null,
-            }, prefetch, triggers.hover.sourceSpan);
-            deferOnOps.push(deferOnOp);
-        }
-        if (triggers.interaction !== undefined) {
-            const deferOnOp = createDeferOnOp(deferXref, {
-                kind: DeferTriggerKind.Interaction,
-                targetName: triggers.interaction.reference,
-                targetXref: null,
-                targetSlot: null,
-                targetView: null,
-                targetSlotViewSteps: null,
-            }, prefetch, triggers.interaction.sourceSpan);
-            deferOnOps.push(deferOnOp);
-        }
-        if (triggers.viewport !== undefined) {
-            const deferOnOp = createDeferOnOp(deferXref, {
-                kind: DeferTriggerKind.Viewport,
-                targetName: triggers.viewport.reference,
-                targetXref: null,
-                targetSlot: null,
-                targetView: null,
-                targetSlotViewSteps: null,
-            }, prefetch, triggers.viewport.sourceSpan);
-            deferOnOps.push(deferOnOp);
-        }
-        if (triggers.when !== undefined) {
-            if (triggers.when.value instanceof Interpolation$1) {
-                // TemplateDefinitionBuilder supports this case, but it's very strange to me. What would it
-                // even mean?
-                throw new Error(`Unexpected interpolation in defer block when trigger`);
-            }
-            const deferOnOp = createDeferWhenOp(deferXref, convertAst(triggers.when.value, unit.job, triggers.when.sourceSpan), prefetch, triggers.when.sourceSpan);
-            deferWhenOps.push(deferOnOp);
-        }
-        // If no (non-prefetching) defer triggers were provided, default to `idle`.
-        if (deferOnOps.length === 0 && deferWhenOps.length === 0) {
-            deferOnOps.push(createDeferOnOp(deferXref, { kind: DeferTriggerKind.Idle }, false, null));
-        }
-        prefetch = true;
+    const deferOnOps = [];
+    const deferWhenOps = [];
+    // Ingest the hydrate triggers first since they set up all the other triggers during SSR.
+    ingestDeferTriggers("hydrate" /* ir.DeferOpModifierKind.HYDRATE */, deferBlock.hydrateTriggers, deferOnOps, deferWhenOps, unit, deferXref);
+    ingestDeferTriggers("none" /* ir.DeferOpModifierKind.NONE */, deferBlock.triggers, deferOnOps, deferWhenOps, unit, deferXref);
+    ingestDeferTriggers("prefetch" /* ir.DeferOpModifierKind.PREFETCH */, deferBlock.prefetchTriggers, deferOnOps, deferWhenOps, unit, deferXref);
+    // If no (non-prefetching or hydrating) defer triggers were provided, default to `idle`.
+    const hasConcreteTrigger = deferOnOps.some((op) => op.modifier === "none" /* ir.DeferOpModifierKind.NONE */) ||
+        deferWhenOps.some((op) => op.modifier === "none" /* ir.DeferOpModifierKind.NONE */);
+    if (!hasConcreteTrigger) {
+        deferOnOps.push(createDeferOnOp(deferXref, { kind: DeferTriggerKind.Idle }, "none" /* ir.DeferOpModifierKind.NONE */, null));
     }
     unit.create.push(deferOnOps);
     unit.update.push(deferWhenOps);
+}
+function ingestDeferTriggers(modifier, triggers, onOps, whenOps, unit, deferXref) {
+    if (triggers.idle !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Idle }, modifier, triggers.idle.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.immediate !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Immediate }, modifier, triggers.immediate.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.timer !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Timer, delay: triggers.timer.delay }, modifier, triggers.timer.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.hover !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, {
+            kind: DeferTriggerKind.Hover,
+            targetName: triggers.hover.reference,
+            targetXref: null,
+            targetSlot: null,
+            targetView: null,
+            targetSlotViewSteps: null,
+        }, modifier, triggers.hover.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.interaction !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, {
+            kind: DeferTriggerKind.Interaction,
+            targetName: triggers.interaction.reference,
+            targetXref: null,
+            targetSlot: null,
+            targetView: null,
+            targetSlotViewSteps: null,
+        }, modifier, triggers.interaction.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.viewport !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, {
+            kind: DeferTriggerKind.Viewport,
+            targetName: triggers.viewport.reference,
+            targetXref: null,
+            targetSlot: null,
+            targetView: null,
+            targetSlotViewSteps: null,
+        }, modifier, triggers.viewport.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.never !== undefined) {
+        const deferOnOp = createDeferOnOp(deferXref, { kind: DeferTriggerKind.Never }, modifier, triggers.never.sourceSpan);
+        onOps.push(deferOnOp);
+    }
+    if (triggers.when !== undefined) {
+        if (triggers.when.value instanceof Interpolation$1) {
+            // TemplateDefinitionBuilder supports this case, but it's very strange to me. What would it
+            // even mean?
+            throw new Error(`Unexpected interpolation in defer block when trigger`);
+        }
+        const deferOnOp = createDeferWhenOp(deferXref, convertAst(triggers.when.value, unit.job, triggers.when.sourceSpan), modifier, triggers.when.sourceSpan);
+        whenOps.push(deferOnOp);
+    }
 }
 function ingestIcu(unit, icu) {
     if (icu.i18n instanceof Message && isSingleI18nIcu(icu.i18n)) {
@@ -26631,12 +26729,29 @@ var OnTriggerType;
     OnTriggerType["IMMEDIATE"] = "immediate";
     OnTriggerType["HOVER"] = "hover";
     OnTriggerType["VIEWPORT"] = "viewport";
+    OnTriggerType["NEVER"] = "never";
 })(OnTriggerType || (OnTriggerType = {}));
+/** Parses a `when` deferred trigger. */
+function parseNeverTrigger({ expression, sourceSpan }, triggers, errors) {
+    const neverIndex = expression.indexOf('never');
+    const neverSourceSpan = new ParseSourceSpan(sourceSpan.start.moveBy(neverIndex), sourceSpan.start.moveBy(neverIndex + 'never'.length));
+    const prefetchSpan = getPrefetchSpan(expression, sourceSpan);
+    const hydrateSpan = getHydrateSpan(expression, sourceSpan);
+    // This is here just to be safe, we shouldn't enter this function
+    // in the first place if a block doesn't have the "on" keyword.
+    if (neverIndex === -1) {
+        errors.push(new ParseError(sourceSpan, `Could not find "never" keyword in expression`));
+    }
+    else {
+        trackTrigger('never', triggers, errors, new NeverDeferredTrigger(neverSourceSpan, sourceSpan, prefetchSpan, null, hydrateSpan));
+    }
+}
 /** Parses a `when` deferred trigger. */
 function parseWhenTrigger({ expression, sourceSpan }, bindingParser, triggers, errors) {
     const whenIndex = expression.indexOf('when');
     const whenSourceSpan = new ParseSourceSpan(sourceSpan.start.moveBy(whenIndex), sourceSpan.start.moveBy(whenIndex + 'when'.length));
     const prefetchSpan = getPrefetchSpan(expression, sourceSpan);
+    const hydrateSpan = getHydrateSpan(expression, sourceSpan);
     // This is here just to be safe, we shouldn't enter this function
     // in the first place if a block doesn't have the "when" keyword.
     if (whenIndex === -1) {
@@ -26645,7 +26760,7 @@ function parseWhenTrigger({ expression, sourceSpan }, bindingParser, triggers, e
     else {
         const start = getTriggerParametersStart(expression, whenIndex + 1);
         const parsed = bindingParser.parseBinding(expression.slice(start), false, sourceSpan, sourceSpan.start.offset + start);
-        trackTrigger('when', triggers, errors, new BoundDeferredTrigger(parsed, sourceSpan, prefetchSpan, whenSourceSpan));
+        trackTrigger('when', triggers, errors, new BoundDeferredTrigger(parsed, sourceSpan, prefetchSpan, whenSourceSpan, hydrateSpan));
     }
 }
 /** Parses an `on` trigger */
@@ -26653,6 +26768,7 @@ function parseOnTrigger({ expression, sourceSpan }, triggers, errors, placeholde
     const onIndex = expression.indexOf('on');
     const onSourceSpan = new ParseSourceSpan(sourceSpan.start.moveBy(onIndex), sourceSpan.start.moveBy(onIndex + 'on'.length));
     const prefetchSpan = getPrefetchSpan(expression, sourceSpan);
+    const hydrateSpan = getHydrateSpan(expression, sourceSpan);
     // This is here just to be safe, we shouldn't enter this function
     // in the first place if a block doesn't have the "on" keyword.
     if (onIndex === -1) {
@@ -26660,7 +26776,9 @@ function parseOnTrigger({ expression, sourceSpan }, triggers, errors, placeholde
     }
     else {
         const start = getTriggerParametersStart(expression, onIndex + 1);
-        const parser = new OnTriggerParser(expression, start, sourceSpan, triggers, errors, placeholder, prefetchSpan, onSourceSpan);
+        const parser = new OnTriggerParser(expression, start, sourceSpan, triggers, errors, expression.startsWith('hydrate')
+            ? validateHydrateReferenceBasedTrigger
+            : validatePlainReferenceBasedTrigger, placeholder, prefetchSpan, onSourceSpan, hydrateSpan);
         parser.parse();
     }
 }
@@ -26670,16 +26788,24 @@ function getPrefetchSpan(expression, sourceSpan) {
     }
     return new ParseSourceSpan(sourceSpan.start, sourceSpan.start.moveBy('prefetch'.length));
 }
+function getHydrateSpan(expression, sourceSpan) {
+    if (!expression.startsWith('hydrate')) {
+        return null;
+    }
+    return new ParseSourceSpan(sourceSpan.start, sourceSpan.start.moveBy('hydrate'.length));
+}
 class OnTriggerParser {
-    constructor(expression, start, span, triggers, errors, placeholder, prefetchSpan, onSourceSpan) {
+    constructor(expression, start, span, triggers, errors, validator, placeholder, prefetchSpan, onSourceSpan, hydrateSpan) {
         this.expression = expression;
         this.start = start;
         this.span = span;
         this.triggers = triggers;
         this.errors = errors;
+        this.validator = validator;
         this.placeholder = placeholder;
         this.prefetchSpan = prefetchSpan;
         this.onSourceSpan = onSourceSpan;
+        this.hydrateSpan = hydrateSpan;
         this.index = 0;
         this.tokens = new Lexer().tokenize(expression.slice(start));
     }
@@ -26734,26 +26860,27 @@ class OnTriggerParser {
         const isFirstTrigger = identifier.index === 0;
         const onSourceSpan = isFirstTrigger ? this.onSourceSpan : null;
         const prefetchSourceSpan = isFirstTrigger ? this.prefetchSpan : null;
+        const hydrateSourceSpan = isFirstTrigger ? this.hydrateSpan : null;
         const sourceSpan = new ParseSourceSpan(isFirstTrigger ? this.span.start : triggerNameStartSpan, endSpan);
         try {
             switch (identifier.toString()) {
                 case OnTriggerType.IDLE:
-                    this.trackTrigger('idle', createIdleTrigger(parameters, nameSpan, sourceSpan, prefetchSourceSpan, onSourceSpan));
+                    this.trackTrigger('idle', createIdleTrigger(parameters, nameSpan, sourceSpan, prefetchSourceSpan, onSourceSpan, hydrateSourceSpan));
                     break;
                 case OnTriggerType.TIMER:
-                    this.trackTrigger('timer', createTimerTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan));
+                    this.trackTrigger('timer', createTimerTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan));
                     break;
                 case OnTriggerType.INTERACTION:
-                    this.trackTrigger('interaction', createInteractionTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.placeholder));
+                    this.trackTrigger('interaction', createInteractionTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.placeholder, this.validator));
                     break;
                 case OnTriggerType.IMMEDIATE:
-                    this.trackTrigger('immediate', createImmediateTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan));
+                    this.trackTrigger('immediate', createImmediateTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan));
                     break;
                 case OnTriggerType.HOVER:
-                    this.trackTrigger('hover', createHoverTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.placeholder));
+                    this.trackTrigger('hover', createHoverTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.placeholder, this.validator));
                     break;
                 case OnTriggerType.VIEWPORT:
-                    this.trackTrigger('viewport', createViewportTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.placeholder));
+                    this.trackTrigger('viewport', createViewportTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.placeholder, this.validator));
                     break;
                 default:
                     throw new Error(`Unrecognized trigger type "${identifier}"`);
@@ -26843,13 +26970,13 @@ function trackTrigger(name, allTriggers, errors, trigger) {
         allTriggers[name] = trigger;
     }
 }
-function createIdleTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
+function createIdleTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
     if (parameters.length > 0) {
         throw new Error(`"${OnTriggerType.IDLE}" trigger cannot have parameters`);
     }
-    return new IdleDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    return new IdleDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createTimerTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
+function createTimerTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
     if (parameters.length !== 1) {
         throw new Error(`"${OnTriggerType.TIMER}" trigger must have exactly one parameter`);
     }
@@ -26857,27 +26984,33 @@ function createTimerTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSo
     if (delay === null) {
         throw new Error(`Could not parse time value of trigger "${OnTriggerType.TIMER}"`);
     }
-    return new TimerDeferredTrigger(delay, nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    return new TimerDeferredTrigger(delay, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createImmediateTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan) {
+function createImmediateTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
     if (parameters.length > 0) {
         throw new Error(`"${OnTriggerType.IMMEDIATE}" trigger cannot have parameters`);
     }
-    return new ImmediateDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+    return new ImmediateDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createHoverTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, placeholder) {
-    validateReferenceBasedTrigger(OnTriggerType.HOVER, parameters, placeholder);
-    return new HoverDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+function createHoverTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, placeholder, validator) {
+    validator(OnTriggerType.HOVER, parameters, placeholder);
+    return new HoverDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createInteractionTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, placeholder) {
-    validateReferenceBasedTrigger(OnTriggerType.INTERACTION, parameters, placeholder);
-    return new InteractionDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+function createInteractionTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, placeholder, validator) {
+    validator(OnTriggerType.INTERACTION, parameters, placeholder);
+    return new InteractionDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createViewportTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, placeholder) {
-    validateReferenceBasedTrigger(OnTriggerType.VIEWPORT, parameters, placeholder);
-    return new ViewportDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan);
+function createViewportTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, placeholder, validator) {
+    validator(OnTriggerType.VIEWPORT, parameters, placeholder);
+    return new ViewportDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function validateReferenceBasedTrigger(type, parameters, placeholder) {
+/**
+ * Checks whether the structure of a non-hydrate reference-based trigger is valid.
+ * @param type Type of the trigger being validated.
+ * @param parameters Parameters of the trigger.
+ * @param placeholder Placeholder of the defer block.
+ */
+function validatePlainReferenceBasedTrigger(type, parameters, placeholder) {
     if (parameters.length > 1) {
         throw new Error(`"${type}" trigger can only have zero or one parameters`);
     }
@@ -26889,6 +27022,16 @@ function validateReferenceBasedTrigger(type, parameters, placeholder) {
             throw new Error(`"${type}" trigger with no parameters can only be placed on an @defer that has a ` +
                 `@placeholder block with exactly one root element node`);
         }
+    }
+}
+/**
+ * Checks whether the structure of a hydrate trigger is valid.
+ * @param type Type of the trigger being validated.
+ * @param parameters Parameters of the trigger.
+ */
+function validateHydrateReferenceBasedTrigger(type, parameters) {
+    if (parameters.length > 0) {
+        throw new Error(`Hydration trigger "${type}" cannot have parameters`);
     }
 }
 /** Gets the index within an expression at which the trigger parameters start. */
@@ -26921,6 +27064,12 @@ function parseDeferredTime(value) {
 const PREFETCH_WHEN_PATTERN = /^prefetch\s+when\s/;
 /** Pattern to identify a `prefetch on` trigger. */
 const PREFETCH_ON_PATTERN = /^prefetch\s+on\s/;
+/** Pattern to identify a `hydrate when` trigger. */
+const HYDRATE_WHEN_PATTERN = /^hydrate\s+when\s/;
+/** Pattern to identify a `hydrate on` trigger. */
+const HYDRATE_ON_PATTERN = /^hydrate\s+on\s/;
+/** Pattern to identify a `hydrate never` trigger. */
+const HYDRATE_NEVER_PATTERN = /^hydrate\s+never\s*/;
 /** Pattern to identify a `minimum` parameter in a block. */
 const MINIMUM_PARAMETER_PATTERN = /^minimum\s/;
 /** Pattern to identify a `after` parameter in a block. */
@@ -26940,7 +27089,7 @@ function isConnectedDeferLoopBlock(name) {
 function createDeferredBlock(ast, connectedBlocks, visitor, bindingParser) {
     const errors = [];
     const { placeholder, loading, error } = parseConnectedBlocks(connectedBlocks, errors, visitor);
-    const { triggers, prefetchTriggers } = parsePrimaryTriggers(ast.parameters, bindingParser, errors, placeholder);
+    const { triggers, prefetchTriggers, hydrateTriggers } = parsePrimaryTriggers(ast, bindingParser, errors, placeholder);
     // The `defer` block has a main span encompassing all of the connected branches as well.
     let lastEndSourceSpan = ast.endSourceSpan;
     let endOfLastSourceSpan = ast.sourceSpan.end;
@@ -26950,7 +27099,7 @@ function createDeferredBlock(ast, connectedBlocks, visitor, bindingParser) {
         endOfLastSourceSpan = lastConnectedBlock.sourceSpan.end;
     }
     const sourceSpanWithConnectedBlocks = new ParseSourceSpan(ast.sourceSpan.start, endOfLastSourceSpan);
-    const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, placeholder, loading, error, ast.nameSpan, sourceSpanWithConnectedBlocks, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan, ast.i18n);
+    const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, ast.nameSpan, sourceSpanWithConnectedBlocks, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan, ast.i18n);
     return { node, errors };
 }
 function parseConnectedBlocks(connectedBlocks, errors, visitor) {
@@ -27051,10 +27200,11 @@ function parseErrorBlock(ast, visitor) {
     }
     return new DeferredBlockError(visitAll(visitor, ast.children, ast.children), ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.i18n);
 }
-function parsePrimaryTriggers(params, bindingParser, errors, placeholder) {
+function parsePrimaryTriggers(ast, bindingParser, errors, placeholder) {
     const triggers = {};
     const prefetchTriggers = {};
-    for (const param of params) {
+    const hydrateTriggers = {};
+    for (const param of ast.parameters) {
         // The lexer ignores the leading spaces so we can assume
         // that the expression starts with a keyword.
         if (WHEN_PARAMETER_PATTERN.test(param.expression)) {
@@ -27069,11 +27219,23 @@ function parsePrimaryTriggers(params, bindingParser, errors, placeholder) {
         else if (PREFETCH_ON_PATTERN.test(param.expression)) {
             parseOnTrigger(param, prefetchTriggers, errors, placeholder);
         }
+        else if (HYDRATE_WHEN_PATTERN.test(param.expression)) {
+            parseWhenTrigger(param, bindingParser, hydrateTriggers, errors);
+        }
+        else if (HYDRATE_ON_PATTERN.test(param.expression)) {
+            parseOnTrigger(param, hydrateTriggers, errors, placeholder);
+        }
+        else if (HYDRATE_NEVER_PATTERN.test(param.expression)) {
+            parseNeverTrigger(param, hydrateTriggers, errors);
+        }
         else {
             errors.push(new ParseError(param.sourceSpan, 'Unrecognized trigger'));
         }
     }
-    return { triggers, prefetchTriggers };
+    if (hydrateTriggers.never && Object.keys(hydrateTriggers).length > 1) {
+        errors.push(new ParseError(ast.startSourceSpan, 'Cannot specify additional `hydrate` triggers if `hydrate never` is present'));
+    }
+    return { triggers, prefetchTriggers, hydrateTriggers };
 }
 
 const BIND_NAME_REGEXP = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
@@ -28867,6 +29029,8 @@ class TemplateBinder extends RecursiveAstVisitor {
         this.ingestScopedNode(deferred);
         deferred.triggers.when?.value.visit(this);
         deferred.prefetchTriggers.when?.value.visit(this);
+        deferred.hydrateTriggers.when?.value.visit(this);
+        deferred.hydrateTriggers.never?.visit(this);
         deferred.placeholder && this.visitNode(deferred.placeholder);
         deferred.loading && this.visitNode(deferred.loading);
         deferred.error && this.visitNode(deferred.error);
@@ -29812,7 +29976,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.0.0-next.5+sha-59fe9bc');
+const VERSION = new Version('19.0.0-next.5+sha-8ecafce');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -31463,7 +31627,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31481,7 +31645,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31576,7 +31740,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -31998,7 +32162,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32033,7 +32197,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32084,7 +32248,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32117,7 +32281,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32168,7 +32332,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.5+sha-59fe9bc'));
+    definitionMap.set('version', literal('19.0.0-next.5+sha-8ecafce'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -32201,5 +32365,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isIdentifier, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
