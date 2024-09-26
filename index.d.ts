@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.7+sha-1549afe
+ * @license Angular v19.0.0-next.7+sha-0aae371
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3892,6 +3892,7 @@ export declare class R3Identifiers {
     static templateRefExtractor: outputAst.ExternalReference;
     static forwardRef: outputAst.ExternalReference;
     static resolveForwardRef: outputAst.ExternalReference;
+    static replaceMetadata: outputAst.ExternalReference;
     static ɵɵdefineInjectable: outputAst.ExternalReference;
     static declareInjectable: outputAst.ExternalReference;
     static InjectableDeclaration: outputAst.ExternalReference;
