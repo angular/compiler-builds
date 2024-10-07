@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.8+sha-a36744e
+ * @license Angular v19.0.0-next.8+sha-6976349
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2899,6 +2899,10 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      */
     styles: string[];
     /**
+     * A collection of style paths for external stylesheets that will be applied and scoped to the component.
+     */
+    externalStyles?: string[];
+    /**
      * An encapsulation policy for the component's styling.
      * Possible values:
      * - `ViewEncapsulation.Emulated`: Apply modified component styles in order to emulate
@@ -3950,6 +3954,7 @@ export declare class R3Identifiers {
     static ProvidersFeature: outputAst.ExternalReference;
     static HostDirectivesFeature: outputAst.ExternalReference;
     static InputTransformsFeatureFeature: outputAst.ExternalReference;
+    static ExternalStylesFeature: outputAst.ExternalReference;
     static listener: outputAst.ExternalReference;
     static getInheritedFactory: outputAst.ExternalReference;
     static sanitizeHtml: outputAst.ExternalReference;
