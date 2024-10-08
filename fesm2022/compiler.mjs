@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.8+sha-bc83fc1
+ * @license Angular v19.0.0-next.8+sha-09f589f
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -25109,29 +25109,9 @@ function convertAst(ast, job, baseSourceSpan) {
         return convertAst(ast.ast, job, baseSourceSpan);
     }
     else if (ast instanceof PropertyRead) {
-        const isThisReceiver = ast.receiver instanceof ThisReceiver;
         // Whether this is an implicit receiver, *excluding* explicit reads of `this`.
         const isImplicitReceiver = ast.receiver instanceof ImplicitReceiver && !(ast.receiver instanceof ThisReceiver);
-        // Whether the  name of the read is a node that should be never retain its explicit this
-        // receiver.
-        const isSpecialNode = ast.name === '$any' || ast.name === '$event';
-        // TODO: The most sensible condition here would be simply `isImplicitReceiver`, to convert only
-        // actual implicit `this` reads, and not explicit ones. However, TemplateDefinitionBuilder (and
-        // the Typecheck block!) both have the same bug, in which they also consider explicit `this`
-        // reads to be implicit. This causes problems when the explicit `this` read is inside a
-        // template with a context that also provides the variable name being read:
-        // ```
-        // <ng-template let-a>{{this.a}}</ng-template>
-        // ```
-        // The whole point of the explicit `this` was to access the class property, but TDB and the
-        // current TCB treat the read as implicit, and give you the context property instead!
-        //
-        // For now, we emulate this old behavior by aggressively converting explicit reads to to
-        // implicit reads, except for the special cases that TDB and the current TCB protect. However,
-        // it would be an improvement to fix this.
-        //
-        // See also the corresponding comment for the TCB, in `type_check_block.ts`.
-        if (isImplicitReceiver || (isThisReceiver && !isSpecialNode)) {
+        if (isImplicitReceiver) {
             return new LexicalReadExpr(ast.name);
         }
         else {
@@ -29130,18 +29110,12 @@ class TemplateBinder extends RecursiveAstVisitor {
     maybeMap(ast, name) {
         // If the receiver of the expression isn't the `ImplicitReceiver`, this isn't the root of an
         // `AST` expression that maps to a `Variable` or `Reference`.
-        if (!(ast.receiver instanceof ImplicitReceiver)) {
+        if (!(ast.receiver instanceof ImplicitReceiver) || ast.receiver instanceof ThisReceiver) {
             return;
         }
         // Check whether the name exists in the current scope. If so, map it. Otherwise, the name is
         // probably a property on the top-level component context.
         const target = this.scope.lookup(name);
-        // It's not allowed to read template entities via `this`, however it previously worked by
-        // accident (see #55115). Since `@let` declarations are new, we can fix it from the beginning,
-        // whereas pre-existing template entities will be fixed in #55115.
-        if (target instanceof LetDeclaration$1 && ast.receiver instanceof ThisReceiver) {
-            return;
-        }
         if (target !== null) {
             this.bindings.set(ast, target);
         }
@@ -29998,7 +29972,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.0.0-next.8+sha-bc83fc1');
+const VERSION = new Version('19.0.0-next.8+sha-09f589f');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -31649,7 +31623,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31667,7 +31641,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31762,7 +31736,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32184,7 +32158,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32219,7 +32193,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32270,7 +32244,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32303,7 +32277,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32354,7 +32328,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.8+sha-bc83fc1'));
+    definitionMap.set('version', literal('19.0.0-next.8+sha-09f589f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
