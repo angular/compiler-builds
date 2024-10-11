@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.9+sha-08b4a8a
+ * @license Angular v19.0.0-next.9+sha-fc6c76a
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -665,6 +665,9 @@ declare class Comment_3 implements TmplAstNode {
  * (e.g., the file name in which the class is defined)
  */
 export declare function compileClassDebugInfo(debugInfo: R3ClassDebugInfo): outputAst.Expression;
+
+/** Compiles the HMR initializer expression. */
+export declare function compileClassHmrInitializer(meta: R3HmrInitializerMetadata): outputAst.Expression;
 
 export declare function compileClassMetadata(metadata: R3ClassMetadata): outputAst.InvokeFunctionExpr;
 
@@ -3696,6 +3699,21 @@ declare enum R3FactoryDelegateType {
 }
 
 export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
+
+/** Metadata necessary to compile the HMR initializer call. */
+export declare interface R3HmrInitializerMetadata {
+    /** Component class for which HMR is being enabled. */
+    type: outputAst.Expression;
+    /** Name of the component class. */
+    className: string;
+    /** File path of the component class. */
+    filePath: string;
+    /**
+     * Timestamp when the compilation took place.
+     * Necessary to invalidate the browser cache.
+     */
+    timestamp: string;
+}
 
 /**
  * Information needed to compile a host directive for the render3 runtime.
