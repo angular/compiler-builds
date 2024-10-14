@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.9+sha-c42759b
+ * @license Angular v19.0.0-next.9+sha-bbca205
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1455,12 +1455,13 @@ class ConditionalExpr extends Expression {
     }
 }
 class DynamicImportExpr extends Expression {
-    constructor(url, sourceSpan) {
+    constructor(url, sourceSpan, urlComment) {
         super(null, sourceSpan);
         this.url = url;
+        this.urlComment = urlComment;
     }
     isEquivalent(e) {
-        return e instanceof DynamicImportExpr && this.url === e.url;
+        return e instanceof DynamicImportExpr && this.url === e.url && this.urlComment === e.urlComment;
     }
     isConstant() {
         return false;
@@ -1469,7 +1470,7 @@ class DynamicImportExpr extends Expression {
         return visitor.visitDynamicImportExpr(this, context);
     }
     clone() {
-        return new DynamicImportExpr(this.url, this.sourceSpan);
+        return new DynamicImportExpr(typeof this.url === 'string' ? this.url : this.url.clone(), this.sourceSpan, this.urlComment);
     }
 }
 class NotExpr extends Expression {
@@ -30041,7 +30042,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.0.0-next.9+sha-c42759b');
+const VERSION = new Version('19.0.0-next.9+sha-bbca205');
 
 class CompilerConfig {
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
@@ -31730,8 +31731,7 @@ function compileClassDebugInfo(debugInfo) {
 /** Compiles the HMR initializer expression. */
 function compileClassHmrInitializer(meta) {
     const id = encodeURIComponent(`${meta.filePath}@${meta.className}`);
-    const timestamp = encodeURIComponent(meta.timestamp);
-    const url = `/@ng/component?c=${id}&t=${timestamp}`;
+    const urlPartial = `/@ng/component?c=${id}&t=`;
     const moduleName = 'm';
     const dataName = 'd';
     // ɵɵreplaceMetadata(Comp, m.default);
@@ -31739,8 +31739,16 @@ function compileClassHmrInitializer(meta) {
         .callFn([meta.type, variable(moduleName).prop('default')]);
     // (m) => ɵɵreplaceMetadata(...)
     const replaceCallback = arrowFn([new FnParam(moduleName)], replaceMetadata);
-    // import(url).then(() => replaceMetadata(...));
-    const dynamicImport = new DynamicImportExpr(url).prop('then').callFn([replaceCallback]);
+    // '<urlPartial>' + encodeURIComponent(d.timestamp)
+    const urlValue = literal(urlPartial)
+        .plus(variable('encodeURIComponent').callFn([variable(dataName).prop('timestamp')]));
+    // import(/* @vite-ignore */ url).then(() => replaceMetadata(...));
+    // The vite-ignore special comment is required to avoid Vite from generating a superfluous
+    // warning for each usage within the development code. If Vite provides a method to
+    // programmatically avoid this warning in the future, this added comment can be removed here.
+    const dynamicImport = new DynamicImportExpr(urlValue, null, '@vite-ignore')
+        .prop('then')
+        .callFn([replaceCallback]);
     // (d) => { if (d.id === <id>) { replaceMetadata(...) } }
     const listenerCallback = arrowFn([new FnParam(dataName)], [ifStmt(variable(dataName).prop('id').equals(literal(id)), [dynamicImport.toStmt()])]);
     // import.meta.hot
@@ -31769,7 +31777,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31787,7 +31795,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -31882,7 +31890,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
@@ -32304,7 +32312,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32339,7 +32347,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32390,7 +32398,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32423,7 +32431,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32474,7 +32482,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.9+sha-c42759b'));
+    definitionMap.set('version', literal('19.0.0-next.9+sha-bbca205'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

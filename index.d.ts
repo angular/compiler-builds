@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.9+sha-c42759b
+ * @license Angular v19.0.0-next.9+sha-bbca205
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1160,8 +1160,9 @@ export declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
 export declare const DYNAMIC_TYPE: BuiltinType;
 
 export declare class DynamicImportExpr extends Expression {
-    url: string;
-    constructor(url: string, sourceSpan?: ParseSourceSpan | null);
+    url: string | Expression;
+    urlComment?: string | undefined;
+    constructor(url: string | Expression, sourceSpan?: ParseSourceSpan | null, urlComment?: string | undefined);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -3708,11 +3709,6 @@ export declare interface R3HmrInitializerMetadata {
     className: string;
     /** File path of the component class. */
     filePath: string;
-    /**
-     * Timestamp when the compilation took place.
-     * Necessary to invalidate the browser cache.
-     */
-    timestamp: string;
 }
 
 /**
