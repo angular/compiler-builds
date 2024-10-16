@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.9+sha-7f0b49d
+ * @license Angular v19.0.0-next.9+sha-4288ea8
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5671,8 +5671,6 @@ export declare class Xliff2 extends Serializer {
 }
 
 export declare class Xmb extends Serializer {
-    private readonly preservePlaceholders;
-    constructor(preservePlaceholders?: boolean);
     write(messages: i18n.Message[], locale: string | null): string;
     load(content: string, url: string): {
         locale: string;
