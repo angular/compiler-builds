@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.9+sha-4288ea8
+ * @license Angular v19.0.0-next.9+sha-231e6ff
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -666,9 +666,6 @@ declare class Comment_3 implements TmplAstNode {
  */
 export declare function compileClassDebugInfo(debugInfo: R3ClassDebugInfo): outputAst.Expression;
 
-/** Compiles the HMR initializer expression. */
-export declare function compileClassHmrInitializer(meta: R3HmrInitializerMetadata): outputAst.Expression;
-
 export declare function compileClassMetadata(metadata: R3ClassMetadata): outputAst.InvokeFunctionExpr;
 
 export declare type CompileClassMetadataFn = (metadata: R3ClassMetadata) => outputAst.Expression;
@@ -741,6 +738,25 @@ export declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, 
  * Construct a factory function expression for the given `R3FactoryMetadata`.
  */
 export declare function compileFactoryFunction(meta: R3FactoryMetadata): R3CompiledExpression;
+
+/**
+ * Compiles the expression that initializes HMR for a class.
+ * @param meta HMR metadata extracted from the class.
+ */
+export declare function compileHmrInitializer(meta: R3HmrMetadata): outputAst.Expression;
+
+/**
+ * Compiles the HMR update callback for a class.
+ * @param definitions Compiled definitions for the class (e.g. `defineComponent` calls).
+ * @param constantStatements Supporting constants statements that were generated alongside
+ *  the definition.
+ * @param meta HMR metadata extracted from the class.
+ */
+export declare function compileHmrUpdateCallback(definitions: {
+    name: string;
+    initializer: outputAst.Expression | null;
+    statements: outputAst.Statement[];
+}[], constantStatements: outputAst.Statement[], meta: R3HmrMetadata): outputAst.DeclareFunctionStmt;
 
 export declare interface CompileIdentifierMetadata {
     reference: any;
@@ -3701,14 +3717,22 @@ declare enum R3FactoryDelegateType {
 
 export declare type R3FactoryMetadata = R3ConstructorFactoryMetadata | R3DelegatedFnOrClassMetadata | R3ExpressionFactoryMetadata;
 
-/** Metadata necessary to compile the HMR initializer call. */
-export declare interface R3HmrInitializerMetadata {
+/** Metadata necessary to compile HMR-related code call. */
+export declare interface R3HmrMetadata {
     /** Component class for which HMR is being enabled. */
     type: outputAst.Expression;
     /** Name of the component class. */
     className: string;
     /** File path of the component class. */
     filePath: string;
+    /** Name under which `@angular/core` should be referred to in the compiled HMR code. */
+    coreName: string;
+    /**
+     * HMR update functions cannot contain imports so any locals the generated code depends on
+     * (e.g. references to imports within the same file or imported symbols) have to be passed in
+     * as function parameters. This array contains the names of those local symbols.
+     */
+    locals: string[];
 }
 
 /**
