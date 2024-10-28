@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.0-next.11+sha-395cb34
+ * @license Angular v19.0.0-next.11+sha-f815d7b
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -20,23 +20,21 @@ const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + // 1: ":not("
  * of selecting subsets out of them.
  */
 class CssSelector {
-    constructor() {
-        this.element = null;
-        this.classNames = [];
-        /**
-         * The selectors are encoded in pairs where:
-         * - even locations are attribute names
-         * - odd locations are attribute values.
-         *
-         * Example:
-         * Selector: `[key1=value1][key2]` would parse to:
-         * ```
-         * ['key1', 'value1', 'key2', '']
-         * ```
-         */
-        this.attrs = [];
-        this.notSelectors = [];
-    }
+    element = null;
+    classNames = [];
+    /**
+     * The selectors are encoded in pairs where:
+     * - even locations are attribute names
+     * - odd locations are attribute values.
+     *
+     * Example:
+     * Selector: `[key1=value1][key2]` would parse to:
+     * ```
+     * ['key1', 'value1', 'key2', '']
+     * ```
+     */
+    attrs = [];
+    notSelectors = [];
     static parse(selector) {
         const results = [];
         const _addResult = (res, cssSel) => {
@@ -184,20 +182,18 @@ class CssSelector {
  * are contained in a given CssSelector.
  */
 class SelectorMatcher {
-    constructor() {
-        this._elementMap = new Map();
-        this._elementPartialMap = new Map();
-        this._classMap = new Map();
-        this._classPartialMap = new Map();
-        this._attrValueMap = new Map();
-        this._attrValuePartialMap = new Map();
-        this._listContexts = [];
-    }
     static createNotMatcher(notSelectors) {
         const notMatcher = new SelectorMatcher();
         notMatcher.addSelectables(notSelectors, null);
         return notMatcher;
     }
+    _elementMap = new Map();
+    _elementPartialMap = new Map();
+    _classMap = new Map();
+    _classPartialMap = new Map();
+    _attrValueMap = new Map();
+    _attrValuePartialMap = new Map();
+    _listContexts = [];
     addSelectables(cssSelectors, callbackCtxt) {
         let listContext = null;
         if (cssSelectors.length > 1) {
@@ -368,13 +364,18 @@ class SelectorMatcher {
     }
 }
 class SelectorListContext {
+    selectors;
+    alreadyMatched = false;
     constructor(selectors) {
         this.selectors = selectors;
-        this.alreadyMatched = false;
     }
 }
 // Store context to pass back selector and context when a selector is matched
 class SelectorContext {
+    selector;
+    cbContext;
+    listContext;
+    notSelectors;
     constructor(selector, cbContext, listContext) {
         this.selector = selector;
         this.cbContext = cbContext;
@@ -817,6 +818,7 @@ var TypeModifier;
     TypeModifier[TypeModifier["Const"] = 1] = "Const";
 })(TypeModifier || (TypeModifier = {}));
 class Type {
+    modifiers;
     constructor(modifiers = TypeModifier.None) {
         this.modifiers = modifiers;
     }
@@ -836,6 +838,7 @@ var BuiltinTypeName;
     BuiltinTypeName[BuiltinTypeName["None"] = 7] = "None";
 })(BuiltinTypeName || (BuiltinTypeName = {}));
 class BuiltinType extends Type {
+    name;
     constructor(name, modifiers) {
         super(modifiers);
         this.name = name;
@@ -845,6 +848,8 @@ class BuiltinType extends Type {
     }
 }
 class ExpressionType extends Type {
+    value;
+    typeParams;
     constructor(value, modifiers, typeParams = null) {
         super(modifiers);
         this.value = value;
@@ -855,6 +860,7 @@ class ExpressionType extends Type {
     }
 }
 class ArrayType extends Type {
+    of;
     constructor(of, modifiers) {
         super(modifiers);
         this.of = of;
@@ -864,6 +870,7 @@ class ArrayType extends Type {
     }
 }
 class MapType extends Type {
+    valueType;
     constructor(valueType, modifiers) {
         super(modifiers);
         this.valueType = valueType || null;
@@ -873,6 +880,7 @@ class MapType extends Type {
     }
 }
 class TransplantedType extends Type {
+    type;
     constructor(type, modifiers) {
         super(modifiers);
         this.type = type;
@@ -938,6 +946,8 @@ function areAllEquivalent(base, other) {
     return areAllEquivalentPredicate(base, other, (baseElement, otherElement) => baseElement.isEquivalent(otherElement));
 }
 class Expression {
+    type;
+    sourceSpan;
     constructor(type, sourceSpan) {
         this.type = type || null;
         this.sourceSpan = sourceSpan || null;
@@ -1021,6 +1031,7 @@ class Expression {
     }
 }
 class ReadVarExpr extends Expression {
+    name;
     constructor(name, type, sourceSpan) {
         super(type, sourceSpan);
         this.name = name;
@@ -1042,6 +1053,7 @@ class ReadVarExpr extends Expression {
     }
 }
 class TypeofExpr extends Expression {
+    expr;
     constructor(expr, type, sourceSpan) {
         super(type, sourceSpan);
         this.expr = expr;
@@ -1060,6 +1072,7 @@ class TypeofExpr extends Expression {
     }
 }
 class WrappedNodeExpr extends Expression {
+    node;
     constructor(node, type, sourceSpan) {
         super(type, sourceSpan);
         this.node = node;
@@ -1078,6 +1091,8 @@ class WrappedNodeExpr extends Expression {
     }
 }
 class WriteVarExpr extends Expression {
+    name;
+    value;
     constructor(name, value, type, sourceSpan) {
         super(type || value.type, sourceSpan);
         this.name = name;
@@ -1103,6 +1118,9 @@ class WriteVarExpr extends Expression {
     }
 }
 class WriteKeyExpr extends Expression {
+    receiver;
+    index;
+    value;
     constructor(receiver, index, value, type, sourceSpan) {
         super(type || value.type, sourceSpan);
         this.receiver = receiver;
@@ -1126,6 +1144,9 @@ class WriteKeyExpr extends Expression {
     }
 }
 class WritePropExpr extends Expression {
+    receiver;
+    name;
+    value;
     constructor(receiver, name, value, type, sourceSpan) {
         super(type || value.type, sourceSpan);
         this.receiver = receiver;
@@ -1149,6 +1170,9 @@ class WritePropExpr extends Expression {
     }
 }
 class InvokeFunctionExpr extends Expression {
+    fn;
+    args;
+    pure;
     constructor(fn, args, type, sourceSpan, pure = false) {
         super(type, sourceSpan);
         this.fn = fn;
@@ -1176,6 +1200,8 @@ class InvokeFunctionExpr extends Expression {
     }
 }
 class TaggedTemplateExpr extends Expression {
+    tag;
+    template;
     constructor(tag, template, type, sourceSpan) {
         super(type, sourceSpan);
         this.tag = tag;
@@ -1198,6 +1224,8 @@ class TaggedTemplateExpr extends Expression {
     }
 }
 class InstantiateExpr extends Expression {
+    classExpr;
+    args;
     constructor(classExpr, args, type, sourceSpan) {
         super(type, sourceSpan);
         this.classExpr = classExpr;
@@ -1219,6 +1247,7 @@ class InstantiateExpr extends Expression {
     }
 }
 class LiteralExpr extends Expression {
+    value;
     constructor(value, type, sourceSpan) {
         super(type, sourceSpan);
         this.value = value;
@@ -1237,6 +1266,8 @@ class LiteralExpr extends Expression {
     }
 }
 class TemplateLiteral {
+    elements;
+    expressions;
     constructor(elements, expressions) {
         this.elements = elements;
         this.expressions = expressions;
@@ -1246,6 +1277,9 @@ class TemplateLiteral {
     }
 }
 class TemplateLiteralElement {
+    text;
+    sourceSpan;
+    rawText;
     constructor(text, sourceSpan, rawText) {
         this.text = text;
         this.sourceSpan = sourceSpan;
@@ -1263,12 +1297,17 @@ class TemplateLiteralElement {
     }
 }
 class LiteralPiece {
+    text;
+    sourceSpan;
     constructor(text, sourceSpan) {
         this.text = text;
         this.sourceSpan = sourceSpan;
     }
 }
 class PlaceholderPiece {
+    text;
+    sourceSpan;
+    associatedMessage;
     /**
      * Create a new instance of a `PlaceholderPiece`.
      *
@@ -1288,6 +1327,10 @@ const MEANING_SEPARATOR$1 = '|';
 const ID_SEPARATOR$1 = '@@';
 const LEGACY_ID_INDICATOR = '␟';
 class LocalizedString extends Expression {
+    metaBlock;
+    messageParts;
+    placeHolderNames;
+    expressions;
     constructor(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan) {
         super(STRING_TYPE, sourceSpan);
         this.metaBlock = metaBlock;
@@ -1393,6 +1436,8 @@ function createCookedRawString(metaBlock, messagePart, range) {
     }
 }
 class ExternalExpr extends Expression {
+    value;
+    typeParams;
     constructor(value, type, typeParams = null, sourceSpan) {
         super(type, sourceSpan);
         this.value = value;
@@ -1415,6 +1460,9 @@ class ExternalExpr extends Expression {
     }
 }
 class ExternalReference {
+    moduleName;
+    name;
+    runtime;
     constructor(moduleName, name, runtime) {
         this.moduleName = moduleName;
         this.name = name;
@@ -1422,6 +1470,9 @@ class ExternalReference {
     }
 }
 class ConditionalExpr extends Expression {
+    condition;
+    falseCase;
+    trueCase;
     constructor(condition, trueCase, falseCase = null, type, sourceSpan) {
         super(type || trueCase.type, sourceSpan);
         this.condition = condition;
@@ -1445,6 +1496,8 @@ class ConditionalExpr extends Expression {
     }
 }
 class DynamicImportExpr extends Expression {
+    url;
+    urlComment;
     constructor(url, sourceSpan, urlComment) {
         super(null, sourceSpan);
         this.url = url;
@@ -1464,6 +1517,7 @@ class DynamicImportExpr extends Expression {
     }
 }
 class NotExpr extends Expression {
+    condition;
     constructor(condition, sourceSpan) {
         super(BOOL_TYPE, sourceSpan);
         this.condition = condition;
@@ -1482,6 +1536,8 @@ class NotExpr extends Expression {
     }
 }
 class FnParam {
+    name;
+    type;
     constructor(name, type = null) {
         this.name = name;
         this.type = type;
@@ -1494,6 +1550,9 @@ class FnParam {
     }
 }
 class FunctionExpr extends Expression {
+    params;
+    statements;
+    name;
     constructor(params, statements, type, sourceSpan, name) {
         super(type, sourceSpan);
         this.params = params;
@@ -1520,6 +1579,8 @@ class FunctionExpr extends Expression {
     }
 }
 class ArrowFunctionExpr extends Expression {
+    params;
+    body;
     // Note that `body: Expression` represents `() => expr` whereas
     // `body: Statement[]` represents `() => { expr }`.
     constructor(params, body, type, sourceSpan) {
@@ -1554,6 +1615,9 @@ class ArrowFunctionExpr extends Expression {
     }
 }
 class UnaryOperatorExpr extends Expression {
+    operator;
+    expr;
+    parens;
     constructor(operator, expr, type, sourceSpan, parens = true) {
         super(type || NUMBER_TYPE, sourceSpan);
         this.operator = operator;
@@ -1576,6 +1640,10 @@ class UnaryOperatorExpr extends Expression {
     }
 }
 class BinaryOperatorExpr extends Expression {
+    operator;
+    rhs;
+    parens;
+    lhs;
     constructor(operator, lhs, rhs, type, sourceSpan, parens = true) {
         super(type || lhs.type, sourceSpan);
         this.operator = operator;
@@ -1600,6 +1668,8 @@ class BinaryOperatorExpr extends Expression {
     }
 }
 class ReadPropExpr extends Expression {
+    receiver;
+    name;
     constructor(receiver, name, type, sourceSpan) {
         super(type, sourceSpan);
         this.receiver = receiver;
@@ -1626,6 +1696,8 @@ class ReadPropExpr extends Expression {
     }
 }
 class ReadKeyExpr extends Expression {
+    receiver;
+    index;
     constructor(receiver, index, type, sourceSpan) {
         super(type, sourceSpan);
         this.receiver = receiver;
@@ -1650,6 +1722,7 @@ class ReadKeyExpr extends Expression {
     }
 }
 class LiteralArrayExpr extends Expression {
+    entries;
     constructor(entries, type, sourceSpan) {
         super(type, sourceSpan);
         this.entries = entries;
@@ -1668,6 +1741,9 @@ class LiteralArrayExpr extends Expression {
     }
 }
 class LiteralMapEntry {
+    key;
+    value;
+    quoted;
     constructor(key, value, quoted) {
         this.key = key;
         this.value = value;
@@ -1681,10 +1757,11 @@ class LiteralMapEntry {
     }
 }
 class LiteralMapExpr extends Expression {
+    entries;
+    valueType = null;
     constructor(entries, type, sourceSpan) {
         super(type, sourceSpan);
         this.entries = entries;
-        this.valueType = null;
         if (type) {
             this.valueType = type.valueType;
         }
@@ -1704,6 +1781,7 @@ class LiteralMapExpr extends Expression {
     }
 }
 class CommaExpr extends Expression {
+    parts;
     constructor(parts, sourceSpan) {
         super(parts[parts.length - 1].type, sourceSpan);
         this.parts = parts;
@@ -1733,6 +1811,9 @@ var StmtModifier;
     StmtModifier[StmtModifier["Static"] = 8] = "Static";
 })(StmtModifier || (StmtModifier = {}));
 class LeadingComment {
+    text;
+    multiline;
+    trailingNewline;
     constructor(text, multiline, trailingNewline) {
         this.text = text;
         this.multiline = multiline;
@@ -1743,6 +1824,7 @@ class LeadingComment {
     }
 }
 class JSDocComment extends LeadingComment {
+    tags;
     constructor(tags) {
         super('', /* multiline */ true, /* trailingNewline */ true);
         this.tags = tags;
@@ -1752,6 +1834,9 @@ class JSDocComment extends LeadingComment {
     }
 }
 class Statement {
+    modifiers;
+    sourceSpan;
+    leadingComments;
     constructor(modifiers = StmtModifier.None, sourceSpan = null, leadingComments) {
         this.modifiers = modifiers;
         this.sourceSpan = sourceSpan;
@@ -1766,6 +1851,9 @@ class Statement {
     }
 }
 class DeclareVarStmt extends Statement {
+    name;
+    value;
+    type;
     constructor(name, value, type, modifiers, sourceSpan, leadingComments) {
         super(modifiers, sourceSpan, leadingComments);
         this.name = name;
@@ -1782,6 +1870,10 @@ class DeclareVarStmt extends Statement {
     }
 }
 class DeclareFunctionStmt extends Statement {
+    name;
+    params;
+    statements;
+    type;
     constructor(name, params, statements, type, modifiers, sourceSpan, leadingComments) {
         super(modifiers, sourceSpan, leadingComments);
         this.name = name;
@@ -1799,6 +1891,7 @@ class DeclareFunctionStmt extends Statement {
     }
 }
 class ExpressionStatement extends Statement {
+    expr;
     constructor(expr, sourceSpan, leadingComments) {
         super(StmtModifier.None, sourceSpan, leadingComments);
         this.expr = expr;
@@ -1811,6 +1904,7 @@ class ExpressionStatement extends Statement {
     }
 }
 class ReturnStatement extends Statement {
+    value;
     constructor(value, sourceSpan = null, leadingComments) {
         super(StmtModifier.None, sourceSpan, leadingComments);
         this.value = value;
@@ -1823,6 +1917,9 @@ class ReturnStatement extends Statement {
     }
 }
 class IfStmt extends Statement {
+    condition;
+    trueCase;
+    falseCase;
     constructor(condition, trueCase, falseCase = [], sourceSpan, leadingComments) {
         super(StmtModifier.None, sourceSpan, leadingComments);
         this.condition = condition;
@@ -2225,10 +2322,12 @@ const POOL_INCLUSION_LENGTH_THRESHOLD_FOR_STRINGS = 50;
  * change the referenced expression.
  */
 class FixupExpression extends Expression {
+    resolved;
+    original;
+    shared = false;
     constructor(resolved) {
         super(resolved.type);
         this.resolved = resolved;
-        this.shared = false;
         this.original = resolved;
     }
     visitExpression(visitor, context) {
@@ -2261,20 +2360,21 @@ class FixupExpression extends Expression {
  * The constant pool also supports sharing access to ivy definitions references.
  */
 class ConstantPool {
+    isClosureCompilerEnabled;
+    statements = [];
+    literals = new Map();
+    literalFactories = new Map();
+    sharedConstants = new Map();
+    /**
+     * Constant pool also tracks claimed names from {@link uniqueName}.
+     * This is useful to avoid collisions if variables are intended to be
+     * named a certain way- but may conflict. We wouldn't want to always suffix
+     * them with unique numbers.
+     */
+    _claimedNames = new Map();
+    nextNameIndex = 0;
     constructor(isClosureCompilerEnabled = false) {
         this.isClosureCompilerEnabled = isClosureCompilerEnabled;
-        this.statements = [];
-        this.literals = new Map();
-        this.literalFactories = new Map();
-        this.sharedConstants = new Map();
-        /**
-         * Constant pool also tracks claimed names from {@link uniqueName}.
-         * This is useful to avoid collisions if variables are intended to be
-         * named a certain way- but may conflict. We wouldn't want to always suffix
-         * them with unique numbers.
-         */
-        this._claimedNames = new Map();
-        this.nextNameIndex = 0;
     }
     getConstLiteral(literal, forceShared) {
         if ((literal instanceof LiteralExpr && !isLongStringLiteral(literal)) ||
@@ -2420,7 +2520,7 @@ class ConstantPool {
     }
 }
 class GenericKeyFn {
-    static { this.INSTANCE = new GenericKeyFn(); }
+    static INSTANCE = new GenericKeyFn();
     keyOf(expr) {
         if (expr instanceof LiteralExpr && typeof expr.value === 'string') {
             return `"${expr.value}"`;
@@ -2472,504 +2572,504 @@ function isLongStringLiteral(expr) {
 const CORE = '@angular/core';
 class Identifiers {
     /* Methods */
-    static { this.NEW_METHOD = 'factory'; }
-    static { this.TRANSFORM_METHOD = 'transform'; }
-    static { this.PATCH_DEPS = 'patchedDeps'; }
-    static { this.core = { name: null, moduleName: CORE }; }
+    static NEW_METHOD = 'factory';
+    static TRANSFORM_METHOD = 'transform';
+    static PATCH_DEPS = 'patchedDeps';
+    static core = { name: null, moduleName: CORE };
     /* Instructions */
-    static { this.namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE }; }
-    static { this.namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE }; }
-    static { this.namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE }; }
-    static { this.element = { name: 'ɵɵelement', moduleName: CORE }; }
-    static { this.elementStart = { name: 'ɵɵelementStart', moduleName: CORE }; }
-    static { this.elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE }; }
-    static { this.advance = { name: 'ɵɵadvance', moduleName: CORE }; }
-    static { this.syntheticHostProperty = {
+    static namespaceHTML = { name: 'ɵɵnamespaceHTML', moduleName: CORE };
+    static namespaceMathML = { name: 'ɵɵnamespaceMathML', moduleName: CORE };
+    static namespaceSVG = { name: 'ɵɵnamespaceSVG', moduleName: CORE };
+    static element = { name: 'ɵɵelement', moduleName: CORE };
+    static elementStart = { name: 'ɵɵelementStart', moduleName: CORE };
+    static elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE };
+    static advance = { name: 'ɵɵadvance', moduleName: CORE };
+    static syntheticHostProperty = {
         name: 'ɵɵsyntheticHostProperty',
         moduleName: CORE,
-    }; }
-    static { this.syntheticHostListener = {
+    };
+    static syntheticHostListener = {
         name: 'ɵɵsyntheticHostListener',
         moduleName: CORE,
-    }; }
-    static { this.attribute = { name: 'ɵɵattribute', moduleName: CORE }; }
-    static { this.attributeInterpolate1 = {
+    };
+    static attribute = { name: 'ɵɵattribute', moduleName: CORE };
+    static attributeInterpolate1 = {
         name: 'ɵɵattributeInterpolate1',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate2 = {
+    };
+    static attributeInterpolate2 = {
         name: 'ɵɵattributeInterpolate2',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate3 = {
+    };
+    static attributeInterpolate3 = {
         name: 'ɵɵattributeInterpolate3',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate4 = {
+    };
+    static attributeInterpolate4 = {
         name: 'ɵɵattributeInterpolate4',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate5 = {
+    };
+    static attributeInterpolate5 = {
         name: 'ɵɵattributeInterpolate5',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate6 = {
+    };
+    static attributeInterpolate6 = {
         name: 'ɵɵattributeInterpolate6',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate7 = {
+    };
+    static attributeInterpolate7 = {
         name: 'ɵɵattributeInterpolate7',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolate8 = {
+    };
+    static attributeInterpolate8 = {
         name: 'ɵɵattributeInterpolate8',
         moduleName: CORE,
-    }; }
-    static { this.attributeInterpolateV = {
+    };
+    static attributeInterpolateV = {
         name: 'ɵɵattributeInterpolateV',
         moduleName: CORE,
-    }; }
-    static { this.classProp = { name: 'ɵɵclassProp', moduleName: CORE }; }
-    static { this.elementContainerStart = {
+    };
+    static classProp = { name: 'ɵɵclassProp', moduleName: CORE };
+    static elementContainerStart = {
         name: 'ɵɵelementContainerStart',
         moduleName: CORE,
-    }; }
-    static { this.elementContainerEnd = {
+    };
+    static elementContainerEnd = {
         name: 'ɵɵelementContainerEnd',
         moduleName: CORE,
-    }; }
-    static { this.elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE }; }
-    static { this.styleMap = { name: 'ɵɵstyleMap', moduleName: CORE }; }
-    static { this.styleMapInterpolate1 = {
+    };
+    static elementContainer = { name: 'ɵɵelementContainer', moduleName: CORE };
+    static styleMap = { name: 'ɵɵstyleMap', moduleName: CORE };
+    static styleMapInterpolate1 = {
         name: 'ɵɵstyleMapInterpolate1',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate2 = {
+    };
+    static styleMapInterpolate2 = {
         name: 'ɵɵstyleMapInterpolate2',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate3 = {
+    };
+    static styleMapInterpolate3 = {
         name: 'ɵɵstyleMapInterpolate3',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate4 = {
+    };
+    static styleMapInterpolate4 = {
         name: 'ɵɵstyleMapInterpolate4',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate5 = {
+    };
+    static styleMapInterpolate5 = {
         name: 'ɵɵstyleMapInterpolate5',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate6 = {
+    };
+    static styleMapInterpolate6 = {
         name: 'ɵɵstyleMapInterpolate6',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate7 = {
+    };
+    static styleMapInterpolate7 = {
         name: 'ɵɵstyleMapInterpolate7',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolate8 = {
+    };
+    static styleMapInterpolate8 = {
         name: 'ɵɵstyleMapInterpolate8',
         moduleName: CORE,
-    }; }
-    static { this.styleMapInterpolateV = {
+    };
+    static styleMapInterpolateV = {
         name: 'ɵɵstyleMapInterpolateV',
         moduleName: CORE,
-    }; }
-    static { this.classMap = { name: 'ɵɵclassMap', moduleName: CORE }; }
-    static { this.classMapInterpolate1 = {
+    };
+    static classMap = { name: 'ɵɵclassMap', moduleName: CORE };
+    static classMapInterpolate1 = {
         name: 'ɵɵclassMapInterpolate1',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate2 = {
+    };
+    static classMapInterpolate2 = {
         name: 'ɵɵclassMapInterpolate2',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate3 = {
+    };
+    static classMapInterpolate3 = {
         name: 'ɵɵclassMapInterpolate3',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate4 = {
+    };
+    static classMapInterpolate4 = {
         name: 'ɵɵclassMapInterpolate4',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate5 = {
+    };
+    static classMapInterpolate5 = {
         name: 'ɵɵclassMapInterpolate5',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate6 = {
+    };
+    static classMapInterpolate6 = {
         name: 'ɵɵclassMapInterpolate6',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate7 = {
+    };
+    static classMapInterpolate7 = {
         name: 'ɵɵclassMapInterpolate7',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolate8 = {
+    };
+    static classMapInterpolate8 = {
         name: 'ɵɵclassMapInterpolate8',
         moduleName: CORE,
-    }; }
-    static { this.classMapInterpolateV = {
+    };
+    static classMapInterpolateV = {
         name: 'ɵɵclassMapInterpolateV',
         moduleName: CORE,
-    }; }
-    static { this.styleProp = { name: 'ɵɵstyleProp', moduleName: CORE }; }
-    static { this.stylePropInterpolate1 = {
+    };
+    static styleProp = { name: 'ɵɵstyleProp', moduleName: CORE };
+    static stylePropInterpolate1 = {
         name: 'ɵɵstylePropInterpolate1',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate2 = {
+    };
+    static stylePropInterpolate2 = {
         name: 'ɵɵstylePropInterpolate2',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate3 = {
+    };
+    static stylePropInterpolate3 = {
         name: 'ɵɵstylePropInterpolate3',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate4 = {
+    };
+    static stylePropInterpolate4 = {
         name: 'ɵɵstylePropInterpolate4',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate5 = {
+    };
+    static stylePropInterpolate5 = {
         name: 'ɵɵstylePropInterpolate5',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate6 = {
+    };
+    static stylePropInterpolate6 = {
         name: 'ɵɵstylePropInterpolate6',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate7 = {
+    };
+    static stylePropInterpolate7 = {
         name: 'ɵɵstylePropInterpolate7',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolate8 = {
+    };
+    static stylePropInterpolate8 = {
         name: 'ɵɵstylePropInterpolate8',
         moduleName: CORE,
-    }; }
-    static { this.stylePropInterpolateV = {
+    };
+    static stylePropInterpolateV = {
         name: 'ɵɵstylePropInterpolateV',
         moduleName: CORE,
-    }; }
-    static { this.nextContext = { name: 'ɵɵnextContext', moduleName: CORE }; }
-    static { this.resetView = { name: 'ɵɵresetView', moduleName: CORE }; }
-    static { this.templateCreate = { name: 'ɵɵtemplate', moduleName: CORE }; }
-    static { this.defer = { name: 'ɵɵdefer', moduleName: CORE }; }
-    static { this.deferWhen = { name: 'ɵɵdeferWhen', moduleName: CORE }; }
-    static { this.deferOnIdle = { name: 'ɵɵdeferOnIdle', moduleName: CORE }; }
-    static { this.deferOnImmediate = { name: 'ɵɵdeferOnImmediate', moduleName: CORE }; }
-    static { this.deferOnTimer = { name: 'ɵɵdeferOnTimer', moduleName: CORE }; }
-    static { this.deferOnHover = { name: 'ɵɵdeferOnHover', moduleName: CORE }; }
-    static { this.deferOnInteraction = { name: 'ɵɵdeferOnInteraction', moduleName: CORE }; }
-    static { this.deferOnViewport = { name: 'ɵɵdeferOnViewport', moduleName: CORE }; }
-    static { this.deferPrefetchWhen = { name: 'ɵɵdeferPrefetchWhen', moduleName: CORE }; }
-    static { this.deferPrefetchOnIdle = {
+    };
+    static nextContext = { name: 'ɵɵnextContext', moduleName: CORE };
+    static resetView = { name: 'ɵɵresetView', moduleName: CORE };
+    static templateCreate = { name: 'ɵɵtemplate', moduleName: CORE };
+    static defer = { name: 'ɵɵdefer', moduleName: CORE };
+    static deferWhen = { name: 'ɵɵdeferWhen', moduleName: CORE };
+    static deferOnIdle = { name: 'ɵɵdeferOnIdle', moduleName: CORE };
+    static deferOnImmediate = { name: 'ɵɵdeferOnImmediate', moduleName: CORE };
+    static deferOnTimer = { name: 'ɵɵdeferOnTimer', moduleName: CORE };
+    static deferOnHover = { name: 'ɵɵdeferOnHover', moduleName: CORE };
+    static deferOnInteraction = { name: 'ɵɵdeferOnInteraction', moduleName: CORE };
+    static deferOnViewport = { name: 'ɵɵdeferOnViewport', moduleName: CORE };
+    static deferPrefetchWhen = { name: 'ɵɵdeferPrefetchWhen', moduleName: CORE };
+    static deferPrefetchOnIdle = {
         name: 'ɵɵdeferPrefetchOnIdle',
         moduleName: CORE,
-    }; }
-    static { this.deferPrefetchOnImmediate = {
+    };
+    static deferPrefetchOnImmediate = {
         name: 'ɵɵdeferPrefetchOnImmediate',
         moduleName: CORE,
-    }; }
-    static { this.deferPrefetchOnTimer = {
+    };
+    static deferPrefetchOnTimer = {
         name: 'ɵɵdeferPrefetchOnTimer',
         moduleName: CORE,
-    }; }
-    static { this.deferPrefetchOnHover = {
+    };
+    static deferPrefetchOnHover = {
         name: 'ɵɵdeferPrefetchOnHover',
         moduleName: CORE,
-    }; }
-    static { this.deferPrefetchOnInteraction = {
+    };
+    static deferPrefetchOnInteraction = {
         name: 'ɵɵdeferPrefetchOnInteraction',
         moduleName: CORE,
-    }; }
-    static { this.deferPrefetchOnViewport = {
+    };
+    static deferPrefetchOnViewport = {
         name: 'ɵɵdeferPrefetchOnViewport',
         moduleName: CORE,
-    }; }
-    static { this.deferHydrateWhen = { name: 'ɵɵdeferHydrateWhen', moduleName: CORE }; }
-    static { this.deferHydrateNever = { name: 'ɵɵdeferHydrateNever', moduleName: CORE }; }
-    static { this.deferHydrateOnIdle = {
+    };
+    static deferHydrateWhen = { name: 'ɵɵdeferHydrateWhen', moduleName: CORE };
+    static deferHydrateNever = { name: 'ɵɵdeferHydrateNever', moduleName: CORE };
+    static deferHydrateOnIdle = {
         name: 'ɵɵdeferHydrateOnIdle',
         moduleName: CORE,
-    }; }
-    static { this.deferHydrateOnImmediate = {
+    };
+    static deferHydrateOnImmediate = {
         name: 'ɵɵdeferHydrateOnImmediate',
         moduleName: CORE,
-    }; }
-    static { this.deferHydrateOnTimer = {
+    };
+    static deferHydrateOnTimer = {
         name: 'ɵɵdeferHydrateOnTimer',
         moduleName: CORE,
-    }; }
-    static { this.deferHydrateOnHover = {
+    };
+    static deferHydrateOnHover = {
         name: 'ɵɵdeferHydrateOnHover',
         moduleName: CORE,
-    }; }
-    static { this.deferHydrateOnInteraction = {
+    };
+    static deferHydrateOnInteraction = {
         name: 'ɵɵdeferHydrateOnInteraction',
         moduleName: CORE,
-    }; }
-    static { this.deferHydrateOnViewport = {
+    };
+    static deferHydrateOnViewport = {
         name: 'ɵɵdeferHydrateOnViewport',
         moduleName: CORE,
-    }; }
-    static { this.deferEnableTimerScheduling = {
+    };
+    static deferEnableTimerScheduling = {
         name: 'ɵɵdeferEnableTimerScheduling',
         moduleName: CORE,
-    }; }
-    static { this.conditional = { name: 'ɵɵconditional', moduleName: CORE }; }
-    static { this.repeater = { name: 'ɵɵrepeater', moduleName: CORE }; }
-    static { this.repeaterCreate = { name: 'ɵɵrepeaterCreate', moduleName: CORE }; }
-    static { this.repeaterTrackByIndex = {
+    };
+    static conditional = { name: 'ɵɵconditional', moduleName: CORE };
+    static repeater = { name: 'ɵɵrepeater', moduleName: CORE };
+    static repeaterCreate = { name: 'ɵɵrepeaterCreate', moduleName: CORE };
+    static repeaterTrackByIndex = {
         name: 'ɵɵrepeaterTrackByIndex',
         moduleName: CORE,
-    }; }
-    static { this.repeaterTrackByIdentity = {
+    };
+    static repeaterTrackByIdentity = {
         name: 'ɵɵrepeaterTrackByIdentity',
         moduleName: CORE,
-    }; }
-    static { this.componentInstance = { name: 'ɵɵcomponentInstance', moduleName: CORE }; }
-    static { this.text = { name: 'ɵɵtext', moduleName: CORE }; }
-    static { this.enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE }; }
-    static { this.disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE }; }
-    static { this.getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE }; }
-    static { this.textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE }; }
-    static { this.textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE }; }
-    static { this.textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE }; }
-    static { this.textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE }; }
-    static { this.textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE }; }
-    static { this.textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE }; }
-    static { this.textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE }; }
-    static { this.textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE }; }
-    static { this.textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE }; }
-    static { this.textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE }; }
-    static { this.restoreView = { name: 'ɵɵrestoreView', moduleName: CORE }; }
-    static { this.pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE }; }
-    static { this.pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE }; }
-    static { this.pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE }; }
-    static { this.pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE }; }
-    static { this.pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE }; }
-    static { this.pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE }; }
-    static { this.pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE }; }
-    static { this.pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE }; }
-    static { this.pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE }; }
-    static { this.pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE }; }
-    static { this.pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE }; }
-    static { this.pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE }; }
-    static { this.pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE }; }
-    static { this.pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE }; }
-    static { this.pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE }; }
-    static { this.hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE }; }
-    static { this.property = { name: 'ɵɵproperty', moduleName: CORE }; }
-    static { this.propertyInterpolate = {
+    };
+    static componentInstance = { name: 'ɵɵcomponentInstance', moduleName: CORE };
+    static text = { name: 'ɵɵtext', moduleName: CORE };
+    static enableBindings = { name: 'ɵɵenableBindings', moduleName: CORE };
+    static disableBindings = { name: 'ɵɵdisableBindings', moduleName: CORE };
+    static getCurrentView = { name: 'ɵɵgetCurrentView', moduleName: CORE };
+    static textInterpolate = { name: 'ɵɵtextInterpolate', moduleName: CORE };
+    static textInterpolate1 = { name: 'ɵɵtextInterpolate1', moduleName: CORE };
+    static textInterpolate2 = { name: 'ɵɵtextInterpolate2', moduleName: CORE };
+    static textInterpolate3 = { name: 'ɵɵtextInterpolate3', moduleName: CORE };
+    static textInterpolate4 = { name: 'ɵɵtextInterpolate4', moduleName: CORE };
+    static textInterpolate5 = { name: 'ɵɵtextInterpolate5', moduleName: CORE };
+    static textInterpolate6 = { name: 'ɵɵtextInterpolate6', moduleName: CORE };
+    static textInterpolate7 = { name: 'ɵɵtextInterpolate7', moduleName: CORE };
+    static textInterpolate8 = { name: 'ɵɵtextInterpolate8', moduleName: CORE };
+    static textInterpolateV = { name: 'ɵɵtextInterpolateV', moduleName: CORE };
+    static restoreView = { name: 'ɵɵrestoreView', moduleName: CORE };
+    static pureFunction0 = { name: 'ɵɵpureFunction0', moduleName: CORE };
+    static pureFunction1 = { name: 'ɵɵpureFunction1', moduleName: CORE };
+    static pureFunction2 = { name: 'ɵɵpureFunction2', moduleName: CORE };
+    static pureFunction3 = { name: 'ɵɵpureFunction3', moduleName: CORE };
+    static pureFunction4 = { name: 'ɵɵpureFunction4', moduleName: CORE };
+    static pureFunction5 = { name: 'ɵɵpureFunction5', moduleName: CORE };
+    static pureFunction6 = { name: 'ɵɵpureFunction6', moduleName: CORE };
+    static pureFunction7 = { name: 'ɵɵpureFunction7', moduleName: CORE };
+    static pureFunction8 = { name: 'ɵɵpureFunction8', moduleName: CORE };
+    static pureFunctionV = { name: 'ɵɵpureFunctionV', moduleName: CORE };
+    static pipeBind1 = { name: 'ɵɵpipeBind1', moduleName: CORE };
+    static pipeBind2 = { name: 'ɵɵpipeBind2', moduleName: CORE };
+    static pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE };
+    static pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE };
+    static pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE };
+    static hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE };
+    static property = { name: 'ɵɵproperty', moduleName: CORE };
+    static propertyInterpolate = {
         name: 'ɵɵpropertyInterpolate',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate1 = {
+    };
+    static propertyInterpolate1 = {
         name: 'ɵɵpropertyInterpolate1',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate2 = {
+    };
+    static propertyInterpolate2 = {
         name: 'ɵɵpropertyInterpolate2',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate3 = {
+    };
+    static propertyInterpolate3 = {
         name: 'ɵɵpropertyInterpolate3',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate4 = {
+    };
+    static propertyInterpolate4 = {
         name: 'ɵɵpropertyInterpolate4',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate5 = {
+    };
+    static propertyInterpolate5 = {
         name: 'ɵɵpropertyInterpolate5',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate6 = {
+    };
+    static propertyInterpolate6 = {
         name: 'ɵɵpropertyInterpolate6',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate7 = {
+    };
+    static propertyInterpolate7 = {
         name: 'ɵɵpropertyInterpolate7',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolate8 = {
+    };
+    static propertyInterpolate8 = {
         name: 'ɵɵpropertyInterpolate8',
         moduleName: CORE,
-    }; }
-    static { this.propertyInterpolateV = {
+    };
+    static propertyInterpolateV = {
         name: 'ɵɵpropertyInterpolateV',
         moduleName: CORE,
-    }; }
-    static { this.i18n = { name: 'ɵɵi18n', moduleName: CORE }; }
-    static { this.i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE }; }
-    static { this.i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE }; }
-    static { this.i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE }; }
-    static { this.i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE }; }
-    static { this.i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE }; }
-    static { this.i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE }; }
-    static { this.pipe = { name: 'ɵɵpipe', moduleName: CORE }; }
-    static { this.projection = { name: 'ɵɵprojection', moduleName: CORE }; }
-    static { this.projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE }; }
-    static { this.reference = { name: 'ɵɵreference', moduleName: CORE }; }
-    static { this.inject = { name: 'ɵɵinject', moduleName: CORE }; }
-    static { this.injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE }; }
-    static { this.directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE }; }
-    static { this.invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE }; }
-    static { this.invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE }; }
-    static { this.templateRefExtractor = {
+    };
+    static i18n = { name: 'ɵɵi18n', moduleName: CORE };
+    static i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE };
+    static i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE };
+    static i18nStart = { name: 'ɵɵi18nStart', moduleName: CORE };
+    static i18nEnd = { name: 'ɵɵi18nEnd', moduleName: CORE };
+    static i18nApply = { name: 'ɵɵi18nApply', moduleName: CORE };
+    static i18nPostprocess = { name: 'ɵɵi18nPostprocess', moduleName: CORE };
+    static pipe = { name: 'ɵɵpipe', moduleName: CORE };
+    static projection = { name: 'ɵɵprojection', moduleName: CORE };
+    static projectionDef = { name: 'ɵɵprojectionDef', moduleName: CORE };
+    static reference = { name: 'ɵɵreference', moduleName: CORE };
+    static inject = { name: 'ɵɵinject', moduleName: CORE };
+    static injectAttribute = { name: 'ɵɵinjectAttribute', moduleName: CORE };
+    static directiveInject = { name: 'ɵɵdirectiveInject', moduleName: CORE };
+    static invalidFactory = { name: 'ɵɵinvalidFactory', moduleName: CORE };
+    static invalidFactoryDep = { name: 'ɵɵinvalidFactoryDep', moduleName: CORE };
+    static templateRefExtractor = {
         name: 'ɵɵtemplateRefExtractor',
         moduleName: CORE,
-    }; }
-    static { this.forwardRef = { name: 'forwardRef', moduleName: CORE }; }
-    static { this.resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE }; }
-    static { this.replaceMetadata = { name: 'ɵɵreplaceMetadata', moduleName: CORE }; }
-    static { this.ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE }; }
-    static { this.declareInjectable = { name: 'ɵɵngDeclareInjectable', moduleName: CORE }; }
-    static { this.InjectableDeclaration = {
+    };
+    static forwardRef = { name: 'forwardRef', moduleName: CORE };
+    static resolveForwardRef = { name: 'resolveForwardRef', moduleName: CORE };
+    static replaceMetadata = { name: 'ɵɵreplaceMetadata', moduleName: CORE };
+    static ɵɵdefineInjectable = { name: 'ɵɵdefineInjectable', moduleName: CORE };
+    static declareInjectable = { name: 'ɵɵngDeclareInjectable', moduleName: CORE };
+    static InjectableDeclaration = {
         name: 'ɵɵInjectableDeclaration',
         moduleName: CORE,
-    }; }
-    static { this.resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE }; }
-    static { this.resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE }; }
-    static { this.resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE }; }
-    static { this.getComponentDepsFactory = {
+    };
+    static resolveWindow = { name: 'ɵɵresolveWindow', moduleName: CORE };
+    static resolveDocument = { name: 'ɵɵresolveDocument', moduleName: CORE };
+    static resolveBody = { name: 'ɵɵresolveBody', moduleName: CORE };
+    static getComponentDepsFactory = {
         name: 'ɵɵgetComponentDepsFactory',
         moduleName: CORE,
-    }; }
-    static { this.defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE }; }
-    static { this.declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE }; }
-    static { this.setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE }; }
-    static { this.ChangeDetectionStrategy = {
+    };
+    static defineComponent = { name: 'ɵɵdefineComponent', moduleName: CORE };
+    static declareComponent = { name: 'ɵɵngDeclareComponent', moduleName: CORE };
+    static setComponentScope = { name: 'ɵɵsetComponentScope', moduleName: CORE };
+    static ChangeDetectionStrategy = {
         name: 'ChangeDetectionStrategy',
         moduleName: CORE,
-    }; }
-    static { this.ViewEncapsulation = {
+    };
+    static ViewEncapsulation = {
         name: 'ViewEncapsulation',
         moduleName: CORE,
-    }; }
-    static { this.ComponentDeclaration = {
+    };
+    static ComponentDeclaration = {
         name: 'ɵɵComponentDeclaration',
         moduleName: CORE,
-    }; }
-    static { this.FactoryDeclaration = {
+    };
+    static FactoryDeclaration = {
         name: 'ɵɵFactoryDeclaration',
         moduleName: CORE,
-    }; }
-    static { this.declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE }; }
-    static { this.FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE }; }
-    static { this.defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE }; }
-    static { this.declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE }; }
-    static { this.DirectiveDeclaration = {
+    };
+    static declareFactory = { name: 'ɵɵngDeclareFactory', moduleName: CORE };
+    static FactoryTarget = { name: 'ɵɵFactoryTarget', moduleName: CORE };
+    static defineDirective = { name: 'ɵɵdefineDirective', moduleName: CORE };
+    static declareDirective = { name: 'ɵɵngDeclareDirective', moduleName: CORE };
+    static DirectiveDeclaration = {
         name: 'ɵɵDirectiveDeclaration',
         moduleName: CORE,
-    }; }
-    static { this.InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE }; }
-    static { this.InjectorDeclaration = {
+    };
+    static InjectorDef = { name: 'ɵɵInjectorDef', moduleName: CORE };
+    static InjectorDeclaration = {
         name: 'ɵɵInjectorDeclaration',
         moduleName: CORE,
-    }; }
-    static { this.defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE }; }
-    static { this.declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE }; }
-    static { this.NgModuleDeclaration = {
+    };
+    static defineInjector = { name: 'ɵɵdefineInjector', moduleName: CORE };
+    static declareInjector = { name: 'ɵɵngDeclareInjector', moduleName: CORE };
+    static NgModuleDeclaration = {
         name: 'ɵɵNgModuleDeclaration',
         moduleName: CORE,
-    }; }
-    static { this.ModuleWithProviders = {
+    };
+    static ModuleWithProviders = {
         name: 'ModuleWithProviders',
         moduleName: CORE,
-    }; }
-    static { this.defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE }; }
-    static { this.declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE }; }
-    static { this.setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE }; }
-    static { this.registerNgModuleType = {
+    };
+    static defineNgModule = { name: 'ɵɵdefineNgModule', moduleName: CORE };
+    static declareNgModule = { name: 'ɵɵngDeclareNgModule', moduleName: CORE };
+    static setNgModuleScope = { name: 'ɵɵsetNgModuleScope', moduleName: CORE };
+    static registerNgModuleType = {
         name: 'ɵɵregisterNgModuleType',
         moduleName: CORE,
-    }; }
-    static { this.PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE }; }
-    static { this.definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE }; }
-    static { this.declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE }; }
-    static { this.declareClassMetadata = {
+    };
+    static PipeDeclaration = { name: 'ɵɵPipeDeclaration', moduleName: CORE };
+    static definePipe = { name: 'ɵɵdefinePipe', moduleName: CORE };
+    static declarePipe = { name: 'ɵɵngDeclarePipe', moduleName: CORE };
+    static declareClassMetadata = {
         name: 'ɵɵngDeclareClassMetadata',
         moduleName: CORE,
-    }; }
-    static { this.declareClassMetadataAsync = {
+    };
+    static declareClassMetadataAsync = {
         name: 'ɵɵngDeclareClassMetadataAsync',
         moduleName: CORE,
-    }; }
-    static { this.setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE }; }
-    static { this.setClassMetadataAsync = {
+    };
+    static setClassMetadata = { name: 'ɵsetClassMetadata', moduleName: CORE };
+    static setClassMetadataAsync = {
         name: 'ɵsetClassMetadataAsync',
         moduleName: CORE,
-    }; }
-    static { this.setClassDebugInfo = { name: 'ɵsetClassDebugInfo', moduleName: CORE }; }
-    static { this.queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE }; }
-    static { this.viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE }; }
-    static { this.loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE }; }
-    static { this.contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE }; }
+    };
+    static setClassDebugInfo = { name: 'ɵsetClassDebugInfo', moduleName: CORE };
+    static queryRefresh = { name: 'ɵɵqueryRefresh', moduleName: CORE };
+    static viewQuery = { name: 'ɵɵviewQuery', moduleName: CORE };
+    static loadQuery = { name: 'ɵɵloadQuery', moduleName: CORE };
+    static contentQuery = { name: 'ɵɵcontentQuery', moduleName: CORE };
     // Signal queries
-    static { this.viewQuerySignal = { name: 'ɵɵviewQuerySignal', moduleName: CORE }; }
-    static { this.contentQuerySignal = { name: 'ɵɵcontentQuerySignal', moduleName: CORE }; }
-    static { this.queryAdvance = { name: 'ɵɵqueryAdvance', moduleName: CORE }; }
+    static viewQuerySignal = { name: 'ɵɵviewQuerySignal', moduleName: CORE };
+    static contentQuerySignal = { name: 'ɵɵcontentQuerySignal', moduleName: CORE };
+    static queryAdvance = { name: 'ɵɵqueryAdvance', moduleName: CORE };
     // Two-way bindings
-    static { this.twoWayProperty = { name: 'ɵɵtwoWayProperty', moduleName: CORE }; }
-    static { this.twoWayBindingSet = { name: 'ɵɵtwoWayBindingSet', moduleName: CORE }; }
-    static { this.twoWayListener = { name: 'ɵɵtwoWayListener', moduleName: CORE }; }
-    static { this.declareLet = { name: 'ɵɵdeclareLet', moduleName: CORE }; }
-    static { this.storeLet = { name: 'ɵɵstoreLet', moduleName: CORE }; }
-    static { this.readContextLet = { name: 'ɵɵreadContextLet', moduleName: CORE }; }
-    static { this.NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE }; }
-    static { this.InheritDefinitionFeature = {
+    static twoWayProperty = { name: 'ɵɵtwoWayProperty', moduleName: CORE };
+    static twoWayBindingSet = { name: 'ɵɵtwoWayBindingSet', moduleName: CORE };
+    static twoWayListener = { name: 'ɵɵtwoWayListener', moduleName: CORE };
+    static declareLet = { name: 'ɵɵdeclareLet', moduleName: CORE };
+    static storeLet = { name: 'ɵɵstoreLet', moduleName: CORE };
+    static readContextLet = { name: 'ɵɵreadContextLet', moduleName: CORE };
+    static NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE };
+    static InheritDefinitionFeature = {
         name: 'ɵɵInheritDefinitionFeature',
         moduleName: CORE,
-    }; }
-    static { this.CopyDefinitionFeature = {
+    };
+    static CopyDefinitionFeature = {
         name: 'ɵɵCopyDefinitionFeature',
         moduleName: CORE,
-    }; }
-    static { this.ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE }; }
-    static { this.HostDirectivesFeature = {
+    };
+    static ProvidersFeature = { name: 'ɵɵProvidersFeature', moduleName: CORE };
+    static HostDirectivesFeature = {
         name: 'ɵɵHostDirectivesFeature',
         moduleName: CORE,
-    }; }
-    static { this.InputTransformsFeatureFeature = {
+    };
+    static InputTransformsFeatureFeature = {
         name: 'ɵɵInputTransformsFeature',
         moduleName: CORE,
-    }; }
-    static { this.ExternalStylesFeature = {
+    };
+    static ExternalStylesFeature = {
         name: 'ɵɵExternalStylesFeature',
         moduleName: CORE,
-    }; }
-    static { this.listener = { name: 'ɵɵlistener', moduleName: CORE }; }
-    static { this.getInheritedFactory = {
+    };
+    static listener = { name: 'ɵɵlistener', moduleName: CORE };
+    static getInheritedFactory = {
         name: 'ɵɵgetInheritedFactory',
         moduleName: CORE,
-    }; }
+    };
     // sanitization-related functions
-    static { this.sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE }; }
-    static { this.sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE }; }
-    static { this.sanitizeResourceUrl = {
+    static sanitizeHtml = { name: 'ɵɵsanitizeHtml', moduleName: CORE };
+    static sanitizeStyle = { name: 'ɵɵsanitizeStyle', moduleName: CORE };
+    static sanitizeResourceUrl = {
         name: 'ɵɵsanitizeResourceUrl',
         moduleName: CORE,
-    }; }
-    static { this.sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE }; }
-    static { this.sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE }; }
-    static { this.sanitizeUrlOrResourceUrl = {
+    };
+    static sanitizeScript = { name: 'ɵɵsanitizeScript', moduleName: CORE };
+    static sanitizeUrl = { name: 'ɵɵsanitizeUrl', moduleName: CORE };
+    static sanitizeUrlOrResourceUrl = {
         name: 'ɵɵsanitizeUrlOrResourceUrl',
         moduleName: CORE,
-    }; }
-    static { this.trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE }; }
-    static { this.trustConstantResourceUrl = {
+    };
+    static trustConstantHtml = { name: 'ɵɵtrustConstantHtml', moduleName: CORE };
+    static trustConstantResourceUrl = {
         name: 'ɵɵtrustConstantResourceUrl',
         moduleName: CORE,
-    }; }
-    static { this.validateIframeAttribute = {
+    };
+    static validateIframeAttribute = {
         name: 'ɵɵvalidateIframeAttribute',
         moduleName: CORE,
-    }; }
+    };
     // type-checking
-    static { this.InputSignalBrandWriteType = { name: 'ɵINPUT_SIGNAL_BRAND_WRITE_TYPE', moduleName: CORE }; }
-    static { this.UnwrapDirectiveSignalInputs = { name: 'ɵUnwrapDirectiveSignalInputs', moduleName: CORE }; }
-    static { this.unwrapWritableSignal = { name: 'ɵunwrapWritableSignal', moduleName: CORE }; }
+    static InputSignalBrandWriteType = { name: 'ɵINPUT_SIGNAL_BRAND_WRITE_TYPE', moduleName: CORE };
+    static UnwrapDirectiveSignalInputs = { name: 'ɵUnwrapDirectiveSignalInputs', moduleName: CORE };
+    static unwrapWritableSignal = { name: 'ɵunwrapWritableSignal', moduleName: CORE };
 }
 
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
@@ -3055,6 +3155,10 @@ function stringify(token) {
     return newLineIndex === -1 ? res : res.substring(0, newLineIndex);
 }
 class Version {
+    full;
+    major;
+    minor;
+    patch;
     constructor(full) {
         this.full = full;
         const splits = full.split('.');
@@ -3105,12 +3209,13 @@ function getJitStandaloneDefaultForVersion(version) {
 const VERSION$1 = 3;
 const JS_B64_PREFIX = '# sourceMappingURL=data:application/json;base64,';
 class SourceMapGenerator {
+    file;
+    sourcesContent = new Map();
+    lines = [];
+    lastCol0 = 0;
+    hasMappings = false;
     constructor(file = null) {
         this.file = file;
-        this.sourcesContent = new Map();
-        this.lines = [];
-        this.lastCol0 = 0;
-        this.hasMappings = false;
     }
     // The content is `null` when the content is expected to be loaded using the URL
     addSource(url, content = null) {
@@ -3247,17 +3352,20 @@ const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
 const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
 const _INDENT_WITH = '  ';
 class _EmittedLine {
+    indent;
+    partsLength = 0;
+    parts = [];
+    srcSpans = [];
     constructor(indent) {
         this.indent = indent;
-        this.partsLength = 0;
-        this.parts = [];
-        this.srcSpans = [];
     }
 }
 class EmitterVisitorContext {
+    _indent;
     static createRoot() {
         return new EmitterVisitorContext(0);
     }
+    _lines;
     constructor(_indent) {
         this._indent = _indent;
         this._lines = [new _EmittedLine(_indent)];
@@ -3388,6 +3496,7 @@ class EmitterVisitorContext {
     }
 }
 class AbstractEmitterVisitor {
+    _escapeDollarInStrings;
     constructor(_escapeDollarInStrings) {
         this._escapeDollarInStrings = _escapeDollarInStrings;
     }
@@ -4035,6 +4144,10 @@ function getInjectFn(target) {
 }
 
 class ParserError {
+    input;
+    errLocation;
+    ctxLocation;
+    message;
     constructor(message, input, errLocation, ctxLocation) {
         this.input = input;
         this.errLocation = errLocation;
@@ -4043,6 +4156,8 @@ class ParserError {
     }
 }
 class ParseSpan {
+    start;
+    end;
     constructor(start, end) {
         this.start = start;
         this.end = end;
@@ -4052,6 +4167,8 @@ class ParseSpan {
     }
 }
 class AST {
+    span;
+    sourceSpan;
     constructor(span, 
     /**
      * Absolute location of the expression AST in a source code file.
@@ -4065,6 +4182,7 @@ class AST {
     }
 }
 class ASTWithName extends AST {
+    nameSpan;
     constructor(span, sourceSpan, nameSpan) {
         super(span, sourceSpan);
         this.nameSpan = nameSpan;
@@ -4097,6 +4215,7 @@ class ThisReceiver extends ImplicitReceiver {
  * Multiple expressions separated by a semicolon.
  */
 class Chain extends AST {
+    expressions;
     constructor(span, sourceSpan, expressions) {
         super(span, sourceSpan);
         this.expressions = expressions;
@@ -4106,6 +4225,9 @@ class Chain extends AST {
     }
 }
 class Conditional extends AST {
+    condition;
+    trueExp;
+    falseExp;
     constructor(span, sourceSpan, condition, trueExp, falseExp) {
         super(span, sourceSpan);
         this.condition = condition;
@@ -4117,6 +4239,8 @@ class Conditional extends AST {
     }
 }
 class PropertyRead extends ASTWithName {
+    receiver;
+    name;
     constructor(span, sourceSpan, nameSpan, receiver, name) {
         super(span, sourceSpan, nameSpan);
         this.receiver = receiver;
@@ -4127,6 +4251,9 @@ class PropertyRead extends ASTWithName {
     }
 }
 class PropertyWrite extends ASTWithName {
+    receiver;
+    name;
+    value;
     constructor(span, sourceSpan, nameSpan, receiver, name, value) {
         super(span, sourceSpan, nameSpan);
         this.receiver = receiver;
@@ -4138,6 +4265,8 @@ class PropertyWrite extends ASTWithName {
     }
 }
 class SafePropertyRead extends ASTWithName {
+    receiver;
+    name;
     constructor(span, sourceSpan, nameSpan, receiver, name) {
         super(span, sourceSpan, nameSpan);
         this.receiver = receiver;
@@ -4148,6 +4277,8 @@ class SafePropertyRead extends ASTWithName {
     }
 }
 class KeyedRead extends AST {
+    receiver;
+    key;
     constructor(span, sourceSpan, receiver, key) {
         super(span, sourceSpan);
         this.receiver = receiver;
@@ -4158,6 +4289,8 @@ class KeyedRead extends AST {
     }
 }
 class SafeKeyedRead extends AST {
+    receiver;
+    key;
     constructor(span, sourceSpan, receiver, key) {
         super(span, sourceSpan);
         this.receiver = receiver;
@@ -4168,6 +4301,9 @@ class SafeKeyedRead extends AST {
     }
 }
 class KeyedWrite extends AST {
+    receiver;
+    key;
+    value;
     constructor(span, sourceSpan, receiver, key, value) {
         super(span, sourceSpan);
         this.receiver = receiver;
@@ -4179,6 +4315,9 @@ class KeyedWrite extends AST {
     }
 }
 class BindingPipe extends ASTWithName {
+    exp;
+    name;
+    args;
     constructor(span, sourceSpan, exp, name, args, nameSpan) {
         super(span, sourceSpan, nameSpan);
         this.exp = exp;
@@ -4190,6 +4329,7 @@ class BindingPipe extends ASTWithName {
     }
 }
 class LiteralPrimitive extends AST {
+    value;
     constructor(span, sourceSpan, value) {
         super(span, sourceSpan);
         this.value = value;
@@ -4199,6 +4339,7 @@ class LiteralPrimitive extends AST {
     }
 }
 class LiteralArray extends AST {
+    expressions;
     constructor(span, sourceSpan, expressions) {
         super(span, sourceSpan);
         this.expressions = expressions;
@@ -4208,6 +4349,8 @@ class LiteralArray extends AST {
     }
 }
 class LiteralMap extends AST {
+    keys;
+    values;
     constructor(span, sourceSpan, keys, values) {
         super(span, sourceSpan);
         this.keys = keys;
@@ -4218,6 +4361,8 @@ class LiteralMap extends AST {
     }
 }
 class Interpolation$1 extends AST {
+    strings;
+    expressions;
     constructor(span, sourceSpan, strings, expressions) {
         super(span, sourceSpan);
         this.strings = strings;
@@ -4228,6 +4373,9 @@ class Interpolation$1 extends AST {
     }
 }
 class Binary extends AST {
+    operation;
+    left;
+    right;
     constructor(span, sourceSpan, operation, left, right) {
         super(span, sourceSpan);
         this.operation = operation;
@@ -4244,6 +4392,13 @@ class Binary extends AST {
  * after consumers have been given a chance to fully support Unary.
  */
 class Unary extends Binary {
+    operator;
+    expr;
+    // Redeclare the properties that are inherited from `Binary` as `never`, as consumers should not
+    // depend on these fields when operating on `Unary`.
+    left = null;
+    right = null;
+    operation = null;
     /**
      * Creates a unary minus expression "-x", represented as `Binary` using "0 - x".
      */
@@ -4264,11 +4419,6 @@ class Unary extends Binary {
         super(span, sourceSpan, binaryOp, binaryLeft, binaryRight);
         this.operator = operator;
         this.expr = expr;
-        // Redeclare the properties that are inherited from `Binary` as `never`, as consumers should not
-        // depend on these fields when operating on `Unary`.
-        this.left = null;
-        this.right = null;
-        this.operation = null;
     }
     visit(visitor, context = null) {
         if (visitor.visitUnary !== undefined) {
@@ -4278,6 +4428,7 @@ class Unary extends Binary {
     }
 }
 class PrefixNot extends AST {
+    expression;
     constructor(span, sourceSpan, expression) {
         super(span, sourceSpan);
         this.expression = expression;
@@ -4287,6 +4438,7 @@ class PrefixNot extends AST {
     }
 }
 class TypeofExpression extends AST {
+    expression;
     constructor(span, sourceSpan, expression) {
         super(span, sourceSpan);
         this.expression = expression;
@@ -4296,6 +4448,7 @@ class TypeofExpression extends AST {
     }
 }
 class NonNullAssert extends AST {
+    expression;
     constructor(span, sourceSpan, expression) {
         super(span, sourceSpan);
         this.expression = expression;
@@ -4305,6 +4458,9 @@ class NonNullAssert extends AST {
     }
 }
 class Call extends AST {
+    receiver;
+    args;
+    argumentSpan;
     constructor(span, sourceSpan, receiver, args, argumentSpan) {
         super(span, sourceSpan);
         this.receiver = receiver;
@@ -4316,6 +4472,9 @@ class Call extends AST {
     }
 }
 class SafeCall extends AST {
+    receiver;
+    args;
+    argumentSpan;
     constructor(span, sourceSpan, receiver, args, argumentSpan) {
         super(span, sourceSpan);
         this.receiver = receiver;
@@ -4331,12 +4490,18 @@ class SafeCall extends AST {
  * starting and ending byte offsets, respectively, of the text span in a source file.
  */
 class AbsoluteSourceSpan {
+    start;
+    end;
     constructor(start, end) {
         this.start = start;
         this.end = end;
     }
 }
 class ASTWithSource extends AST {
+    ast;
+    source;
+    location;
+    errors;
     constructor(ast, source, location, absoluteOffset, errors) {
         super(new ParseSpan(0, source === null ? 0 : source.length), new AbsoluteSourceSpan(absoluteOffset, source === null ? absoluteOffset : absoluteOffset + source.length));
         this.ast = ast;
@@ -4355,6 +4520,9 @@ class ASTWithSource extends AST {
     }
 }
 class VariableBinding {
+    sourceSpan;
+    key;
+    value;
     /**
      * @param sourceSpan entire span of the binding.
      * @param key name of the LHS along with its span.
@@ -4367,6 +4535,9 @@ class VariableBinding {
     }
 }
 class ExpressionBinding {
+    sourceSpan;
+    key;
+    value;
     /**
      * @param sourceSpan entire span of the binding.
      * @param key binding name, like ngForOf, ngForTrackBy, ngIf, along with its
@@ -4726,6 +4897,14 @@ class AstMemoryEfficientTransformer {
 }
 // Bindings
 class ParsedProperty {
+    name;
+    expression;
+    type;
+    sourceSpan;
+    keySpan;
+    valueSpan;
+    isLiteral;
+    isAnimation;
     constructor(name, expression, type, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.expression = expression;
@@ -4754,6 +4933,13 @@ var ParsedEventType;
     ParsedEventType[ParsedEventType["TwoWay"] = 2] = "TwoWay";
 })(ParsedEventType || (ParsedEventType = {}));
 class ParsedEvent {
+    name;
+    targetOrPhase;
+    type;
+    handler;
+    sourceSpan;
+    handlerSpan;
+    keySpan;
     constructor(name, targetOrPhase, type, handler, sourceSpan, handlerSpan, keySpan) {
         this.name = name;
         this.targetOrPhase = targetOrPhase;
@@ -4768,6 +4954,11 @@ class ParsedEvent {
  * ParsedVariable represents a variable declaration in a microsyntax expression.
  */
 class ParsedVariable {
+    name;
+    value;
+    sourceSpan;
+    keySpan;
+    valueSpan;
     constructor(name, value, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.value = value;
@@ -4792,6 +4983,14 @@ var BindingType;
     BindingType[BindingType["TwoWay"] = 5] = "TwoWay";
 })(BindingType || (BindingType = {}));
 class BoundElementProperty {
+    name;
+    type;
+    securityContext;
+    value;
+    unit;
+    sourceSpan;
+    keySpan;
+    valueSpan;
     constructor(name, type, securityContext, value, unit, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.type = type;
@@ -4851,6 +5050,8 @@ function mergeNsAndName(prefix, localName) {
  * is true.
  */
 class Comment$1 {
+    value;
+    sourceSpan;
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -4860,6 +5061,8 @@ class Comment$1 {
     }
 }
 class Text$3 {
+    value;
+    sourceSpan;
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -4869,6 +5072,9 @@ class Text$3 {
     }
 }
 class BoundText {
+    value;
+    sourceSpan;
+    i18n;
     constructor(value, sourceSpan, i18n) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -4885,6 +5091,12 @@ class BoundText {
  * `keySpan` may also not be present for synthetic attributes from ICU expansions.
  */
 class TextAttribute {
+    name;
+    value;
+    sourceSpan;
+    keySpan;
+    valueSpan;
+    i18n;
     constructor(name, value, sourceSpan, keySpan, valueSpan, i18n) {
         this.name = name;
         this.value = value;
@@ -4898,6 +5110,15 @@ class TextAttribute {
     }
 }
 class BoundAttribute {
+    name;
+    type;
+    securityContext;
+    value;
+    unit;
+    sourceSpan;
+    keySpan;
+    valueSpan;
+    i18n;
     constructor(name, type, securityContext, value, unit, sourceSpan, keySpan, valueSpan, i18n) {
         this.name = name;
         this.type = type;
@@ -4920,6 +5141,14 @@ class BoundAttribute {
     }
 }
 class BoundEvent {
+    name;
+    type;
+    handler;
+    target;
+    phase;
+    sourceSpan;
+    handlerSpan;
+    keySpan;
     constructor(name, type, handler, target, phase, sourceSpan, handlerSpan, keySpan) {
         this.name = name;
         this.type = type;
@@ -4943,6 +5172,16 @@ class BoundEvent {
     }
 }
 class Element$1 {
+    name;
+    attributes;
+    inputs;
+    outputs;
+    children;
+    references;
+    sourceSpan;
+    startSourceSpan;
+    endSourceSpan;
+    i18n;
     constructor(name, attributes, inputs, outputs, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.name = name;
         this.attributes = attributes;
@@ -4960,6 +5199,11 @@ class Element$1 {
     }
 }
 class DeferredTrigger {
+    nameSpan;
+    sourceSpan;
+    prefetchSpan;
+    whenOrOnSourceSpan;
+    hydrateSpan;
     constructor(nameSpan, sourceSpan, prefetchSpan, whenOrOnSourceSpan, hydrateSpan) {
         this.nameSpan = nameSpan;
         this.sourceSpan = sourceSpan;
@@ -4972,6 +5216,7 @@ class DeferredTrigger {
     }
 }
 class BoundDeferredTrigger extends DeferredTrigger {
+    value;
     constructor(value, sourceSpan, prefetchSpan, whenSourceSpan, hydrateSpan) {
         // BoundDeferredTrigger is for 'when' triggers. These aren't really "triggers" and don't have a
         // nameSpan. Trigger names are the built in event triggers like hover, interaction, etc.
@@ -4986,30 +5231,38 @@ class IdleDeferredTrigger extends DeferredTrigger {
 class ImmediateDeferredTrigger extends DeferredTrigger {
 }
 class HoverDeferredTrigger extends DeferredTrigger {
+    reference;
     constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
         super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.reference = reference;
     }
 }
 class TimerDeferredTrigger extends DeferredTrigger {
+    delay;
     constructor(delay, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
         super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.delay = delay;
     }
 }
 class InteractionDeferredTrigger extends DeferredTrigger {
+    reference;
     constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
         super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.reference = reference;
     }
 }
 class ViewportDeferredTrigger extends DeferredTrigger {
+    reference;
     constructor(reference, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
         super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
         this.reference = reference;
     }
 }
 class BlockNode {
+    nameSpan;
+    sourceSpan;
+    startSourceSpan;
+    endSourceSpan;
     constructor(nameSpan, sourceSpan, startSourceSpan, endSourceSpan) {
         this.nameSpan = nameSpan;
         this.sourceSpan = sourceSpan;
@@ -5018,6 +5271,9 @@ class BlockNode {
     }
 }
 class DeferredBlockPlaceholder extends BlockNode {
+    children;
+    minimumTime;
+    i18n;
     constructor(children, minimumTime, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
@@ -5029,6 +5285,10 @@ class DeferredBlockPlaceholder extends BlockNode {
     }
 }
 class DeferredBlockLoading extends BlockNode {
+    children;
+    afterTime;
+    minimumTime;
+    i18n;
     constructor(children, afterTime, minimumTime, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
@@ -5041,6 +5301,8 @@ class DeferredBlockLoading extends BlockNode {
     }
 }
 class DeferredBlockError extends BlockNode {
+    children;
+    i18n;
     constructor(children, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
@@ -5051,6 +5313,18 @@ class DeferredBlockError extends BlockNode {
     }
 }
 class DeferredBlock extends BlockNode {
+    children;
+    placeholder;
+    loading;
+    error;
+    mainBlockSpan;
+    i18n;
+    triggers;
+    prefetchTriggers;
+    hydrateTriggers;
+    definedTriggers;
+    definedPrefetchTriggers;
+    definedHydrateTriggers;
     constructor(children, triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
@@ -5085,6 +5359,9 @@ class DeferredBlock extends BlockNode {
     }
 }
 class SwitchBlock extends BlockNode {
+    expression;
+    cases;
+    unknownBlocks;
     constructor(expression, cases, 
     /**
      * These blocks are only captured to allow for autocompletion in the language service. They
@@ -5101,6 +5378,9 @@ class SwitchBlock extends BlockNode {
     }
 }
 class SwitchBlockCase extends BlockNode {
+    expression;
+    children;
+    i18n;
     constructor(expression, children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.expression = expression;
@@ -5112,6 +5392,15 @@ class SwitchBlockCase extends BlockNode {
     }
 }
 class ForLoopBlock extends BlockNode {
+    item;
+    expression;
+    trackBy;
+    trackKeywordSpan;
+    contextVariables;
+    children;
+    empty;
+    mainBlockSpan;
+    i18n;
     constructor(item, expression, trackBy, trackKeywordSpan, contextVariables, children, empty, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.item = item;
@@ -5129,6 +5418,8 @@ class ForLoopBlock extends BlockNode {
     }
 }
 class ForLoopBlockEmpty extends BlockNode {
+    children;
+    i18n;
     constructor(children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.children = children;
@@ -5139,6 +5430,7 @@ class ForLoopBlockEmpty extends BlockNode {
     }
 }
 class IfBlock extends BlockNode {
+    branches;
     constructor(branches, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.branches = branches;
@@ -5148,6 +5440,10 @@ class IfBlock extends BlockNode {
     }
 }
 class IfBlockBranch extends BlockNode {
+    expression;
+    children;
+    expressionAlias;
+    i18n;
     constructor(expression, children, expressionAlias, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
         super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
         this.expression = expression;
@@ -5160,6 +5456,9 @@ class IfBlockBranch extends BlockNode {
     }
 }
 class UnknownBlock {
+    name;
+    sourceSpan;
+    nameSpan;
     constructor(name, sourceSpan, nameSpan) {
         this.name = name;
         this.sourceSpan = sourceSpan;
@@ -5170,6 +5469,11 @@ class UnknownBlock {
     }
 }
 class LetDeclaration$1 {
+    name;
+    value;
+    sourceSpan;
+    nameSpan;
+    valueSpan;
     constructor(name, value, sourceSpan, nameSpan, valueSpan) {
         this.name = name;
         this.value = value;
@@ -5182,6 +5486,18 @@ class LetDeclaration$1 {
     }
 }
 class Template {
+    tagName;
+    attributes;
+    inputs;
+    outputs;
+    templateAttrs;
+    children;
+    references;
+    variables;
+    sourceSpan;
+    startSourceSpan;
+    endSourceSpan;
+    i18n;
     constructor(
     // tagName is the name of the container element, if applicable.
     // `null` is a special case for when there is a structural directive on an `ng-template` so
@@ -5206,19 +5522,29 @@ class Template {
     }
 }
 class Content {
+    selector;
+    attributes;
+    children;
+    sourceSpan;
+    i18n;
+    name = 'ng-content';
     constructor(selector, attributes, children, sourceSpan, i18n) {
         this.selector = selector;
         this.attributes = attributes;
         this.children = children;
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
-        this.name = 'ng-content';
     }
     visit(visitor) {
         return visitor.visitContent(this);
     }
 }
 class Variable {
+    name;
+    value;
+    sourceSpan;
+    keySpan;
+    valueSpan;
     constructor(name, value, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.value = value;
@@ -5231,6 +5557,11 @@ class Variable {
     }
 }
 class Reference {
+    name;
+    value;
+    sourceSpan;
+    keySpan;
+    valueSpan;
     constructor(name, value, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.value = value;
@@ -5243,6 +5574,10 @@ class Reference {
     }
 }
 class Icu$1 {
+    vars;
+    placeholders;
+    sourceSpan;
+    i18n;
     constructor(vars, placeholders, sourceSpan, i18n) {
         this.vars = vars;
         this.placeholders = placeholders;
@@ -5337,6 +5672,17 @@ function visitAll$1(visitor, nodes) {
 }
 
 class Message {
+    nodes;
+    placeholders;
+    placeholderToMessage;
+    meaning;
+    description;
+    customId;
+    sources;
+    id;
+    /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
+    legacyIds = [];
+    messageString;
     /**
      * @param nodes message AST
      * @param placeholders maps placeholder names to static content and their source spans
@@ -5352,8 +5698,6 @@ class Message {
         this.meaning = meaning;
         this.description = description;
         this.customId = customId;
-        /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
-        this.legacyIds = [];
         this.id = this.customId;
         this.messageString = serializeMessage(this.nodes);
         if (nodes.length) {
@@ -5373,6 +5717,8 @@ class Message {
     }
 }
 class Text$2 {
+    value;
+    sourceSpan;
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -5383,6 +5729,8 @@ class Text$2 {
 }
 // TODO(vicb): do we really need this node (vs an array) ?
 class Container {
+    children;
+    sourceSpan;
     constructor(children, sourceSpan) {
         this.children = children;
         this.sourceSpan = sourceSpan;
@@ -5392,6 +5740,11 @@ class Container {
     }
 }
 class Icu {
+    expression;
+    type;
+    cases;
+    sourceSpan;
+    expressionPlaceholder;
     constructor(expression, type, cases, sourceSpan, expressionPlaceholder) {
         this.expression = expression;
         this.type = type;
@@ -5404,6 +5757,15 @@ class Icu {
     }
 }
 class TagPlaceholder {
+    tag;
+    attrs;
+    startName;
+    closeName;
+    children;
+    isVoid;
+    sourceSpan;
+    startSourceSpan;
+    endSourceSpan;
     constructor(tag, attrs, startName, closeName, children, isVoid, 
     // TODO sourceSpan should cover all (we need a startSourceSpan and endSourceSpan)
     sourceSpan, startSourceSpan, endSourceSpan) {
@@ -5422,6 +5784,9 @@ class TagPlaceholder {
     }
 }
 class Placeholder {
+    value;
+    name;
+    sourceSpan;
     constructor(value, name, sourceSpan) {
         this.value = value;
         this.name = name;
@@ -5432,6 +5797,11 @@ class Placeholder {
     }
 }
 class IcuPlaceholder {
+    value;
+    name;
+    sourceSpan;
+    /** Used to capture a message computed from a previous processing pass (see `setI18nRefs()`). */
+    previousMessage;
     constructor(value, name, sourceSpan) {
         this.value = value;
         this.name = name;
@@ -5442,6 +5812,14 @@ class IcuPlaceholder {
     }
 }
 class BlockPlaceholder {
+    name;
+    parameters;
+    startName;
+    closeName;
+    children;
+    sourceSpan;
+    startSourceSpan;
+    endSourceSpan;
     constructor(name, parameters, startName, closeName, children, sourceSpan, startSourceSpan, endSourceSpan) {
         this.name = name;
         this.parameters = parameters;
@@ -5552,13 +5930,14 @@ class Serializer {
  * A simple mapper that take a function to transform an internal name to a public name
  */
 class SimplePlaceholderMapper extends RecurseVisitor {
+    mapName;
+    internalToPublic = {};
+    publicToNextId = {};
+    publicToInternal = {};
     // create a mapping from the message
     constructor(message, mapName) {
         super();
         this.mapName = mapName;
-        this.internalToPublic = {};
-        this.publicToNextId = {};
-        this.publicToInternal = {};
         message.nodes.forEach((node) => node.visit(this));
     }
     toPublicName(internalName) {
@@ -5640,8 +6019,8 @@ function serialize$1(nodes) {
     return nodes.map((node) => node.visit(_visitor)).join('');
 }
 class Declaration {
+    attrs = {};
     constructor(unescapedAttrs) {
-        this.attrs = {};
         Object.keys(unescapedAttrs).forEach((k) => {
             this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
@@ -5651,6 +6030,8 @@ class Declaration {
     }
 }
 class Doctype {
+    rootTag;
+    dtd;
     constructor(rootTag, dtd) {
         this.rootTag = rootTag;
         this.dtd = dtd;
@@ -5660,10 +6041,12 @@ class Doctype {
     }
 }
 class Tag {
+    name;
+    children;
+    attrs = {};
     constructor(name, unescapedAttrs = {}, children = []) {
         this.name = name;
         this.children = children;
-        this.attrs = {};
         Object.keys(unescapedAttrs).forEach((k) => {
             this.attrs[k] = escapeXml(unescapedAttrs[k]);
         });
@@ -5673,6 +6056,7 @@ class Tag {
     }
 }
 class Text$1 {
+    value;
     constructor(unescapedValue) {
         this.value = escapeXml(unescapedValue);
     }
@@ -6051,9 +6435,7 @@ function conditionallyCreateDirectiveBindingLiteral(map, forInputs) {
  * property names that are set can be resolved to their documented declaration.
  */
 class DefinitionMap {
-    constructor() {
-        this.values = [];
-    }
+    values = [];
     set(key, value) {
         if (value) {
             const existing = this.values.find((value) => value.key === key);
@@ -6271,6 +6653,8 @@ function assertInterpolationSymbols(identifier, value) {
 }
 
 class InterpolationConfig {
+    start;
+    end;
     static fromArray(markers) {
         if (!markers) {
             return DEFAULT_INTERPOLATION_CONFIG;
@@ -6370,6 +6754,10 @@ function isQuote(code) {
 }
 
 class ParseLocation {
+    file;
+    offset;
+    line;
+    col;
     constructor(file, offset, line, col) {
         this.file = file;
         this.offset = offset;
@@ -6455,12 +6843,18 @@ class ParseLocation {
     }
 }
 class ParseSourceFile {
+    content;
+    url;
     constructor(content, url) {
         this.content = content;
         this.url = url;
     }
 }
 class ParseSourceSpan {
+    start;
+    end;
+    fullStart;
+    details;
     /**
      * Create an object that holds information about spans of tokens/nodes captured during
      * lexing/parsing of text.
@@ -6500,6 +6894,9 @@ var ParseErrorLevel;
     ParseErrorLevel[ParseErrorLevel["ERROR"] = 1] = "ERROR";
 })(ParseErrorLevel || (ParseErrorLevel = {}));
 class ParseError {
+    span;
+    msg;
+    level;
     constructor(span, msg, level = ParseErrorLevel.ERROR) {
         this.span = span;
         this.msg = msg;
@@ -6844,12 +7241,13 @@ class JitEvaluator {
  * An Angular AST visitor that converts AST nodes into executable JavaScript code.
  */
 class JitEmitterVisitor extends AbstractJsEmitterVisitor {
+    refResolver;
+    _evalArgNames = [];
+    _evalArgValues = [];
+    _evalExportedVars = [];
     constructor(refResolver) {
         super();
         this.refResolver = refResolver;
-        this._evalArgNames = [];
-        this._evalArgValues = [];
-        this._evalExportedVars = [];
     }
     createReturnStmt(ctx) {
         const stmt = new ReturnStatement(new LiteralMapExpr(this._evalExportedVars.map((resultVar) => new LiteralMapEntry(resultVar, variable(resultVar), false))));
@@ -6921,6 +7319,7 @@ function createInjectorType(meta) {
  * Only supports `resolveExternalReference`, all other methods throw.
  */
 class R3JitReflector {
+    context;
     constructor(context) {
         this.context = context;
     }
@@ -7322,23 +7721,6 @@ const scopedAtRuleIdentifiers = [
   in comments in lieu of the next selector when running under polyfill.
 */
 class ShadowCss {
-    constructor() {
-        /**
-         * Regular expression used to extrapolate the possible keyframes from an
-         * animation declaration (with possibly multiple animation definitions)
-         *
-         * The regular expression can be divided in three parts
-         *  - (^|\s+|,)
-         *    captures how many (if any) leading whitespaces are present or a comma
-         *  - (?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))
-         *    captures two different possible keyframes, ones which are quoted or ones which are valid css
-         * indents (custom properties excluded)
-         *  - (?=[,\s;]|$)
-         *    simply matches the end of the possible keyframe, valid endings are: a comma, a space, a
-         * semicolon or the end of the string
-         */
-        this._animationDeclarationKeyframesRe = /(^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))(?=[,\s]|$)/g;
-    }
     /*
      * Shim some cssText with the given selector. Returns cssText that can be included in the document
      *
@@ -7481,6 +7863,21 @@ class ShadowCss {
             return `${spaces1}${quote}${name}${quote}${spaces2}`;
         });
     }
+    /**
+     * Regular expression used to extrapolate the possible keyframes from an
+     * animation declaration (with possibly multiple animation definitions)
+     *
+     * The regular expression can be divided in three parts
+     *  - (^|\s+|,)
+     *    captures how many (if any) leading whitespaces are present or a comma
+     *  - (?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))
+     *    captures two different possible keyframes, ones which are quoted or ones which are valid css
+     * indents (custom properties excluded)
+     *  - (?=[,\s;]|$)
+     *    simply matches the end of the possible keyframe, valid endings are: a comma, a space, a
+     * semicolon or the end of the string
+     */
+    _animationDeclarationKeyframesRe = /(^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))(?=[,\s]|$)/g;
     /**
      * Scope an animation rule so that the keyframes mentioned in such rule
      * are scoped if defined in the component's css and left untouched otherwise.
@@ -7753,6 +8150,8 @@ class ShadowCss {
             return new CssRule(selector, rule.content);
         });
     }
+    _safeSelector;
+    _shouldScopeIndicator;
     // `isParentSelector` is used to distinguish the selectors which are coming from
     // the initial selector string and any nested selectors, parsed recursively,
     // for example `selector = 'a:where(.one)'` could be the parent, while recursive call
@@ -7936,9 +8335,10 @@ class ShadowCss {
     }
 }
 class SafeSelector {
+    placeholders = [];
+    index = 0;
+    _content;
     constructor(selector) {
-        this.placeholders = [];
-        this.index = 0;
         // Replaces attribute selectors with placeholders.
         // The WS in [attr="va lue"] would otherwise be interpreted as a selector separator.
         selector = this._escapeRegexMatches(selector, /(\[[^\]]*\])/g);
@@ -8028,6 +8428,8 @@ const _cssCommaInPlaceholderReGlobal = new RegExp(COMMA_IN_PLACEHOLDER, 'g');
 const _cssSemiInPlaceholderReGlobal = new RegExp(SEMI_IN_PLACEHOLDER, 'g');
 const _cssColonInPlaceholderReGlobal = new RegExp(COLON_IN_PLACEHOLDER, 'g');
 class CssRule {
+    selector;
+    content;
     constructor(selector, content) {
         this.selector = selector;
         this.content = content;
@@ -8053,6 +8455,8 @@ function processRules(input, ruleCallback) {
     return unescapeInStrings(escapedResult);
 }
 class StringWithEscapedBlocks {
+    escapedString;
+    blocks;
     constructor(escapedString, blocks) {
         this.escapedString = escapedString;
         this.blocks = blocks;
@@ -8885,6 +9289,9 @@ function createInterpolateTextOp(xref, interpolation, sourceSpan) {
     };
 }
 class Interpolation {
+    strings;
+    expressions;
+    i18nPlaceholders;
     constructor(strings, expressions, i18nPlaceholders) {
         this.strings = strings;
         this.expressions = expressions;
@@ -9137,7 +9544,6 @@ function createStoreLetOp(target, declaredName, value, sourceSpan) {
     };
 }
 
-var _a, _b, _c, _d, _e, _f, _g, _h;
 /**
  * Check whether a given `o.Expression` is a logical IR expression type.
  */
@@ -9156,10 +9562,11 @@ class ExpressionBase extends Expression {
  * Logical expression representing a lexical read of a variable name.
  */
 class LexicalReadExpr extends ExpressionBase {
+    name;
+    kind = ExpressionKind.LexicalRead;
     constructor(name) {
         super();
         this.name = name;
-        this.kind = ExpressionKind.LexicalRead;
     }
     visitExpression(visitor, context) { }
     isEquivalent(other) {
@@ -9180,12 +9587,15 @@ class LexicalReadExpr extends ExpressionBase {
  * Runtime operation to retrieve the value of a local reference.
  */
 class ReferenceExpr extends ExpressionBase {
+    target;
+    targetSlot;
+    offset;
+    kind = ExpressionKind.Reference;
     constructor(target, targetSlot, offset) {
         super();
         this.target = target;
         this.targetSlot = targetSlot;
         this.offset = offset;
-        this.kind = ExpressionKind.Reference;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9200,15 +9610,17 @@ class ReferenceExpr extends ExpressionBase {
     }
 }
 class StoreLetExpr extends ExpressionBase {
-    static { _a = ConsumesVarsTrait, _b = DependsOnSlotContext; }
+    target;
+    value;
+    sourceSpan;
+    kind = ExpressionKind.StoreLet;
+    [ConsumesVarsTrait] = true;
+    [DependsOnSlotContext] = true;
     constructor(target, value, sourceSpan) {
         super();
         this.target = target;
         this.value = value;
         this.sourceSpan = sourceSpan;
-        this.kind = ExpressionKind.StoreLet;
-        this[_a] = true;
-        this[_b] = true;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9225,11 +9637,13 @@ class StoreLetExpr extends ExpressionBase {
     }
 }
 class ContextLetReferenceExpr extends ExpressionBase {
+    target;
+    targetSlot;
+    kind = ExpressionKind.ContextLetReference;
     constructor(target, targetSlot) {
         super();
         this.target = target;
         this.targetSlot = targetSlot;
-        this.kind = ExpressionKind.ContextLetReference;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9247,10 +9661,11 @@ class ContextLetReferenceExpr extends ExpressionBase {
  * A reference to the current view context (usually the `ctx` variable in a template function).
  */
 class ContextExpr extends ExpressionBase {
+    view;
+    kind = ExpressionKind.Context;
     constructor(view) {
         super();
         this.view = view;
-        this.kind = ExpressionKind.Context;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9268,10 +9683,11 @@ class ContextExpr extends ExpressionBase {
  * A reference to the current view context inside a track function.
  */
 class TrackContextExpr extends ExpressionBase {
+    view;
+    kind = ExpressionKind.TrackContext;
     constructor(view) {
         super();
         this.view = view;
-        this.kind = ExpressionKind.TrackContext;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9289,10 +9705,10 @@ class TrackContextExpr extends ExpressionBase {
  * Runtime operation to navigate to the next view context in the view hierarchy.
  */
 class NextContextExpr extends ExpressionBase {
+    kind = ExpressionKind.NextContext;
+    steps = 1;
     constructor() {
         super();
-        this.kind = ExpressionKind.NextContext;
-        this.steps = 1;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9315,9 +9731,9 @@ class NextContextExpr extends ExpressionBase {
  * operation.
  */
 class GetCurrentViewExpr extends ExpressionBase {
+    kind = ExpressionKind.GetCurrentView;
     constructor() {
         super();
-        this.kind = ExpressionKind.GetCurrentView;
     }
     visitExpression() { }
     isEquivalent(e) {
@@ -9335,10 +9751,11 @@ class GetCurrentViewExpr extends ExpressionBase {
  * Runtime operation to restore a snapshotted view.
  */
 class RestoreViewExpr extends ExpressionBase {
+    view;
+    kind = ExpressionKind.RestoreView;
     constructor(view) {
         super();
         this.view = view;
-        this.kind = ExpressionKind.RestoreView;
     }
     visitExpression(visitor, context) {
         if (typeof this.view !== 'number') {
@@ -9372,10 +9789,11 @@ class RestoreViewExpr extends ExpressionBase {
  * Runtime operation to reset the current view context after `RestoreView`.
  */
 class ResetViewExpr extends ExpressionBase {
+    expr;
+    kind = ExpressionKind.ResetView;
     constructor(expr) {
         super();
         this.expr = expr;
-        this.kind = ExpressionKind.ResetView;
     }
     visitExpression(visitor, context) {
         this.expr.visitExpression(visitor, context);
@@ -9394,11 +9812,13 @@ class ResetViewExpr extends ExpressionBase {
     }
 }
 class TwoWayBindingSetExpr extends ExpressionBase {
+    target;
+    value;
+    kind = ExpressionKind.TwoWayBindingSet;
     constructor(target, value) {
         super();
         this.target = target;
         this.value = value;
-        this.kind = ExpressionKind.TwoWayBindingSet;
     }
     visitExpression(visitor, context) {
         this.target.visitExpression(visitor, context);
@@ -9422,11 +9842,12 @@ class TwoWayBindingSetExpr extends ExpressionBase {
  * Read of a variable declared as an `ir.VariableOp` and referenced through its `ir.XrefId`.
  */
 class ReadVariableExpr extends ExpressionBase {
+    xref;
+    kind = ExpressionKind.ReadVariable;
+    name = null;
     constructor(xref) {
         super();
         this.xref = xref;
-        this.kind = ExpressionKind.ReadVariable;
-        this.name = null;
     }
     visitExpression() { }
     isEquivalent(other) {
@@ -9443,18 +9864,29 @@ class ReadVariableExpr extends ExpressionBase {
     }
 }
 class PureFunctionExpr extends ExpressionBase {
-    static { _c = ConsumesVarsTrait, _d = UsesVarOffset; }
+    kind = ExpressionKind.PureFunctionExpr;
+    [ConsumesVarsTrait] = true;
+    [UsesVarOffset] = true;
+    varOffset = null;
+    /**
+     * The expression which should be memoized as a pure computation.
+     *
+     * This expression contains internal `PureFunctionParameterExpr`s, which are placeholders for the
+     * positional argument expressions in `args.
+     */
+    body;
+    /**
+     * Positional arguments to the pure function which will memoize the `body` expression, which act
+     * as memoization keys.
+     */
+    args;
+    /**
+     * Once extracted to the `ConstantPool`, a reference to the function which defines the computation
+     * of `body`.
+     */
+    fn = null;
     constructor(expression, args) {
         super();
-        this.kind = ExpressionKind.PureFunctionExpr;
-        this[_c] = true;
-        this[_d] = true;
-        this.varOffset = null;
-        /**
-         * Once extracted to the `ConstantPool`, a reference to the function which defines the computation
-         * of `body`.
-         */
-        this.fn = null;
         this.body = expression;
         this.args = args;
     }
@@ -9496,10 +9928,11 @@ class PureFunctionExpr extends ExpressionBase {
     }
 }
 class PureFunctionParameterExpr extends ExpressionBase {
+    index;
+    kind = ExpressionKind.PureFunctionParameterExpr;
     constructor(index) {
         super();
         this.index = index;
-        this.kind = ExpressionKind.PureFunctionParameterExpr;
     }
     visitExpression() { }
     isEquivalent(other) {
@@ -9514,17 +9947,20 @@ class PureFunctionParameterExpr extends ExpressionBase {
     }
 }
 class PipeBindingExpr extends ExpressionBase {
-    static { _e = ConsumesVarsTrait, _f = UsesVarOffset; }
+    target;
+    targetSlot;
+    name;
+    args;
+    kind = ExpressionKind.PipeBinding;
+    [ConsumesVarsTrait] = true;
+    [UsesVarOffset] = true;
+    varOffset = null;
     constructor(target, targetSlot, name, args) {
         super();
         this.target = target;
         this.targetSlot = targetSlot;
         this.name = name;
         this.args = args;
-        this.kind = ExpressionKind.PipeBinding;
-        this[_e] = true;
-        this[_f] = true;
-        this.varOffset = null;
     }
     visitExpression(visitor, context) {
         for (const arg of this.args) {
@@ -9549,7 +9985,15 @@ class PipeBindingExpr extends ExpressionBase {
     }
 }
 class PipeBindingVariadicExpr extends ExpressionBase {
-    static { _g = ConsumesVarsTrait, _h = UsesVarOffset; }
+    target;
+    targetSlot;
+    name;
+    args;
+    numArgs;
+    kind = ExpressionKind.PipeBindingVariadic;
+    [ConsumesVarsTrait] = true;
+    [UsesVarOffset] = true;
+    varOffset = null;
     constructor(target, targetSlot, name, args, numArgs) {
         super();
         this.target = target;
@@ -9557,10 +10001,6 @@ class PipeBindingVariadicExpr extends ExpressionBase {
         this.name = name;
         this.args = args;
         this.numArgs = numArgs;
-        this.kind = ExpressionKind.PipeBindingVariadic;
-        this[_g] = true;
-        this[_h] = true;
-        this.varOffset = null;
     }
     visitExpression(visitor, context) {
         this.args.visitExpression(visitor, context);
@@ -9581,11 +10021,13 @@ class PipeBindingVariadicExpr extends ExpressionBase {
     }
 }
 class SafePropertyReadExpr extends ExpressionBase {
+    receiver;
+    name;
+    kind = ExpressionKind.SafePropertyRead;
     constructor(receiver, name) {
         super();
         this.receiver = receiver;
         this.name = name;
-        this.kind = ExpressionKind.SafePropertyRead;
     }
     // An alias for name, which allows other logic to handle property reads and keyed reads together.
     get index() {
@@ -9608,11 +10050,13 @@ class SafePropertyReadExpr extends ExpressionBase {
     }
 }
 class SafeKeyedReadExpr extends ExpressionBase {
+    receiver;
+    index;
+    kind = ExpressionKind.SafeKeyedRead;
     constructor(receiver, index, sourceSpan) {
         super(sourceSpan);
         this.receiver = receiver;
         this.index = index;
-        this.kind = ExpressionKind.SafeKeyedRead;
     }
     visitExpression(visitor, context) {
         this.receiver.visitExpression(visitor, context);
@@ -9633,11 +10077,13 @@ class SafeKeyedReadExpr extends ExpressionBase {
     }
 }
 class SafeInvokeFunctionExpr extends ExpressionBase {
+    receiver;
+    args;
+    kind = ExpressionKind.SafeInvokeFunction;
     constructor(receiver, args) {
         super();
         this.receiver = receiver;
         this.args = args;
-        this.kind = ExpressionKind.SafeInvokeFunction;
     }
     visitExpression(visitor, context) {
         this.receiver.visitExpression(visitor, context);
@@ -9662,11 +10108,13 @@ class SafeInvokeFunctionExpr extends ExpressionBase {
     }
 }
 class SafeTernaryExpr extends ExpressionBase {
+    guard;
+    expr;
+    kind = ExpressionKind.SafeTernaryExpr;
     constructor(guard, expr) {
         super();
         this.guard = guard;
         this.expr = expr;
-        this.kind = ExpressionKind.SafeTernaryExpr;
     }
     visitExpression(visitor, context) {
         this.guard.visitExpression(visitor, context);
@@ -9687,10 +10135,7 @@ class SafeTernaryExpr extends ExpressionBase {
     }
 }
 class EmptyExpr extends ExpressionBase {
-    constructor() {
-        super(...arguments);
-        this.kind = ExpressionKind.EmptyExpr;
-    }
+    kind = ExpressionKind.EmptyExpr;
     visitExpression(visitor, context) { }
     isEquivalent(e) {
         return e instanceof EmptyExpr;
@@ -9704,12 +10149,14 @@ class EmptyExpr extends ExpressionBase {
     transformInternalExpressions() { }
 }
 class AssignTemporaryExpr extends ExpressionBase {
+    expr;
+    xref;
+    kind = ExpressionKind.AssignTemporaryExpr;
+    name = null;
     constructor(expr, xref) {
         super();
         this.expr = expr;
         this.xref = xref;
-        this.kind = ExpressionKind.AssignTemporaryExpr;
-        this.name = null;
     }
     visitExpression(visitor, context) {
         this.expr.visitExpression(visitor, context);
@@ -9730,11 +10177,12 @@ class AssignTemporaryExpr extends ExpressionBase {
     }
 }
 class ReadTemporaryExpr extends ExpressionBase {
+    xref;
+    kind = ExpressionKind.ReadTemporaryExpr;
+    name = null;
     constructor(xref) {
         super();
         this.xref = xref;
-        this.kind = ExpressionKind.ReadTemporaryExpr;
-        this.name = null;
     }
     visitExpression(visitor, context) { }
     isEquivalent() {
@@ -9751,10 +10199,11 @@ class ReadTemporaryExpr extends ExpressionBase {
     }
 }
 class SlotLiteralExpr extends ExpressionBase {
+    slot;
+    kind = ExpressionKind.SlotLiteralExpr;
     constructor(slot) {
         super();
         this.slot = slot;
-        this.kind = ExpressionKind.SlotLiteralExpr;
     }
     visitExpression(visitor, context) { }
     isEquivalent(e) {
@@ -9769,6 +10218,11 @@ class SlotLiteralExpr extends ExpressionBase {
     transformInternalExpressions() { }
 }
 class ConditionalCaseExpr extends ExpressionBase {
+    expr;
+    target;
+    targetSlot;
+    alias;
+    kind = ExpressionKind.ConditionalCase;
     /**
      * Create an expression for one branch of a conditional.
      * @param expr The expression to be tested for this case. Might be null, as in an `else` case.
@@ -9780,7 +10234,6 @@ class ConditionalCaseExpr extends ExpressionBase {
         this.target = target;
         this.targetSlot = targetSlot;
         this.alias = alias;
-        this.kind = ExpressionKind.ConditionalCase;
     }
     visitExpression(visitor, context) {
         if (this.expr !== null) {
@@ -9803,10 +10256,11 @@ class ConditionalCaseExpr extends ExpressionBase {
     }
 }
 class ConstCollectedExpr extends ExpressionBase {
+    expr;
+    kind = ExpressionKind.ConstCollected;
     constructor(expr) {
         super();
         this.expr = expr;
-        this.kind = ExpressionKind.ConstCollected;
     }
     transformInternalExpressions(transform, flags) {
         this.expr = transform(this.expr, flags);
@@ -10129,27 +10583,27 @@ function isStringLiteral(expr) {
  * @param OpT specific subtype of `Op` nodes which this list contains.
  */
 class OpList {
-    static { this.nextListId = 0; }
+    static nextListId = 0;
+    /**
+     * Debug ID of this `OpList` instance.
+     */
+    debugListId = OpList.nextListId++;
+    // OpList uses static head/tail nodes of a special `ListEnd` type.
+    // This avoids the need for special casing of the first and last list
+    // elements in all list operations.
+    head = {
+        kind: OpKind.ListEnd,
+        next: null,
+        prev: null,
+        debugListId: this.debugListId,
+    };
+    tail = {
+        kind: OpKind.ListEnd,
+        next: null,
+        prev: null,
+        debugListId: this.debugListId,
+    };
     constructor() {
-        /**
-         * Debug ID of this `OpList` instance.
-         */
-        this.debugListId = OpList.nextListId++;
-        // OpList uses static head/tail nodes of a special `ListEnd` type.
-        // This avoids the need for special casing of the first and last list
-        // elements in all list operations.
-        this.head = {
-            kind: OpKind.ListEnd,
-            next: null,
-            prev: null,
-            debugListId: this.debugListId,
-        };
-        this.tail = {
-            kind: OpKind.ListEnd,
-            next: null,
-            prev: null,
-            debugListId: this.debugListId,
-        };
         // Link `head` and `tail` together at the start (list is empty).
         this.head.next = this.tail;
         this.tail.prev = this.head;
@@ -10377,9 +10831,7 @@ class OpList {
 }
 
 class SlotHandle {
-    constructor() {
-        this.slot = null;
-    }
+    slot = null;
 }
 
 /**
@@ -10807,55 +11259,56 @@ var CompilationJobKind;
  * Contains one or more corresponding compilation units.
  */
 class CompilationJob {
+    componentName;
+    pool;
+    compatibility;
     constructor(componentName, pool, compatibility) {
         this.componentName = componentName;
         this.pool = pool;
         this.compatibility = compatibility;
-        this.kind = CompilationJobKind.Both;
-        /**
-         * Tracks the next `ir.XrefId` which can be assigned as template structures are ingested.
-         */
-        this.nextXrefId = 0;
     }
+    kind = CompilationJobKind.Both;
     /**
      * Generate a new unique `ir.XrefId` in this job.
      */
     allocateXrefId() {
         return this.nextXrefId++;
     }
+    /**
+     * Tracks the next `ir.XrefId` which can be assigned as template structures are ingested.
+     */
+    nextXrefId = 0;
 }
 /**
  * Compilation-in-progress of a whole component's template, including the main template and any
  * embedded views or host bindings.
  */
 class ComponentCompilationJob extends CompilationJob {
+    relativeContextFilePath;
+    i18nUseExternalIds;
+    deferMeta;
+    allDeferrableDepsFn;
     constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn) {
         super(componentName, pool, compatibility);
         this.relativeContextFilePath = relativeContextFilePath;
         this.i18nUseExternalIds = i18nUseExternalIds;
         this.deferMeta = deferMeta;
         this.allDeferrableDepsFn = allDeferrableDepsFn;
-        this.kind = CompilationJobKind.Tmpl;
-        this.fnSuffix = 'Template';
-        this.views = new Map();
-        /**
-         * Causes ngContentSelectors to be emitted, for content projection slots in the view. Possibly a
-         * reference into the constant pool.
-         */
-        this.contentSelectors = null;
-        /**
-         * Constant expressions used by operations within this component's compilation.
-         *
-         * This will eventually become the `consts` array in the component definition.
-         */
-        this.consts = [];
-        /**
-         * Initialization statements needed to set up the consts.
-         */
-        this.constsInitializers = [];
         this.root = new ViewCompilationUnit(this, this.allocateXrefId(), null);
         this.views.set(this.root.xref, this.root);
     }
+    kind = CompilationJobKind.Tmpl;
+    fnSuffix = 'Template';
+    /**
+     * The root view, representing the component's template.
+     */
+    root;
+    views = new Map();
+    /**
+     * Causes ngContentSelectors to be emitted, for content projection slots in the view. Possibly a
+     * reference into the constant pool.
+     */
+    contentSelectors = null;
     /**
      * Add a `ViewCompilation` for a new embedded view to this compilation.
      */
@@ -10883,36 +11336,47 @@ class ComponentCompilationJob extends CompilationJob {
         }
         return idx;
     }
+    /**
+     * Constant expressions used by operations within this component's compilation.
+     *
+     * This will eventually become the `consts` array in the component definition.
+     */
+    consts = [];
+    /**
+     * Initialization statements needed to set up the consts.
+     */
+    constsInitializers = [];
 }
 /**
  * A compilation unit is compiled into a template function. Some example units are views and host
  * bindings.
  */
 class CompilationUnit {
+    xref;
     constructor(xref) {
         this.xref = xref;
-        /**
-         * List of creation operations for this view.
-         *
-         * Creation operations may internally contain other operations, including update operations.
-         */
-        this.create = new OpList();
-        /**
-         * List of update operations for this view.
-         */
-        this.update = new OpList();
-        /**
-         * Name of the function which will be generated for this unit.
-         *
-         * May be `null` if not yet determined.
-         */
-        this.fnName = null;
-        /**
-         * Number of variable slots used within this view, or `null` if variables have not yet been
-         * counted.
-         */
-        this.vars = null;
     }
+    /**
+     * List of creation operations for this view.
+     *
+     * Creation operations may internally contain other operations, including update operations.
+     */
+    create = new OpList();
+    /**
+     * List of update operations for this view.
+     */
+    update = new OpList();
+    /**
+     * Name of the function which will be generated for this unit.
+     *
+     * May be `null` if not yet determined.
+     */
+    fnName = null;
+    /**
+     * Number of variable slots used within this view, or `null` if variables have not yet been
+     * counted.
+     */
+    vars = null;
     /**
      * Iterate over all `ir.Op`s within this view.
      *
@@ -10936,26 +11400,28 @@ class CompilationUnit {
  * Compilation-in-progress of an individual view within a template.
  */
 class ViewCompilationUnit extends CompilationUnit {
+    job;
+    parent;
     constructor(job, xref, parent) {
         super(xref);
         this.job = job;
         this.parent = parent;
-        /**
-         * Map of declared variables available within this view to the property on the context object
-         * which they alias.
-         */
-        this.contextVariables = new Map();
-        /**
-         * Set of aliases available within this view. An alias is a variable whose provided expression is
-         * inlined at every location it is used. It may also depend on context variables, by name.
-         */
-        this.aliases = new Set();
-        /**
-         * Number of declaration slots used within this view, or `null` if slots have not yet been
-         * allocated.
-         */
-        this.decls = null;
     }
+    /**
+     * Map of declared variables available within this view to the property on the context object
+     * which they alias.
+     */
+    contextVariables = new Map();
+    /**
+     * Set of aliases available within this view. An alias is a variable whose provided expression is
+     * inlined at every location it is used. It may also depend on context variables, by name.
+     */
+    aliases = new Set();
+    /**
+     * Number of declaration slots used within this view, or `null` if slots have not yet been
+     * allocated.
+     */
+    decls = null;
 }
 /**
  * Compilation-in-progress of a host binding, which contains a single unit for that host binding.
@@ -10963,23 +11429,25 @@ class ViewCompilationUnit extends CompilationUnit {
 class HostBindingCompilationJob extends CompilationJob {
     constructor(componentName, pool, compatibility) {
         super(componentName, pool, compatibility);
-        this.kind = CompilationJobKind.Host;
-        this.fnSuffix = 'HostBindings';
         this.root = new HostBindingCompilationUnit(this);
     }
+    kind = CompilationJobKind.Host;
+    fnSuffix = 'HostBindings';
+    root;
     get units() {
         return [this.root];
     }
 }
 class HostBindingCompilationUnit extends CompilationUnit {
+    job;
     constructor(job) {
         super(0);
         this.job = job;
-        /**
-         * Much like an element can have attributes, so can a host binding function.
-         */
-        this.attributes = null;
     }
+    /**
+     * Much like an element can have attributes, so can a host binding function.
+     */
+    attributes = null;
 }
 
 /**
@@ -11633,6 +12101,11 @@ const FLYWEIGHT_ARRAY = Object.freeze([]);
  * Container for all of the various kinds of attributes which are applied on an element.
  */
 class ElementAttributes {
+    compatibility;
+    known = new Map();
+    byKind = new Map();
+    propertyBindings = null;
+    projectAs = null;
     get attributes() {
         return this.byKind.get(BindingKind.Attribute) ?? FLYWEIGHT_ARRAY;
     }
@@ -11653,10 +12126,6 @@ class ElementAttributes {
     }
     constructor(compatibility) {
         this.compatibility = compatibility;
-        this.known = new Map();
-        this.byKind = new Map();
-        this.propertyBindings = null;
-        this.projectAs = null;
     }
     isKnown(kind, name) {
         const nameToValue = this.known.get(kind) ?? new Set();
@@ -12078,9 +12547,7 @@ function resolveDeferTargetNames(job) {
     }
 }
 class Scope$1 {
-    constructor() {
-        this.targets = new Map();
-    }
+    targets = new Map();
 }
 
 const REPLACEMENTS = new Map([
@@ -12915,12 +13382,16 @@ function serializeIcuNode(icu) {
 }
 
 class NodeWithI18n {
+    sourceSpan;
+    i18n;
     constructor(sourceSpan, i18n) {
         this.sourceSpan = sourceSpan;
         this.i18n = i18n;
     }
 }
 class Text extends NodeWithI18n {
+    value;
+    tokens;
     constructor(value, sourceSpan, tokens, i18n) {
         super(sourceSpan, i18n);
         this.value = value;
@@ -12931,6 +13402,10 @@ class Text extends NodeWithI18n {
     }
 }
 class Expansion extends NodeWithI18n {
+    switchValue;
+    type;
+    cases;
+    switchValueSourceSpan;
     constructor(switchValue, type, cases, sourceSpan, switchValueSourceSpan, i18n) {
         super(sourceSpan, i18n);
         this.switchValue = switchValue;
@@ -12943,6 +13418,11 @@ class Expansion extends NodeWithI18n {
     }
 }
 class ExpansionCase {
+    value;
+    expression;
+    sourceSpan;
+    valueSourceSpan;
+    expSourceSpan;
     constructor(value, expression, sourceSpan, valueSourceSpan, expSourceSpan) {
         this.value = value;
         this.expression = expression;
@@ -12955,6 +13435,11 @@ class ExpansionCase {
     }
 }
 class Attribute extends NodeWithI18n {
+    name;
+    value;
+    keySpan;
+    valueSpan;
+    valueTokens;
     constructor(name, value, sourceSpan, keySpan, valueSpan, valueTokens, i18n) {
         super(sourceSpan, i18n);
         this.name = name;
@@ -12968,6 +13453,11 @@ class Attribute extends NodeWithI18n {
     }
 }
 class Element extends NodeWithI18n {
+    name;
+    attrs;
+    children;
+    startSourceSpan;
+    endSourceSpan;
     constructor(name, attrs, children, sourceSpan, startSourceSpan, endSourceSpan = null, i18n) {
         super(sourceSpan, i18n);
         this.name = name;
@@ -12981,6 +13471,8 @@ class Element extends NodeWithI18n {
     }
 }
 class Comment {
+    value;
+    sourceSpan;
     constructor(value, sourceSpan) {
         this.value = value;
         this.sourceSpan = sourceSpan;
@@ -12990,6 +13482,12 @@ class Comment {
     }
 }
 class Block extends NodeWithI18n {
+    name;
+    parameters;
+    children;
+    nameSpan;
+    startSourceSpan;
+    endSourceSpan;
     constructor(name, parameters, children, sourceSpan, nameSpan, startSourceSpan, endSourceSpan = null, i18n) {
         super(sourceSpan, i18n);
         this.name = name;
@@ -13004,6 +13502,8 @@ class Block extends NodeWithI18n {
     }
 }
 class BlockParameter {
+    expression;
+    sourceSpan;
     constructor(expression, sourceSpan) {
         this.expression = expression;
         this.sourceSpan = sourceSpan;
@@ -13013,6 +13513,11 @@ class BlockParameter {
     }
 }
 class LetDeclaration {
+    name;
+    value;
+    sourceSpan;
+    nameSpan;
+    valueSpan;
     constructor(name, value, sourceSpan, nameSpan, valueSpan) {
         this.name = name;
         this.value = value;
@@ -15212,12 +15717,16 @@ const NGSP_UNICODE = '\uE500';
 NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
 class TokenError extends ParseError {
+    tokenType;
     constructor(errorMsg, tokenType, span) {
         super(span, errorMsg);
         this.tokenType = tokenType;
     }
 }
 class TokenizeResult {
+    tokens;
+    errors;
+    nonNormalizedIcuExpressions;
     constructor(tokens, errors, nonNormalizedIcuExpressions) {
         this.tokens = tokens;
         this.errors = errors;
@@ -15246,12 +15755,29 @@ var CharacterReferenceType;
     CharacterReferenceType["DEC"] = "decimal";
 })(CharacterReferenceType || (CharacterReferenceType = {}));
 class _ControlFlowError {
+    error;
     constructor(error) {
         this.error = error;
     }
 }
 // See https://www.w3.org/TR/html51/syntax.html#writing-html-documents
 class _Tokenizer {
+    _getTagDefinition;
+    _cursor;
+    _tokenizeIcu;
+    _interpolationConfig;
+    _leadingTriviaCodePoints;
+    _currentTokenStart = null;
+    _currentTokenType = null;
+    _expansionCaseStack = [];
+    _inInterpolation = false;
+    _preserveLineEndings;
+    _i18nNormalizeLineEndingsInICUs;
+    _tokenizeBlocks;
+    _tokenizeLet;
+    tokens = [];
+    errors = [];
+    nonNormalizedIcuExpressions = [];
     /**
      * @param _file The html source file being tokenized.
      * @param _getTagDefinition A function that will retrieve a tag definition for a given tag name.
@@ -15259,13 +15785,6 @@ class _Tokenizer {
      */
     constructor(_file, _getTagDefinition, options) {
         this._getTagDefinition = _getTagDefinition;
-        this._currentTokenStart = null;
-        this._currentTokenType = null;
-        this._expansionCaseStack = [];
-        this._inInterpolation = false;
-        this.tokens = [];
-        this.errors = [];
-        this.nonNormalizedIcuExpressions = [];
         this._tokenizeIcu = options.tokenizeExpansionForms || false;
         this._interpolationConfig = options.interpolationConfig || DEFAULT_INTERPOLATION_CONFIG;
         this._leadingTriviaCodePoints =
@@ -16172,6 +16691,10 @@ function mergeTextTokens(srcTokens) {
     return dstTokens;
 }
 class PlainCharacterCursor {
+    state;
+    file;
+    input;
+    end;
     constructor(fileOrCursor, range) {
         if (fileOrCursor instanceof PlainCharacterCursor) {
             this.file = fileOrCursor.file;
@@ -16268,6 +16791,7 @@ class PlainCharacterCursor {
     }
 }
 class EscapedCharacterCursor extends PlainCharacterCursor {
+    internalState;
     constructor(fileOrCursor, range) {
         if (fileOrCursor instanceof EscapedCharacterCursor) {
             super(fileOrCursor);
@@ -16403,6 +16927,8 @@ class EscapedCharacterCursor extends PlainCharacterCursor {
     }
 }
 class CursorError {
+    msg;
+    cursor;
     constructor(msg, cursor) {
         this.msg = msg;
         this.cursor = cursor;
@@ -16410,6 +16936,7 @@ class CursorError {
 }
 
 class TreeError extends ParseError {
+    elementName;
     static create(elementName, span, msg) {
         return new TreeError(elementName, span, msg);
     }
@@ -16419,12 +16946,15 @@ class TreeError extends ParseError {
     }
 }
 class ParseTreeResult {
+    rootNodes;
+    errors;
     constructor(rootNodes, errors) {
         this.rootNodes = rootNodes;
         this.errors = errors;
     }
 }
 class Parser$1 {
+    getTagDefinition;
     constructor(getTagDefinition) {
         this.getTagDefinition = getTagDefinition;
     }
@@ -16436,13 +16966,17 @@ class Parser$1 {
     }
 }
 class _TreeBuilder {
+    tokens;
+    getTagDefinition;
+    _index = -1;
+    // `_peek` will be initialized by the call to `_advance()` in the constructor.
+    _peek;
+    _containerStack = [];
+    rootNodes = [];
+    errors = [];
     constructor(tokens, getTagDefinition) {
         this.tokens = tokens;
         this.getTagDefinition = getTagDefinition;
-        this._index = -1;
-        this._containerStack = [];
-        this.rootNodes = [];
-        this.errors = [];
         this._advance();
     }
     build() {
@@ -16975,14 +17509,17 @@ function replaceNgsp(value) {
  * such that trimming whitespace does not does not drop required information from the node.
  */
 class WhitespaceVisitor {
+    preserveSignificantWhitespace;
+    originalNodeMap;
+    requireContext;
+    // How many ICU expansions which are currently being visited. ICUs can be nested, so this
+    // tracks the current depth of nesting. If this depth is greater than 0, then this visitor is
+    // currently processing content inside an ICU expansion.
+    icuExpansionDepth = 0;
     constructor(preserveSignificantWhitespace, originalNodeMap, requireContext = true) {
         this.preserveSignificantWhitespace = preserveSignificantWhitespace;
         this.originalNodeMap = originalNodeMap;
         this.requireContext = requireContext;
-        // How many ICU expansions which are currently being visited. ICUs can be nested, so this
-        // tracks the current depth of nesting. If this depth is greater than 0, then this visitor is
-        // currently processing content inside an ICU expansion.
-        this.icuExpansionDepth = 0;
     }
     visitElement(element, context) {
         if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
@@ -17160,6 +17697,11 @@ class Lexer {
     }
 }
 class Token {
+    index;
+    end;
+    type;
+    numValue;
+    strValue;
     constructor(index, end, type, numValue, strValue) {
         this.index = index;
         this.end = end;
@@ -17261,10 +17803,12 @@ function newErrorToken(index, end, message) {
 }
 const EOF = new Token(-1, -1, TokenType.Character, 0, '');
 class _Scanner {
+    input;
+    length;
+    peek = 0;
+    index = -1;
     constructor(input) {
         this.input = input;
-        this.peek = 0;
-        this.index = -1;
         this.length = input.length;
         this.advance();
     }
@@ -17538,6 +18082,9 @@ function parseIntAutoRadix(text) {
 }
 
 class SplitInterpolation {
+    strings;
+    expressions;
+    offsets;
     constructor(strings, expressions, offsets) {
         this.strings = strings;
         this.expressions = expressions;
@@ -17545,6 +18092,9 @@ class SplitInterpolation {
     }
 }
 class TemplateBindingParseResult {
+    templateBindings;
+    warnings;
+    errors;
     constructor(templateBindings, warnings, errors) {
         this.templateBindings = templateBindings;
         this.warnings = warnings;
@@ -17552,9 +18102,10 @@ class TemplateBindingParseResult {
     }
 }
 class Parser {
+    _lexer;
+    errors = [];
     constructor(_lexer) {
         this._lexer = _lexer;
-        this.errors = [];
     }
     parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         this._checkNoInterpolation(input, location, interpolationConfig);
@@ -17822,6 +18373,23 @@ var ParseContextFlags;
     ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
 })(ParseContextFlags || (ParseContextFlags = {}));
 class _ParseAST {
+    input;
+    location;
+    absoluteOffset;
+    tokens;
+    parseFlags;
+    errors;
+    offset;
+    rparensExpected = 0;
+    rbracketsExpected = 0;
+    rbracesExpected = 0;
+    context = ParseContextFlags.None;
+    // Cache of expression start and input indeces to the absolute source span they map to, used to
+    // prevent creating superfluous source spans in `sourceSpan`.
+    // A serial of the expression start and input index is used for mapping because both are stateful
+    // and may change for subsequent expressions visited by the parser.
+    sourceSpanCache = new Map();
+    index = 0;
     constructor(input, location, absoluteOffset, tokens, parseFlags, errors, offset) {
         this.input = input;
         this.location = location;
@@ -17830,16 +18398,6 @@ class _ParseAST {
         this.parseFlags = parseFlags;
         this.errors = errors;
         this.offset = offset;
-        this.rparensExpected = 0;
-        this.rbracketsExpected = 0;
-        this.rbracesExpected = 0;
-        this.context = ParseContextFlags.None;
-        // Cache of expression start and input indeces to the absolute source span they map to, used to
-        // prevent creating superfluous source spans in `sourceSpan`.
-        // A serial of the expression start and input index is used for mapping because both are stateful
-        // and may change for subsequent expressions visited by the parser.
-        this.sourceSpanCache = new Map();
-        this.index = 0;
     }
     peek(offset) {
         const i = this.index + offset;
@@ -18710,10 +19268,7 @@ class _ParseAST {
     }
 }
 class SimpleExpressionChecker extends RecursiveAstVisitor {
-    constructor() {
-        super(...arguments);
-        this.errors = [];
-    }
+    errors = [];
     visitPipe() {
         this.errors.push('pipes');
     }
@@ -19228,12 +19783,12 @@ const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName,
     return inverted;
 }, new Map());
 class DomElementSchemaRegistry extends ElementSchemaRegistry {
+    _schema = new Map();
+    // We don't allow binding to events for security reasons. Allowing event bindings would almost
+    // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
+    _eventSchema = new Map();
     constructor() {
         super();
-        this._schema = new Map();
-        // We don't allow binding to events for security reasons. Allowing event bindings would almost
-        // certainly introduce bad XSS vulnerabilities. Instead, we store events in a separate schema.
-        this._eventSchema = new Map();
         SCHEMA.forEach((encodedType) => {
             const type = new Map();
             const events = new Set();
@@ -19430,9 +19985,15 @@ function _isPixelDimensionStyle(prop) {
 }
 
 class HtmlTagDefinition {
+    closedByChildren = {};
+    contentType;
+    closedByParent = false;
+    implicitNamespacePrefix;
+    isVoid;
+    ignoreFirstLf;
+    canSelfClose;
+    preventNamespaceInheritance;
     constructor({ closedByChildren, implicitNamespacePrefix, contentType = TagContentType.PARSABLE_DATA, closedByParent = false, isVoid = false, ignoreFirstLf = false, preventNamespaceInheritance = false, canSelfClose = false, } = {}) {
-        this.closedByChildren = {};
-        this.closedByParent = false;
         if (closedByChildren && closedByChildren.length > 0) {
             closedByChildren.forEach((tagName) => (this.closedByChildren[tagName] = true));
         }
@@ -19614,12 +20175,10 @@ const TAG_TO_PLACEHOLDER_NAMES = {
  * Returns the same placeholder name when the content is identical.
  */
 class PlaceholderRegistry {
-    constructor() {
-        // Count the occurrence of the base name top generate a unique name
-        this._placeHolderNameCounts = {};
-        // Maps signature to placeholder names
-        this._signatureToName = {};
-    }
+    // Count the occurrence of the base name top generate a unique name
+    _placeHolderNameCounts = {};
+    // Maps signature to placeholder names
+    _signatureToName = {};
     getStartTagPlaceholderName(tag, attrs, isVoid) {
         const signature = this._hashTag(tag, attrs, isVoid);
         if (this._signatureToName[signature]) {
@@ -19720,6 +20279,11 @@ function noopVisitNodeFn(_html, i18n) {
     return i18n;
 }
 class _I18nVisitor {
+    _expressionParser;
+    _interpolationConfig;
+    _containerBlocks;
+    _retainEmptyTokens;
+    _preserveExpressionWhitespace;
     constructor(_expressionParser, _interpolationConfig, _containerBlocks, _retainEmptyTokens, _preserveExpressionWhitespace) {
         this._expressionParser = _expressionParser;
         this._interpolationConfig = _interpolationConfig;
@@ -20059,6 +20623,15 @@ const setI18nRefs = (originalNodeMap) => {
  * stored with other element's and attribute's information.
  */
 class I18nMetaVisitor {
+    interpolationConfig;
+    keepI18nAttrs;
+    enableI18nLegacyMessageIdFormat;
+    containerBlocks;
+    preserveSignificantWhitespace;
+    retainEmptyTokens;
+    // whether visited nodes contain i18n information
+    hasI18nMeta = false;
+    _errors = [];
     constructor(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, keepI18nAttrs = false, enableI18nLegacyMessageIdFormat = false, containerBlocks = DEFAULT_CONTAINER_BLOCKS, preserveSignificantWhitespace = true, 
     // When dropping significant whitespace we need to retain empty tokens or
     // else we won't be able to reuse source spans because empty tokens would be
@@ -20073,9 +20646,6 @@ class I18nMetaVisitor {
         this.containerBlocks = containerBlocks;
         this.preserveSignificantWhitespace = preserveSignificantWhitespace;
         this.retainEmptyTokens = retainEmptyTokens;
-        // whether visited nodes contain i18n information
-        this.hasI18nMeta = false;
-        this._errors = [];
     }
     _generateI18nMessage(nodes, meta = '', visitNodeFn) {
         const { meaning, description, customId } = this._parseMetadata(meta);
@@ -20433,6 +21003,8 @@ function createLocalizeStatements(variable, message, params) {
  * The result can be used for generating the `$localize` tagged template literals.
  */
 class LocalizeSerializerVisitor {
+    placeholderToMessage;
+    pieces;
     constructor(placeholderToMessage, pieces) {
         this.placeholderToMessage = placeholderToMessage;
         this.pieces = pieces;
@@ -21751,6 +22323,7 @@ function extractPureFunctions(job) {
     }
 }
 class PureFunctionConstant extends GenericKeyFn {
+    numArgs;
     constructor(numArgs) {
         super();
         this.numArgs = numArgs;
@@ -26010,6 +26583,11 @@ const ANIMATE_PROP_PREFIX = 'animate-';
  * Parses bindings in templates and in the directive host area.
  */
 class BindingParser {
+    _exprParser;
+    _interpolationConfig;
+    _schemaRegistry;
+    errors;
+    _allowInvalidAssignmentEvents;
     constructor(_exprParser, _interpolationConfig, _schemaRegistry, errors, _allowInvalidAssignmentEvents = false) {
         this._exprParser = _exprParser;
         this._interpolationConfig = _interpolationConfig;
@@ -26412,10 +26990,7 @@ class BindingParser {
     }
 }
 class PipeCollector extends RecursiveAstVisitor {
-    constructor() {
-        super(...arguments);
-        this.pipes = new Map();
-    }
+    pipes = new Map();
     visitPipe(ast, context) {
         this.pipes.set(ast.name, ast);
         ast.exp.visit(this);
@@ -26523,6 +27098,11 @@ var PreparsedElementType;
     PreparsedElementType[PreparsedElementType["OTHER"] = 4] = "OTHER";
 })(PreparsedElementType || (PreparsedElementType = {}));
 class PreparsedElement {
+    type;
+    selectAttr;
+    hrefAttr;
+    nonBindable;
+    projectAs;
     constructor(type, selectAttr, hrefAttr, nonBindable, projectAs) {
         this.type = type;
         this.selectAttr = selectAttr;
@@ -27033,6 +27613,18 @@ function getHydrateSpan(expression, sourceSpan) {
     return new ParseSourceSpan(sourceSpan.start, sourceSpan.start.moveBy('hydrate'.length));
 }
 class OnTriggerParser {
+    expression;
+    start;
+    span;
+    triggers;
+    errors;
+    validator;
+    placeholder;
+    prefetchSpan;
+    onSourceSpan;
+    hydrateSpan;
+    index = 0;
+    tokens;
     constructor(expression, start, span, triggers, errors, validator, placeholder, prefetchSpan, onSourceSpan, hydrateSpan) {
         this.expression = expression;
         this.start = start;
@@ -27044,7 +27636,6 @@ class OnTriggerParser {
         this.prefetchSpan = prefetchSpan;
         this.onSourceSpan = onSourceSpan;
         this.hydrateSpan = hydrateSpan;
-        this.index = 0;
         this.tokens = new Lexer().tokenize(expression.slice(start));
     }
     parse() {
@@ -27307,7 +27898,7 @@ const HYDRATE_WHEN_PATTERN = /^hydrate\s+when\s/;
 /** Pattern to identify a `hydrate on` trigger. */
 const HYDRATE_ON_PATTERN = /^hydrate\s+on\s/;
 /** Pattern to identify a `hydrate never` trigger. */
-const HYDRATE_NEVER_PATTERN = /^hydrate\s+never\s*/;
+const HYDRATE_NEVER_PATTERN = /^hydrate\s+never(\s*)$/;
 /** Pattern to identify a `minimum` parameter in a block. */
 const MINIMUM_PARAMETER_PATTERN = /^minimum\s/;
 /** Pattern to identify a `after` parameter in a block. */
@@ -27515,21 +28106,23 @@ function htmlAstToRender3Ast(htmlNodes, bindingParser, options) {
     return result;
 }
 class HtmlAstToIvyAst {
+    bindingParser;
+    options;
+    errors = [];
+    styles = [];
+    styleUrls = [];
+    ngContentSelectors = [];
+    // This array will be populated if `Render3ParseOptions['collectCommentNodes']` is true
+    commentNodes = [];
+    inI18nBlock = false;
+    /**
+     * Keeps track of the nodes that have been processed already when previous nodes were visited.
+     * These are typically blocks connected to other blocks or text nodes between connected blocks.
+     */
+    processedNodes = new Set();
     constructor(bindingParser, options) {
         this.bindingParser = bindingParser;
         this.options = options;
-        this.errors = [];
-        this.styles = [];
-        this.styleUrls = [];
-        this.ngContentSelectors = [];
-        // This array will be populated if `Render3ParseOptions['collectCommentNodes']` is true
-        this.commentNodes = [];
-        this.inI18nBlock = false;
-        /**
-         * Keeps track of the nodes that have been processed already when previous nodes were visited.
-         * These are typically blocks connected to other blocks or text nodes between connected blocks.
-         */
-        this.processedNodes = new Set();
     }
     // HTML visitor
     visitElement(element) {
@@ -28738,6 +29331,7 @@ function findMatchingDirectivesAndPipes(template, directiveSelectors) {
  * target.
  */
 class R3TargetBinder {
+    directiveMatcher;
     constructor(directiveMatcher) {
         this.directiveMatcher = directiveMatcher;
     }
@@ -28775,21 +29369,25 @@ class R3TargetBinder {
  * be analyzed and have their child `Scope`s available in `childScopes`.
  */
 class Scope {
+    parentScope;
+    rootNode;
+    /**
+     * Named members of the `Scope`, such as `Reference`s or `Variable`s.
+     */
+    namedEntities = new Map();
+    /**
+     * Set of elements that belong to this scope.
+     */
+    elementsInScope = new Set();
+    /**
+     * Child `Scope`s for immediately nested `ScopedNode`s.
+     */
+    childScopes = new Map();
+    /** Whether this scope is deferred or if any of its ancestors are deferred. */
+    isDeferred;
     constructor(parentScope, rootNode) {
         this.parentScope = parentScope;
         this.rootNode = rootNode;
-        /**
-         * Named members of the `Scope`, such as `Reference`s or `Variable`s.
-         */
-        this.namedEntities = new Map();
-        /**
-         * Set of elements that belong to this scope.
-         */
-        this.elementsInScope = new Set();
-        /**
-         * Child `Scope`s for immediately nested `ScopedNode`s.
-         */
-        this.childScopes = new Map();
         this.isDeferred =
             parentScope !== null && parentScope.isDeferred ? true : rootNode instanceof DeferredBlock;
     }
@@ -28960,14 +29558,19 @@ class Scope {
  * Usually used via the static `apply()` method.
  */
 class DirectiveBinder {
+    matcher;
+    directives;
+    eagerDirectives;
+    bindings;
+    references;
+    // Indicates whether we are visiting elements within a `defer` block
+    isInDeferBlock = false;
     constructor(matcher, directives, eagerDirectives, bindings, references) {
         this.matcher = matcher;
         this.directives = directives;
         this.eagerDirectives = eagerDirectives;
         this.bindings = bindings;
         this.references = references;
-        // Indicates whether we are visiting elements within a `defer` block
-        this.isInDeferBlock = false;
     }
     /**
      * Process a template (list of `Node`s) and perform directive matching against each node.
@@ -29126,6 +29729,16 @@ class DirectiveBinder {
  * by overridden methods from that visitor.
  */
 class TemplateBinder extends RecursiveAstVisitor {
+    bindings;
+    symbols;
+    usedPipes;
+    eagerPipes;
+    deferBlocks;
+    nestingLevel;
+    scope;
+    rootNode;
+    level;
+    visitNode;
     constructor(bindings, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, rootNode, level) {
         super();
         this.bindings = bindings;
@@ -29365,6 +29978,21 @@ class TemplateBinder extends RecursiveAstVisitor {
  * See `BoundTarget` for documentation on the individual methods.
  */
 class R3BoundTarget {
+    target;
+    directives;
+    eagerDirectives;
+    bindings;
+    references;
+    exprTargets;
+    symbols;
+    nestingLevel;
+    scopedNodeEntities;
+    usedPipes;
+    eagerPipes;
+    /** Deferred blocks, ordered as they appear in the template. */
+    deferredBlocks;
+    /** Map of deferred blocks to their scope. */
+    deferredScopes;
     constructor(target, directives, eagerDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred) {
         this.target = target;
         this.directives = directives;
@@ -29552,11 +30180,12 @@ class ResourceLoader {
 }
 
 class CompilerFacadeImpl {
+    jitEvaluator;
+    FactoryTarget = FactoryTarget$1;
+    ResourceLoader = ResourceLoader;
+    elementSchemaRegistry = new DomElementSchemaRegistry();
     constructor(jitEvaluator = new JitEvaluator()) {
         this.jitEvaluator = jitEvaluator;
-        this.FactoryTarget = FactoryTarget$1;
-        this.ResourceLoader = ResourceLoader;
-        this.elementSchemaRegistry = new DomElementSchemaRegistry();
     }
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
         const metadata = {
@@ -30210,9 +30839,12 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.0.0-next.11+sha-395cb34');
+const VERSION = new Version('19.0.0-next.11+sha-f815d7b');
 
 class CompilerConfig {
+    defaultEncapsulation;
+    preserveWhitespaces;
+    strictInjectionParameters;
     constructor({ defaultEncapsulation = ViewEncapsulation.Emulated, preserveWhitespaces, strictInjectionParameters, } = {}) {
         this.defaultEncapsulation = defaultEncapsulation;
         this.preserveWhitespaces = preserveWhitespacesDefault(noUndefined(preserveWhitespaces));
@@ -30241,6 +30873,8 @@ function mergeTranslations(nodes, translations, interpolationConfig, implicitTag
     return visitor.merge(nodes, translations, interpolationConfig);
 }
 class ExtractionResult {
+    messages;
+    errors;
     constructor(messages, errors) {
         this.messages = messages;
         this.errors = errors;
@@ -30259,6 +30893,30 @@ var _VisitorMode;
  * @internal
  */
 class _Visitor {
+    _implicitTags;
+    _implicitAttrs;
+    _preserveSignificantWhitespace;
+    // Using non-null assertions because all variables are (re)set in init()
+    _depth;
+    // <el i18n>...</el>
+    _inI18nNode;
+    _inImplicitNode;
+    // <!--i18n-->...<!--/i18n-->
+    _inI18nBlock;
+    _blockMeaningAndDesc;
+    _blockChildren;
+    _blockStartDepth;
+    // {<icu message>}
+    _inIcu;
+    // set to void 0 when not in a section
+    _msgCountAtSectionStart;
+    _errors;
+    _mode;
+    // _VisitorMode.Extract only
+    _messages;
+    // _VisitorMode.Merge only
+    _translations;
+    _createI18nMessage;
     constructor(_implicitTags, _implicitAttrs, _preserveSignificantWhitespace = true) {
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
@@ -30669,14 +31327,12 @@ function isAttrNode(ast) {
 }
 
 class XmlTagDefinition {
-    constructor() {
-        this.closedByParent = false;
-        this.implicitNamespacePrefix = null;
-        this.isVoid = false;
-        this.ignoreFirstLf = false;
-        this.canSelfClose = true;
-        this.preventNamespaceInheritance = false;
-    }
+    closedByParent = false;
+    implicitNamespacePrefix = null;
+    isVoid = false;
+    ignoreFirstLf = false;
+    canSelfClose = true;
+    preventNamespaceInheritance = false;
     requireExtraParent(currentParent) {
         return false;
     }
@@ -30848,9 +31504,11 @@ class _WriteVisitor$1 {
 // TODO(vicb): add error management (structure)
 // Extract messages as xml nodes from the xliff file
 class XliffParser {
-    constructor() {
-        this._locale = null;
-    }
+    // using non-null assertions because they're re(set) by parse()
+    _unitMlString;
+    _errors;
+    _msgIdToHtml;
+    _locale = null;
     parse(xliff, url) {
         this._unitMlString = null;
         this._msgIdToHtml = {};
@@ -30926,6 +31584,8 @@ class XliffParser {
 }
 // Convert ml nodes (xliff syntax) to i18n nodes
 class XmlToI18n$2 {
+    // using non-null assertion because it's re(set) by convert()
+    _errors;
     convert(message, url) {
         const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
         this._errors = xmlIcu.errors;
@@ -31061,9 +31721,7 @@ class Xliff2 extends Serializer {
     }
 }
 class _WriteVisitor {
-    constructor() {
-        this._nextPlaceholderId = 0;
-    }
+    _nextPlaceholderId = 0;
     visitText(text, context) {
         return [new Text$1(text.value)];
     }
@@ -31156,9 +31814,11 @@ class _WriteVisitor {
 }
 // Extract messages as xml nodes from the xliff file
 class Xliff2Parser {
-    constructor() {
-        this._locale = null;
-    }
+    // using non-null assertions because they're all (re)set by parse()
+    _unitMlString;
+    _errors;
+    _msgIdToHtml;
+    _locale = null;
     parse(xliff, url) {
         this._unitMlString = null;
         this._msgIdToHtml = {};
@@ -31239,6 +31899,8 @@ class Xliff2Parser {
 }
 // Convert ml nodes (xliff syntax) to i18n nodes
 class XmlToI18n$1 {
+    // using non-null assertion because re(set) by convert()
+    _errors;
     convert(message, url) {
         const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
         this._errors = xmlIcu.errors;
@@ -31378,9 +32040,11 @@ function createLazyProperty(messages, id, valueFn) {
 }
 // Extract messages as xml nodes from the xtb file
 class XtbParser {
-    constructor() {
-        this._locale = null;
-    }
+    // using non-null assertions because they're (re)set by parse()
+    _bundleDepth;
+    _errors;
+    _msgIdToHtml;
+    _locale = null;
     parse(xtb, url) {
         this._bundleDepth = 0;
         this._msgIdToHtml = {};
@@ -31446,6 +32110,8 @@ class XtbParser {
 }
 // Convert ml nodes (xtb syntax) to i18n nodes
 class XmlToI18n {
+    // using non-null assertion because it's (re)set by convert()
+    _errors;
     convert(message, url) {
         const xmlIcu = new XmlParser().parse(message, url, { tokenizeExpansionForms: true });
         this._errors = xmlIcu.errors;
@@ -31500,6 +32166,10 @@ class XmlToI18n {
  * A container for translated messages
  */
 class TranslationBundle {
+    _i18nNodesByMsgId;
+    digest;
+    mapperFactory;
+    _i18nToHtml;
     constructor(_i18nNodesByMsgId = {}, locale, digest, mapperFactory, missingTranslationStrategy = MissingTranslationStrategy.Warning, console) {
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this.digest = digest;
@@ -31526,6 +32196,17 @@ class TranslationBundle {
     }
 }
 class I18nToHtmlVisitor {
+    _i18nNodesByMsgId;
+    _locale;
+    _digest;
+    _mapperFactory;
+    _missingTranslationStrategy;
+    _console;
+    // using non-null assertions because they're (re)set by convert()
+    _srcMsg;
+    _errors = [];
+    _contextStack = [];
+    _mapper;
     constructor(_i18nNodesByMsgId = {}, _locale, _digest, _mapperFactory, _missingTranslationStrategy, _console) {
         this._i18nNodesByMsgId = _i18nNodesByMsgId;
         this._locale = _locale;
@@ -31533,8 +32214,6 @@ class I18nToHtmlVisitor {
         this._mapperFactory = _mapperFactory;
         this._missingTranslationStrategy = _missingTranslationStrategy;
         this._console = _console;
-        this._errors = [];
-        this._contextStack = [];
     }
     convert(srcMsg) {
         this._contextStack.length = 0;
@@ -31650,6 +32329,10 @@ class I18nToHtmlVisitor {
 }
 
 class I18NHtmlParser {
+    _htmlParser;
+    // @override
+    getTagDefinition;
+    _translationBundle;
     constructor(_htmlParser, translations, translationsFormat, missingTranslation = MissingTranslationStrategy.Warning, console) {
         this._htmlParser = _htmlParser;
         if (translations) {
@@ -31690,13 +32373,18 @@ function createSerializer(format) {
  * A container for message extracted from the templates.
  */
 class MessageBundle {
+    _htmlParser;
+    _implicitTags;
+    _implicitAttrs;
+    _locale;
+    _preserveWhitespace;
+    _messages = [];
     constructor(_htmlParser, _implicitTags, _implicitAttrs, _locale = null, _preserveWhitespace = true) {
         this._htmlParser = _htmlParser;
         this._implicitTags = _implicitTags;
         this._implicitAttrs = _implicitAttrs;
         this._locale = _locale;
         this._preserveWhitespace = _preserveWhitespace;
-        this._messages = [];
     }
     updateFromTemplate(source, url, interpolationConfig) {
         const htmlParserResult = this._htmlParser.parse(source, url, {
@@ -31971,7 +32659,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -31989,7 +32677,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32084,7 +32772,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -32459,10 +33147,7 @@ function compileUsedDependenciesMetadata(meta) {
     });
 }
 class BlockPresenceVisitor extends RecursiveVisitor$1 {
-    constructor() {
-        super(...arguments);
-        this.hasBlocks = false;
-    }
+    hasBlocks = false;
     visitDeferredBlock() {
         this.hasBlocks = true;
     }
@@ -32506,7 +33191,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -32541,7 +33226,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -32592,7 +33277,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -32625,7 +33310,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -32676,7 +33361,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.0.0-next.11+sha-395cb34'));
+    definitionMap.set('version', literal('19.0.0-next.11+sha-f815d7b'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
