@@ -28,7 +28,7 @@ export function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', o.literal(minVersion));
-    definitionMap.set('version', o.literal('18.2.10+sha-a249d0b'));
+    definitionMap.set('version', o.literal('18.2.10+sha-9d9abf2'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone) {
