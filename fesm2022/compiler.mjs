@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.0+sha-a55341b
+ * @license Angular v19.1.0-next.0+sha-549a00d
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8197,13 +8197,15 @@ class ShadowCss {
         _polyfillHostRe.lastIndex = 0;
         if (_polyfillHostRe.test(selector)) {
             const replaceBy = `[${hostSelector}]`;
-            return selector
-                .replace(_polyfillHostNoCombinatorReGlobal, (_hnc, selector) => {
-                return selector.replace(/([^:\)]*)(:*)(.*)/, (_, before, colon, after) => {
-                    return before + replaceBy + colon + after;
+            let result = selector;
+            while (result.match(_polyfillHostNoCombinatorRe)) {
+                result = result.replace(_polyfillHostNoCombinatorRe, (_hnc, selector) => {
+                    return selector.replace(/([^:\)]*)(:*)(.*)/, (_, before, colon, after) => {
+                        return before + replaceBy + colon + after;
+                    });
                 });
-            })
-                .replace(_polyfillHostRe, replaceBy + ' ');
+            }
+            return result.replace(_polyfillHostRe, replaceBy);
         }
         return scopeSelector + ' ' + selector;
     }
@@ -8212,7 +8214,7 @@ class ShadowCss {
     _applySelectorScope({ selector, scopeSelector, hostSelector, isParentSelector, }) {
         const isRe = /\[is=([^\]]*)\]/g;
         scopeSelector = scopeSelector.replace(isRe, (_, ...parts) => parts[0]);
-        const attrName = '[' + scopeSelector + ']';
+        const attrName = `[${scopeSelector}]`;
         const _scopeSelectorPart = (p) => {
             let scopedP = p.trim();
             if (!scopedP) {
@@ -8220,8 +8222,8 @@ class ShadowCss {
             }
             if (p.includes(_polyfillHostNoCombinator)) {
                 scopedP = this._applySimpleSelectorScope(p, scopeSelector, hostSelector);
-                if (_polyfillHostNoCombinatorWithinPseudoFunction.test(p)) {
-                    const [_, before, colon, after] = scopedP.match(/([^:]*)(:*)(.*)/);
+                if (!p.match(_polyfillHostNoCombinatorOutsidePseudoFunction)) {
+                    const [_, before, colon, after] = scopedP.match(/([^:]*)(:*)([\s\S]*)/);
                     scopedP = before + attrName + colon + after;
                 }
             }
@@ -8229,7 +8231,7 @@ class ShadowCss {
                 // remove :host since it should be unnecessary
                 const t = p.replace(_polyfillHostRe, '');
                 if (t.length > 0) {
-                    const matches = t.match(/([^:]*)(:*)(.*)/);
+                    const matches = t.match(/([^:]*)(:*)([\s\S]*)/);
                     if (matches) {
                         scopedP = matches[1] + attrName + matches[2] + matches[3];
                     }
@@ -8242,24 +8244,55 @@ class ShadowCss {
         // functions are recursively sent to `_scopeSelector()`.
         const _pseudoFunctionAwareScopeSelectorPart = (selectorPart) => {
             let scopedPart = '';
-            const cssPrefixWithPseudoSelectorFunctionMatch = selectorPart.match(_cssPrefixWithPseudoSelectorFunction);
-            if (cssPrefixWithPseudoSelectorFunctionMatch) {
-                const [cssPseudoSelectorFunction] = cssPrefixWithPseudoSelectorFunctionMatch;
-                // Unwrap the pseudo selector to scope its contents.
-                // For example,
-                // - `:where(selectorToScope)` -> `selectorToScope`;
-                // - `:is(.foo, .bar)` -> `.foo, .bar`.
-                const selectorToScope = selectorPart.slice(cssPseudoSelectorFunction.length, -1);
-                if (selectorToScope.includes(_polyfillHostNoCombinator)) {
-                    this._shouldScopeIndicator = true;
+            // Collect all outer `:where()` and `:is()` selectors,
+            // counting parenthesis to keep nested selectors intact.
+            const pseudoSelectorParts = [];
+            let pseudoSelectorMatch;
+            while ((pseudoSelectorMatch = _cssPrefixWithPseudoSelectorFunction.exec(selectorPart)) !== null) {
+                let openedBrackets = 1;
+                let index = _cssPrefixWithPseudoSelectorFunction.lastIndex;
+                while (index < selectorPart.length) {
+                    const currentSymbol = selectorPart[index];
+                    index++;
+                    if (currentSymbol === '(') {
+                        openedBrackets++;
+                        continue;
+                    }
+                    if (currentSymbol === ')') {
+                        openedBrackets--;
+                        if (openedBrackets === 0) {
+                            break;
+                        }
+                        continue;
+                    }
                 }
-                const scopedInnerPart = this._scopeSelector({
-                    selector: selectorToScope,
-                    scopeSelector,
-                    hostSelector,
-                });
-                // Put the result back into the pseudo selector function.
-                scopedPart = `${cssPseudoSelectorFunction}${scopedInnerPart})`;
+                pseudoSelectorParts.push(`${pseudoSelectorMatch[0]}${selectorPart.slice(_cssPrefixWithPseudoSelectorFunction.lastIndex, index)}`);
+                _cssPrefixWithPseudoSelectorFunction.lastIndex = index;
+            }
+            // If selector consists of only `:where()` and `:is()` on the outer level
+            // scope those pseudo-selectors individually, otherwise scope the whole
+            // selector.
+            if (pseudoSelectorParts.join('') === selectorPart) {
+                scopedPart = pseudoSelectorParts
+                    .map((selectorPart) => {
+                    const [cssPseudoSelectorFunction] = selectorPart.match(_cssPrefixWithPseudoSelectorFunction) ?? [];
+                    // Unwrap the pseudo selector to scope its contents.
+                    // For example,
+                    // - `:where(selectorToScope)` -> `selectorToScope`;
+                    // - `:is(.foo, .bar)` -> `.foo, .bar`.
+                    const selectorToScope = selectorPart.slice(cssPseudoSelectorFunction?.length, -1);
+                    if (selectorToScope.includes(_polyfillHostNoCombinator)) {
+                        this._shouldScopeIndicator = true;
+                    }
+                    const scopedInnerPart = this._scopeSelector({
+                        selector: selectorToScope,
+                        scopeSelector,
+                        hostSelector,
+                    });
+                    // Put the result back into the pseudo selector function.
+                    return `${cssPseudoSelectorFunction}${scopedInnerPart})`;
+                })
+                    .join('');
             }
             else {
                 this._shouldScopeIndicator =
@@ -8380,7 +8413,7 @@ class SafeSelector {
     }
 }
 const _cssScopedPseudoFunctionPrefix = '(:(where|is)\\()?';
-const _cssPrefixWithPseudoSelectorFunction = /^:(where|is)\(/i;
+const _cssPrefixWithPseudoSelectorFunction = /:(where|is)\(/gi;
 const _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
 const _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
 const _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
@@ -8392,9 +8425,8 @@ const _cssColonHostRe = new RegExp(_polyfillHost + _parenSuffix, 'gim');
 const _cssColonHostContextReGlobal = new RegExp(_cssScopedPseudoFunctionPrefix + '(' + _polyfillHostContext + _parenSuffix + ')', 'gim');
 const _cssColonHostContextRe = new RegExp(_polyfillHostContext + _parenSuffix, 'im');
 const _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
-const _polyfillHostNoCombinatorWithinPseudoFunction = new RegExp(`:.*\\(.*${_polyfillHostNoCombinator}.*\\)`);
-const _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s]*)/;
-const _polyfillHostNoCombinatorReGlobal = new RegExp(_polyfillHostNoCombinatorRe, 'g');
+const _polyfillHostNoCombinatorOutsidePseudoFunction = new RegExp(`${_polyfillHostNoCombinator}(?![^(]*\\))`, 'g');
+const _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s,]*)/;
 const _shadowDOMSelectorsRe = [
     /::shadow/g,
     /::content/g,
@@ -30840,7 +30872,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.1.0-next.0+sha-a55341b');
+const VERSION = new Version('19.1.0-next.0+sha-549a00d');
 
 class CompilerConfig {
     defaultEncapsulation;
@@ -32684,7 +32716,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32702,7 +32734,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32797,7 +32829,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33216,7 +33248,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33251,7 +33283,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33302,7 +33334,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33335,7 +33367,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33386,7 +33418,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-a55341b'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-549a00d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
