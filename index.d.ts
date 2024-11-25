@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.0+sha-c56ec5e
+ * @license Angular v19.1.0-next.0+sha-e395364
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1480,8 +1480,8 @@ declare const FUNCTION_TYPE: BuiltinType;
 export declare class FunctionExpr extends Expression {
     params: FnParam[];
     statements: Statement[];
-    name?: (string | null) | undefined;
-    constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: (string | null) | undefined);
+    name?: string | null | undefined;
+    constructor(params: FnParam[], statements: Statement[], type?: Type | null, sourceSpan?: ParseSourceSpan | null, name?: string | null | undefined);
     isEquivalent(e: Expression | Statement): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -2410,7 +2410,7 @@ export declare class ParseError {
      * Error that caused the error to be surfaced. For example, an error in a sub-expression that
      * couldn't be parsed. Not guaranteed to be defined, but can be used to provide more context.
      */
-    readonly relatedError?: unknown;
+    readonly relatedError?: unknown | undefined;
     constructor(
     /** Location of the error. */
     span: ParseSourceSpan, 
@@ -2422,7 +2422,7 @@ export declare class ParseError {
      * Error that caused the error to be surfaced. For example, an error in a sub-expression that
      * couldn't be parsed. Not guaranteed to be defined, but can be used to provide more context.
      */
-    relatedError?: unknown);
+    relatedError?: unknown | undefined);
     contextualMessage(): string;
     toString(): string;
 }
@@ -2540,9 +2540,9 @@ declare class Parser_2 {
 export declare class ParserError {
     input: string;
     errLocation: string;
-    ctxLocation?: any;
+    ctxLocation?: any | undefined;
     message: string;
-    constructor(message: string, input: string, errLocation: string, ctxLocation?: any);
+    constructor(message: string, input: string, errLocation: string, ctxLocation?: any | undefined);
 }
 
 declare function parseSelectorToR3Selector(selector: string | null): R3CssSelectorList;
