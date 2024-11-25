@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.0+sha-1bdc3f1
+ * @license Angular v19.1.0-next.0+sha-901fd1c
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2400,10 +2400,29 @@ export declare class ParsedVariable {
 }
 
 export declare class ParseError {
-    span: ParseSourceSpan;
-    msg: string;
-    level: ParseErrorLevel;
-    constructor(span: ParseSourceSpan, msg: string, level?: ParseErrorLevel);
+    /** Location of the error. */
+    readonly span: ParseSourceSpan;
+    /** Error message. */
+    readonly msg: string;
+    /** Severity level of the error. */
+    readonly level: ParseErrorLevel;
+    /**
+     * Error that caused the error to be surfaced. For example, an error in a sub-expression that
+     * couldn't be parsed. Not guaranteed to be defined, but can be used to provide more context.
+     */
+    readonly relatedError?: unknown;
+    constructor(
+    /** Location of the error. */
+    span: ParseSourceSpan, 
+    /** Error message. */
+    msg: string, 
+    /** Severity level of the error. */
+    level?: ParseErrorLevel, 
+    /**
+     * Error that caused the error to be surfaced. For example, an error in a sub-expression that
+     * couldn't be parsed. Not guaranteed to be defined, but can be used to provide more context.
+     */
+    relatedError?: unknown);
     contextualMessage(): string;
     toString(): string;
 }
