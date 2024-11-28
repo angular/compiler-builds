@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.0.1+sha-d6f4b10
+ * @license Angular v19.0.1+sha-9f99196
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3744,14 +3744,29 @@ export declare interface R3HmrMetadata {
     className: string;
     /** File path of the component class. */
     filePath: string;
-    /** Name under which `@angular/core` should be referred to in the compiled HMR code. */
-    coreName: string;
+    /**
+     * When the compiler generates new imports, they get produced as namespace imports
+     * (e.g. import * as i0 from '@angular/core'). These namespaces have to be captured and passed
+     * along to the update callback.
+     */
+    namespaceDependencies: R3HmrNamespaceDependency[];
     /**
      * HMR update functions cannot contain imports so any locals the generated code depends on
      * (e.g. references to imports within the same file or imported symbols) have to be passed in
      * as function parameters. This array contains the names of those local symbols.
      */
-    locals: string[];
+    localDependencies: string[];
+}
+
+/** HMR dependency on a namespace import. */
+export declare interface R3HmrNamespaceDependency {
+    /** Module name of the import. */
+    moduleName: string;
+    /**
+     * Name under which to refer to the namespace inside
+     * HMR-related code. Must be a valid JS identifier.
+     */
+    assignedName: string;
 }
 
 /**
