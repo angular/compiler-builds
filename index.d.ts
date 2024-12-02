@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.0+sha-ed965bd
+ * @license Angular v19.1.0-next.0+sha-35165d1
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -363,8 +363,7 @@ declare class BindingParser {
     private _interpolationConfig;
     private _schemaRegistry;
     errors: ParseError[];
-    private _allowInvalidAssignmentEvents;
-    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[], _allowInvalidAssignmentEvents?: boolean);
+    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[]);
     get interpolationConfig(): InterpolationConfig;
     createBoundHostProperties(properties: HostProperties, sourceSpan: ParseSourceSpan): ParsedProperty[] | null;
     createDirectiveHostEventAsts(hostListeners: HostListeners, sourceSpan: ParseSourceSpan): ParsedEvent[] | null;
@@ -2027,7 +2026,7 @@ declare function localizedString(metaBlock: I18nMeta, messageParts: LiteralPiece
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-export declare function makeBindingParser(interpolationConfig?: InterpolationConfig, allowInvalidAssignmentEvents?: boolean): BindingParser;
+export declare function makeBindingParser(interpolationConfig?: InterpolationConfig): BindingParser;
 
 export declare class MapType extends Type {
     valueType: Type | null;
@@ -2702,12 +2701,6 @@ export declare interface ParseTemplateOptions {
     enableBlockSyntax?: boolean;
     /** Whether the `@let` syntax is enabled. */
     enableLetSyntax?: boolean;
-    /**
-     * Whether the parser should allow invalid two-way bindings.
-     *
-     * This option is only present to support an automated migration away from the invalid syntax.
-     */
-    allowInvalidAssignmentEvents?: boolean;
 }
 
 export declare class ParseTreeResult {

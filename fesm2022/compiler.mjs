@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.0+sha-ed965bd
+ * @license Angular v19.1.0-next.0+sha-35165d1
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -26642,13 +26642,11 @@ class BindingParser {
     _interpolationConfig;
     _schemaRegistry;
     errors;
-    _allowInvalidAssignmentEvents;
-    constructor(_exprParser, _interpolationConfig, _schemaRegistry, errors, _allowInvalidAssignmentEvents = false) {
+    constructor(_exprParser, _interpolationConfig, _schemaRegistry, errors) {
         this._exprParser = _exprParser;
         this._interpolationConfig = _interpolationConfig;
         this._schemaRegistry = _schemaRegistry;
         this.errors = errors;
-        this._allowInvalidAssignmentEvents = _allowInvalidAssignmentEvents;
     }
     get interpolationConfig() {
         return this._interpolationConfig;
@@ -27032,16 +27030,7 @@ class BindingParser {
         if (ast instanceof PropertyRead || ast instanceof KeyedRead) {
             return true;
         }
-        // TODO(crisbeto): this logic is only here to support the automated migration away
-        // from invalid bindings. It should be removed once the migration is deleted.
-        if (!this._allowInvalidAssignmentEvents) {
-            return false;
-        }
-        if (ast instanceof Binary) {
-            return ((ast.operation === '&&' || ast.operation === '||' || ast.operation === '??') &&
-                (ast.right instanceof PropertyRead || ast.right instanceof KeyedRead));
-        }
-        return ast instanceof Conditional || ast instanceof PrefixNot;
+        return false;
     }
 }
 class PipeCollector extends RecursiveAstVisitor {
@@ -28674,8 +28663,8 @@ const LEADING_TRIVIA_CHARS = [' ', '\n', '\r', '\t'];
  * @param options options to modify how the template is parsed
  */
 function parseTemplate(template, templateUrl, options = {}) {
-    const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat, allowInvalidAssignmentEvents, } = options;
-    const bindingParser = makeBindingParser(interpolationConfig, allowInvalidAssignmentEvents);
+    const { interpolationConfig, preserveWhitespaces, enableI18nLegacyMessageIdFormat } = options;
+    const bindingParser = makeBindingParser(interpolationConfig);
     const htmlParser = new HtmlParser();
     const parseResult = htmlParser.parse(template, templateUrl, {
         leadingTriviaChars: LEADING_TRIVIA_CHARS,
@@ -28781,8 +28770,8 @@ const elementRegistry = new DomElementSchemaRegistry();
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG, allowInvalidAssignmentEvents = false) {
-    return new BindingParser(new Parser(new Lexer()), interpolationConfig, elementRegistry, [], allowInvalidAssignmentEvents);
+function makeBindingParser(interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    return new BindingParser(new Parser(new Lexer()), interpolationConfig, elementRegistry, []);
 }
 
 const COMPONENT_VARIABLE = '%COMP%';
@@ -30894,7 +30883,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.1.0-next.0+sha-ed965bd');
+const VERSION = new Version('19.1.0-next.0+sha-35165d1');
 
 class CompilerConfig {
     defaultEncapsulation;
@@ -32746,7 +32735,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32764,7 +32753,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32859,7 +32848,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33278,7 +33267,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33313,7 +33302,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33364,7 +33353,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33397,7 +33386,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33448,7 +33437,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.1.0-next.0+sha-ed965bd'));
+    definitionMap.set('version', literal('19.1.0-next.0+sha-35165d1'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
