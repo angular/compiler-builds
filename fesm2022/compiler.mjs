@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.2+sha-f15ccb9
+ * @license Angular v19.1.0-next.2+sha-30e6760
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3014,6 +3014,10 @@ class Identifiers {
     static declareLet = { name: 'ɵɵdeclareLet', moduleName: CORE };
     static storeLet = { name: 'ɵɵstoreLet', moduleName: CORE };
     static readContextLet = { name: 'ɵɵreadContextLet', moduleName: CORE };
+    static attachSourceLocations = {
+        name: 'ɵɵattachSourceLocations',
+        moduleName: CORE,
+    };
     static NgOnChangesFeature = { name: 'ɵɵNgOnChangesFeature', moduleName: CORE };
     static InheritDefinitionFeature = {
         name: 'ɵɵInheritDefinitionFeature',
@@ -8937,6 +8941,10 @@ var OpKind;
      * A creation op that corresponds to i18n attributes on an element.
      */
     OpKind[OpKind["I18nAttributes"] = 49] = "I18nAttributes";
+    /**
+     * Creation op that attaches the location at which an element was defined in a template to it.
+     */
+    OpKind[OpKind["SourceLocation"] = 50] = "SourceLocation";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -10478,6 +10486,7 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.I18nAttributes:
         case OpKind.IcuPlaceholder:
         case OpKind.DeclareLet:
+        case OpKind.SourceLocation:
             // These operations contain no expressions.
             break;
         default:
@@ -11269,6 +11278,15 @@ function createI18nAttributesOp(xref, handle, target) {
         ...TRAIT_CONSUMES_SLOT,
     };
 }
+/** Create a `SourceLocationOp`. */
+function createSourceLocationOp(templatePath, locations) {
+    return {
+        kind: OpKind.SourceLocation,
+        templatePath,
+        locations,
+        ...NEW_OP,
+    };
+}
 
 function createHostPropertyOp(name, expression, isAnimationTrigger, i18nContext, securityContext, sourceSpan) {
     return {
@@ -11331,12 +11349,16 @@ class ComponentCompilationJob extends CompilationJob {
     i18nUseExternalIds;
     deferMeta;
     allDeferrableDepsFn;
-    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn) {
+    relativeTemplatePath;
+    enableDebugLocations;
+    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
         super(componentName, pool, compatibility);
         this.relativeContextFilePath = relativeContextFilePath;
         this.i18nUseExternalIds = i18nUseExternalIds;
         this.deferMeta = deferMeta;
         this.allDeferrableDepsFn = allDeferrableDepsFn;
+        this.relativeTemplatePath = relativeTemplatePath;
+        this.enableDebugLocations = enableDebugLocations;
         this.root = new ViewCompilationUnit(this, this.allocateXrefId(), null);
         this.views.set(this.root.xref, this.root);
     }
@@ -22840,6 +22862,9 @@ function syntheticHostProperty(name, expression, sourceSpan) {
 function pureFunction(varOffset, fn, args) {
     return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [literal(varOffset), fn], args, [], null);
 }
+function attachSourceLocation(templatePath, locations) {
+    return call(Identifiers.attachSourceLocations, [literal(templatePath), locations], null);
+}
 /**
  * Collates the string an expression arguments for an interpolation instruction.
  */
@@ -23278,6 +23303,20 @@ function reifyCreateOperations(unit, ops) {
                     emptyVars = emptyView.vars;
                 }
                 OpList.replace(op, repeaterCreate(op.handle.slot, repeaterView.fnName, op.decls, op.vars, op.tag, op.attributes, op.trackByFn, op.usesComponentInstance, emptyViewFnName, emptyDecls, emptyVars, op.emptyTag, op.emptyAttributes, op.wholeSourceSpan));
+                break;
+            case OpKind.SourceLocation:
+                const locationsLiteral = literalArr(op.locations.map(({ targetSlot, offset, line, column }) => {
+                    if (targetSlot.slot === null) {
+                        throw new Error('No slot was assigned for source location');
+                    }
+                    return literalArr([
+                        literal(targetSlot.slot),
+                        literal(offset),
+                        literal(line),
+                        literal(column),
+                    ]);
+                }));
+                OpList.replace(op, attachSourceLocation(op.templatePath, locationsLiteral));
                 break;
             case OpKind.Statement:
                 // Pass statement operations directly through.
@@ -25239,6 +25278,33 @@ function generateLocalLetReferences(job) {
 }
 
 /**
+ * Locates all of the elements defined in a creation block and outputs an op
+ * that will expose their definition location in the DOM.
+ */
+function attachSourceLocations(job) {
+    if (!job.enableDebugLocations || job.relativeTemplatePath === null) {
+        return;
+    }
+    for (const unit of job.units) {
+        const locations = [];
+        for (const op of unit.create) {
+            if (op.kind === OpKind.ElementStart || op.kind === OpKind.Element) {
+                const start = op.startSourceSpan.start;
+                locations.push({
+                    targetSlot: op.handle,
+                    offset: start.offset,
+                    line: start.line,
+                    column: start.col,
+                });
+            }
+        }
+        if (locations.length > 0) {
+            unit.create.push(createSourceLocationOp(job.relativeTemplatePath, locations));
+        }
+    }
+}
+
+/**
  *
  * @license
  * Copyright Google LLC All Rights Reserved.
@@ -25307,6 +25373,7 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: mergeNextContextExpressions },
     { kind: CompilationJobKind.Tmpl, fn: generateNgContainerOps },
     { kind: CompilationJobKind.Tmpl, fn: collapseEmptyInstructions },
+    { kind: CompilationJobKind.Tmpl, fn: attachSourceLocations },
     { kind: CompilationJobKind.Tmpl, fn: disableBindings$1 },
     { kind: CompilationJobKind.Both, fn: extractPureFunctions },
     { kind: CompilationJobKind.Both, fn: reify },
@@ -25425,8 +25492,8 @@ function isSingleI18nIcu(meta) {
  * representation.
  * TODO: Refactor more of the ingestion code into phases.
  */
-function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn) {
-    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn);
+function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
+    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations);
     ingestNodes(job.root, template);
     return job;
 }
@@ -26448,6 +26515,32 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
         return tagName === NG_TEMPLATE_TAG_NAME ? null : tagName;
     }
     return null;
+}
+
+/*!
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.dev/license
+ */
+/**
+ * Whether to produce instructions that will attach the source location to each DOM node.
+ *
+ * !!!Important!!! at the time of writing this flag isn't exposed externally, but internal debug
+ * tools enable it via a local change. Any modifications to this flag need to update the
+ * internal tooling as well.
+ */
+let ENABLE_TEMPLATE_SOURCE_LOCATIONS = false;
+/**
+ * Utility function to enable source locations. Intended to be used **only** inside unit tests.
+ */
+function setEnableTemplateSourceLocations(value) {
+    ENABLE_TEMPLATE_SOURCE_LOCATIONS = value;
+}
+/** Gets whether template source locations are enabled. */
+function getTemplateSourceLocationsEnabled() {
+    return ENABLE_TEMPLATE_SOURCE_LOCATIONS;
 }
 
 //  if (rf & flags) { .. }
@@ -28893,7 +28986,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         allDeferrableDepsFn = variable(fnName);
     }
     // First the template is ingested into IR:
-    const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn);
+    const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn, meta.relativeTemplatePath, getTemplateSourceLocationsEnabled());
     // Then the IR is transformed to prepare it for cod egeneration.
     transform(tpl, CompilationJobKind.Tmpl);
     // Finally we emit the template function:
@@ -30353,6 +30446,7 @@ class CompilerFacadeImpl {
             viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) : null,
             relativeContextFilePath: '',
             i18nUseExternalIds: true,
+            relativeTemplatePath: null,
         };
         const jitExpressionSourceMap = `ng:///${facade.name}.js`;
         return this.compileComponentFromMeta(angularCoreEnv, jitExpressionSourceMap, meta);
@@ -30608,6 +30702,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
         declarationListEmitMode: 2 /* DeclarationListEmitMode.ClosureResolved */,
         relativeContextFilePath: '',
         i18nUseExternalIds: true,
+        relativeTemplatePath: null,
     };
 }
 function convertDeclarationFacadeToMetadata(declaration) {
@@ -30883,7 +30978,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.1.0-next.2+sha-f15ccb9');
+const VERSION = new Version('19.1.0-next.2+sha-30e6760');
 
 class CompilerConfig {
     defaultEncapsulation;
@@ -32735,7 +32830,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32753,7 +32848,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32848,7 +32943,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33267,7 +33362,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33302,7 +33397,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33353,7 +33448,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33386,7 +33481,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33437,7 +33532,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.1.0-next.2+sha-f15ccb9'));
+    definitionMap.set('version', literal('19.1.0-next.2+sha-30e6760'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);

@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-next.2+sha-f15ccb9
+ * @license Angular v19.1.0-next.2+sha-30e6760
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2975,6 +2975,11 @@ export declare interface R3ComponentMetadata<DeclarationT extends R3TemplateDepe
      */
     changeDetection: ChangeDetectionStrategy | outputAst.Expression | null;
     /**
+     * Relative path to the component's template from the root of the project.
+     * Used to generate debugging information.
+     */
+    relativeTemplatePath: string | null;
+    /**
      * The imports expression as appears on the component decorate for standalone component. This
      * field is currently needed only for local compilation, and so in other compilation modes it may
      * not be set. If component has empty array imports then this field is not set.
@@ -4012,6 +4017,7 @@ export declare class R3Identifiers {
     static declareLet: outputAst.ExternalReference;
     static storeLet: outputAst.ExternalReference;
     static readContextLet: outputAst.ExternalReference;
+    static attachSourceLocations: outputAst.ExternalReference;
     static NgOnChangesFeature: outputAst.ExternalReference;
     static InheritDefinitionFeature: outputAst.ExternalReference;
     static CopyDefinitionFeature: outputAst.ExternalReference;
