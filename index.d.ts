@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-rc.0+sha-8091a4a
+ * @license Angular v19.1.0-rc.0+sha-ff38671
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -75,7 +75,7 @@ export declare class AstMemoryEfficientTransformer implements AstVisitor {
     visitUnary(ast: Unary, context: any): AST;
     visitBinary(ast: Binary, context: any): AST;
     visitPrefixNot(ast: PrefixNot, context: any): AST;
-    visitTypeofExpresion(ast: TypeofExpression, context: any): AST;
+    visitTypeofExpression(ast: TypeofExpression, context: any): AST;
     visitNonNullAssert(ast: NonNullAssert, context: any): AST;
     visitConditional(ast: Conditional, context: any): AST;
     visitPipe(ast: BindingPipe, context: any): AST;
@@ -101,7 +101,7 @@ export declare class AstTransformer implements AstVisitor {
     visitUnary(ast: Unary, context: any): AST;
     visitBinary(ast: Binary, context: any): AST;
     visitPrefixNot(ast: PrefixNot, context: any): AST;
-    visitTypeofExpresion(ast: TypeofExpression, context: any): AST;
+    visitTypeofExpression(ast: TypeofExpression, context: any): AST;
     visitNonNullAssert(ast: NonNullAssert, context: any): AST;
     visitConditional(ast: Conditional, context: any): AST;
     visitPipe(ast: BindingPipe, context: any): AST;
@@ -137,7 +137,7 @@ export declare interface AstVisitor {
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
     visitPipe(ast: BindingPipe, context: any): any;
     visitPrefixNot(ast: PrefixNot, context: any): any;
-    visitTypeofExpresion(ast: TypeofExpression, context: any): any;
+    visitTypeofExpression(ast: TypeofExpression, context: any): any;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
@@ -4444,7 +4444,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitLiteralMap(ast: LiteralMap, context: any): any;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
     visitPrefixNot(ast: PrefixNot, context: any): any;
-    visitTypeofExpresion(ast: TypeofExpression, context: any): void;
+    visitTypeofExpression(ast: TypeofExpression, context: any): void;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
