@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.2.0-next.0+sha-d038b3c
+ * @license Angular v19.2.0-next.0+sha-803358f
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -60,58 +60,6 @@ export declare abstract class AST {
     sourceSpan: AbsoluteSourceSpan);
     abstract visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
-}
-
-export declare class AstMemoryEfficientTransformer implements AstVisitor {
-    visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
-    visitThisReceiver(ast: ThisReceiver, context: any): AST;
-    visitInterpolation(ast: Interpolation, context: any): Interpolation;
-    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): AST;
-    visitPropertyRead(ast: PropertyRead, context: any): AST;
-    visitPropertyWrite(ast: PropertyWrite, context: any): AST;
-    visitSafePropertyRead(ast: SafePropertyRead, context: any): AST;
-    visitLiteralArray(ast: LiteralArray, context: any): AST;
-    visitLiteralMap(ast: LiteralMap, context: any): AST;
-    visitUnary(ast: Unary, context: any): AST;
-    visitBinary(ast: Binary, context: any): AST;
-    visitPrefixNot(ast: PrefixNot, context: any): AST;
-    visitTypeofExpression(ast: TypeofExpression, context: any): AST;
-    visitNonNullAssert(ast: NonNullAssert, context: any): AST;
-    visitConditional(ast: Conditional, context: any): AST;
-    visitPipe(ast: BindingPipe, context: any): AST;
-    visitKeyedRead(ast: KeyedRead, context: any): AST;
-    visitKeyedWrite(ast: KeyedWrite, context: any): AST;
-    visitAll(asts: any[]): any[];
-    visitChain(ast: Chain, context: any): AST;
-    visitCall(ast: Call, context: any): AST;
-    visitSafeCall(ast: SafeCall, context: any): AST;
-    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
-}
-
-export declare class AstTransformer implements AstVisitor {
-    visitImplicitReceiver(ast: ImplicitReceiver, context: any): AST;
-    visitThisReceiver(ast: ThisReceiver, context: any): AST;
-    visitInterpolation(ast: Interpolation, context: any): AST;
-    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): AST;
-    visitPropertyRead(ast: PropertyRead, context: any): AST;
-    visitPropertyWrite(ast: PropertyWrite, context: any): AST;
-    visitSafePropertyRead(ast: SafePropertyRead, context: any): AST;
-    visitLiteralArray(ast: LiteralArray, context: any): AST;
-    visitLiteralMap(ast: LiteralMap, context: any): AST;
-    visitUnary(ast: Unary, context: any): AST;
-    visitBinary(ast: Binary, context: any): AST;
-    visitPrefixNot(ast: PrefixNot, context: any): AST;
-    visitTypeofExpression(ast: TypeofExpression, context: any): AST;
-    visitNonNullAssert(ast: NonNullAssert, context: any): AST;
-    visitConditional(ast: Conditional, context: any): AST;
-    visitPipe(ast: BindingPipe, context: any): AST;
-    visitKeyedRead(ast: KeyedRead, context: any): AST;
-    visitKeyedWrite(ast: KeyedWrite, context: any): AST;
-    visitCall(ast: Call, context: any): AST;
-    visitSafeCall(ast: SafeCall, context: any): AST;
-    visitAll(asts: any[]): any[];
-    visitChain(ast: Chain, context: any): AST;
-    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): AST;
 }
 
 export declare interface AstVisitor {

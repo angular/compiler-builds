@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.2.0-next.0+sha-d038b3c
+ * @license Angular v19.2.0-next.0+sha-803358f
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4638,262 +4638,6 @@ class RecursiveAstVisitor {
         for (const ast of asts) {
             this.visit(ast, context);
         }
-    }
-}
-class AstTransformer {
-    visitImplicitReceiver(ast, context) {
-        return ast;
-    }
-    visitThisReceiver(ast, context) {
-        return ast;
-    }
-    visitInterpolation(ast, context) {
-        return new Interpolation$1(ast.span, ast.sourceSpan, ast.strings, this.visitAll(ast.expressions));
-    }
-    visitLiteralPrimitive(ast, context) {
-        return new LiteralPrimitive(ast.span, ast.sourceSpan, ast.value);
-    }
-    visitPropertyRead(ast, context) {
-        return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
-    }
-    visitPropertyWrite(ast, context) {
-        return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name, ast.value.visit(this));
-    }
-    visitSafePropertyRead(ast, context) {
-        return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, ast.receiver.visit(this), ast.name);
-    }
-    visitLiteralArray(ast, context) {
-        return new LiteralArray(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
-    }
-    visitLiteralMap(ast, context) {
-        return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, this.visitAll(ast.values));
-    }
-    visitUnary(ast, context) {
-        switch (ast.operator) {
-            case '+':
-                return Unary.createPlus(ast.span, ast.sourceSpan, ast.expr.visit(this));
-            case '-':
-                return Unary.createMinus(ast.span, ast.sourceSpan, ast.expr.visit(this));
-            default:
-                throw new Error(`Unknown unary operator ${ast.operator}`);
-        }
-    }
-    visitBinary(ast, context) {
-        return new Binary(ast.span, ast.sourceSpan, ast.operation, ast.left.visit(this), ast.right.visit(this));
-    }
-    visitPrefixNot(ast, context) {
-        return new PrefixNot(ast.span, ast.sourceSpan, ast.expression.visit(this));
-    }
-    visitTypeofExpression(ast, context) {
-        return new TypeofExpression(ast.span, ast.sourceSpan, ast.expression.visit(this));
-    }
-    visitNonNullAssert(ast, context) {
-        return new NonNullAssert(ast.span, ast.sourceSpan, ast.expression.visit(this));
-    }
-    visitConditional(ast, context) {
-        return new Conditional(ast.span, ast.sourceSpan, ast.condition.visit(this), ast.trueExp.visit(this), ast.falseExp.visit(this));
-    }
-    visitPipe(ast, context) {
-        return new BindingPipe(ast.span, ast.sourceSpan, ast.exp.visit(this), ast.name, this.visitAll(ast.args), ast.nameSpan);
-    }
-    visitKeyedRead(ast, context) {
-        return new KeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
-    }
-    visitKeyedWrite(ast, context) {
-        return new KeyedWrite(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this), ast.value.visit(this));
-    }
-    visitCall(ast, context) {
-        return new Call(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
-    }
-    visitSafeCall(ast, context) {
-        return new SafeCall(ast.span, ast.sourceSpan, ast.receiver.visit(this), this.visitAll(ast.args), ast.argumentSpan);
-    }
-    visitAll(asts) {
-        const res = [];
-        for (let i = 0; i < asts.length; ++i) {
-            res[i] = asts[i].visit(this);
-        }
-        return res;
-    }
-    visitChain(ast, context) {
-        return new Chain(ast.span, ast.sourceSpan, this.visitAll(ast.expressions));
-    }
-    visitSafeKeyedRead(ast, context) {
-        return new SafeKeyedRead(ast.span, ast.sourceSpan, ast.receiver.visit(this), ast.key.visit(this));
-    }
-}
-// A transformer that only creates new nodes if the transformer makes a change or
-// a change is made a child node.
-class AstMemoryEfficientTransformer {
-    visitImplicitReceiver(ast, context) {
-        return ast;
-    }
-    visitThisReceiver(ast, context) {
-        return ast;
-    }
-    visitInterpolation(ast, context) {
-        const expressions = this.visitAll(ast.expressions);
-        if (expressions !== ast.expressions)
-            return new Interpolation$1(ast.span, ast.sourceSpan, ast.strings, expressions);
-        return ast;
-    }
-    visitLiteralPrimitive(ast, context) {
-        return ast;
-    }
-    visitPropertyRead(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        if (receiver !== ast.receiver) {
-            return new PropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
-        }
-        return ast;
-    }
-    visitPropertyWrite(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const value = ast.value.visit(this);
-        if (receiver !== ast.receiver || value !== ast.value) {
-            return new PropertyWrite(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name, value);
-        }
-        return ast;
-    }
-    visitSafePropertyRead(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        if (receiver !== ast.receiver) {
-            return new SafePropertyRead(ast.span, ast.sourceSpan, ast.nameSpan, receiver, ast.name);
-        }
-        return ast;
-    }
-    visitLiteralArray(ast, context) {
-        const expressions = this.visitAll(ast.expressions);
-        if (expressions !== ast.expressions) {
-            return new LiteralArray(ast.span, ast.sourceSpan, expressions);
-        }
-        return ast;
-    }
-    visitLiteralMap(ast, context) {
-        const values = this.visitAll(ast.values);
-        if (values !== ast.values) {
-            return new LiteralMap(ast.span, ast.sourceSpan, ast.keys, values);
-        }
-        return ast;
-    }
-    visitUnary(ast, context) {
-        const expr = ast.expr.visit(this);
-        if (expr !== ast.expr) {
-            switch (ast.operator) {
-                case '+':
-                    return Unary.createPlus(ast.span, ast.sourceSpan, expr);
-                case '-':
-                    return Unary.createMinus(ast.span, ast.sourceSpan, expr);
-                default:
-                    throw new Error(`Unknown unary operator ${ast.operator}`);
-            }
-        }
-        return ast;
-    }
-    visitBinary(ast, context) {
-        const left = ast.left.visit(this);
-        const right = ast.right.visit(this);
-        if (left !== ast.left || right !== ast.right) {
-            return new Binary(ast.span, ast.sourceSpan, ast.operation, left, right);
-        }
-        return ast;
-    }
-    visitPrefixNot(ast, context) {
-        const expression = ast.expression.visit(this);
-        if (expression !== ast.expression) {
-            return new PrefixNot(ast.span, ast.sourceSpan, expression);
-        }
-        return ast;
-    }
-    visitTypeofExpression(ast, context) {
-        const expression = ast.expression.visit(this);
-        if (expression !== ast.expression) {
-            return new TypeofExpression(ast.span, ast.sourceSpan, expression);
-        }
-        return ast;
-    }
-    visitNonNullAssert(ast, context) {
-        const expression = ast.expression.visit(this);
-        if (expression !== ast.expression) {
-            return new NonNullAssert(ast.span, ast.sourceSpan, expression);
-        }
-        return ast;
-    }
-    visitConditional(ast, context) {
-        const condition = ast.condition.visit(this);
-        const trueExp = ast.trueExp.visit(this);
-        const falseExp = ast.falseExp.visit(this);
-        if (condition !== ast.condition || trueExp !== ast.trueExp || falseExp !== ast.falseExp) {
-            return new Conditional(ast.span, ast.sourceSpan, condition, trueExp, falseExp);
-        }
-        return ast;
-    }
-    visitPipe(ast, context) {
-        const exp = ast.exp.visit(this);
-        const args = this.visitAll(ast.args);
-        if (exp !== ast.exp || args !== ast.args) {
-            return new BindingPipe(ast.span, ast.sourceSpan, exp, ast.name, args, ast.nameSpan);
-        }
-        return ast;
-    }
-    visitKeyedRead(ast, context) {
-        const obj = ast.receiver.visit(this);
-        const key = ast.key.visit(this);
-        if (obj !== ast.receiver || key !== ast.key) {
-            return new KeyedRead(ast.span, ast.sourceSpan, obj, key);
-        }
-        return ast;
-    }
-    visitKeyedWrite(ast, context) {
-        const obj = ast.receiver.visit(this);
-        const key = ast.key.visit(this);
-        const value = ast.value.visit(this);
-        if (obj !== ast.receiver || key !== ast.key || value !== ast.value) {
-            return new KeyedWrite(ast.span, ast.sourceSpan, obj, key, value);
-        }
-        return ast;
-    }
-    visitAll(asts) {
-        const res = [];
-        let modified = false;
-        for (let i = 0; i < asts.length; ++i) {
-            const original = asts[i];
-            const value = original.visit(this);
-            res[i] = value;
-            modified = modified || value !== original;
-        }
-        return modified ? res : asts;
-    }
-    visitChain(ast, context) {
-        const expressions = this.visitAll(ast.expressions);
-        if (expressions !== ast.expressions) {
-            return new Chain(ast.span, ast.sourceSpan, expressions);
-        }
-        return ast;
-    }
-    visitCall(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const args = this.visitAll(ast.args);
-        if (receiver !== ast.receiver || args !== ast.args) {
-            return new Call(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
-        }
-        return ast;
-    }
-    visitSafeCall(ast, context) {
-        const receiver = ast.receiver.visit(this);
-        const args = this.visitAll(ast.args);
-        if (receiver !== ast.receiver || args !== ast.args) {
-            return new SafeCall(ast.span, ast.sourceSpan, receiver, args, ast.argumentSpan);
-        }
-        return ast;
-    }
-    visitSafeKeyedRead(ast, context) {
-        const obj = ast.receiver.visit(this);
-        const key = ast.key.visit(this);
-        if (obj !== ast.receiver || key !== ast.key) {
-            return new SafeKeyedRead(ast.span, ast.sourceSpan, obj, key);
-        }
-        return ast;
     }
 }
 // Bindings
@@ -30986,7 +30730,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.2.0-next.0+sha-d038b3c');
+const VERSION = new Version('19.2.0-next.0+sha-803358f');
 
 class CompilerConfig {
     defaultEncapsulation;
@@ -32842,7 +32586,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32860,7 +32604,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32955,7 +32699,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33374,7 +33118,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33409,7 +33153,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33460,7 +33204,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33493,7 +33237,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33544,7 +33288,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.2.0-next.0+sha-d038b3c'));
+    definitionMap.set('version', literal('19.2.0-next.0+sha-803358f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33577,5 +33321,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, AstMemoryEfficientTransformer, AstTransformer, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, TagContentType, TaggedTemplateExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
