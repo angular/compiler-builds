@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.0-rc.0+sha-99c542a
+ * @license Angular v19.1.0-rc.0+sha-3e7ba3d
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -146,12 +146,12 @@ declare const enum AttributeMarker {
      * ## Example:
      *
      * Given:
-     * ```
-     * <div class="foo bar baz">...<d/vi>
+     * ```html
+     * <div class="foo bar baz">...</div>
      * ```
      *
      * the generated code is:
-     * ```
+     * ```ts
      * var _c1 = [AttributeMarker.Classes, 'foo', 'bar', 'baz'];
      * ```
      */
@@ -164,12 +164,12 @@ declare const enum AttributeMarker {
      * ## Example:
      *
      * Given:
-     * ```
+     * ```html
      * <div style="width:100px; height:200px; color:red">...</div>
      * ```
      *
      * the generated code is:
-     * ```
+     * ```ts
      * var _c1 = [AttributeMarker.Styles, 'width', '100px', 'height'. '200px', 'color', 'red'];
      * ```
      */
@@ -179,13 +179,13 @@ declare const enum AttributeMarker {
      *
      * For example, given the following HTML:
      *
-     * ```
+     * ```html
      * <div moo="car" [foo]="exp" (bar)="doSth()">
      * ```
      *
      * the generated code is:
      *
-     * ```
+     * ```ts
      * var _c1 = ['moo', 'car', AttributeMarker.Bindings, 'foo', 'bar'];
      * ```
      */
@@ -195,7 +195,7 @@ declare const enum AttributeMarker {
      *
      * For example, given the following HTML:
      *
-     * ```
+     * ```html
      * <div *ngFor="let value of values; trackBy:trackBy" dirA [dirB]="value">
      * ```
      *
@@ -219,7 +219,7 @@ declare const enum AttributeMarker {
      *
      * For example, given the following HTML:
      *
-     * ```
+     * ```html
      * <h1 attr="value" ngProjectAs="[title]">
      * ```
      *
@@ -235,14 +235,15 @@ declare const enum AttributeMarker {
      *
      * For example, given the following HTML:
      *
-     * ```
+     * ```html
      * <div moo="car" foo="value" i18n-foo [bar]="binding" i18n-bar>
      * ```
      *
      * the generated code is:
      *
-     * ```
+     * ```ts
      * var _c1 = ['moo', 'car', AttributeMarker.I18n, 'foo', 'bar'];
+     * ```
      */
     I18n = 6
 }
@@ -337,7 +338,7 @@ declare class BindingParser {
     parseInlineTemplateBinding(tplKey: string, tplValue: string, sourceSpan: ParseSourceSpan, absoluteValueOffset: number, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], targetVars: ParsedVariable[], isIvyAst: boolean): void;
     /**
      * Parses the bindings in a microsyntax expression, e.g.
-     * ```
+     * ```html
      *    <tag *tplKey="let value1 = prop; let value2 = localVar">
      * ```
      *
@@ -925,7 +926,7 @@ export declare const enum DeclarationListEmitMode {
     /**
      * The list of declarations is emitted into the generated code as is.
      *
-     * ```
+     * ```ts
      * directives: [MyDir],
      * ```
      */
@@ -934,7 +935,7 @@ export declare const enum DeclarationListEmitMode {
      * The list of declarations is emitted into the generated code wrapped inside a closure, which
      * is needed when at least one declaration is a forward reference.
      *
-     * ```
+     * ```ts
      * directives: function () { return [MyDir, ForwardDir]; },
      * ```
      */
@@ -947,13 +948,13 @@ export declare const enum DeclarationListEmitMode {
      * any forward references within the list are resolved when the outer closure is invoked.
      *
      * Consider the case where the runtime has captured two declarations in two distinct values:
-     * ```
+     * ```ts
      * const dirA = MyDir;
      * const dirB = forwardRef(function() { return ForwardRef; });
      * ```
      *
      * This mode would emit the declarations captured in `dirA` and `dirB` as follows:
-     * ```
+     * ```ts
      * directives: function () { return [dirA, dirB].map(ng.resolveForwardRef); },
      * ```
      */
@@ -2423,7 +2424,7 @@ export declare class Parser {
      * parsing errors in case the given expression is invalid.
      *
      * For example,
-     * ```
+     * ```html
      *   <div *ngFor="let item of items">
      *         ^      ^ absoluteValueOffset for `templateValue`
      *         absoluteKeyOffset for `templateKey`
@@ -2434,7 +2435,7 @@ export declare class Parser {
      * 3. ngForOf -> items
      *
      * This is apparent from the de-sugared template:
-     * ```
+     * ```html
      *   <ng-template ngFor let-item [ngForOf]="items">
      * ```
      *
