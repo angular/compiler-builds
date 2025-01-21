@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.2.0-next.0+sha-76c4a77
+ * @license Angular v19.2.0-next.0+sha-fe8a683
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -93,6 +93,8 @@ export declare interface AstVisitor {
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
     visitSafeCall(ast: SafeCall, context: any): any;
+    visitTemplateLiteral(ast: TemplateLiteral, context: any): any;
+    visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
     /**
      * This function is optionally defined to allow classes that implement this
@@ -1319,7 +1321,9 @@ export declare interface ExpressionVisitor {
     visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
     visitWritePropExpr(expr: WritePropExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
-    visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
+    visitTaggedTemplateLiteralExpr(ast: TaggedTemplateLiteralExpr, context: any): any;
+    visitTemplateLiteralExpr(ast: TemplateLiteralExpr, context: any): any;
+    visitTemplateLiteralElementExpr(ast: TemplateLiteralElementExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
     visitLiteralExpr(ast: LiteralExpr, context: any): any;
     visitLocalizedString(ast: LocalizedString, context: any): any;
@@ -2192,11 +2196,11 @@ declare namespace outputAst {
         WriteKeyExpr,
         WritePropExpr,
         InvokeFunctionExpr,
-        TaggedTemplateExpr,
+        TaggedTemplateLiteralExpr,
         InstantiateExpr,
         LiteralExpr,
-        TemplateLiteral,
-        TemplateLiteralElement,
+        TemplateLiteralExpr,
+        TemplateLiteralElementExpr,
         LiteralPiece,
         PlaceholderPiece,
         MessagePiece,
@@ -4401,6 +4405,8 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
     visitSafeCall(ast: SafeCall, context: any): any;
+    visitTemplateLiteral(ast: TemplateLiteral, context: any): void;
+    visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): void;
     visitAll(asts: AST[], context: any): any;
 }
 
@@ -4420,7 +4426,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitWritePropExpr(ast: WritePropExpr, context: any): any;
     visitDynamicImportExpr(ast: DynamicImportExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
-    visitTaggedTemplateExpr(ast: TaggedTemplateExpr, context: any): any;
+    visitTaggedTemplateLiteralExpr(ast: TaggedTemplateLiteralExpr, context: any): any;
     visitInstantiateExpr(ast: InstantiateExpr, context: any): any;
     visitLiteralExpr(ast: LiteralExpr, context: any): any;
     visitLocalizedString(ast: LocalizedString, context: any): any;
@@ -4436,6 +4442,8 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitLiteralArrayExpr(ast: LiteralArrayExpr, context: any): any;
     visitLiteralMapExpr(ast: LiteralMapExpr, context: any): any;
     visitCommaExpr(ast: CommaExpr, context: any): any;
+    visitTemplateLiteralExpr(ast: TemplateLiteralExpr, context: any): any;
+    visitTemplateLiteralElementExpr(ast: TemplateLiteralElementExpr, context: any): any;
     visitAllExpressions(exprs: Expression[], context: any): void;
     visitDeclareVarStmt(stmt: DeclareVarStmt, context: any): any;
     visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
@@ -4756,6 +4764,17 @@ export declare enum StmtModifier {
 
 export declare const STRING_TYPE: BuiltinType;
 
+export declare class StringToken extends Token {
+    readonly kind: StringTokenKind;
+    constructor(index: number, end: number, strValue: string, kind: StringTokenKind);
+}
+
+export declare enum StringTokenKind {
+    Plain = 0,
+    TemplateLiteralPart = 1,
+    TemplateLiteralEnd = 2
+}
+
 declare namespace t {
     export {
         tmplAstVisitAll as visitAll,
@@ -4818,16 +4837,16 @@ export declare interface TagDefinition {
     getContentType(prefix?: string): TagContentType;
 }
 
-declare function taggedTemplate(tag: Expression, template: TemplateLiteral, type?: Type | null, sourceSpan?: ParseSourceSpan | null): TaggedTemplateExpr;
+declare function taggedTemplate(tag: Expression, template: TemplateLiteralExpr, type?: Type | null, sourceSpan?: ParseSourceSpan | null): TaggedTemplateLiteralExpr;
 
-export declare class TaggedTemplateExpr extends Expression {
+export declare class TaggedTemplateLiteralExpr extends Expression {
     tag: Expression;
-    template: TemplateLiteral;
-    constructor(tag: Expression, template: TemplateLiteral, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    template: TemplateLiteralExpr;
+    constructor(tag: Expression, template: TemplateLiteralExpr, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    clone(): TaggedTemplateExpr;
+    clone(): TaggedTemplateLiteralExpr;
 }
 
 declare class TagPlaceholder implements Node_3 {
@@ -4901,19 +4920,37 @@ export declare class TemplateBindingParseResult {
 /** Entity that is local to the template and defined within the template. */
 export declare type TemplateEntity = TmplAstReference | TmplAstVariable | TmplAstLetDeclaration;
 
-export declare class TemplateLiteral {
+export declare class TemplateLiteral extends AST {
     elements: TemplateLiteralElement[];
-    expressions: Expression[];
-    constructor(elements: TemplateLiteralElement[], expressions: Expression[]);
-    clone(): TemplateLiteral;
+    expressions: AST[];
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, elements: TemplateLiteralElement[], expressions: AST[]);
+    visit(visitor: AstVisitor, context?: any): any;
 }
 
-export declare class TemplateLiteralElement {
+export declare class TemplateLiteralElement extends AST {
     text: string;
-    sourceSpan?: ParseSourceSpan | undefined;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, text: string);
+    visit(visitor: AstVisitor, context?: any): any;
+}
+
+export declare class TemplateLiteralElementExpr extends Expression {
+    text: string;
     rawText: string;
-    constructor(text: string, sourceSpan?: ParseSourceSpan | undefined, rawText?: string);
-    clone(): TemplateLiteralElement;
+    constructor(text: string, sourceSpan?: ParseSourceSpan | null, rawText?: string);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    clone(): TemplateLiteralElementExpr;
+}
+
+export declare class TemplateLiteralExpr extends Expression {
+    elements: TemplateLiteralElementExpr[];
+    expressions: Expression[];
+    constructor(elements: TemplateLiteralElementExpr[], expressions: Expression[], sourceSpan?: ParseSourceSpan | null);
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    clone(): TemplateLiteralExpr;
 }
 
 declare class Text_2 extends NodeWithI18n {
@@ -5345,7 +5382,7 @@ export declare class Token {
     constructor(index: number, end: number, type: TokenType, numValue: number, strValue: string);
     isCharacter(code: number): boolean;
     isNumber(): boolean;
-    isString(): boolean;
+    isString(): this is StringToken;
     isOperator(operator: string): boolean;
     isIdentifier(): boolean;
     isPrivateIdentifier(): boolean;
@@ -5360,6 +5397,10 @@ export declare class Token {
     isKeywordTypeof(): boolean;
     isError(): boolean;
     toNumber(): number;
+    isTemplateLiteralPart(): this is StringToken;
+    isTemplateLiteralEnd(): this is StringToken;
+    isTemplateLiteralInterpolationStart(): boolean;
+    isTemplateLiteralInterpolationEnd(): boolean;
     toString(): string | null;
 }
 
