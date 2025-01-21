@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.2+sha-6483621
+ * @license Angular v19.1.2+sha-67fe0b9
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -7794,6 +7794,36 @@ class ShadowCss {
      * .foo<scopeName> .bar { ... }
      */
     _convertColonHostContext(cssText) {
+        const length = cssText.length;
+        let parens = 0;
+        let prev = 0;
+        let result = '';
+        // Splits up the selectors on their top-level commas, processes the :host-context in them
+        // individually and stitches them back together. This ensures that individual selectors don't
+        // affect each other.
+        for (let i = 0; i < length; i++) {
+            const char = cssText[i];
+            // If we hit a comma and there are no open parentheses, take the current chunk and process it.
+            if (char === ',' && parens === 0) {
+                result += this._convertColonHostContextInSelectorPart(cssText.slice(prev, i)) + ',';
+                prev = i + 1;
+                continue;
+            }
+            // We've hit the end. Take everything since the last comma.
+            if (i === length - 1) {
+                result += this._convertColonHostContextInSelectorPart(cssText.slice(prev));
+                break;
+            }
+            if (char === '(') {
+                parens++;
+            }
+            else if (char === ')') {
+                parens--;
+            }
+        }
+        return result;
+    }
+    _convertColonHostContextInSelectorPart(cssText) {
         return cssText.replace(_cssColonHostContextReGlobal, (selectorText, pseudoPrefix) => {
             // We have captured a selector that contains a `:host-context` rule.
             // For backward compatibility `:host-context` may contain a comma separated list of selectors.
@@ -8181,10 +8211,13 @@ const _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*([
 const _polyfillHost = '-shadowcsshost';
 // note: :host-context pre-processed to -shadowcsshostcontext.
 const _polyfillHostContext = '-shadowcsscontext';
-const _parenSuffix = '(?:\\((' + '(?:\\([^)(]*\\)|[^)(]*)+?' + ')\\))?([^,{]*)';
-const _cssColonHostRe = new RegExp(_polyfillHost + _parenSuffix, 'gim');
-const _cssColonHostContextReGlobal = new RegExp(_cssScopedPseudoFunctionPrefix + '(' + _polyfillHostContext + _parenSuffix + ')', 'gim');
-const _cssColonHostContextRe = new RegExp(_polyfillHostContext + _parenSuffix, 'im');
+const _parenSuffix = '(?:\\((' + '(?:\\([^)(]*\\)|[^)(]*)+?' + ')\\))';
+const _cssColonHostRe = new RegExp(_polyfillHost + _parenSuffix + '?([^,{]*)', 'gim');
+// note: :host-context patterns are terminated with `{`, as opposed to :host which
+// is both `{` and `,` because :host-context handles top-level commas differently.
+const _hostContextPattern = _polyfillHostContext + _parenSuffix + '?([^{]*)';
+const _cssColonHostContextReGlobal = new RegExp(`${_cssScopedPseudoFunctionPrefix}(${_hostContextPattern})`, 'gim');
+const _cssColonHostContextRe = new RegExp(_hostContextPattern, 'im');
 const _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
 const _polyfillHostNoCombinatorOutsidePseudoFunction = new RegExp(`${_polyfillHostNoCombinator}(?![^(]*\\))`, 'g');
 const _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s,]*)/;
@@ -30730,7 +30763,7 @@ function publishFacade(global) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('19.1.2+sha-6483621');
+const VERSION = new Version('19.1.2+sha-67fe0b9');
 
 class CompilerConfig {
     defaultEncapsulation;
@@ -32586,7 +32619,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32604,7 +32637,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32699,7 +32732,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33118,7 +33151,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33153,7 +33186,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33204,7 +33237,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33237,7 +33270,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33288,7 +33321,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('19.1.2+sha-6483621'));
+    definitionMap.set('version', literal('19.1.2+sha-67fe0b9'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
