@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.2.0-next.1+sha-9723f03
+ * @license Angular v19.2.0-next.1+sha-146ab9a
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3704,9 +3704,12 @@ export declare interface R3HmrMetadata {
     /**
      * HMR update functions cannot contain imports so any locals the generated code depends on
      * (e.g. references to imports within the same file or imported symbols) have to be passed in
-     * as function parameters. This array contains the names of those local symbols.
+     * as function parameters. This array contains the names and runtime representation of the locals.
      */
-    localDependencies: string[];
+    localDependencies: {
+        name: string;
+        runtimeRepresentation: outputAst.Expression;
+    }[];
 }
 
 /** HMR dependency on a namespace import. */
