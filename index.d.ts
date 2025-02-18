@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.1.6+sha-6d8c2e2
+ * @license Angular v19.1.6+sha-ec1e4c3
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3975,7 +3975,6 @@ export declare class R3Identifiers {
     static CopyDefinitionFeature: outputAst.ExternalReference;
     static ProvidersFeature: outputAst.ExternalReference;
     static HostDirectivesFeature: outputAst.ExternalReference;
-    static InputTransformsFeatureFeature: outputAst.ExternalReference;
     static ExternalStylesFeature: outputAst.ExternalReference;
     static listener: outputAst.ExternalReference;
     static getInheritedFactory: outputAst.ExternalReference;
