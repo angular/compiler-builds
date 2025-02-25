@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.0+sha-6c9247c
+ * @license Angular v20.0.0-next.0+sha-f2d5cf7
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -923,6 +923,7 @@ var BinaryOperator;
     BinaryOperator[BinaryOperator["Bigger"] = 15] = "Bigger";
     BinaryOperator[BinaryOperator["BiggerEquals"] = 16] = "BiggerEquals";
     BinaryOperator[BinaryOperator["NullishCoalesce"] = 17] = "NullishCoalesce";
+    BinaryOperator[BinaryOperator["Exponentiation"] = 18] = "Exponentiation";
 })(BinaryOperator || (BinaryOperator = {}));
 function nullSafeIsEquivalent(base, other) {
     if (base == null || other == null) {
@@ -993,6 +994,9 @@ class Expression {
     }
     modulo(rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.Modulo, this, rhs, null, sourceSpan);
+    }
+    power(rhs, sourceSpan) {
+        return new BinaryOperatorExpr(BinaryOperator.Exponentiation, this, rhs, null, sourceSpan);
     }
     and(rhs, sourceSpan) {
         return new BinaryOperatorExpr(BinaryOperator.And, this, rhs, null, sourceSpan);
@@ -1069,6 +1073,25 @@ class TypeofExpr extends Expression {
     }
     clone() {
         return new TypeofExpr(this.expr.clone());
+    }
+}
+class VoidExpr extends Expression {
+    expr;
+    constructor(expr, type, sourceSpan) {
+        super(type, sourceSpan);
+        this.expr = expr;
+    }
+    visitExpression(visitor, context) {
+        return visitor.visitVoidExpr(this, context);
+    }
+    isEquivalent(e) {
+        return e instanceof VoidExpr && e.expr.isEquivalent(this.expr);
+    }
+    isConstant() {
+        return this.expr.isConstant();
+    }
+    clone() {
+        return new VoidExpr(this.expr.clone());
     }
 }
 class WrappedNodeExpr extends Expression {
@@ -1987,6 +2010,9 @@ class RecursiveAstVisitor$1 {
     visitTypeofExpr(ast, context) {
         return this.visitExpression(ast, context);
     }
+    visitVoidExpr(ast, context) {
+        return this.visitExpression(ast, context);
+    }
     visitReadVarExpr(ast, context) {
         return this.visitExpression(ast, context);
     }
@@ -2252,6 +2278,7 @@ var output_ast = /*#__PURE__*/Object.freeze({
     Expression: Expression,
     ReadVarExpr: ReadVarExpr,
     TypeofExpr: TypeofExpr,
+    VoidExpr: VoidExpr,
     WrappedNodeExpr: WrappedNodeExpr,
     WriteVarExpr: WriteVarExpr,
     WriteKeyExpr: WriteKeyExpr,
@@ -3666,6 +3693,10 @@ class AbstractEmitterVisitor {
         ctx.print(expr, 'typeof ');
         expr.expr.visitExpression(this, ctx);
     }
+    visitVoidExpr(expr, ctx) {
+        ctx.print(expr, 'void ');
+        expr.expr.visitExpression(this, ctx);
+    }
     visitReadVarExpr(ast, ctx) {
         ctx.print(ast, ast.name);
         return null;
@@ -3778,6 +3809,9 @@ class AbstractEmitterVisitor {
                 break;
             case BinaryOperator.Modulo:
                 opStr = '%';
+                break;
+            case BinaryOperator.Exponentiation:
+                opStr = '**';
                 break;
             case BinaryOperator.Lower:
                 opStr = '<';
@@ -4481,6 +4515,16 @@ class TypeofExpression extends AST {
         return visitor.visitTypeofExpression(this, context);
     }
 }
+class VoidExpression extends AST {
+    expression;
+    constructor(span, sourceSpan, expression) {
+        super(span, sourceSpan);
+        this.expression = expression;
+    }
+    visit(visitor, context = null) {
+        return visitor.visitVoidExpression(this, context);
+    }
+}
 class NonNullAssert extends AST {
     expression;
     constructor(span, sourceSpan, expression) {
@@ -4661,6 +4705,9 @@ class RecursiveAstVisitor {
         this.visit(ast.expression, context);
     }
     visitTypeofExpression(ast, context) {
+        this.visit(ast.expression, context);
+    }
+    visitVoidExpression(ast, context) {
         this.visit(ast.expression, context);
     }
     visitNonNullAssert(ast, context) {
@@ -10420,6 +10467,9 @@ function transformExpressionsInExpression(expr, transform, flags) {
     else if (expr instanceof TypeofExpr) {
         expr.expr = transformExpressionsInExpression(expr.expr, transform, flags);
     }
+    else if (expr instanceof VoidExpr) {
+        expr.expr = transformExpressionsInExpression(expr.expr, transform, flags);
+    }
     else if (expr instanceof WriteVarExpr) {
         expr.value = transformExpressionsInExpression(expr.value, transform, flags);
     }
@@ -11927,6 +11977,7 @@ const BINARY_OPERATORS = new Map([
     ['<=', BinaryOperator.LowerEquals],
     ['-', BinaryOperator.Minus],
     ['%', BinaryOperator.Modulo],
+    ['**', BinaryOperator.Exponentiation],
     ['*', BinaryOperator.Multiply],
     ['!=', BinaryOperator.NotEquals],
     ['!==', BinaryOperator.NotIdentical],
@@ -17636,6 +17687,7 @@ const KEYWORDS = [
     'else',
     'this',
     'typeof',
+    'void',
 ];
 class Lexer {
     tokenize(text) {
@@ -17699,6 +17751,9 @@ class Token {
     }
     isKeywordTypeof() {
         return this.type === TokenType.Keyword && this.strValue === 'typeof';
+    }
+    isKeywordVoid() {
+        return this.type === TokenType.Keyword && this.strValue === 'void';
     }
     isError() {
         return this.type === TokenType.Error;
@@ -17844,11 +17899,12 @@ class _Scanner {
                 return this.scanPrivateIdentifier();
             case $PLUS:
             case $MINUS:
-            case $STAR:
             case $SLASH:
             case $PERCENT:
             case $CARET:
                 return this.scanOperator(start, String.fromCharCode(peek));
+            case $STAR:
+                return this.scanComplexOperator(start, '*', $STAR, '*');
             case $QUESTION:
                 return this.scanQuestion(start);
             case $LT:
@@ -18418,6 +18474,7 @@ class _ParseAST {
     parseFlags;
     errors;
     offset;
+    lastUnary = null;
     rparensExpected = 0;
     rbracketsExpected = 0;
     rbracesExpected = 0;
@@ -18784,7 +18841,7 @@ class _ParseAST {
     parseMultiplicative() {
         // '*', '%', '/'
         const start = this.inputIndex;
-        let result = this.parsePrefix();
+        let result = this.parseExponentiation();
         while (this.next.type == TokenType.Operator) {
             const operator = this.next.strValue;
             switch (operator) {
@@ -18792,11 +18849,28 @@ class _ParseAST {
                 case '%':
                 case '/':
                     this.advance();
-                    let right = this.parsePrefix();
+                    const right = this.parseExponentiation();
                     result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
                     continue;
             }
             break;
+        }
+        return result;
+    }
+    parseExponentiation() {
+        // '**'
+        const start = this.inputIndex;
+        let result = this.parsePrefix();
+        while (this.next.type == TokenType.Operator && this.next.strValue === '**') {
+            // This aligns with Javascript semantics which require any unary operator preceeding the
+            // exponentiation operation to be explicitly grouped as either applying to the base or result
+            // of the exponentiation operation.
+            if (result === this.lastUnary) {
+                this.error('Unary operator used immediately before exponentiation expression. Parenthesis must be used to disambiguate operator precedence');
+            }
+            this.advance();
+            const right = this.parsePrefix();
+            result = new Binary(this.span(start), this.sourceSpan(start), '**', result, right);
         }
         return result;
     }
@@ -18809,22 +18883,28 @@ class _ParseAST {
                 case '+':
                     this.advance();
                     result = this.parsePrefix();
-                    return Unary.createPlus(this.span(start), this.sourceSpan(start), result);
+                    return (this.lastUnary = Unary.createPlus(this.span(start), this.sourceSpan(start), result));
                 case '-':
                     this.advance();
                     result = this.parsePrefix();
-                    return Unary.createMinus(this.span(start), this.sourceSpan(start), result);
+                    return (this.lastUnary = Unary.createMinus(this.span(start), this.sourceSpan(start), result));
                 case '!':
                     this.advance();
                     result = this.parsePrefix();
-                    return new PrefixNot(this.span(start), this.sourceSpan(start), result);
+                    return (this.lastUnary = new PrefixNot(this.span(start), this.sourceSpan(start), result));
             }
         }
         else if (this.next.isKeywordTypeof()) {
             this.advance();
             const start = this.inputIndex;
             let result = this.parsePrefix();
-            return new TypeofExpression(this.span(start), this.sourceSpan(start), result);
+            return (this.lastUnary = new TypeofExpression(this.span(start), this.sourceSpan(start), result));
+        }
+        else if (this.next.isKeywordVoid()) {
+            this.advance();
+            const start = this.inputIndex;
+            let result = this.parsePrefix();
+            return (this.lastUnary = new VoidExpression(this.span(start), this.sourceSpan(start), result));
         }
         return this.parseCallChain();
     }
@@ -18865,6 +18945,7 @@ class _ParseAST {
             this.rparensExpected++;
             const result = this.parsePipe();
             this.rparensExpected--;
+            this.lastUnary = null;
             this.expectCharacter($RPAREN);
             return result;
         }
@@ -19487,6 +19568,9 @@ class SerializeExpressionVisitor {
     }
     visitTypeofExpression(ast, context) {
         return `typeof ${ast.expression.visit(this, context)}`;
+    }
+    visitVoidExpression(ast, context) {
+        return `void ${ast.expression.visit(this, context)}`;
     }
     visitASTWithSource(ast, context) {
         return ast.ast.visit(this, context);
@@ -26194,6 +26278,9 @@ function convertAst(ast, job, baseSourceSpan) {
     else if (ast instanceof TypeofExpression) {
         return typeofExpr(convertAst(ast.expression, job, baseSourceSpan));
     }
+    else if (ast instanceof VoidExpression) {
+        return new VoidExpr(convertAst(ast.expression, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
+    }
     else if (ast instanceof TemplateLiteral) {
         return new TemplateLiteralExpr(ast.elements.map((el) => {
             return new TemplateLiteralElementExpr(el.text, convertSourceSpan(el.span, baseSourceSpan));
@@ -31029,13 +31116,6 @@ function publishFacade(global) {
     ng.ɵcompilerFacade = new CompilerFacadeImpl();
 }
 
-/**
- * @module
- * @description
- * Entry point for all public APIs of the compiler package.
- */
-const VERSION = new Version('20.0.0-next.0+sha-6c9247c');
-
 class CompilerConfig {
     defaultEncapsulation;
     preserveWhitespaces;
@@ -32751,143 +32831,6 @@ function compileComponentMetadataAsyncResolver(dependencies) {
 }
 
 /**
- * Generate an ngDevMode guarded call to setClassDebugInfo with the debug info about the class
- * (e.g., the file name in which the class is defined)
- */
-function compileClassDebugInfo(debugInfo) {
-    const debugInfoObject = {
-        className: debugInfo.className,
-    };
-    // Include file path and line number only if the file relative path is calculated successfully.
-    if (debugInfo.filePath) {
-        debugInfoObject.filePath = debugInfo.filePath;
-        debugInfoObject.lineNumber = debugInfo.lineNumber;
-    }
-    // Include forbidOrphanRendering only if it's set to true (to reduce generated code)
-    if (debugInfo.forbidOrphanRendering) {
-        debugInfoObject.forbidOrphanRendering = literal(true);
-    }
-    const fnCall = importExpr(Identifiers.setClassDebugInfo)
-        .callFn([debugInfo.type, mapLiteral(debugInfoObject)]);
-    const iife = arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
-    return iife.callFn([]);
-}
-
-/*!
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.dev/license
- */
-/**
- * Compiles the expression that initializes HMR for a class.
- * @param meta HMR metadata extracted from the class.
- */
-function compileHmrInitializer(meta) {
-    const moduleName = 'm';
-    const dataName = 'd';
-    const timestampName = 't';
-    const idName = 'id';
-    const importCallbackName = `${meta.className}_HmrLoad`;
-    const namespaces = meta.namespaceDependencies.map((dep) => {
-        return new ExternalExpr({ moduleName: dep.moduleName, name: null });
-    });
-    // m.default
-    const defaultRead = variable(moduleName).prop('default');
-    // ɵɵreplaceMetadata(Comp, m.default, [...namespaces], [...locals], import.meta, id);
-    const replaceCall = importExpr(Identifiers.replaceMetadata)
-        .callFn([
-        meta.type,
-        defaultRead,
-        literalArr(namespaces),
-        literalArr(meta.localDependencies.map((l) => l.runtimeRepresentation)),
-        variable('import').prop('meta'),
-        variable(idName),
-    ]);
-    // (m) => m.default && ɵɵreplaceMetadata(...)
-    const replaceCallback = arrowFn([new FnParam(moduleName)], defaultRead.and(replaceCall));
-    // '<url>?c=' + id + '&t=' + encodeURIComponent(t)
-    const urlValue = literal(`./@ng/component?c=`)
-        .plus(variable(idName))
-        .plus(literal('&t='))
-        .plus(variable('encodeURIComponent').callFn([variable(timestampName)]));
-    // import.meta.url
-    const urlBase = variable('import').prop('meta').prop('url');
-    // new URL(urlValue, urlBase).href
-    const urlHref = new InstantiateExpr(variable('URL'), [urlValue, urlBase]).prop('href');
-    // function Cmp_HmrLoad(t) {
-    //   import(/* @vite-ignore */ urlHref).then((m) => m.default && replaceMetadata(...));
-    // }
-    const importCallback = new DeclareFunctionStmt(importCallbackName, [new FnParam(timestampName)], [
-        // The vite-ignore special comment is required to prevent Vite from generating a superfluous
-        // warning for each usage within the development code. If Vite provides a method to
-        // programmatically avoid this warning in the future, this added comment can be removed here.
-        new DynamicImportExpr(urlHref, null, '@vite-ignore')
-            .prop('then')
-            .callFn([replaceCallback])
-            .toStmt(),
-    ], null, StmtModifier.Final);
-    // (d) => d.id === id && Cmp_HmrLoad(d.timestamp)
-    const updateCallback = arrowFn([new FnParam(dataName)], variable(dataName)
-        .prop('id')
-        .identical(variable(idName))
-        .and(variable(importCallbackName).callFn([variable(dataName).prop('timestamp')])));
-    // Cmp_HmrLoad(Date.now());
-    // Initial call to kick off the loading in order to avoid edge cases with components
-    // coming from lazy chunks that change before the chunk has loaded.
-    const initialCall = variable(importCallbackName)
-        .callFn([variable('Date').prop('now').callFn([])]);
-    // import.meta.hot
-    const hotRead = variable('import').prop('meta').prop('hot');
-    // import.meta.hot.on('angular:component-update', () => ...);
-    const hotListener = hotRead
-        .clone()
-        .prop('on')
-        .callFn([literal('angular:component-update'), updateCallback]);
-    return arrowFn([], [
-        // const id = <id>;
-        new DeclareVarStmt(idName, literal(encodeURIComponent(`${meta.filePath}@${meta.className}`)), null, StmtModifier.Final),
-        // function Cmp_HmrLoad() {...}.
-        importCallback,
-        // ngDevMode && Cmp_HmrLoad(Date.now());
-        devOnlyGuardedExpression(initialCall).toStmt(),
-        // ngDevMode && import.meta.hot && import.meta.hot.on(...)
-        devOnlyGuardedExpression(hotRead.and(hotListener)).toStmt(),
-    ])
-        .callFn([]);
-}
-/**
- * Compiles the HMR update callback for a class.
- * @param definitions Compiled definitions for the class (e.g. `defineComponent` calls).
- * @param constantStatements Supporting constants statements that were generated alongside
- *  the definition.
- * @param meta HMR metadata extracted from the class.
- */
-function compileHmrUpdateCallback(definitions, constantStatements, meta) {
-    const namespaces = 'ɵɵnamespaces';
-    const params = [meta.className, namespaces].map((name) => new FnParam(name, DYNAMIC_TYPE));
-    const body = [];
-    for (const local of meta.localDependencies) {
-        params.push(new FnParam(local.name));
-    }
-    // Declare variables that read out the individual namespaces.
-    for (let i = 0; i < meta.namespaceDependencies.length; i++) {
-        body.push(new DeclareVarStmt(meta.namespaceDependencies[i].assignedName, variable(namespaces).key(literal(i)), DYNAMIC_TYPE, StmtModifier.Final));
-    }
-    body.push(...constantStatements);
-    for (const field of definitions) {
-        if (field.initializer !== null) {
-            body.push(variable(meta.className).prop(field.name).set(field.initializer).toStmt());
-            for (const stmt of field.statements) {
-                body.push(stmt);
-            }
-        }
-    }
-    return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
-}
-
-/**
  * Every time we make a breaking change to the declaration interface or partial-linker behavior, we
  * must update this constant to prevent old partial-linkers from incorrectly processing the
  * declaration.
@@ -32902,7 +32845,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32920,7 +32863,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33015,7 +32958,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33434,7 +33377,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33469,7 +33412,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33520,7 +33463,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33553,7 +33496,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33604,7 +33547,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-6c9247c'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-f2d5cf7'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33619,6 +33562,150 @@ function createPipeDefinitionMap(meta) {
     }
     return definitionMap;
 }
+
+/**
+ * Generate an ngDevMode guarded call to setClassDebugInfo with the debug info about the class
+ * (e.g., the file name in which the class is defined)
+ */
+function compileClassDebugInfo(debugInfo) {
+    const debugInfoObject = {
+        className: debugInfo.className,
+    };
+    // Include file path and line number only if the file relative path is calculated successfully.
+    if (debugInfo.filePath) {
+        debugInfoObject.filePath = debugInfo.filePath;
+        debugInfoObject.lineNumber = debugInfo.lineNumber;
+    }
+    // Include forbidOrphanRendering only if it's set to true (to reduce generated code)
+    if (debugInfo.forbidOrphanRendering) {
+        debugInfoObject.forbidOrphanRendering = literal(true);
+    }
+    const fnCall = importExpr(Identifiers.setClassDebugInfo)
+        .callFn([debugInfo.type, mapLiteral(debugInfoObject)]);
+    const iife = arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
+    return iife.callFn([]);
+}
+
+/*!
+ * @license
+ * Copyright Google LLC All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.dev/license
+ */
+/**
+ * Compiles the expression that initializes HMR for a class.
+ * @param meta HMR metadata extracted from the class.
+ */
+function compileHmrInitializer(meta) {
+    const moduleName = 'm';
+    const dataName = 'd';
+    const timestampName = 't';
+    const idName = 'id';
+    const importCallbackName = `${meta.className}_HmrLoad`;
+    const namespaces = meta.namespaceDependencies.map((dep) => {
+        return new ExternalExpr({ moduleName: dep.moduleName, name: null });
+    });
+    // m.default
+    const defaultRead = variable(moduleName).prop('default');
+    // ɵɵreplaceMetadata(Comp, m.default, [...namespaces], [...locals], import.meta, id);
+    const replaceCall = importExpr(Identifiers.replaceMetadata)
+        .callFn([
+        meta.type,
+        defaultRead,
+        literalArr(namespaces),
+        literalArr(meta.localDependencies.map((l) => l.runtimeRepresentation)),
+        variable('import').prop('meta'),
+        variable(idName),
+    ]);
+    // (m) => m.default && ɵɵreplaceMetadata(...)
+    const replaceCallback = arrowFn([new FnParam(moduleName)], defaultRead.and(replaceCall));
+    // '<url>?c=' + id + '&t=' + encodeURIComponent(t)
+    const urlValue = literal(`./@ng/component?c=`)
+        .plus(variable(idName))
+        .plus(literal('&t='))
+        .plus(variable('encodeURIComponent').callFn([variable(timestampName)]));
+    // import.meta.url
+    const urlBase = variable('import').prop('meta').prop('url');
+    // new URL(urlValue, urlBase).href
+    const urlHref = new InstantiateExpr(variable('URL'), [urlValue, urlBase]).prop('href');
+    // function Cmp_HmrLoad(t) {
+    //   import(/* @vite-ignore */ urlHref).then((m) => m.default && replaceMetadata(...));
+    // }
+    const importCallback = new DeclareFunctionStmt(importCallbackName, [new FnParam(timestampName)], [
+        // The vite-ignore special comment is required to prevent Vite from generating a superfluous
+        // warning for each usage within the development code. If Vite provides a method to
+        // programmatically avoid this warning in the future, this added comment can be removed here.
+        new DynamicImportExpr(urlHref, null, '@vite-ignore')
+            .prop('then')
+            .callFn([replaceCallback])
+            .toStmt(),
+    ], null, StmtModifier.Final);
+    // (d) => d.id === id && Cmp_HmrLoad(d.timestamp)
+    const updateCallback = arrowFn([new FnParam(dataName)], variable(dataName)
+        .prop('id')
+        .identical(variable(idName))
+        .and(variable(importCallbackName).callFn([variable(dataName).prop('timestamp')])));
+    // Cmp_HmrLoad(Date.now());
+    // Initial call to kick off the loading in order to avoid edge cases with components
+    // coming from lazy chunks that change before the chunk has loaded.
+    const initialCall = variable(importCallbackName)
+        .callFn([variable('Date').prop('now').callFn([])]);
+    // import.meta.hot
+    const hotRead = variable('import').prop('meta').prop('hot');
+    // import.meta.hot.on('angular:component-update', () => ...);
+    const hotListener = hotRead
+        .clone()
+        .prop('on')
+        .callFn([literal('angular:component-update'), updateCallback]);
+    return arrowFn([], [
+        // const id = <id>;
+        new DeclareVarStmt(idName, literal(encodeURIComponent(`${meta.filePath}@${meta.className}`)), null, StmtModifier.Final),
+        // function Cmp_HmrLoad() {...}.
+        importCallback,
+        // ngDevMode && Cmp_HmrLoad(Date.now());
+        devOnlyGuardedExpression(initialCall).toStmt(),
+        // ngDevMode && import.meta.hot && import.meta.hot.on(...)
+        devOnlyGuardedExpression(hotRead.and(hotListener)).toStmt(),
+    ])
+        .callFn([]);
+}
+/**
+ * Compiles the HMR update callback for a class.
+ * @param definitions Compiled definitions for the class (e.g. `defineComponent` calls).
+ * @param constantStatements Supporting constants statements that were generated alongside
+ *  the definition.
+ * @param meta HMR metadata extracted from the class.
+ */
+function compileHmrUpdateCallback(definitions, constantStatements, meta) {
+    const namespaces = 'ɵɵnamespaces';
+    const params = [meta.className, namespaces].map((name) => new FnParam(name, DYNAMIC_TYPE));
+    const body = [];
+    for (const local of meta.localDependencies) {
+        params.push(new FnParam(local.name));
+    }
+    // Declare variables that read out the individual namespaces.
+    for (let i = 0; i < meta.namespaceDependencies.length; i++) {
+        body.push(new DeclareVarStmt(meta.namespaceDependencies[i].assignedName, variable(namespaces).key(literal(i)), DYNAMIC_TYPE, StmtModifier.Final));
+    }
+    body.push(...constantStatements);
+    for (const field of definitions) {
+        if (field.initializer !== null) {
+            body.push(variable(meta.className).prop(field.name).set(field.initializer).toStmt());
+            for (const stmt of field.statements) {
+                body.push(stmt);
+            }
+        }
+    }
+    return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
+}
+
+/**
+ * @module
+ * @description
+ * Entry point for all public APIs of the compiler package.
+ */
+const VERSION = new Version('20.0.0-next.0+sha-f2d5cf7');
 
 //////////////////////////////////////
 // This file only reexports content of the `src` folder. Keep it that way.
@@ -33637,5 +33724,5 @@ publishFacade(_global);
 
 // This file is not used to build this module. It is only used during editing
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.0+sha-6c9247c
+ * @license Angular v20.0.0-next.0+sha-f2d5cf7
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -86,6 +86,7 @@ export declare interface AstVisitor {
     visitPipe(ast: BindingPipe, context: any): any;
     visitPrefixNot(ast: PrefixNot, context: any): any;
     visitTypeofExpression(ast: TypeofExpression, context: any): any;
+    visitVoidExpression(ast: TypeofExpression, context: any): any;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
@@ -291,7 +292,8 @@ export declare enum BinaryOperator {
     LowerEquals = 14,
     Bigger = 15,
     BiggerEquals = 16,
-    NullishCoalesce = 17
+    NullishCoalesce = 17,
+    Exponentiation = 18
 }
 
 export declare class BinaryOperatorExpr extends Expression {
@@ -1265,6 +1267,7 @@ export declare abstract class Expression {
     divide(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     multiply(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     modulo(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    power(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     and(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     bitwiseOr(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
     bitwiseAnd(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
@@ -1341,6 +1344,7 @@ export declare interface ExpressionVisitor {
     visitCommaExpr(ast: CommaExpr, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
+    visitVoidExpr(ast: VoidExpr, context: any): any;
     visitArrowFunctionExpr(ast: ArrowFunctionExpr, context: any): any;
 }
 
@@ -2191,6 +2195,7 @@ declare namespace outputAst {
         Expression,
         ReadVarExpr,
         TypeofExpr,
+        VoidExpr,
         WrappedNodeExpr,
         WriteVarExpr,
         WriteKeyExpr,
@@ -4400,6 +4405,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
     visitPrefixNot(ast: PrefixNot, context: any): any;
     visitTypeofExpression(ast: TypeofExpression, context: any): void;
+    visitVoidExpression(ast: VoidExpression, context: any): void;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
     visitPropertyWrite(ast: PropertyWrite, context: any): any;
@@ -4422,6 +4428,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
+    visitVoidExpr(ast: VoidExpr, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
@@ -5397,6 +5404,7 @@ export declare class Token {
     isKeywordFalse(): boolean;
     isKeywordThis(): boolean;
     isKeywordTypeof(): boolean;
+    isKeywordVoid(): boolean;
     isError(): boolean;
     toNumber(): number;
     isTemplateLiteralPart(): this is StringToken;
@@ -5659,6 +5667,21 @@ declare interface Visitor_2 {
     visitPlaceholder(ph: Placeholder, context?: any): any;
     visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
     visitBlockPlaceholder(ph: BlockPlaceholder, context?: any): any;
+}
+
+export declare class VoidExpr extends Expression {
+    expr: Expression;
+    constructor(expr: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    clone(): VoidExpr;
+}
+
+export declare class VoidExpression extends AST {
+    expression: AST;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
+    visit(visitor: AstVisitor, context?: any): any;
 }
 
 export declare class WrappedNodeExpr<T> extends Expression {
