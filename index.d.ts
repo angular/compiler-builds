@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.0+sha-08d9081
+ * @license Angular v20.0.0-next.0+sha-25db666
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -299,9 +299,8 @@ export declare enum BinaryOperator {
 export declare class BinaryOperatorExpr extends Expression {
     operator: BinaryOperator;
     rhs: Expression;
-    parens: boolean;
     lhs: Expression;
-    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null, parens?: boolean);
+    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1269,8 +1268,8 @@ export declare abstract class Expression {
     modulo(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     power(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     and(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
-    bitwiseOr(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
-    bitwiseAnd(rhs: Expression, sourceSpan?: ParseSourceSpan | null, parens?: boolean): BinaryOperatorExpr;
+    bitwiseOr(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
+    bitwiseAnd(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     or(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     lower(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
     lowerEquals(rhs: Expression, sourceSpan?: ParseSourceSpan | null): BinaryOperatorExpr;
@@ -1346,6 +1345,7 @@ export declare interface ExpressionVisitor {
     visitTypeofExpr(ast: TypeofExpr, context: any): any;
     visitVoidExpr(ast: VoidExpr, context: any): any;
     visitArrowFunctionExpr(ast: ArrowFunctionExpr, context: any): any;
+    visitParenthesizedExpr(ast: ParenthesizedExpr, context: any): any;
 }
 
 export declare class ExternalExpr extends Expression {
@@ -2220,6 +2220,7 @@ declare namespace outputAst {
         FunctionExpr,
         ArrowFunctionExpr,
         UnaryOperatorExpr,
+        ParenthesizedExpr,
         BinaryOperatorExpr,
         ReadPropExpr,
         ReadKeyExpr,
@@ -2246,6 +2247,15 @@ declare namespace outputAst {
     }
 }
 export { outputAst }
+
+export declare class ParenthesizedExpr extends Expression {
+    expr: Expression;
+    constructor(expr: Expression, type?: Type | null, sourceSpan?: ParseSourceSpan | null);
+    visitExpression(visitor: ExpressionVisitor, context: any): any;
+    isEquivalent(e: Expression): boolean;
+    isConstant(): boolean;
+    clone(): ParenthesizedExpr;
+}
 
 export declare class ParsedEvent {
     name: string;
@@ -4453,6 +4463,7 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitCommaExpr(ast: CommaExpr, context: any): any;
     visitTemplateLiteralExpr(ast: TemplateLiteralExpr, context: any): any;
     visitTemplateLiteralElementExpr(ast: TemplateLiteralElementExpr, context: any): any;
+    visitParenthesizedExpr(ast: ParenthesizedExpr, context: any): any;
     visitAllExpressions(exprs: Expression[], context: any): void;
     visitDeclareVarStmt(stmt: DeclareVarStmt, context: any): any;
     visitDeclareFunctionStmt(stmt: DeclareFunctionStmt, context: any): any;
