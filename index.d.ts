@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.0+sha-78b27a8
+ * @license Angular v20.0.0-next.0+sha-51b8ff2
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -96,6 +96,7 @@ export declare interface AstVisitor {
     visitSafeCall(ast: SafeCall, context: any): any;
     visitTemplateLiteral(ast: TemplateLiteral, context: any): any;
     visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): any;
+    visitTaggedTemplateLiteral(ast: TaggedTemplateLiteral, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
     /**
      * This function is optionally defined to allow classes that implement this
@@ -4425,6 +4426,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitSafeCall(ast: SafeCall, context: any): any;
     visitTemplateLiteral(ast: TemplateLiteral, context: any): void;
     visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): void;
+    visitTaggedTemplateLiteral(ast: TaggedTemplateLiteral, context: any): void;
     visitAll(asts: AST[], context: any): any;
 }
 
@@ -4858,6 +4860,13 @@ export declare interface TagDefinition {
 }
 
 declare function taggedTemplate(tag: Expression, template: TemplateLiteralExpr, type?: Type | null, sourceSpan?: ParseSourceSpan | null): TaggedTemplateLiteralExpr;
+
+export declare class TaggedTemplateLiteral extends AST {
+    tag: AST;
+    template: TemplateLiteral;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, tag: AST, template: TemplateLiteral);
+    visit(visitor: AstVisitor, context?: any): any;
+}
 
 export declare class TaggedTemplateLiteralExpr extends Expression {
     tag: Expression;
