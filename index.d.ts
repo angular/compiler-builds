@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.0+sha-c2a46d2
+ * @license Angular v20.0.0-next.0+sha-af02914
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4437,8 +4437,6 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitMapType(type: MapType, context: any): any;
     visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
-    visitTypeofExpr(ast: TypeofExpr, context: any): any;
-    visitVoidExpr(ast: VoidExpr, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
     visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
     visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
@@ -4455,6 +4453,8 @@ declare class RecursiveAstVisitor_2 implements StatementVisitor, ExpressionVisit
     visitFunctionExpr(ast: FunctionExpr, context: any): any;
     visitArrowFunctionExpr(ast: ArrowFunctionExpr, context: any): any;
     visitUnaryOperatorExpr(ast: UnaryOperatorExpr, context: any): any;
+    visitTypeofExpr(ast: TypeofExpr, context: any): any;
+    visitVoidExpr(ast: VoidExpr, context: any): any;
     visitBinaryOperatorExpr(ast: BinaryOperatorExpr, context: any): any;
     visitReadPropExpr(ast: ReadPropExpr, context: any): any;
     visitReadKeyExpr(ast: ReadKeyExpr, context: any): any;
