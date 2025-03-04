@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.0+sha-0007d20
+ * @license Angular v20.0.0-next.0+sha-bec6e56
  * (c) 2010-2024 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -22235,30 +22235,6 @@ function disableBindings$1(job) {
     }
 }
 
-/**
- * Nullish coalescing expressions such as `a ?? b` have different semantics in Angular templates as
- * compared to JavaScript. In particular, they default to `null` instead of `undefined`. Therefore,
- * we replace them with ternary expressions, assigning temporaries as needed to avoid re-evaluating
- * the same sub-expression multiple times.
- */
-function generateNullishCoalesceExpressions(job) {
-    for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            transformExpressionsInOp(op, (expr) => {
-                if (!(expr instanceof BinaryOperatorExpr) ||
-                    expr.operator !== BinaryOperator.NullishCoalesce) {
-                    return expr;
-                }
-                const assignment = new AssignTemporaryExpr(expr.lhs.clone(), job.allocateXrefId());
-                const read = new ReadTemporaryExpr(assignment.xref);
-                // TODO: When not in compatibility mode for TemplateDefinitionBuilder, we can just emit
-                // `t != null` instead of including an undefined check as well.
-                return new ConditionalExpr(new BinaryOperatorExpr(BinaryOperator.And, new BinaryOperatorExpr(BinaryOperator.NotIdentical, assignment, NULL_EXPR), new BinaryOperatorExpr(BinaryOperator.NotIdentical, read, new LiteralExpr(undefined))), read.clone(), expr.rhs);
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-
 function kindTest(kind) {
     return (op) => op.kind === kind;
 }
@@ -23863,20 +23839,46 @@ function removeUnusedI18nAttributesOps(job) {
  *
  * 1. Unary operators in the base of an exponentiation expression. For example, `-2 ** 3` is not
  *    valid JavaScript, but `(-2) ** 3` is.
+ * 2. When mixing nullish coalescing (`??`) and logical and/or operators (`&&`, `||`), we need to
+ *    add parentheses. For example, `a ?? b && c` is not valid JavaScript, but `a ?? (b && c)` is.
+ * 3. Safe property access that has been down-leveled into a ternary expression needs parentheses
+ *    when used with nullish coalescing.
  */
 function requiredParentheses(job) {
     for (const unit of job.units) {
         for (const op of unit.ops()) {
             transformExpressionsInOp(op, (expr) => {
-                if (expr instanceof BinaryOperatorExpr &&
-                    expr.operator === BinaryOperator.Exponentiation &&
-                    expr.lhs instanceof UnaryOperatorExpr) {
-                    expr.lhs = new ParenthesizedExpr(expr.lhs);
+                if (expr instanceof BinaryOperatorExpr) {
+                    switch (expr.operator) {
+                        case BinaryOperator.Exponentiation:
+                            parenthesizeExponentiation(expr);
+                            break;
+                        case BinaryOperator.NullishCoalesce:
+                            parenthesizeNullishCoalescing(expr);
+                            break;
+                    }
                 }
                 return expr;
             }, VisitorContextFlag.None);
         }
     }
+}
+function parenthesizeExponentiation(expr) {
+    if (expr.lhs instanceof UnaryOperatorExpr) {
+        expr.lhs = new ParenthesizedExpr(expr.lhs);
+    }
+}
+function parenthesizeNullishCoalescing(expr) {
+    if (isLogicalAndOr(expr.lhs) || expr.lhs instanceof ConditionalExpr) {
+        expr.lhs = new ParenthesizedExpr(expr.lhs);
+    }
+    if (isLogicalAndOr(expr.rhs) || expr.rhs instanceof ConditionalExpr) {
+        expr.rhs = new ParenthesizedExpr(expr.rhs);
+    }
+}
+function isLogicalAndOr(expr) {
+    return (expr instanceof BinaryOperatorExpr &&
+        (expr.operator === BinaryOperator.And || expr.operator === BinaryOperator.Or));
 }
 
 /**
@@ -25584,9 +25586,8 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: resolveContexts },
     { kind: CompilationJobKind.Both, fn: resolveSanitizers },
     { kind: CompilationJobKind.Tmpl, fn: liftLocalRefs },
-    { kind: CompilationJobKind.Both, fn: generateNullishCoalesceExpressions },
-    { kind: CompilationJobKind.Both, fn: requiredParentheses },
     { kind: CompilationJobKind.Both, fn: expandSafeReads },
+    { kind: CompilationJobKind.Both, fn: requiredParentheses },
     { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
     { kind: CompilationJobKind.Both, fn: optimizeVariables },
     { kind: CompilationJobKind.Both, fn: optimizeStoreLet },
@@ -32949,7 +32950,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32967,7 +32968,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33062,7 +33063,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33481,7 +33482,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33516,7 +33517,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33567,7 +33568,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33600,7 +33601,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33651,7 +33652,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.0+sha-0007d20'));
+    definitionMap.set('version', literal('20.0.0-next.0+sha-bec6e56'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33809,7 +33810,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.0.0-next.0+sha-0007d20');
+const VERSION = new Version('20.0.0-next.0+sha-bec6e56');
 
 //////////////////////////////////////
 // This file only reexports content of the `src` folder. Keep it that way.
