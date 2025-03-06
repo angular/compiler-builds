@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.1+sha-81fe053
+ * @license Angular v20.0.0-next.1+sha-1b91de3
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -3167,13 +3167,6 @@ function _splitAt(input, character, defaultValues) {
 function noUndefined(val) {
     return val === undefined ? null : val;
 }
-function error(msg) {
-    throw new Error(`Internal Error: ${msg}`);
-}
-// Escape characters that have a special meaning in Regular Expressions
-function escapeRegExp(s) {
-    return s.replace(/([.*+?^=!:${}()|[\]\/\\])/g, '\\$1');
-}
 function utf8Encode(str) {
     let encoded = [];
     for (let index = 0; index < str.length; index++) {
@@ -3244,29 +3237,6 @@ class Version {
     }
 }
 const _global = globalThis;
-function newArray(size, value) {
-    const list = [];
-    for (let i = 0; i < size; i++) {
-        list.push(value);
-    }
-    return list;
-}
-/**
- * Partitions a given array into 2 arrays, based on a boolean value returned by the condition
- * function.
- *
- * @param arr Input array that should be partitioned
- * @param conditionFn Condition function that is called for each item in a given array and returns a
- * boolean value.
- */
-function partitionArray(arr, conditionFn) {
-    const truthy = [];
-    const falsy = [];
-    for (const item of arr) {
-        (conditionFn(item) ? truthy : falsy).push(item);
-    }
-    return [truthy, falsy];
-}
 const V1_TO_18 = /^([1-9]|1[0-8])\./;
 function getJitStandaloneDefaultForVersion(version) {
     if (version.startsWith('0.')) {
@@ -3981,19 +3951,9 @@ function typeWithParameters(type, numParams) {
     }
     return expressionType(type, undefined, params);
 }
-const ANIMATE_SYMBOL_PREFIX = '@';
-function prepareSyntheticPropertyName(name) {
-    return `${ANIMATE_SYMBOL_PREFIX}${name}`;
-}
-function prepareSyntheticListenerName(name, phase) {
-    return `${ANIMATE_SYMBOL_PREFIX}${name}.${phase}`;
-}
 function getSafePropertyAccessString(accessor, name) {
     const escapedName = escapeIdentifier(name, false, false);
     return escapedName !== name ? `${accessor}[${escapedName}]` : `${accessor}.${name}`;
-}
-function prepareSyntheticListenerFunctionName(name, phase) {
-    return `animation_${name}_${phase}`;
 }
 function jitOnlyGuardedExpression(expr) {
     return guardedExpression('ngJitMode', expr);
@@ -6184,13 +6144,6 @@ function hasI18nAttrs(element) {
 function icuFromI18nMessage(message) {
     return message.nodes[0];
 }
-function placeholdersToParams(placeholders) {
-    const params = {};
-    placeholders.forEach((values, key) => {
-        params[key] = literal(values.length > 1 ? `[${values.join('|')}]` : values[0]);
-    });
-    return params;
-}
 /**
  * Format the placeholder names in a map of placeholders to expressions.
  *
@@ -6267,9 +6220,6 @@ function temporaryAllocator(pushStatement, name) {
         }
         return temp;
     };
-}
-function invalid(arg) {
-    throw new Error(`Invalid state: Visitor ${this.constructor.name} doesn't handle ${arg.constructor.name}`);
 }
 function asLiteral(value) {
     if (Array.isArray(value)) {
@@ -6638,8 +6588,6 @@ const $LBRACE = 123;
 const $BAR = 124;
 const $RBRACE = 125;
 const $NBSP = 160;
-const $PIPE = 124;
-const $TILDA = 126;
 const $AT = 64;
 const $BT = 96;
 function isWhitespace(code) {
@@ -7352,9 +7300,7 @@ function compileNgModule(meta) {
             statements.push(setNgModuleScopeCall);
         }
     }
-    else {
-        // Selector scope emit was not requested, so skip it.
-    }
+    else ;
     if (meta.schemas !== null && meta.schemas.length > 0) {
         definitionMap.set('schemas', literalArr(meta.schemas.map((ref) => ref.value)));
     }
@@ -10547,9 +10493,7 @@ function transformExpressionsInExpression(expr, transform, flags) {
             expr.body = transformExpressionsInExpression(expr.body, transform, flags);
         }
     }
-    else if (expr instanceof WrappedNodeExpr) {
-        // TODO: Do we need to transform any TS nodes nested inside of this expression?
-    }
+    else if (expr instanceof WrappedNodeExpr) ;
     else if (expr instanceof TemplateLiteralExpr) {
         for (let i = 0; i < expr.expressions.length; i++) {
             expr.expressions[i] = transformExpressionsInExpression(expr.expressions[i], transform, flags);
@@ -10560,9 +10504,7 @@ function transformExpressionsInExpression(expr, transform, flags) {
     }
     else if (expr instanceof ReadVarExpr ||
         expr instanceof ExternalExpr ||
-        expr instanceof LiteralExpr) {
-        // No action for these types.
-    }
+        expr instanceof LiteralExpr) ;
     else {
         throw new Error(`Unhandled expression kind: ${expr.constructor.name}`);
     }
@@ -12465,11 +12407,6 @@ function deduplicateTextBindings(job) {
                             OpList.remove(op);
                         }
                     }
-                    else {
-                        // TODO: Determine the correct behavior. It would probably make sense to merge multiple
-                        // style and class attributes. Alternatively we could just throw an error, as HTML
-                        // doesn't permit duplicate attributes.
-                    }
                 }
                 seenForElement.add(op.name);
                 seen.set(op.target, seenForElement);
@@ -12658,14 +12595,6 @@ function expandSafeReads(job) {
         }
     }
 }
-// A lookup set of all the expression kinds that require a temporary variable to be generated.
-const requiresTemporary = [
-    InvokeFunctionExpr,
-    LiteralArrayExpr,
-    LiteralMapExpr,
-    SafeInvokeFunctionExpr,
-    PipeBindingExpr,
-].map((e) => e.constructor.name);
 function needsTemporaryInSafeAccess(e) {
     // TODO: We probably want to use an expression visitor to recursively visit all descendents.
     // However, that would potentially do a lot of extra work (because it cannot short circuit), so we
@@ -13409,9 +13338,6 @@ function parseProperty(name) {
     return { property, suffix };
 }
 
-function mapEntry(key, value) {
-    return { key, value, quoted: false };
-}
 function mapLiteral(obj, quoted = false) {
     return literalMap(Object.keys(obj).map((key) => ({
         key,
@@ -17723,9 +17649,6 @@ function transformTextToken({ type, parts, sourceSpan }, transform) {
 function processWhitespace(text) {
     return replaceNgsp(text).replace(WS_REPLACE_REGEXP, ' ');
 }
-function removeWhitespaces(htmlAstWithErrors, preserveSignificantWhitespace) {
-    return new ParseTreeResult(visitAllWithSiblings(new WhitespaceVisitor(preserveSignificantWhitespace), htmlAstWithErrors.rootNodes), htmlAstWithErrors.errors);
-}
 function visitAllWithSiblings(visitor, nodes) {
     const result = [];
     nodes.forEach((ast, i) => {
@@ -18078,9 +18001,7 @@ class _Scanner {
         let hasSeparators = false;
         this.advance(); // Skip initial digit.
         while (true) {
-            if (isDigit(this.peek)) {
-                // Do nothing.
-            }
+            if (isDigit(this.peek)) ;
             else if (this.peek === $_) {
                 // Separators are only valid when they're surrounded by digits. E.g. `1_0_1` is
                 // valid while `_101` and `101_` are not. The separator can't be next to the decimal
@@ -23278,31 +23199,6 @@ function reify(job) {
         reifyUpdateOperations(unit, unit.update);
     }
 }
-/**
- * This function can be used a sanity check -- it walks every expression in the const pool, and
- * every expression reachable from an op, and makes sure that there are no IR expressions
- * left. This is nice to use for debugging mysterious failures where an IR expression cannot be
- * output from the output AST code.
- */
-function ensureNoIrForDebug(job) {
-    for (const stmt of job.pool.statements) {
-        transformExpressionsInStatement(stmt, (expr) => {
-            if (isIrExpression(expr)) {
-                throw new Error(`AssertionError: IR expression found during reify: ${ExpressionKind[expr.kind]}`);
-            }
-            return expr;
-        }, VisitorContextFlag.None);
-    }
-    for (const unit of job.units) {
-        for (const op of unit.ops()) {
-            visitExpressionsInOp(op, (expr) => {
-                if (isIrExpression(expr)) {
-                    throw new Error(`AssertionError: IR expression found during reify: ${ExpressionKind[expr.kind]}`);
-                }
-            });
-        }
-    }
-}
 function reifyCreateOperations(unit, ops) {
     for (const op of ops) {
         transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
@@ -26779,12 +26675,6 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
  * internal tooling as well.
  */
 let ENABLE_TEMPLATE_SOURCE_LOCATIONS = false;
-/**
- * Utility function to enable source locations. Intended to be used **only** inside unit tests.
- */
-function setEnableTemplateSourceLocations(value) {
-    ENABLE_TEMPLATE_SOURCE_LOCATIONS = value;
-}
 /** Gets whether template source locations are enabled. */
 function getTemplateSourceLocationsEnabled() {
     return ENABLE_TEMPLATE_SOURCE_LOCATIONS;
@@ -27379,15 +27269,6 @@ class BindingParser {
             return true;
         }
         return false;
-    }
-}
-class PipeCollector extends RecursiveAstVisitor {
-    pipes = new Map();
-    visitPipe(ast, context) {
-        this.pipes.set(ast.name, ast);
-        ast.exp.visit(this);
-        this.visitAll(ast.args, context);
-        return null;
     }
 }
 function isAnimationLabel(name) {
@@ -29726,23 +29607,35 @@ class R3TargetBinder {
      */
     bind(target) {
         if (!target.template) {
-            // TODO(alxhub): handle targets which contain things like HostBindings, etc.
-            throw new Error('Binding without a template not yet supported');
+            throw new Error('Empty bound targets are not supported');
         }
-        // First, parse the template into a `Scope` structure. This operation captures the syntactic
-        // scopes in the template and makes them available for later use.
-        const scope = Scope.apply(target.template);
-        // Use the `Scope` to extract the entities present at every level of the template.
-        const scopedNodeEntities = extractScopedNodeEntities(scope);
-        // Next, perform directive matching on the template using the `DirectiveBinder`. This returns:
-        //   - directives: Map of nodes (elements & ng-templates) to the directives on them.
-        //   - bindings: Map of inputs, outputs, and attributes to the directive/element that claims
-        //     them. TODO(alxhub): handle multiple directives claiming an input/output/etc.
-        //   - references: Map of #references to their targets.
-        const { directives, eagerDirectives, bindings, references } = DirectiveBinder.apply(target.template, this.directiveMatcher);
-        // Finally, run the TemplateBinder to bind references, variables, and other entities within the
-        // template. This extracts all the metadata that doesn't depend on directive matching.
-        const { expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks } = TemplateBinder.applyWithScope(target.template, scope);
+        const directives = new Map();
+        const eagerDirectives = [];
+        const bindings = new Map();
+        const references = new Map();
+        const scopedNodeEntities = new Map();
+        const expressions = new Map();
+        const symbols = new Map();
+        const nestingLevel = new Map();
+        const usedPipes = new Set();
+        const eagerPipes = new Set();
+        const deferBlocks = [];
+        if (target.template) {
+            // First, parse the template into a `Scope` structure. This operation captures the syntactic
+            // scopes in the template and makes them available for later use.
+            const scope = Scope.apply(target.template);
+            // Use the `Scope` to extract the entities present at every level of the template.
+            extractScopedNodeEntities(scope, scopedNodeEntities);
+            // Next, perform directive matching on the template using the `DirectiveBinder`. This returns:
+            //   - directives: Map of nodes (elements & ng-templates) to the directives on them.
+            //   - bindings: Map of inputs, outputs, and attributes to the directive/element that claims
+            //     them. TODO(alxhub): handle multiple directives claiming an input/output/etc.
+            //   - references: Map of #references to their targets.
+            DirectiveBinder.apply(target.template, this.directiveMatcher, directives, eagerDirectives, bindings, references);
+            // Finally, run the TemplateBinder to bind references, variables, and other entities within the
+            // template. This extracts all the metadata that doesn't depend on directive matching.
+            TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
+        }
         return new R3BoundTarget(target, directives, eagerDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks);
     }
 }
@@ -29969,14 +29862,9 @@ class DirectiveBinder {
      * map which resolves #references (`Reference`s) within the template to the named directive or
      * template node.
      */
-    static apply(template, selectorMatcher) {
-        const directives = new Map();
-        const bindings = new Map();
-        const references = new Map();
-        const eagerDirectives = [];
+    static apply(template, selectorMatcher, directives, eagerDirectives, bindings, references) {
         const matcher = new DirectiveBinder(selectorMatcher, directives, eagerDirectives, bindings, references);
         matcher.ingest(template);
-        return { directives, eagerDirectives, bindings, references };
     }
     ingest(template) {
         template.forEach((node) => node.visit(this));
@@ -30161,18 +30049,11 @@ class TemplateBinder extends RecursiveAstVisitor {
      * nesting level (how many levels deep within the template structure the `Template` is), starting
      * at 1.
      */
-    static applyWithScope(nodes, scope) {
-        const expressions = new Map();
-        const symbols = new Map();
-        const nestingLevel = new Map();
-        const usedPipes = new Set();
-        const eagerPipes = new Set();
+    static applyWithScope(nodes, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks) {
         const template = nodes instanceof Template ? nodes : null;
-        const deferBlocks = [];
         // The top-level template has nesting level 0.
         const binder = new TemplateBinder(expressions, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, template, 0);
         binder.ingest(nodes);
-        return { expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks };
     }
     ingest(nodeOrNodes) {
         if (nodeOrNodes instanceof Template) {
@@ -30522,7 +30403,7 @@ class R3BoundTarget {
         return this.referenceTargetToElement(target.node);
     }
 }
-function extractScopedNodeEntities(rootScope) {
+function extractScopedNodeEntities(rootScope, templateEntities) {
     const entityMap = new Map();
     function extractScopeEntities(scope) {
         if (entityMap.has(scope.rootNode)) {
@@ -30547,11 +30428,9 @@ function extractScopedNodeEntities(rootScope) {
         }
         extractScopeEntities(scope);
     }
-    const templateEntities = new Map();
     for (const [template, entities] of entityMap) {
         templateEntities.set(template, new Set(entities.values()));
     }
-    return templateEntities;
 }
 
 /**
@@ -32950,7 +32829,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32968,7 +32847,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33063,7 +32942,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33163,9 +33042,6 @@ function compileQuery(query) {
         // `emitDistinctChangesOnly` is special because we expect it to be `true`.
         // Therefore we explicitly emit the field, and explicitly place it only when it's `false`.
         meta.set('emitDistinctChangesOnly', literal(false));
-    }
-    else {
-        // The linker will assume that an absent `emitDistinctChangesOnly` flag is by default `true`.
     }
     if (query.descendants) {
         meta.set('descendants', literal(true));
@@ -33482,7 +33358,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33517,7 +33393,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33568,7 +33444,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33601,7 +33477,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33652,7 +33528,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-81fe053'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-1b91de3'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33810,24 +33686,13 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.0.0-next.1+sha-81fe053');
+const VERSION = new Version('20.0.0-next.1+sha-1b91de3');
 
 //////////////////////////////////////
 // This file only reexports content of the `src` folder. Keep it that way.
 // This function call has a global side effects and publishes the compiler into global namespace for
 // the late binding of the Compiler to the @angular/core for jit compilation.
 publishFacade(_global);
-
-/**
- * @module
- * @description
- * Entry point for all public APIs of this package.
- */
-// This file only reexports content of the `src` folder. Keep it that way.
-
-// This file is not used to build this module. It is only used during editing
-
-// This file is not used to build this module. It is only used during editing
 
 export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, R3BoundTarget, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

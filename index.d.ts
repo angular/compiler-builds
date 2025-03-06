@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.1+sha-81fe053
+ * @license Angular v20.0.0-next.1+sha-1b91de3
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -387,6 +387,9 @@ export declare class BindingPipe extends ASTWithName {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[], nameSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
+
+/** Shorthand for a map between a binding AST node and the entity it's targeting. */
+declare type BindingsMap<DirectiveT> = Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstTemplate | TmplAstElement>;
 
 export declare enum BindingType {
     Property = 0,
@@ -1036,6 +1039,9 @@ export declare const enum DeferBlockDepsEmitMode {
      */
     PerComponent = 1
 }
+
+/** Shorthand tuple type where a defer block is paired with its corresponding scope. */
+declare type DeferBlockScopes = [TmplAstDeferredBlock, Scope][];
 
 export declare function devOnlyGuardedExpression(expr: outputAst.Expression): outputAst.Expression;
 
@@ -1992,6 +1998,9 @@ export declare class MapType extends Type {
     visitType(visitor: TypeVisitor, context: any): any;
 }
 
+/** Mapping between AST nodes and the directives that have been matched on them. */
+declare type MatchedDirectives<DirectiveT> = Map<TmplAstTemplate | TmplAstElement, DirectiveT[]>;
+
 /**
  * Describes an expression that may have been wrapped in a `forwardRef()` guard.
  *
@@ -2759,10 +2768,7 @@ export declare class R3BoundTarget<DirectiveT extends DirectiveMeta> implements 
     private deferredBlocks;
     /** Map of deferred blocks to their scope. */
     private deferredScopes;
-    constructor(target: Target, directives: Map<TmplAstElement | TmplAstTemplate, DirectiveT[]>, eagerDirectives: DirectiveT[], bindings: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstTextAttribute, DirectiveT | TmplAstElement | TmplAstTemplate>, references: Map<TmplAstBoundAttribute | TmplAstBoundEvent | TmplAstReference | TmplAstTextAttribute, {
-        directive: DirectiveT;
-        node: TmplAstElement | TmplAstTemplate;
-    } | TmplAstElement | TmplAstTemplate>, exprTargets: Map<AST, TemplateEntity>, symbols: Map<TemplateEntity, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: Map<ScopedNode | null, ReadonlySet<TemplateEntity>>, usedPipes: Set<string>, eagerPipes: Set<string>, rawDeferred: [TmplAstDeferredBlock, Scope][]);
+    constructor(target: Target, directives: MatchedDirectives<DirectiveT>, eagerDirectives: DirectiveT[], bindings: BindingsMap<DirectiveT>, references: ReferenceMap<DirectiveT>, exprTargets: Map<AST, TemplateEntity>, symbols: Map<TemplateEntity, TmplAstTemplate>, nestingLevel: Map<ScopedNode, number>, scopedNodeEntities: ScopedNodeEntities, usedPipes: Set<string>, eagerPipes: Set<string>, rawDeferred: DeferBlockScopes);
     getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TemplateEntity>;
     getDirectivesOfNode(node: TmplAstElement | TmplAstTemplate): DirectiveT[] | null;
     getReferenceTarget(ref: TmplAstReference): ReferenceTarget<DirectiveT> | null;
@@ -4489,6 +4495,12 @@ export declare class RecursiveVisitor implements Visitor {
     private visitChildren;
 }
 
+/** Shorthand for a map between a reference AST node and the entity it's targeting. */
+declare type ReferenceMap<DirectiveT> = Map<TmplAstReference, TmplAstTemplate | TmplAstElement | {
+    directive: DirectiveT;
+    node: TmplAstElement | TmplAstTemplate;
+}>;
+
 /** Possible values that a reference can be resolved to. */
 export declare type ReferenceTarget<DirectiveT> = {
     directive: DirectiveT;
@@ -4632,6 +4644,12 @@ declare class Scope implements TmplAstVisitor {
 
 /** Node that has a `Scope` associated with it. */
 export declare type ScopedNode = TmplAstTemplate | TmplAstSwitchBlockCase | TmplAstIfBlockBranch | TmplAstForLoopBlock | TmplAstForLoopBlockEmpty | TmplAstDeferredBlock | TmplAstDeferredBlockError | TmplAstDeferredBlockLoading | TmplAstDeferredBlockPlaceholder | TmplAstContent;
+
+/**
+ * Mapping between a scoped not and the template entities that exist in it.
+ * `null` represents the root scope.
+ */
+declare type ScopedNodeEntities = Map<ScopedNode | null, Set<TemplateEntity>>;
 
 declare enum SecurityContext {
     NONE = 0,
