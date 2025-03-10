@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.1+sha-3089ab4
+ * @license Angular v20.0.0-next.1+sha-3602c53
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -97,6 +97,7 @@ export declare interface AstVisitor {
     visitTemplateLiteral(ast: TemplateLiteral, context: any): any;
     visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): any;
     visitTaggedTemplateLiteral(ast: TaggedTemplateLiteral, context: any): any;
+    visitParenthesizedExpression(ast: ParenthesizedExpression, context: any): any;
     visitASTWithSource?(ast: ASTWithSource, context: any): any;
     /**
      * This function is optionally defined to allow classes that implement this
@@ -2267,6 +2268,12 @@ export declare class ParenthesizedExpr extends Expression {
     clone(): ParenthesizedExpr;
 }
 
+export declare class ParenthesizedExpression extends AST {
+    expression: AST;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
+    visit(visitor: AstVisitor, context?: any): any;
+}
+
 export declare class ParsedEvent {
     name: string;
     targetOrPhase: string;
@@ -4433,6 +4440,7 @@ export declare class RecursiveAstVisitor implements AstVisitor {
     visitTemplateLiteral(ast: TemplateLiteral, context: any): void;
     visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): void;
     visitTaggedTemplateLiteral(ast: TaggedTemplateLiteral, context: any): void;
+    visitParenthesizedExpression(ast: ParenthesizedExpression, context: any): void;
     visitAll(asts: AST[], context: any): any;
 }
 
