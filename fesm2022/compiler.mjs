@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.1+sha-8be6e38
+ * @license Angular v20.0.0-next.1+sha-4fa5d18
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -399,6 +399,10 @@ class SelectorContext {
 }
 
 // Attention:
+// This file duplicates types and values from @angular/core
+// so that we are able to make @angular/compiler independent of @angular/core.
+// This is important to prevent a build cycle, as @angular/core needs to
+// be compiled with the compiler.
 // Stores the default value of `emitDistinctChangesOnly` when the `emitDistinctChangesOnly` is not
 // explicitly set.
 const emitDistinctChangesOnlyDefaultValue = true;
@@ -484,15 +488,15 @@ function parseSelectorToR3Selector(selector) {
 
 var core = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    emitDistinctChangesOnlyDefaultValue: emitDistinctChangesOnlyDefaultValue,
-    get ViewEncapsulation () { return ViewEncapsulation; },
+    CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
     get ChangeDetectionStrategy () { return ChangeDetectionStrategy; },
     get InputFlags () { return InputFlags; },
-    CUSTOM_ELEMENTS_SCHEMA: CUSTOM_ELEMENTS_SCHEMA,
-    NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
-    Type: Type$1,
-    get SecurityContext () { return SecurityContext; },
     get MissingTranslationStrategy () { return MissingTranslationStrategy; },
+    NO_ERRORS_SCHEMA: NO_ERRORS_SCHEMA,
+    get SecurityContext () { return SecurityContext; },
+    Type: Type$1,
+    get ViewEncapsulation () { return ViewEncapsulation; },
+    emitDistinctChangesOnlyDefaultValue: emitDistinctChangesOnlyDefaultValue,
     parseSelectorToR3Selector: parseSelectorToR3Selector
 });
 
@@ -663,7 +667,7 @@ function fingerprint(str) {
     let lo = hash32(view, utf8.length, 102072);
     if (hi == 0 && (lo == 0 || lo == 1)) {
         hi = hi ^ 0x130f9bef;
-        lo = lo ^ -0x6b5f56d8;
+        lo = lo ^ -1801410264;
     }
     return (BigInt.asUintN(32, BigInt(hi)) << BigInt(32)) | BigInt.asUintN(32, BigInt(lo));
 }
@@ -1993,7 +1997,7 @@ class IfStmt extends Statement {
         return visitor.visitIfStmt(this, context);
     }
 }
-class RecursiveAstVisitor$1 {
+let RecursiveAstVisitor$1 = class RecursiveAstVisitor {
     visitType(ast, context) {
         return ast;
     }
@@ -2184,7 +2188,7 @@ class RecursiveAstVisitor$1 {
     visitAllStatements(stmts, context) {
         stmts.forEach((stmt) => stmt.visitStatement(this, context));
     }
-}
+};
 function leadingComment(text, multiline = false, trailingNewline = true) {
     return new LeadingComment(text, multiline, trailingNewline);
 }
@@ -2279,91 +2283,91 @@ function serializeTags(tags) {
 
 var output_ast = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    get TypeModifier () { return TypeModifier; },
-    Type: Type,
-    get BuiltinTypeName () { return BuiltinTypeName; },
-    BuiltinType: BuiltinType,
-    ExpressionType: ExpressionType,
     ArrayType: ArrayType,
-    MapType: MapType,
-    TransplantedType: TransplantedType,
-    DYNAMIC_TYPE: DYNAMIC_TYPE,
-    INFERRED_TYPE: INFERRED_TYPE,
+    ArrowFunctionExpr: ArrowFunctionExpr,
     BOOL_TYPE: BOOL_TYPE,
-    INT_TYPE: INT_TYPE,
-    NUMBER_TYPE: NUMBER_TYPE,
-    STRING_TYPE: STRING_TYPE,
-    FUNCTION_TYPE: FUNCTION_TYPE,
-    NONE_TYPE: NONE_TYPE,
-    get UnaryOperator () { return UnaryOperator; },
     get BinaryOperator () { return BinaryOperator; },
-    nullSafeIsEquivalent: nullSafeIsEquivalent,
-    areAllEquivalent: areAllEquivalent,
+    BinaryOperatorExpr: BinaryOperatorExpr,
+    BuiltinType: BuiltinType,
+    get BuiltinTypeName () { return BuiltinTypeName; },
+    CommaExpr: CommaExpr,
+    ConditionalExpr: ConditionalExpr,
+    DYNAMIC_TYPE: DYNAMIC_TYPE,
+    DeclareFunctionStmt: DeclareFunctionStmt,
+    DeclareVarStmt: DeclareVarStmt,
+    DynamicImportExpr: DynamicImportExpr,
     Expression: Expression,
-    ReadVarExpr: ReadVarExpr,
-    TypeofExpr: TypeofExpr,
-    VoidExpr: VoidExpr,
-    WrappedNodeExpr: WrappedNodeExpr,
-    WriteVarExpr: WriteVarExpr,
-    WriteKeyExpr: WriteKeyExpr,
-    WritePropExpr: WritePropExpr,
-    InvokeFunctionExpr: InvokeFunctionExpr,
-    TaggedTemplateLiteralExpr: TaggedTemplateLiteralExpr,
-    InstantiateExpr: InstantiateExpr,
-    LiteralExpr: LiteralExpr,
-    TemplateLiteralExpr: TemplateLiteralExpr,
-    TemplateLiteralElementExpr: TemplateLiteralElementExpr,
-    LiteralPiece: LiteralPiece,
-    PlaceholderPiece: PlaceholderPiece,
-    LocalizedString: LocalizedString,
+    ExpressionStatement: ExpressionStatement,
+    ExpressionType: ExpressionType,
     ExternalExpr: ExternalExpr,
     ExternalReference: ExternalReference,
-    ConditionalExpr: ConditionalExpr,
-    DynamicImportExpr: DynamicImportExpr,
-    NotExpr: NotExpr,
+    FUNCTION_TYPE: FUNCTION_TYPE,
     FnParam: FnParam,
     FunctionExpr: FunctionExpr,
-    ArrowFunctionExpr: ArrowFunctionExpr,
-    UnaryOperatorExpr: UnaryOperatorExpr,
-    ParenthesizedExpr: ParenthesizedExpr,
-    BinaryOperatorExpr: BinaryOperatorExpr,
-    ReadPropExpr: ReadPropExpr,
-    ReadKeyExpr: ReadKeyExpr,
+    INFERRED_TYPE: INFERRED_TYPE,
+    INT_TYPE: INT_TYPE,
+    IfStmt: IfStmt,
+    InstantiateExpr: InstantiateExpr,
+    InvokeFunctionExpr: InvokeFunctionExpr,
+    JSDocComment: JSDocComment,
+    LeadingComment: LeadingComment,
     LiteralArrayExpr: LiteralArrayExpr,
+    LiteralExpr: LiteralExpr,
     LiteralMapEntry: LiteralMapEntry,
     LiteralMapExpr: LiteralMapExpr,
-    CommaExpr: CommaExpr,
+    LiteralPiece: LiteralPiece,
+    LocalizedString: LocalizedString,
+    MapType: MapType,
+    NONE_TYPE: NONE_TYPE,
     NULL_EXPR: NULL_EXPR,
-    TYPED_NULL_EXPR: TYPED_NULL_EXPR,
-    get StmtModifier () { return StmtModifier; },
-    LeadingComment: LeadingComment,
-    JSDocComment: JSDocComment,
-    Statement: Statement,
-    DeclareVarStmt: DeclareVarStmt,
-    DeclareFunctionStmt: DeclareFunctionStmt,
-    ExpressionStatement: ExpressionStatement,
-    ReturnStatement: ReturnStatement,
-    IfStmt: IfStmt,
+    NUMBER_TYPE: NUMBER_TYPE,
+    NotExpr: NotExpr,
+    ParenthesizedExpr: ParenthesizedExpr,
+    PlaceholderPiece: PlaceholderPiece,
+    ReadKeyExpr: ReadKeyExpr,
+    ReadPropExpr: ReadPropExpr,
+    ReadVarExpr: ReadVarExpr,
     RecursiveAstVisitor: RecursiveAstVisitor$1,
-    leadingComment: leadingComment,
-    jsDocComment: jsDocComment,
-    variable: variable,
+    ReturnStatement: ReturnStatement,
+    STRING_TYPE: STRING_TYPE,
+    Statement: Statement,
+    get StmtModifier () { return StmtModifier; },
+    TYPED_NULL_EXPR: TYPED_NULL_EXPR,
+    TaggedTemplateLiteralExpr: TaggedTemplateLiteralExpr,
+    TemplateLiteralElementExpr: TemplateLiteralElementExpr,
+    TemplateLiteralExpr: TemplateLiteralExpr,
+    TransplantedType: TransplantedType,
+    Type: Type,
+    get TypeModifier () { return TypeModifier; },
+    TypeofExpr: TypeofExpr,
+    get UnaryOperator () { return UnaryOperator; },
+    UnaryOperatorExpr: UnaryOperatorExpr,
+    VoidExpr: VoidExpr,
+    WrappedNodeExpr: WrappedNodeExpr,
+    WriteKeyExpr: WriteKeyExpr,
+    WritePropExpr: WritePropExpr,
+    WriteVarExpr: WriteVarExpr,
+    areAllEquivalent: areAllEquivalent,
+    arrowFn: arrowFn,
+    expressionType: expressionType,
+    fn: fn,
+    ifStmt: ifStmt,
     importExpr: importExpr,
     importType: importType,
-    expressionType: expressionType,
-    transplantedType: transplantedType,
-    typeofExpr: typeofExpr,
+    isNull: isNull,
+    jsDocComment: jsDocComment,
+    leadingComment: leadingComment,
+    literal: literal,
     literalArr: literalArr,
     literalMap: literalMap,
-    unary: unary,
-    not: not,
-    fn: fn,
-    arrowFn: arrowFn,
-    ifStmt: ifStmt,
-    taggedTemplate: taggedTemplate,
-    literal: literal,
     localizedString: localizedString,
-    isNull: isNull
+    not: not,
+    nullSafeIsEquivalent: nullSafeIsEquivalent,
+    taggedTemplate: taggedTemplate,
+    transplantedType: transplantedType,
+    typeofExpr: typeofExpr,
+    unary: unary,
+    variable: variable
 });
 
 const CONSTANT_PREFIX = '_c';
@@ -4252,11 +4256,11 @@ class ASTWithName extends AST {
         this.nameSpan = nameSpan;
     }
 }
-class EmptyExpr$1 extends AST {
+let EmptyExpr$1 = class EmptyExpr extends AST {
     visit(visitor, context = null) {
         // do nothing
     }
-}
+};
 class ImplicitReceiver extends AST {
     visit(visitor, context = null) {
         return visitor.visitImplicitReceiver(this, context);
@@ -4424,7 +4428,7 @@ class LiteralMap extends AST {
         return visitor.visitLiteralMap(this, context);
     }
 }
-class Interpolation$1 extends AST {
+let Interpolation$1 = class Interpolation extends AST {
     strings;
     expressions;
     constructor(span, sourceSpan, strings, expressions) {
@@ -4435,7 +4439,7 @@ class Interpolation$1 extends AST {
     visit(visitor, context = null) {
         return visitor.visitInterpolation(this, context);
     }
-}
+};
 class Binary extends AST {
     operation;
     left;
@@ -4933,7 +4937,7 @@ function mergeNsAndName(prefix, localName) {
  * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
  * is true.
  */
-class Comment$1 {
+let Comment$1 = class Comment {
     value;
     sourceSpan;
     constructor(value, sourceSpan) {
@@ -4943,8 +4947,8 @@ class Comment$1 {
     visit(_visitor) {
         throw new Error('visit() not implemented for Comment');
     }
-}
-class Text$3 {
+};
+let Text$3 = class Text {
     value;
     sourceSpan;
     constructor(value, sourceSpan) {
@@ -4954,7 +4958,7 @@ class Text$3 {
     visit(visitor) {
         return visitor.visitText(this);
     }
-}
+};
 class BoundText {
     value;
     sourceSpan;
@@ -5055,7 +5059,7 @@ class BoundEvent {
         return visitor.visitBoundEvent(this);
     }
 }
-class Element$1 {
+let Element$1 = class Element {
     name;
     attributes;
     inputs;
@@ -5081,7 +5085,7 @@ class Element$1 {
     visit(visitor) {
         return visitor.visitElement(this);
     }
-}
+};
 class DeferredTrigger {
     nameSpan;
     sourceSpan;
@@ -5352,7 +5356,7 @@ class UnknownBlock {
         return visitor.visitUnknownBlock(this);
     }
 }
-class LetDeclaration$1 {
+let LetDeclaration$1 = class LetDeclaration {
     name;
     value;
     sourceSpan;
@@ -5368,7 +5372,7 @@ class LetDeclaration$1 {
     visit(visitor) {
         return visitor.visitLetDeclaration(this);
     }
-}
+};
 class Template {
     tagName;
     attributes;
@@ -5457,7 +5461,7 @@ class Reference {
         return visitor.visitReference(this);
     }
 }
-class Icu$1 {
+let Icu$1 = class Icu {
     vars;
     placeholders;
     sourceSpan;
@@ -5471,8 +5475,8 @@ class Icu$1 {
     visit(visitor) {
         return visitor.visitIcu(this);
     }
-}
-class RecursiveVisitor$1 {
+};
+let RecursiveVisitor$1 = class RecursiveVisitor {
     visitElement(element) {
         visitAll$1(this, element.attributes);
         visitAll$1(this, element.inputs);
@@ -5536,7 +5540,7 @@ class RecursiveVisitor$1 {
     visitDeferredTrigger(trigger) { }
     visitUnknownBlock(block) { }
     visitLetDeclaration(decl) { }
-}
+};
 function visitAll$1(visitor, nodes) {
     const result = [];
     if (visitor.visit) {
@@ -5600,7 +5604,7 @@ class Message {
         }
     }
 }
-class Text$2 {
+let Text$2 = class Text {
     value;
     sourceSpan;
     constructor(value, sourceSpan) {
@@ -5610,7 +5614,7 @@ class Text$2 {
     visit(visitor, context) {
         return visitor.visitText(this, context);
     }
-}
+};
 // TODO(vicb): do we really need this node (vs an array) ?
 class Container {
     children;
@@ -5873,7 +5877,7 @@ class SimplePlaceholderMapper extends RecurseVisitor {
     }
 }
 
-class _Visitor$2 {
+let _Visitor$2 = class _Visitor {
     visitTag(tag) {
         const strAttrs = this._serializeAttributes(tag.attrs);
         if (tag.children.length == 0) {
@@ -5897,7 +5901,7 @@ class _Visitor$2 {
     visitDoctype(doctype) {
         return `<!DOCTYPE ${doctype.rootTag} [\n${doctype.dtd}\n]>`;
     }
-}
+};
 const _visitor = new _Visitor$2();
 function serialize$1(nodes) {
     return nodes.map((node) => node.visit(_visitor)).join('');
@@ -5939,7 +5943,7 @@ class Tag {
         return visitor.visitTag(this);
     }
 }
-class Text$1 {
+let Text$1 = class Text {
     value;
     constructor(unescapedValue) {
         this.value = escapeXml(unescapedValue);
@@ -5947,7 +5951,7 @@ class Text$1 {
     visit(visitor) {
         return visitor.visitText(this);
     }
-}
+};
 class CR extends Text$1 {
     constructor(ws = 0) {
         super(`\n${new Array(ws + 1).join(' ')}`);
@@ -6039,7 +6043,7 @@ class Xmb extends Serializer {
         return new SimplePlaceholderMapper(message, toPublicName);
     }
 }
-class _Visitor$1 {
+let _Visitor$1 = class _Visitor {
     visitText(text, context) {
         return [new Text$1(text.value)];
     }
@@ -6113,7 +6117,7 @@ class _Visitor$1 {
     serialize(nodes) {
         return [].concat(...nodes.map((node) => node.visit(this)));
     }
-}
+};
 function digest(message) {
     return decimalDigest(message);
 }
@@ -12550,9 +12554,9 @@ function resolveDeferTargetNames(job) {
         }
     }
 }
-class Scope$1 {
+let Scope$1 = class Scope {
     targets = new Map();
-}
+};
 
 const REPLACEMENTS = new Map([
     [OpKind.ElementEnd, [OpKind.ElementStart, OpKind.Element]],
@@ -12882,7 +12886,7 @@ function createI18nMessage(job, context, messagePlaceholder) {
     let formattedParams = formatParams(context.params);
     const formattedPostprocessingParams = formatParams(context.postprocessingParams);
     let needsPostprocessing = [...context.params.values()].some((v) => v.length > 1);
-    return createI18nMessageOp(job.allocateXrefId(), context.xref, context.i18nBlock, context.message, messagePlaceholder ?? null, formattedParams, formattedPostprocessingParams, needsPostprocessing);
+    return createI18nMessageOp(job.allocateXrefId(), context.xref, context.i18nBlock, context.message, null, formattedParams, formattedPostprocessingParams, needsPostprocessing);
 }
 /**
  * Formats an ICU placeholder into a single string with expression placeholders.
@@ -16973,7 +16977,7 @@ class ParseTreeResult {
         this.errors = errors;
     }
 }
-class Parser$1 {
+let Parser$1 = class Parser {
     getTagDefinition;
     constructor(getTagDefinition) {
         this.getTagDefinition = getTagDefinition;
@@ -16984,7 +16988,7 @@ class Parser$1 {
         parser.build();
         return new ParseTreeResult(parser.rootNodes, tokenizeResult.errors.concat(parser.errors));
     }
-}
+};
 class _TreeBuilder {
     tokens;
     getTagDefinition;
@@ -19348,9 +19352,10 @@ class _ParseAST {
     }
     parseNoInterpolationTemplateLiteral() {
         const text = this.next.strValue;
+        const start = this.inputIndex;
         this.advance();
-        const span = this.span(this.inputIndex);
-        const sourceSpan = this.sourceSpan(this.inputIndex);
+        const span = this.span(start);
+        const sourceSpan = this.sourceSpan(start);
         return new TemplateLiteral(span, sourceSpan, [new TemplateLiteralElement(span, sourceSpan, text)], []);
     }
     parseTaggedTemplateLiteral(tag, start) {
@@ -19364,8 +19369,9 @@ class _ParseAST {
         while (this.next !== EOF) {
             const token = this.next;
             if (token.isTemplateLiteralPart() || token.isTemplateLiteralEnd()) {
-                elements.push(new TemplateLiteralElement(this.span(this.inputIndex), this.sourceSpan(this.inputIndex), token.strValue));
+                const partStart = this.inputIndex;
                 this.advance();
+                elements.push(new TemplateLiteralElement(this.span(partStart), this.sourceSpan(partStart), token.strValue));
                 if (token.isTemplateLiteralEnd()) {
                     break;
                 }
@@ -26343,10 +26349,10 @@ function convertTemplateLiteral(ast, job, baseSourceSpan) {
 function convertAstWithInterpolation(job, value, i18nMeta, sourceSpan) {
     let expression;
     if (value instanceof Interpolation$1) {
-        expression = new Interpolation(value.strings, value.expressions.map((e) => convertAst(e, job, sourceSpan ?? null)), Object.keys(asMessage(i18nMeta)?.placeholders ?? {}));
+        expression = new Interpolation(value.strings, value.expressions.map((e) => convertAst(e, job, null)), Object.keys(asMessage(i18nMeta)?.placeholders ?? {}));
     }
     else if (value instanceof AST) {
-        expression = convertAst(value, job, sourceSpan ?? null);
+        expression = convertAst(value, job, null);
     }
     else {
         expression = literal(value);
@@ -30502,10 +30508,8 @@ class CompilerFacadeImpl {
     }
     compilePipe(angularCoreEnv, sourceMapUrl, facade) {
         const metadata = {
-            name: facade.name,
             type: wrapReference(facade.type),
             typeArgumentCount: 0,
-            deps: null,
             pipeName: facade.pipeName,
             pure: facade.pure,
             isStandalone: facade.isStandalone,
@@ -30550,7 +30554,6 @@ class CompilerFacadeImpl {
     }
     compileInjector(angularCoreEnv, sourceMapUrl, facade) {
         const meta = {
-            name: facade.name,
             type: wrapReference(facade.type),
             providers: facade.providers && facade.providers.length > 0
                 ? new WrappedNodeExpr(facade.providers)
@@ -31749,7 +31752,7 @@ class Xliff extends Serializer {
         return digest$1(message);
     }
 }
-class _WriteVisitor$1 {
+let _WriteVisitor$1 = class _WriteVisitor {
     visitText(text, context) {
         return [new Text$1(text.value)];
     }
@@ -31808,7 +31811,7 @@ class _WriteVisitor$1 {
     serialize(nodes) {
         return [].concat(...nodes.map((node) => node.visit(this)));
     }
-}
+};
 // TODO(vicb): add error management (structure)
 // Extract messages as xml nodes from the xliff file
 class XliffParser {
@@ -31891,7 +31894,7 @@ class XliffParser {
     }
 }
 // Convert ml nodes (xliff syntax) to i18n nodes
-class XmlToI18n$2 {
+let XmlToI18n$2 = class XmlToI18n {
     // using non-null assertion because it's re(set) by convert()
     _errors;
     convert(message, url) {
@@ -31944,7 +31947,7 @@ class XmlToI18n$2 {
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
-}
+};
 function getCtypeForTag(tag) {
     switch (tag.toLowerCase()) {
         case 'br':
@@ -32206,7 +32209,7 @@ class Xliff2Parser {
     }
 }
 // Convert ml nodes (xliff syntax) to i18n nodes
-class XmlToI18n$1 {
+let XmlToI18n$1 = class XmlToI18n {
     // using non-null assertion because re(set) by convert()
     _errors;
     convert(message, url) {
@@ -32276,7 +32279,7 @@ class XmlToI18n$1 {
     _addError(node, message) {
         this._errors.push(new I18nError(node.sourceSpan, message));
     }
-}
+};
 function getTypeForTag(tag) {
     switch (tag.toLowerCase()) {
         case 'br':
@@ -32878,7 +32881,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -32896,7 +32899,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -32991,7 +32994,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33407,7 +33410,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33442,7 +33445,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33493,7 +33496,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33526,7 +33529,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33577,7 +33580,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.1+sha-8be6e38'));
+    definitionMap.set('version', literal('20.0.0-next.1+sha-4fa5d18'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33735,9 +33738,27 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.0.0-next.1+sha-8be6e38');
+const VERSION = new Version('20.0.0-next.1+sha-4fa5d18');
 
 //////////////////////////////////////
+// THIS FILE HAS GLOBAL SIDE EFFECT //
+//       (see bottom of file)       //
+//////////////////////////////////////
+/**
+ * @module
+ * @description
+ * Entry point for all APIs of the compiler package.
+ *
+ * <div class="callout is-critical">
+ *   <header>Unstable APIs</header>
+ *   <p>
+ *     All compiler apis are currently considered experimental and private!
+ *   </p>
+ *   <p>
+ *     We expect the APIs in this package to keep on changing. Do not rely on them.
+ *   </p>
+ * </div>
+ */
 // This file only reexports content of the `src` folder. Keep it that way.
 // This function call has a global side effects and publishes the compiler into global namespace for
 // the late binding of the Compiler to the @angular/core for jit compilation.
