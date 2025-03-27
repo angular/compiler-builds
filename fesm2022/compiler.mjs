@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.3+sha-6d3849f
+ * @license Angular v20.0.0-next.4+sha-98bf4d5
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1320,14 +1320,13 @@ class TemplateLiteralElementExpr extends Expression {
     constructor(text, sourceSpan, rawText) {
         super(STRING_TYPE, sourceSpan);
         this.text = text;
-        // If `rawText` is not provided, try to extract the raw string from its
-        // associated `sourceSpan`. If that is also not available, "fake" the raw
-        // string instead by escaping the following control sequences:
+        // If `rawText` is not provided, "fake" the raw string by escaping the following sequences:
         // - "\" would otherwise indicate that the next character is a control character.
         // - "`" and "${" are template string control sequences that would otherwise prematurely
         // indicate the end of the template literal element.
-        this.rawText =
-            rawText ?? sourceSpan?.toString() ?? escapeForTemplateLiteral(escapeSlashes(text));
+        // Note that we can't rely on the `sourceSpan` here, because it may be incorrect (see
+        // https://github.com/angular/angular/pull/60267#discussion_r1986402524).
+        this.rawText = rawText ?? escapeForTemplateLiteral(escapeSlashes(text));
     }
     visitExpression(visitor, context) {
         return visitor.visitTemplateLiteralElementExpr(this, context);
@@ -27392,10 +27391,16 @@ class BindingParser {
         const prop = this._schemaRegistry.getMappedPropName(propName);
         return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
     }
+    parseEventListenerName(rawName) {
+        const [target, eventName] = splitAtColon(rawName, [null, rawName]);
+        return { eventName: eventName, target };
+    }
+    parseAnimationEventName(rawName) {
+        const matches = splitAtPeriod(rawName, [rawName, null]);
+        return { eventName: matches[0], phase: matches[1] === null ? null : matches[1].toLowerCase() };
+    }
     _parseAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan) {
-        const matches = splitAtPeriod(name, [name, '']);
-        const eventName = matches[0];
-        const phase = matches[1].toLowerCase();
+        const { eventName, phase } = this.parseAnimationEventName(name);
         const ast = this._parseAction(expression, handlerSpan);
         targetEvents.push(new ParsedEvent(eventName, phase, ParsedEventType.Animation, ast, sourceSpan, handlerSpan, keySpan));
         if (eventName.length === 0) {
@@ -27412,7 +27417,7 @@ class BindingParser {
     }
     _parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
         // long format: 'target: eventName'
-        const [target, eventName] = splitAtColon(name, [null, name]);
+        const { eventName, target } = this.parseEventListenerName(name);
         const prevErrorCount = this.errors.length;
         const ast = this._parseAction(expression, handlerSpan);
         const isValid = this.errors.length === prevErrorCount;
@@ -33055,7 +33060,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33073,7 +33078,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33168,7 +33173,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33584,7 +33589,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33619,7 +33624,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33670,7 +33675,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33703,7 +33708,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33754,7 +33759,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.3+sha-6d3849f'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-98bf4d5'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33912,7 +33917,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.0.0-next.3+sha-6d3849f');
+const VERSION = new Version('20.0.0-next.4+sha-98bf4d5');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //

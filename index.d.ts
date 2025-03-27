@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.3+sha-6d3849f
+ * @license Angular v20.0.0-next.4+sha-98bf4d5
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1038,8 +1038,8 @@ declare class TemplateLiteralExpr extends Expression {
     clone(): TemplateLiteralExpr;
 }
 declare class TemplateLiteralElementExpr extends Expression {
-    text: string;
-    rawText: string;
+    readonly text: string;
+    readonly rawText: string;
     constructor(text: string, sourceSpan?: ParseSourceSpan | null, rawText?: string);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
@@ -2050,14 +2050,14 @@ declare enum ParsedEventType {
 }
 declare class ParsedEvent {
     name: string;
-    targetOrPhase: string;
+    targetOrPhase: string | null;
     type: ParsedEventType;
     handler: ASTWithSource;
     sourceSpan: ParseSourceSpan;
     handlerSpan: ParseSourceSpan;
     readonly keySpan: ParseSourceSpan;
-    constructor(name: string, targetOrPhase: string, type: ParsedEventType.TwoWay, handler: ASTWithSource<NonNullAssert | PropertyRead | KeyedRead>, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
-    constructor(name: string, targetOrPhase: string, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
+    constructor(name: string, targetOrPhase: string | null, type: ParsedEventType.TwoWay, handler: ASTWithSource<NonNullAssert | PropertyRead | KeyedRead>, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
+    constructor(name: string, targetOrPhase: string | null, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, keySpan: ParseSourceSpan);
 }
 /**
  * ParsedVariable represents a variable declaration in a microsyntax expression.
@@ -4142,6 +4142,14 @@ declare class BindingParser {
     createBoundElementProperty(elementSelector: string, boundProp: ParsedProperty, skipValidation?: boolean, mapPropertyName?: boolean): BoundElementProperty;
     parseEvent(name: string, expression: string, isAssignmentEvent: boolean, sourceSpan: ParseSourceSpan, handlerSpan: ParseSourceSpan, targetMatchableAttrs: string[][], targetEvents: ParsedEvent[], keySpan: ParseSourceSpan): void;
     calcPossibleSecurityContexts(selector: string, propName: string, isAttribute: boolean): SecurityContext[];
+    parseEventListenerName(rawName: string): {
+        eventName: string;
+        target: string | null;
+    };
+    parseAnimationEventName(rawName: string): {
+        eventName: string;
+        phase: string | null;
+    };
     private _parseAnimationEvent;
     private _parseRegularEvent;
     private _parseAction;
