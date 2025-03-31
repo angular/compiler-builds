@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.4+sha-cbd6ec8
+ * @license Angular v20.0.0-next.4+sha-9c106f4
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4869,7 +4869,7 @@ declare class Identifiers {
     static pipeBind3: ExternalReference;
     static pipeBind4: ExternalReference;
     static pipeBindV: ExternalReference;
-    static hostProperty: ExternalReference;
+    static domProperty: ExternalReference;
     static property: ExternalReference;
     static propertyInterpolate: ExternalReference;
     static propertyInterpolate1: ExternalReference;

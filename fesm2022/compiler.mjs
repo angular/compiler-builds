@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.4+sha-cbd6ec8
+ * @license Angular v20.0.0-next.4+sha-9c106f4
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2942,7 +2942,7 @@ class Identifiers {
     static pipeBind3 = { name: 'ɵɵpipeBind3', moduleName: CORE };
     static pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE };
     static pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE };
-    static hostProperty = { name: 'ɵɵhostProperty', moduleName: CORE };
+    static domProperty = { name: 'ɵɵdomProperty', moduleName: CORE };
     static property = { name: 'ɵɵproperty', moduleName: CORE };
     static propertyInterpolate = {
         name: 'ɵɵpropertyInterpolate',
@@ -8819,9 +8819,9 @@ var OpKind;
      */
     OpKind[OpKind["I18nMessage"] = 31] = "I18nMessage";
     /**
-     * A host binding property.
+     * A binding to a native DOM property.
      */
-    OpKind[OpKind["HostProperty"] = 32] = "HostProperty";
+    OpKind[OpKind["DomProperty"] = 32] = "DomProperty";
     /**
      * A namespace change, which causes the subsequent elements to be processed as either HTML or SVG.
      */
@@ -10328,7 +10328,7 @@ function transformExpressionsInOp(op, transform, flags) {
             }
             break;
         case OpKind.Property:
-        case OpKind.HostProperty:
+        case OpKind.DomProperty:
         case OpKind.Attribute:
             if (op.expression instanceof Interpolation) {
                 transformExpressionsInInterpolation(op.expression, transform, flags);
@@ -11306,9 +11306,9 @@ function createSourceLocationOp(templatePath, locations) {
     };
 }
 
-function createHostPropertyOp(name, expression, isAnimationTrigger, i18nContext, securityContext, sourceSpan) {
+function createDomPropertyOp(name, expression, isAnimationTrigger, i18nContext, securityContext, sourceSpan) {
     return {
-        kind: OpKind.HostProperty,
+        kind: OpKind.DomProperty,
         name,
         expression,
         isAnimationTrigger,
@@ -11886,7 +11886,7 @@ function specializeBindings(job) {
                 case BindingKind.Property:
                 case BindingKind.Animation:
                     if (job.kind === CompilationJobKind.Host) {
-                        OpList.replace(op, createHostPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.i18nContext, op.securityContext, op.sourceSpan));
+                        OpList.replace(op, createDomPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.Animation, op.i18nContext, op.securityContext, op.sourceSpan));
                     }
                     else {
                         OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.Animation, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
@@ -11919,7 +11919,7 @@ const CHAIN_COMPATIBILITY = new Map([
     [Identifiers.elementContainerStart, Identifiers.elementContainerStart],
     [Identifiers.elementEnd, Identifiers.elementEnd],
     [Identifiers.elementStart, Identifiers.elementStart],
-    [Identifiers.hostProperty, Identifiers.hostProperty],
+    [Identifiers.domProperty, Identifiers.domProperty],
     [Identifiers.i18nExp, Identifiers.i18nExp],
     [Identifiers.listener, Identifiers.listener],
     [Identifiers.listener, Identifiers.listener],
@@ -22003,7 +22003,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
     for (const op of unit.ops()) {
         switch (op.kind) {
             case OpKind.Property:
-            case OpKind.HostProperty:
+            case OpKind.DomProperty:
                 if (op.isAnimationTrigger) {
                     op.name = '@' + op.name;
                 }
@@ -22319,8 +22319,8 @@ const UPDATE_ORDERING = [
  * Host bindings have their own update ordering.
  */
 const UPDATE_HOST_ORDERING = [
-    { test: kindWithInterpolationTest(OpKind.HostProperty, true) },
-    { test: kindWithInterpolationTest(OpKind.HostProperty, false) },
+    { test: kindWithInterpolationTest(OpKind.DomProperty, true) },
+    { test: kindWithInterpolationTest(OpKind.DomProperty, false) },
     { test: kindTest(OpKind.Attribute) },
     { test: kindTest(OpKind.StyleMap), transform: keepLast },
     { test: kindTest(OpKind.ClassMap), transform: keepLast },
@@ -22339,7 +22339,7 @@ const handledOpKinds = new Set([
     OpKind.ClassProp,
     OpKind.Property,
     OpKind.TwoWayProperty,
-    OpKind.HostProperty,
+    OpKind.DomProperty,
     OpKind.Attribute,
 ]);
 /**
@@ -23113,12 +23113,12 @@ function classMapInterpolate(strings, expressions, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
     return callVariadicInstruction(CLASS_MAP_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
 }
-function hostProperty(name, expression, sanitizer, sourceSpan) {
+function domProperty(name, expression, sanitizer, sourceSpan) {
     const args = [literal(name), expression];
     if (sanitizer !== null) {
         args.push(sanitizer);
     }
-    return call(Identifiers.hostProperty, args, sourceSpan);
+    return call(Identifiers.domProperty, args, sourceSpan);
 }
 function syntheticHostProperty(name, expression, sourceSpan) {
     return call(Identifiers.syntheticHostProperty, [literal(name), expression], sourceSpan);
@@ -23657,7 +23657,7 @@ function reifyUpdateOperations(_unit, ops) {
                     OpList.replace(op, attribute(op.name, op.expression, op.sanitizer, op.namespace));
                 }
                 break;
-            case OpKind.HostProperty:
+            case OpKind.DomProperty:
                 if (op.expression instanceof Interpolation) {
                     throw new Error('not yet handled');
                 }
@@ -23666,7 +23666,7 @@ function reifyUpdateOperations(_unit, ops) {
                         OpList.replace(op, syntheticHostProperty(op.name, op.expression, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, hostProperty(op.name, op.expression, op.sanitizer, op.sourceSpan));
+                        OpList.replace(op, domProperty(op.name, op.expression, op.sanitizer, op.sourceSpan));
                     }
                 }
                 break;
@@ -24500,7 +24500,7 @@ function resolveSanitizers(job) {
             switch (op.kind) {
                 case OpKind.Property:
                 case OpKind.Attribute:
-                case OpKind.HostProperty:
+                case OpKind.DomProperty:
                     let sanitizerFn = null;
                     if (Array.isArray(op.securityContext) &&
                         op.securityContext.length === 2 &&
@@ -24522,7 +24522,7 @@ function resolveSanitizers(job) {
                     // <iframe>).
                     if (op.sanitizer === null) {
                         let isIframe = false;
-                        if (job.kind === CompilationJobKind.Host || op.kind === OpKind.HostProperty) {
+                        if (job.kind === CompilationJobKind.Host || op.kind === OpKind.DomProperty) {
                             // Note: for host bindings defined on a directive, we do not try to find all
                             // possible places where it can be matched, so we can not determine whether
                             // the host element is an <iframe>. In this case, we just assume it is and append a
@@ -25129,7 +25129,7 @@ function varsUsedByOp(op) {
     let slots;
     switch (op.kind) {
         case OpKind.Property:
-        case OpKind.HostProperty:
+        case OpKind.DomProperty:
         case OpKind.Attribute:
             // All of these bindings use 1 variable slot, plus 1 slot for every interpolated expression,
             // if any.
@@ -25858,7 +25858,7 @@ function ingestHostBinding(input, bindingParser, constantPool) {
         const securityContexts = bindingParser
             .calcPossibleSecurityContexts(input.componentSelector, property.name, bindingKind === BindingKind.Attribute)
             .filter((context) => context !== SecurityContext.NONE);
-        ingestHostProperty(job, property, bindingKind, securityContexts);
+        ingestDomProperty(job, property, bindingKind, securityContexts);
     }
     for (const [name, expr] of Object.entries(input.attributes) ?? []) {
         const securityContexts = bindingParser
@@ -25873,7 +25873,7 @@ function ingestHostBinding(input, bindingParser, constantPool) {
 }
 // TODO: We should refactor the parser to use the same types and structures for host bindings as
 // with ordinary components. This would allow us to share a lot more ingestion code.
-function ingestHostProperty(job, property, bindingKind, securityContexts) {
+function ingestDomProperty(job, property, bindingKind, securityContexts) {
     let expression;
     const ast = property.expression.ast;
     if (ast instanceof Interpolation$1) {
@@ -33067,7 +33067,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33085,7 +33085,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33180,7 +33180,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -33596,7 +33596,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -33631,7 +33631,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -33682,7 +33682,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -33715,7 +33715,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -33766,7 +33766,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.4+sha-cbd6ec8'));
+    definitionMap.set('version', literal('20.0.0-next.4+sha-9c106f4'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -33924,7 +33924,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.0.0-next.4+sha-cbd6ec8');
+const VERSION = new Version('20.0.0-next.4+sha-9c106f4');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
