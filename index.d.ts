@@ -1,5 +1,5 @@
 /**
- * @license Angular v19.2.5+sha-ae2fc18
+ * @license Angular v19.2.5+sha-3441f7b
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1072,8 +1072,8 @@ declare class TemplateLiteralExpr extends Expression {
     clone(): TemplateLiteralExpr;
 }
 declare class TemplateLiteralElementExpr extends Expression {
-    text: string;
-    rawText: string;
+    readonly text: string;
+    readonly rawText: string;
     constructor(text: string, sourceSpan?: ParseSourceSpan | null, rawText?: string);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
