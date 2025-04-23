@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.7+sha-c990265
+ * @license Angular v20.0.0-next.7+sha-5efc692
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -395,6 +395,15 @@ class SelectorContext {
             callback(this.selector, this.cbContext);
         }
         return result;
+    }
+}
+class SelectorlessMatcher {
+    registry;
+    constructor(registry) {
+        this.registry = registry;
+    }
+    match(name) {
+        return this.registry.get(name) ?? null;
     }
 }
 
@@ -29284,6 +29293,7 @@ class HtmlAstToIvyAst {
             return null;
         }
         const { attributes, boundEvents, references, templateVariables, elementHasInlineTemplate, parsedProperties, templateParsedProperties, i18nAttrsMeta, } = this.prepareAttributes(component.attrs, false);
+        this.validateSelectorlessReferences(references);
         const directives = this.extractDirectives(component);
         let children;
         if (component.attrs.find((attr) => attr.name === 'ngNonBindable')) {
@@ -29586,6 +29596,7 @@ class HtmlAstToIvyAst {
                 continue;
             }
             const { attributes, parsedProperties, boundEvents, references, i18nAttrsMeta } = this.prepareAttributes(directive.attrs, false);
+            this.validateSelectorlessReferences(references);
             const { bound: inputs } = this.categorizePropertyAttributes(elementName, parsedProperties, i18nAttrsMeta);
             for (const input of inputs) {
                 if (input.type !== BindingType.Property && input.type !== BindingType.TwoWay) {
@@ -29668,6 +29679,23 @@ class HtmlAstToIvyAst {
         this.bindingParser.parseEvent(`${name}Change`, expression, 
         /* isAssignmentEvent */ true, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
         addEvents(events, boundEvents);
+    }
+    validateSelectorlessReferences(references) {
+        if (references.length === 0) {
+            return;
+        }
+        const seenNames = new Set();
+        for (const ref of references) {
+            if (ref.value.length > 0) {
+                this.reportError('Cannot specify a value for a local reference in this context', ref.valueSpan || ref.sourceSpan);
+            }
+            else if (seenNames.has(ref.name)) {
+                this.reportError('Duplicate reference names are not allowed', ref.sourceSpan);
+            }
+            else {
+                seenNames.add(ref.name);
+            }
+        }
     }
     reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
         this.errors.push(new ParseError(sourceSpan, message, level));
@@ -29770,6 +29798,7 @@ function parseTemplate(template, templateUrl, options = {}) {
         tokenizeExpansionForms: true,
         tokenizeBlocks: options.enableBlockSyntax ?? true,
         tokenizeLet: options.enableLetSyntax ?? true,
+        selectorlessEnabled: options.enableSelectorless ?? false,
     });
     if (!options.alwaysAttemptHtmlToR3AstConversion &&
         parseResult.errors &&
@@ -30528,9 +30557,9 @@ class Scope {
      */
     namedEntities = new Map();
     /**
-     * Set of elements that belong to this scope.
+     * Set of element-like nodes that belong to this scope.
      */
-    elementsInScope = new Set();
+    elementLikeInScope = new Set();
     /**
      * Child `Scope`s for immediately nested `ScopedNode`s.
      */
@@ -30591,12 +30620,7 @@ class Scope {
         }
     }
     visitElement(element) {
-        element.directives.forEach((node) => node.visit(this));
-        // `Element`s in the template may have `Reference`s which are captured in the scope.
-        element.references.forEach((node) => this.visitReference(node));
-        // Recurse into the `Element`'s children.
-        element.children.forEach((node) => node.visit(this));
-        this.elementsInScope.add(element);
+        this.visitElementLike(element);
     }
     visitTemplate(template) {
         template.directives.forEach((node) => node.visit(this));
@@ -30655,10 +30679,10 @@ class Scope {
         this.maybeDeclare(decl);
     }
     visitComponent(component) {
-        throw new Error('TODO');
+        this.visitElementLike(component);
     }
     visitDirective(directive) {
-        throw new Error('TODO');
+        directive.references.forEach((current) => this.visitReference(current));
     }
     // Unused visitors.
     visitBoundAttribute(attr) { }
@@ -30669,6 +30693,12 @@ class Scope {
     visitIcu(icu) { }
     visitDeferredTrigger(trigger) { }
     visitUnknownBlock(block) { }
+    visitElementLike(node) {
+        node.directives.forEach((current) => current.visit(this));
+        node.references.forEach((current) => this.visitReference(current));
+        node.children.forEach((current) => current.visit(this));
+        this.elementLikeInScope.add(node);
+    }
     maybeDeclare(thing) {
         // Declare something with a name, as long as that name isn't taken.
         if (!this.namedEntities.has(thing.name)) {
@@ -30718,15 +30748,15 @@ class Scope {
  * Usually used via the static `apply()` method.
  */
 class DirectiveBinder {
-    matcher;
+    directiveMatcher;
     directives;
     eagerDirectives;
     bindings;
     references;
     // Indicates whether we are visiting elements within a `defer` block
     isInDeferBlock = false;
-    constructor(matcher, directives, eagerDirectives, bindings, references) {
-        this.matcher = matcher;
+    constructor(directiveMatcher, directives, eagerDirectives, bindings, references) {
+        this.directiveMatcher = directiveMatcher;
         this.directives = directives;
         this.eagerDirectives = eagerDirectives;
         this.bindings = bindings;
@@ -30744,8 +30774,8 @@ class DirectiveBinder {
      * map which resolves #references (`Reference`s) within the template to the named directive or
      * template node.
      */
-    static apply(template, selectorMatcher, directives, eagerDirectives, bindings, references) {
-        const matcher = new DirectiveBinder(selectorMatcher, directives, eagerDirectives, bindings, references);
+    static apply(template, directiveMatcher, directives, eagerDirectives, bindings, references) {
+        const matcher = new DirectiveBinder(directiveMatcher, directives, eagerDirectives, bindings, references);
         matcher.ingest(template);
     }
     ingest(template) {
@@ -30756,70 +30786,6 @@ class DirectiveBinder {
     }
     visitTemplate(template) {
         this.visitElementOrTemplate(template);
-    }
-    visitElementOrTemplate(node) {
-        // First, determine the HTML shape of the node for the purpose of directive matching.
-        // Do this by building up a `CssSelector` for the node.
-        const cssSelector = createCssSelectorFromNode(node);
-        // TODO(crisbeto): account for selectorless directives here.
-        if (node.directives.length > 0) {
-            throw new Error('TODO');
-        }
-        // Next, use the `SelectorMatcher` to get the list of directives on the node.
-        const directives = [];
-        this.matcher.match(cssSelector, (_selector, results) => directives.push(...results));
-        if (directives.length > 0) {
-            this.directives.set(node, directives);
-            if (!this.isInDeferBlock) {
-                this.eagerDirectives.push(...directives);
-            }
-        }
-        // Resolve any references that are created on this node.
-        node.references.forEach((ref) => {
-            let dirTarget = null;
-            // If the reference expression is empty, then it matches the "primary" directive on the node
-            // (if there is one). Otherwise it matches the host node itself (either an element or
-            // <ng-template> node).
-            if (ref.value.trim() === '') {
-                // This could be a reference to a component if there is one.
-                dirTarget = directives.find((dir) => dir.isComponent) || null;
-            }
-            else {
-                // This should be a reference to a directive exported via exportAs.
-                dirTarget =
-                    directives.find((dir) => dir.exportAs !== null && dir.exportAs.some((value) => value === ref.value)) || null;
-                // Check if a matching directive was found.
-                if (dirTarget === null) {
-                    // No matching directive was found - this reference points to an unknown target. Leave it
-                    // unmapped.
-                    return;
-                }
-            }
-            if (dirTarget !== null) {
-                // This reference points to a directive.
-                this.references.set(ref, { directive: dirTarget, node });
-            }
-            else {
-                // This reference points to the node itself.
-                this.references.set(ref, node);
-            }
-        });
-        const setAttributeBinding = (attribute, ioType) => {
-            const dir = directives.find((dir) => dir[ioType].hasBindingPropertyName(attribute.name));
-            const binding = dir !== undefined ? dir : node;
-            this.bindings.set(attribute, binding);
-        };
-        // Node inputs (bound attributes) and text attributes can be bound to an
-        // input on a directive.
-        node.inputs.forEach((input) => setAttributeBinding(input, 'inputs'));
-        node.attributes.forEach((attr) => setAttributeBinding(attr, 'inputs'));
-        if (node instanceof Template) {
-            node.templateAttrs.forEach((attr) => setAttributeBinding(attr, 'inputs'));
-        }
-        // Node outputs (bound events) can be bound to an output on a directive.
-        node.outputs.forEach((output) => setAttributeBinding(output, 'outputs'));
-        // Recurse into the node's children.
-        node.children.forEach((child) => child.visit(this));
     }
     visitDeferredBlock(deferred) {
         const wasInDeferBlock = this.isInDeferBlock;
@@ -30864,11 +30830,131 @@ class DirectiveBinder {
     visitContent(content) {
         content.children.forEach((child) => child.visit(this));
     }
-    visitComponent(component) {
-        throw new Error('TODO');
+    visitComponent(node) {
+        const directives = [];
+        let componentMetas = null;
+        if (this.directiveMatcher instanceof SelectorlessMatcher) {
+            componentMetas = this.directiveMatcher.match(node.componentName);
+            if (componentMetas !== null) {
+                directives.push(...componentMetas);
+            }
+            for (const directive of node.directives) {
+                const directiveMetas = this.directiveMatcher.match(directive.name);
+                if (directiveMetas !== null) {
+                    directives.push(...directiveMetas);
+                }
+            }
+        }
+        this.trackMatchedDirectives(node, directives);
+        if (componentMetas !== null) {
+            this.trackSelectorlessBindings(node, componentMetas);
+        }
+        node.directives.forEach((directive) => directive.visit(this));
+        node.children.forEach((child) => child.visit(this));
     }
-    visitDirective(directive) {
-        throw new Error('TODO');
+    visitDirective(node) {
+        const directives = this.directiveMatcher instanceof SelectorlessMatcher
+            ? this.directiveMatcher.match(node.name)
+            : null;
+        if (directives !== null) {
+            this.trackSelectorlessBindings(node, directives);
+        }
+    }
+    visitElementOrTemplate(node) {
+        const directives = [];
+        if (this.directiveMatcher instanceof SelectorMatcher) {
+            // First, determine the HTML shape of the node for the purpose of directive matching.
+            // Do this by building up a `CssSelector` for the node.
+            const cssSelector = createCssSelectorFromNode(node);
+            this.directiveMatcher.match(cssSelector, (_selector, results) => {
+                directives.push(...results);
+            });
+            this.trackSelectorMatchedBindings(node, directives);
+        }
+        else {
+            for (const directive of node.directives) {
+                const matchedDirectives = this.directiveMatcher.match(directive.name);
+                if (matchedDirectives !== null) {
+                    directives.push(...matchedDirectives);
+                }
+            }
+        }
+        this.trackMatchedDirectives(node, directives);
+        node.directives.forEach((directive) => directive.visit(this));
+        node.children.forEach((child) => child.visit(this));
+    }
+    trackMatchedDirectives(node, directives) {
+        if (directives.length > 0) {
+            this.directives.set(node, directives);
+            if (!this.isInDeferBlock) {
+                this.eagerDirectives.push(...directives);
+            }
+        }
+    }
+    trackSelectorlessBindings(node, metas) {
+        const setBinding = (meta, attribute, ioType) => {
+            if (meta[ioType].hasBindingPropertyName(attribute.name)) {
+                this.bindings.set(attribute, meta);
+            }
+        };
+        for (const meta of metas) {
+            node.inputs.forEach((input) => setBinding(meta, input, 'inputs'));
+            node.attributes.forEach((attr) => setBinding(meta, attr, 'inputs'));
+            node.outputs.forEach((output) => setBinding(meta, output, 'outputs'));
+        }
+        // TODO(crisbeto): currently it's unclear how references should behave under selectorless,
+        // given that there's one named class which can bring in multiple host directives.
+        // For the time being only register the first directive as the reference target.
+        if (metas.length > 0) {
+            node.references.forEach((ref) => this.references.set(ref, { directive: metas[0], node: node }));
+        }
+    }
+    trackSelectorMatchedBindings(node, directives) {
+        // Resolve any references that are created on this node.
+        node.references.forEach((ref) => {
+            let dirTarget = null;
+            // If the reference expression is empty, then it matches the "primary" directive on the node
+            // (if there is one). Otherwise it matches the host node itself (either an element or
+            // <ng-template> node).
+            if (ref.value.trim() === '') {
+                // This could be a reference to a component if there is one.
+                dirTarget = directives.find((dir) => dir.isComponent) || null;
+            }
+            else {
+                // This should be a reference to a directive exported via exportAs.
+                dirTarget =
+                    directives.find((dir) => dir.exportAs !== null && dir.exportAs.some((value) => value === ref.value)) || null;
+                // Check if a matching directive was found.
+                if (dirTarget === null) {
+                    // No matching directive was found - this reference points to an unknown target. Leave it
+                    // unmapped.
+                    return;
+                }
+            }
+            if (dirTarget !== null) {
+                // This reference points to a directive.
+                this.references.set(ref, { directive: dirTarget, node });
+            }
+            else {
+                // This reference points to the node itself.
+                this.references.set(ref, node);
+            }
+        });
+        // Associate attributes/bindings on the node with directives or with the node itself.
+        const setAttributeBinding = (attribute, ioType) => {
+            const dir = directives.find((dir) => dir[ioType].hasBindingPropertyName(attribute.name));
+            const binding = dir !== undefined ? dir : node;
+            this.bindings.set(attribute, binding);
+        };
+        // Node inputs (bound attributes) and text attributes can be bound to an
+        // input on a directive.
+        node.inputs.forEach((input) => setAttributeBinding(input, 'inputs'));
+        node.attributes.forEach((attr) => setAttributeBinding(attr, 'inputs'));
+        if (node instanceof Template) {
+            node.templateAttrs.forEach((attr) => setAttributeBinding(attr, 'inputs'));
+        }
+        // Node outputs (bound events) can be bound to an output on a directive.
+        node.outputs.forEach((output) => setAttributeBinding(output, 'outputs'));
     }
     // Unused visitors.
     visitVariable(variable) { }
@@ -31027,10 +31113,16 @@ class TemplateBinder extends RecursiveAstVisitor {
         }
     }
     visitComponent(component) {
-        throw new Error('TODO');
+        component.inputs.forEach(this.visitNode);
+        component.outputs.forEach(this.visitNode);
+        component.directives.forEach(this.visitNode);
+        component.children.forEach(this.visitNode);
+        component.references.forEach(this.visitNode);
     }
     visitDirective(directive) {
-        throw new Error('TODO');
+        directive.inputs.forEach(this.visitNode);
+        directive.outputs.forEach(this.visitNode);
+        directive.references.forEach(this.visitNode);
     }
     // Unused template visitors
     visitText(text) { }
@@ -31274,7 +31366,7 @@ class R3BoundTarget {
             const stack = [this.deferredScopes.get(block)];
             while (stack.length > 0) {
                 const current = stack.pop();
-                if (current.elementsInScope.has(element)) {
+                if (current.elementLikeInScope.has(element)) {
                     return true;
                 }
                 stack.push(...current.childScopes.values());
@@ -31301,7 +31393,9 @@ class R3BoundTarget {
         if (target instanceof Element$1) {
             return target;
         }
-        if (target instanceof Template) {
+        if (target instanceof Template ||
+            target.node instanceof Component$1 ||
+            target.node instanceof Directive$1) {
             return null;
         }
         return this.referenceTargetToElement(target.node);
@@ -33781,7 +33875,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33799,7 +33893,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33894,7 +33988,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34310,7 +34404,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34345,7 +34439,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34396,7 +34490,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34429,7 +34523,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34480,7 +34574,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.0.0-next.7+sha-c990265'));
+    definitionMap.set('version', literal('20.0.0-next.7+sha-5efc692'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34638,7 +34732,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.0.0-next.7+sha-c990265');
+const VERSION = new Version('20.0.0-next.7+sha-5efc692');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
@@ -34664,5 +34758,5 @@ const VERSION = new Version('20.0.0-next.7+sha-c990265');
 // the late binding of the Compiler to the @angular/core for jit compilation.
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CommaExpr, Comment, CompilerConfig, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget$1 as FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
