@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-next.8+sha-c2987d8
+ * @license Angular v20.0.0-next.8+sha-e711f99
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -4504,8 +4504,8 @@ declare class SelectorContext<T = any> {
 }
 declare class SelectorlessMatcher<T = unknown> {
     private registry;
-    constructor(registry: Map<string, T>);
-    match(name: string): T | null;
+    constructor(registry: Map<string, T[]>);
+    match(name: string): T[];
 }
 
 /**
@@ -5300,7 +5300,18 @@ interface BoundTarget<DirectiveT extends DirectiveMeta> {
     /**
      * Whether a given node is located in a `@defer` block.
      */
-    isDeferred(node: Element | Component): boolean;
+    isDeferred(node: Element): boolean;
+    /**
+     * Returns the directives that are owned by a specific component/directive node. This is either
+     * the directive being referenced itself or its host directives.
+     * @param node Node for which to retrieve the owned directives.
+     */
+    getOwnedDirectives(node: Component | Directive): DirectiveT[] | null;
+    /**
+     * Checks whether a component/directive that was referenced directly in the template exists.
+     * @param name Name of the component/directive.
+     */
+    referencedDirectiveExists(name: string): boolean;
 }
 
 /**
@@ -5328,7 +5339,7 @@ declare function findMatchingDirectivesAndPipes(template: string, directiveSelec
     };
 };
 /** Object used to match template nodes to directives. */
-type DirectiveMatcher<DirectiveT extends DirectiveMeta> = SelectorMatcher<DirectiveT[]> | SelectorlessMatcher<DirectiveT[]>;
+type DirectiveMatcher<DirectiveT extends DirectiveMeta> = SelectorMatcher<DirectiveT[]> | SelectorlessMatcher<DirectiveT>;
 /**
  * Processes `Target`s with a given set of directives and performs a binding operation, which
  * returns an object similar to TypeScript's `ts.TypeChecker` that contains knowledge about the
