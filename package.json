@@ -1,22 +1,14 @@
 {
   "name": "@angular/compiler",
-  "version": "18.1.0-next.0+sha-87c5f3c",
+  "version": "20.0.0-next.9+sha-f4d60ff",
   "description": "Angular - the compiler library",
   "author": "angular",
   "license": "MIT",
   "engines": {
-    "node": "^18.13.0 || >=20.9.0"
+    "node": "^20.11.1 || >=22.11.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"
-  },
-  "peerDependencies": {
-    "@angular/core": "18.1.0-next.0+sha-87c5f3c"
-  },
-  "peerDependenciesMeta": {
-    "@angular/core": {
-      "optional": true
-    }
   },
   "repository": {
     "type": "git",
@@ -43,7 +35,9 @@
       "@angular/service-worker"
     ]
   },
-  "sideEffects": true,
+  "sideEffects": [
+    "./fesm2022/compiler.mjs"
+  ],
   "module": "./fesm2022/compiler.mjs",
   "typings": "./index.d.ts",
   "type": "module",
@@ -53,8 +47,6 @@
     },
     ".": {
       "types": "./index.d.ts",
-      "esm2022": "./esm2022/index.mjs",
-      "esm": "./esm2022/index.mjs",
       "default": "./fesm2022/compiler.mjs"
     }
   }
