@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-810b0a7
+ * @license Angular v20.1.0-next.0+sha-c34efcc
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -11770,7 +11770,23 @@ function assignI18nSlotDependencies(job) {
                         i18nExpressionsInProgress.push(opToRemove);
                         continue;
                     }
+                    let hasDifferentTarget = false;
                     if (hasDependsOnSlotContextTrait(updateOp) && updateOp.target !== createOp.xref) {
+                        hasDifferentTarget = true;
+                    }
+                    else if (
+                    // Some expressions may consume slots as well (e.g. `storeLet`).
+                    updateOp.kind === OpKind.Statement ||
+                        updateOp.kind === OpKind.Variable) {
+                        visitExpressionsInOp(updateOp, (expr) => {
+                            if (!hasDifferentTarget &&
+                                hasDependsOnSlotContextTrait(expr) &&
+                                expr.target !== createOp.xref) {
+                                hasDifferentTarget = true;
+                            }
+                        });
+                    }
+                    if (hasDifferentTarget) {
                         break;
                     }
                     updateOp = updateOp.next;
@@ -25232,11 +25248,16 @@ function allocateSlots(job) {
  */
 function optimizeStoreLet(job) {
     const letUsedExternally = new Set();
+    const declareLetOps = new Map();
     // Since `@let` declarations can be referenced in child views, both in
     // the creation block (via listeners) and in the update block, we have
     // to look through all the ops to find the references.
     for (const unit of job.units) {
         for (const op of unit.ops()) {
+            // Take advantage that we're already looking through all the ops and track some more info.
+            if (op.kind === OpKind.DeclareLet) {
+                declareLetOps.set(op.xref, op);
+            }
             visitExpressionsInOp(op, (expr) => {
                 if (expr instanceof ContextLetReferenceExpr) {
                     letUsedExternally.add(expr.target);
@@ -25244,14 +25265,34 @@ function optimizeStoreLet(job) {
             });
         }
     }
-    // TODO(crisbeto): potentially remove the unused calls completely, pending discussion.
     for (const unit of job.units) {
         for (const op of unit.update) {
-            transformExpressionsInOp(op, (expression) => expression instanceof StoreLetExpr && !letUsedExternally.has(expression.target)
-                ? expression.value
-                : expression, VisitorContextFlag.None);
+            transformExpressionsInOp(op, (expr) => {
+                // If a @let isn't used in other views, we don't have to store its value.
+                if (expr instanceof StoreLetExpr && !letUsedExternally.has(expr.target)) {
+                    // Furthermore, if the @let isn't using pipes, we can also drop its declareLet op.
+                    // We need to keep the declareLet if there are pipes, because they can use DI which
+                    // requires the TNode created by declareLet.
+                    if (!hasPipe(expr)) {
+                        OpList.remove(declareLetOps.get(expr.target));
+                    }
+                    return expr.value;
+                }
+                return expr;
+            }, VisitorContextFlag.None);
         }
     }
+}
+/** Determines if a `storeLet` expression contains a pipe. */
+function hasPipe(root) {
+    let result = false;
+    transformExpressionsInExpression(root, (expr) => {
+        if (expr instanceof PipeBindingExpr || expr instanceof PipeBindingVariadicExpr) {
+            result = true;
+        }
+        return expr;
+    }, VisitorContextFlag.None);
+    return result;
 }
 
 /**
@@ -26211,11 +26252,6 @@ const phases = [
     { kind: CompilationJobKind.Tmpl, fn: generateConditionalExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createPipes },
     { kind: CompilationJobKind.Tmpl, fn: configureDeferInstructions },
-    { kind: CompilationJobKind.Tmpl, fn: convertI18nText },
-    { kind: CompilationJobKind.Tmpl, fn: convertI18nBindings },
-    { kind: CompilationJobKind.Tmpl, fn: removeUnusedI18nAttributesOps },
-    { kind: CompilationJobKind.Tmpl, fn: assignI18nSlotDependencies },
-    { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: createVariadicPipes },
     { kind: CompilationJobKind.Both, fn: generatePureLiteralStructures },
     { kind: CompilationJobKind.Tmpl, fn: generateProjectionDefs },
@@ -26238,6 +26274,11 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: generateTemporaryVariables },
     { kind: CompilationJobKind.Both, fn: optimizeVariables },
     { kind: CompilationJobKind.Both, fn: optimizeStoreLet },
+    { kind: CompilationJobKind.Tmpl, fn: convertI18nText },
+    { kind: CompilationJobKind.Tmpl, fn: convertI18nBindings },
+    { kind: CompilationJobKind.Tmpl, fn: removeUnusedI18nAttributesOps },
+    { kind: CompilationJobKind.Tmpl, fn: assignI18nSlotDependencies },
+    { kind: CompilationJobKind.Tmpl, fn: applyI18nExpressions },
     { kind: CompilationJobKind.Tmpl, fn: allocateSlots },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nElementPlaceholders },
     { kind: CompilationJobKind.Tmpl, fn: resolveI18nExpressionPlaceholders },
@@ -33972,7 +34013,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33990,7 +34031,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34085,7 +34126,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34501,7 +34542,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34536,7 +34577,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34587,7 +34628,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34620,7 +34661,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34671,7 +34712,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-810b0a7'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-c34efcc'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34829,7 +34870,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0-next.0+sha-810b0a7');
+const VERSION = new Version('20.1.0-next.0+sha-c34efcc');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
