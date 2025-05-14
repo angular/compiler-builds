@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-4058f8d
+ * @license Angular v20.1.0-next.0+sha-3aef3e6
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5098,11 +5098,12 @@ let Element$1 = class Element {
     directives;
     children;
     references;
+    isSelfClosing;
     sourceSpan;
     startSourceSpan;
     endSourceSpan;
     i18n;
-    constructor(name, attributes, inputs, outputs, directives, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    constructor(name, attributes, inputs, outputs, directives, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.name = name;
         this.attributes = attributes;
         this.inputs = inputs;
@@ -5110,6 +5111,7 @@ let Element$1 = class Element {
         this.directives = directives;
         this.children = children;
         this.references = references;
+        this.isSelfClosing = isSelfClosing;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
@@ -5416,11 +5418,12 @@ let Component$1 = class Component {
     directives;
     children;
     references;
+    isSelfClosing;
     sourceSpan;
     startSourceSpan;
     endSourceSpan;
     i18n;
-    constructor(componentName, tagName, fullName, attributes, inputs, outputs, directives, children, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    constructor(componentName, tagName, fullName, attributes, inputs, outputs, directives, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.componentName = componentName;
         this.tagName = tagName;
         this.fullName = fullName;
@@ -5430,6 +5433,7 @@ let Component$1 = class Component {
         this.directives = directives;
         this.children = children;
         this.references = references;
+        this.isSelfClosing = isSelfClosing;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
@@ -5474,6 +5478,7 @@ class Template {
     children;
     references;
     variables;
+    isSelfClosing;
     sourceSpan;
     startSourceSpan;
     endSourceSpan;
@@ -5483,7 +5488,7 @@ class Template {
     // `null` is a special case for when there is a structural directive on an `ng-template` so
     // the renderer can differentiate between the synthetic template and the one written in the
     // file.
-    tagName, attributes, inputs, outputs, directives, templateAttrs, children, references, variables, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    tagName, attributes, inputs, outputs, directives, templateAttrs, children, references, variables, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.tagName = tagName;
         this.attributes = attributes;
         this.inputs = inputs;
@@ -5493,6 +5498,7 @@ class Template {
         this.children = children;
         this.references = references;
         this.variables = variables;
+        this.isSelfClosing = isSelfClosing;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
@@ -5506,15 +5512,17 @@ class Content {
     selector;
     attributes;
     children;
+    isSelfClosing;
     sourceSpan;
     startSourceSpan;
     endSourceSpan;
     i18n;
     name = 'ng-content';
-    constructor(selector, attributes, children, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    constructor(selector, attributes, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
         this.selector = selector;
         this.attributes = attributes;
         this.children = children;
+        this.isSelfClosing = isSelfClosing;
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
@@ -13695,14 +13703,16 @@ class Element extends NodeWithI18n {
     attrs;
     directives;
     children;
+    isSelfClosing;
     startSourceSpan;
     endSourceSpan;
-    constructor(name, attrs, directives, children, sourceSpan, startSourceSpan, endSourceSpan = null, i18n) {
+    constructor(name, attrs, directives, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, i18n) {
         super(sourceSpan, i18n);
         this.name = name;
         this.attrs = attrs;
         this.directives = directives;
         this.children = children;
+        this.isSelfClosing = isSelfClosing;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
     }
@@ -13748,9 +13758,10 @@ class Component extends NodeWithI18n {
     attrs;
     directives;
     children;
+    isSelfClosing;
     startSourceSpan;
     endSourceSpan;
-    constructor(componentName, tagName, fullName, attrs, directives, children, sourceSpan, startSourceSpan, endSourceSpan = null, i18n) {
+    constructor(componentName, tagName, fullName, attrs, directives, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, i18n) {
         super(sourceSpan, i18n);
         this.componentName = componentName;
         this.tagName = tagName;
@@ -13758,6 +13769,7 @@ class Component extends NodeWithI18n {
         this.attrs = attrs;
         this.directives = directives;
         this.children = children;
+        this.isSelfClosing = isSelfClosing;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
     }
@@ -17669,7 +17681,7 @@ class _TreeBuilder {
         const span = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
         // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
         const startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
-        const el = new Element(fullName, attrs, directives, [], span, startSpan, undefined);
+        const el = new Element(fullName, attrs, directives, [], selfClosing, span, startSpan, undefined);
         const parent = this._getContainer();
         const isClosedByChild = parent !== null && !!this._getTagDefinition(parent)?.isClosedByChild(el.name);
         this._pushContainer(el, isClosedByChild);
@@ -17698,7 +17710,7 @@ class _TreeBuilder {
         const end = this._peek.sourceSpan.fullStart;
         const span = new ParseSourceSpan(startToken.sourceSpan.start, end, startToken.sourceSpan.fullStart);
         const startSpan = new ParseSourceSpan(startToken.sourceSpan.start, end, startToken.sourceSpan.fullStart);
-        const node = new Component(componentName, tagName, fullName, attrs, directives, [], span, startSpan, undefined);
+        const node = new Component(componentName, tagName, fullName, attrs, directives, [], selfClosing, span, startSpan, undefined);
         const parent = this._getContainer();
         const isClosedByChild = parent !== null &&
             node.tagName !== null &&
@@ -18112,11 +18124,11 @@ class WhitespaceVisitor {
         if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
             // don't descent into elements where we need to preserve whitespaces
             // but still visit all attributes to eliminate one used as a market to preserve WS
-            const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), visitAllWithSiblings(this, element.directives), element.children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), visitAllWithSiblings(this, element.directives), element.children, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
             this.originalNodeMap?.set(newElement, element);
             return newElement;
         }
-        const newElement = new Element(element.name, element.attrs, element.directives, visitAllWithSiblings(this, element.children), element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+        const newElement = new Element(element.name, element.attrs, element.directives, visitAllWithSiblings(this, element.children), element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         this.originalNodeMap?.set(newElement, element);
         return newElement;
     }
@@ -18195,11 +18207,11 @@ class WhitespaceVisitor {
             hasPreserveWhitespacesAttr(node.attrs)) {
             // don't descent into elements where we need to preserve whitespaces
             // but still visit all attributes to eliminate one used as a market to preserve WS
-            const newElement = new Component(node.componentName, node.tagName, node.fullName, visitAllWithSiblings(this, node.attrs), visitAllWithSiblings(this, node.directives), node.children, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.i18n);
+            const newElement = new Component(node.componentName, node.tagName, node.fullName, visitAllWithSiblings(this, node.attrs), visitAllWithSiblings(this, node.directives), node.children, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.i18n);
             this.originalNodeMap?.set(newElement, node);
             return newElement;
         }
-        const newElement = new Component(node.componentName, node.tagName, node.fullName, node.attrs, node.directives, visitAllWithSiblings(this, node.children), node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.i18n);
+        const newElement = new Component(node.componentName, node.tagName, node.fullName, node.attrs, node.directives, visitAllWithSiblings(this, node.children), node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.i18n);
         this.originalNodeMap?.set(newElement, node);
         return newElement;
     }
@@ -29270,7 +29282,7 @@ class HtmlAstToIvyAst {
         if (preparsedElement.type === PreparsedElementType.NG_CONTENT) {
             const selector = preparsedElement.selectAttr;
             const attrs = element.attrs.map((attr) => this.visitAttribute(attr));
-            parsedElement = new Content(selector, attrs, children, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Content(selector, attrs, children, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
             this.ngContentSelectors.push(selector);
         }
         else if (isTemplateElement) {
@@ -29278,11 +29290,11 @@ class HtmlAstToIvyAst {
             const attrs = this.categorizePropertyAttributes(element.name, parsedProperties, i18nAttrsMeta);
             parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, directives, [
             /* no template attributes */
-            ], children, references, variables, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            ], children, references, variables, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         else {
             const attrs = this.categorizePropertyAttributes(element.name, parsedProperties, i18nAttrsMeta);
-            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, directives, children, references, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, directives, children, references, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
         }
         if (elementHasInlineTemplate) {
             // If this node is an inline-template (e.g. has *ngFor) then we need to create a template
@@ -29377,7 +29389,7 @@ class HtmlAstToIvyAst {
             children = visitAll(this, component.children, component.children);
         }
         const attrs = this.categorizePropertyAttributes(component.tagName, parsedProperties, i18nAttrsMeta);
-        let node = new Component$1(component.componentName, component.tagName, component.fullName, attributes, attrs.bound, boundEvents, directives, children, references, component.sourceSpan, component.startSourceSpan, component.endSourceSpan, component.i18n);
+        let node = new Component$1(component.componentName, component.tagName, component.fullName, attributes, attrs.bound, boundEvents, directives, children, references, component.isSelfClosing, component.sourceSpan, component.startSourceSpan, component.endSourceSpan, component.i18n);
         if (elementHasInlineTemplate) {
             node = this.wrapInTemplate(node, templateParsedProperties, templateVariables, i18nAttrsMeta, false, isI18nRootElement);
         }
@@ -29717,7 +29729,7 @@ class HtmlAstToIvyAst {
         // Do not copy over the directives.
         ], templateAttrs, [node], [
         // Do not copy over the references.
-        ], templateVariables, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, i18n);
+        ], templateVariables, false, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, i18n);
     }
     _visitTextWithInterpolation(value, sourceSpan, interpolatedTokens, i18n) {
         const valueNoNgsp = replaceNgsp(value);
@@ -29788,7 +29800,7 @@ class NonBindableVisitor {
         /* inputs */ [], 
         /* outputs */ [], 
         /* directives */ [], children, 
-        /* references */ [], ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        /* references */ [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
     }
     visitComment(comment) {
         return null;
@@ -29829,7 +29841,7 @@ class NonBindableVisitor {
         /* inputs */ [], 
         /* outputs */ [], 
         /* directives */ [], children, 
-        /* references */ [], ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        /* references */ [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
     }
     visitDirective(directive, context) {
         return null;
@@ -32332,7 +32344,7 @@ class _Visitor {
         this._init(_VisitorMode.Merge, interpolationConfig);
         this._translations = translations;
         // Construct a single fake root element
-        const wrapper = new Element('wrapper', [], [], nodes, undefined, undefined, undefined);
+        const wrapper = new Element('wrapper', [], [], nodes, false, undefined, undefined, undefined);
         const translatedNode = wrapper.visit(this, null);
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
@@ -32510,10 +32522,10 @@ class _Visitor {
         this._inImplicitNode = wasInImplicitNode;
         if (this._mode === _VisitorMode.Merge) {
             if (node instanceof Element) {
-                return new Element(node.name, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
+                return new Element(node.name, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
             }
             else {
-                return new Component(node.componentName, node.tagName, node.fullName, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
+                return new Component(node.componentName, node.tagName, node.fullName, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
             }
         }
         return null;
@@ -34013,7 +34025,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34031,7 +34043,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34126,7 +34138,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34542,7 +34554,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34577,7 +34589,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34628,7 +34640,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34661,7 +34673,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34712,7 +34724,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-4058f8d'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-3aef3e6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34870,7 +34882,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0-next.0+sha-4058f8d');
+const VERSION = new Version('20.1.0-next.0+sha-3aef3e6');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //

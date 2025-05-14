@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-4058f8d
+ * @license Angular v20.1.0-next.0+sha-3aef3e6
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -611,9 +611,10 @@ declare class Element$1 extends NodeWithI18n {
     attrs: Attribute[];
     readonly directives: Directive$1[];
     children: Node$1[];
+    readonly isSelfClosing: boolean;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(name: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta$1);
+    constructor(name: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta$1);
     visit(visitor: Visitor$1, context: any): any;
 }
 declare class Comment$1 implements BaseNode {
@@ -639,9 +640,10 @@ declare class Component$1 extends NodeWithI18n {
     attrs: Attribute[];
     readonly directives: Directive$1[];
     readonly children: Node$1[];
+    readonly isSelfClosing: boolean;
     readonly startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
-    constructor(componentName: string, tagName: string | null, fullName: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta$1);
+    constructor(componentName: string, tagName: string | null, fullName: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan?: ParseSourceSpan | null, i18n?: I18nMeta$1);
     visit(visitor: Visitor$1, context: any): any;
 }
 declare class Directive$1 implements BaseNode {
@@ -3279,11 +3281,12 @@ declare class Element implements Node {
     directives: Directive[];
     children: Node[];
     references: Reference[];
+    isSelfClosing: boolean;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
+    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare abstract class DeferredTrigger implements Node {
@@ -3458,11 +3461,12 @@ declare class Component implements Node {
     directives: Directive[];
     children: Node[];
     references: Reference[];
+    isSelfClosing: boolean;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta$1 | undefined;
-    constructor(componentName: string, tagName: string | null, fullName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
+    constructor(componentName: string, tagName: string | null, fullName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class Directive implements Node {
@@ -3488,23 +3492,25 @@ declare class Template implements Node {
     children: Node[];
     references: Reference[];
     variables: Variable[];
+    isSelfClosing: boolean;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta$1 | undefined;
-    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
+    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class Content implements Node {
     selector: string;
     attributes: TextAttribute[];
     children: Node[];
+    isSelfClosing: boolean;
     sourceSpan: ParseSourceSpan;
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta$1 | undefined;
     readonly name = "ng-content";
-    constructor(selector: string, attributes: TextAttribute[], children: Node[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
+    constructor(selector: string, attributes: TextAttribute[], children: Node[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class Variable implements Node {
