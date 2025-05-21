@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-rc.1+sha-abdade9
+ * @license Angular v20.0.0-rc.1+sha-d97892a
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5158,15 +5158,6 @@ declare class Identifiers {
     static syntheticHostProperty: ExternalReference;
     static syntheticHostListener: ExternalReference;
     static attribute: ExternalReference;
-    static attributeInterpolate1: ExternalReference;
-    static attributeInterpolate2: ExternalReference;
-    static attributeInterpolate3: ExternalReference;
-    static attributeInterpolate4: ExternalReference;
-    static attributeInterpolate5: ExternalReference;
-    static attributeInterpolate6: ExternalReference;
-    static attributeInterpolate7: ExternalReference;
-    static attributeInterpolate8: ExternalReference;
-    static attributeInterpolateV: ExternalReference;
     static classProp: ExternalReference;
     static elementContainerStart: ExternalReference;
     static elementContainerEnd: ExternalReference;
@@ -5201,6 +5192,16 @@ declare class Identifiers {
     static stylePropInterpolate7: ExternalReference;
     static stylePropInterpolate8: ExternalReference;
     static stylePropInterpolateV: ExternalReference;
+    static interpolate: ExternalReference;
+    static interpolate1: ExternalReference;
+    static interpolate2: ExternalReference;
+    static interpolate3: ExternalReference;
+    static interpolate4: ExternalReference;
+    static interpolate5: ExternalReference;
+    static interpolate6: ExternalReference;
+    static interpolate7: ExternalReference;
+    static interpolate8: ExternalReference;
+    static interpolateV: ExternalReference;
     static nextContext: ExternalReference;
     static resetView: ExternalReference;
     static templateCreate: ExternalReference;
