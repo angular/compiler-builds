@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.0-rc.1+sha-b90160d
+ * @license Angular v20.0.0-rc.1+sha-e74266b
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5298,6 +5298,7 @@ declare class Identifiers {
     static forwardRef: ExternalReference;
     static resolveForwardRef: ExternalReference;
     static replaceMetadata: ExternalReference;
+    static getReplaceMetadataURL: ExternalReference;
     static ɵɵdefineInjectable: ExternalReference;
     static declareInjectable: ExternalReference;
     static InjectableDeclaration: ExternalReference;
