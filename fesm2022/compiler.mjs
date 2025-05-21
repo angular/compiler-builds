@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-216222f
+ * @license Angular v20.1.0-next.0+sha-373480c
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2704,42 +2704,6 @@ class Identifiers {
         moduleName: CORE,
     };
     static attribute = { name: 'ɵɵattribute', moduleName: CORE };
-    static attributeInterpolate1 = {
-        name: 'ɵɵattributeInterpolate1',
-        moduleName: CORE,
-    };
-    static attributeInterpolate2 = {
-        name: 'ɵɵattributeInterpolate2',
-        moduleName: CORE,
-    };
-    static attributeInterpolate3 = {
-        name: 'ɵɵattributeInterpolate3',
-        moduleName: CORE,
-    };
-    static attributeInterpolate4 = {
-        name: 'ɵɵattributeInterpolate4',
-        moduleName: CORE,
-    };
-    static attributeInterpolate5 = {
-        name: 'ɵɵattributeInterpolate5',
-        moduleName: CORE,
-    };
-    static attributeInterpolate6 = {
-        name: 'ɵɵattributeInterpolate6',
-        moduleName: CORE,
-    };
-    static attributeInterpolate7 = {
-        name: 'ɵɵattributeInterpolate7',
-        moduleName: CORE,
-    };
-    static attributeInterpolate8 = {
-        name: 'ɵɵattributeInterpolate8',
-        moduleName: CORE,
-    };
-    static attributeInterpolateV = {
-        name: 'ɵɵattributeInterpolateV',
-        moduleName: CORE,
-    };
     static classProp = { name: 'ɵɵclassProp', moduleName: CORE };
     static elementContainerStart = {
         name: 'ɵɵelementContainerStart',
@@ -2859,6 +2823,46 @@ class Identifiers {
     };
     static stylePropInterpolateV = {
         name: 'ɵɵstylePropInterpolateV',
+        moduleName: CORE,
+    };
+    static interpolate = {
+        name: 'ɵɵinterpolate',
+        moduleName: CORE,
+    };
+    static interpolate1 = {
+        name: 'ɵɵinterpolate1',
+        moduleName: CORE,
+    };
+    static interpolate2 = {
+        name: 'ɵɵinterpolate2',
+        moduleName: CORE,
+    };
+    static interpolate3 = {
+        name: 'ɵɵinterpolate3',
+        moduleName: CORE,
+    };
+    static interpolate4 = {
+        name: 'ɵɵinterpolate4',
+        moduleName: CORE,
+    };
+    static interpolate5 = {
+        name: 'ɵɵinterpolate5',
+        moduleName: CORE,
+    };
+    static interpolate6 = {
+        name: 'ɵɵinterpolate6',
+        moduleName: CORE,
+    };
+    static interpolate7 = {
+        name: 'ɵɵinterpolate7',
+        moduleName: CORE,
+    };
+    static interpolate8 = {
+        name: 'ɵɵinterpolate8',
+        moduleName: CORE,
+    };
+    static interpolateV = {
+        name: 'ɵɵinterpolateV',
         moduleName: CORE,
     };
     static nextContext = { name: 'ɵɵnextContext', moduleName: CORE };
@@ -23681,13 +23685,10 @@ function propertyInterpolate(name, strings, expressions, sanitizer, sourceSpan) 
     }
     return callVariadicInstruction(PROPERTY_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, sourceSpan);
 }
-function attributeInterpolate(name, strings, expressions, sanitizer, sourceSpan) {
+function attributeInterpolate(name, strings, expressions, sanitizer, namespace, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
-    const extraArgs = [];
-    if (sanitizer !== null) {
-        extraArgs.push(sanitizer);
-    }
-    return callVariadicInstruction(ATTRIBUTE_INTERPOLATE_CONFIG, [literal(name)], interpolationArgs, extraArgs, sourceSpan);
+    const value = callVariadicInstructionExpr(VALUE_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
+    return attribute(name, value, sanitizer, namespace);
 }
 function stylePropInterpolate(name, strings, expressions, unit, sourceSpan) {
     const interpolationArgs = collateInterpolationArgs(strings, expressions);
@@ -23799,6 +23800,26 @@ const PROPERTY_INTERPOLATE_CONFIG = {
         return (n - 1) / 2;
     },
 };
+const VALUE_INTERPOLATE_CONFIG = {
+    constant: [
+        Identifiers.interpolate,
+        Identifiers.interpolate1,
+        Identifiers.interpolate2,
+        Identifiers.interpolate3,
+        Identifiers.interpolate4,
+        Identifiers.interpolate5,
+        Identifiers.interpolate6,
+        Identifiers.interpolate7,
+        Identifiers.interpolate8,
+    ],
+    variable: Identifiers.interpolateV,
+    mapping: (n) => {
+        if (n % 2 === 0) {
+            throw new Error(`Expected odd number of arguments`);
+        }
+        return (n - 1) / 2;
+    },
+};
 /**
  * `InterpolationConfig` for the `stylePropInterpolate` instruction.
  */
@@ -23815,29 +23836,6 @@ const STYLE_PROP_INTERPOLATE_CONFIG = {
         Identifiers.stylePropInterpolate8,
     ],
     variable: Identifiers.stylePropInterpolateV,
-    mapping: (n) => {
-        if (n % 2 === 0) {
-            throw new Error(`Expected odd number of arguments`);
-        }
-        return (n - 1) / 2;
-    },
-};
-/**
- * `InterpolationConfig` for the `attributeInterpolate` instruction.
- */
-const ATTRIBUTE_INTERPOLATE_CONFIG = {
-    constant: [
-        Identifiers.attribute,
-        Identifiers.attributeInterpolate1,
-        Identifiers.attributeInterpolate2,
-        Identifiers.attributeInterpolate3,
-        Identifiers.attributeInterpolate4,
-        Identifiers.attributeInterpolate5,
-        Identifiers.attributeInterpolate6,
-        Identifiers.attributeInterpolate7,
-        Identifiers.attributeInterpolate8,
-    ],
-    variable: Identifiers.attributeInterpolateV,
     mapping: (n) => {
         if (n % 2 === 0) {
             throw new Error(`Expected odd number of arguments`);
@@ -24243,7 +24241,7 @@ function reifyUpdateOperations(_unit, ops) {
                 break;
             case OpKind.Attribute:
                 if (op.expression instanceof Interpolation) {
-                    OpList.replace(op, attributeInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sanitizer, op.sourceSpan));
+                    OpList.replace(op, attributeInterpolate(op.name, op.expression.strings, op.expression.expressions, op.sanitizer, op.namespace, op.sourceSpan));
                 }
                 else {
                     OpList.replace(op, attribute(op.name, op.expression, op.sanitizer, op.namespace));
@@ -34043,7 +34041,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34061,7 +34059,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34156,7 +34154,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34572,7 +34570,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34607,7 +34605,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34658,7 +34656,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34691,7 +34689,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34742,7 +34740,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-216222f'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-373480c'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34898,7 +34896,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0-next.0+sha-216222f');
+const VERSION = new Version('20.1.0-next.0+sha-373480c');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
