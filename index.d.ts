@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-82327f2
+ * @license Angular v20.1.0-next.0+sha-04656d0
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5184,35 +5184,8 @@ declare class Identifiers {
     static elementContainerEnd: ExternalReference;
     static elementContainer: ExternalReference;
     static styleMap: ExternalReference;
-    static styleMapInterpolate1: ExternalReference;
-    static styleMapInterpolate2: ExternalReference;
-    static styleMapInterpolate3: ExternalReference;
-    static styleMapInterpolate4: ExternalReference;
-    static styleMapInterpolate5: ExternalReference;
-    static styleMapInterpolate6: ExternalReference;
-    static styleMapInterpolate7: ExternalReference;
-    static styleMapInterpolate8: ExternalReference;
-    static styleMapInterpolateV: ExternalReference;
     static classMap: ExternalReference;
-    static classMapInterpolate1: ExternalReference;
-    static classMapInterpolate2: ExternalReference;
-    static classMapInterpolate3: ExternalReference;
-    static classMapInterpolate4: ExternalReference;
-    static classMapInterpolate5: ExternalReference;
-    static classMapInterpolate6: ExternalReference;
-    static classMapInterpolate7: ExternalReference;
-    static classMapInterpolate8: ExternalReference;
-    static classMapInterpolateV: ExternalReference;
     static styleProp: ExternalReference;
-    static stylePropInterpolate1: ExternalReference;
-    static stylePropInterpolate2: ExternalReference;
-    static stylePropInterpolate3: ExternalReference;
-    static stylePropInterpolate4: ExternalReference;
-    static stylePropInterpolate5: ExternalReference;
-    static stylePropInterpolate6: ExternalReference;
-    static stylePropInterpolate7: ExternalReference;
-    static stylePropInterpolate8: ExternalReference;
-    static stylePropInterpolateV: ExternalReference;
     static interpolate: ExternalReference;
     static interpolate1: ExternalReference;
     static interpolate2: ExternalReference;
@@ -5290,16 +5263,6 @@ declare class Identifiers {
     static pipeBindV: ExternalReference;
     static domProperty: ExternalReference;
     static property: ExternalReference;
-    static propertyInterpolate: ExternalReference;
-    static propertyInterpolate1: ExternalReference;
-    static propertyInterpolate2: ExternalReference;
-    static propertyInterpolate3: ExternalReference;
-    static propertyInterpolate4: ExternalReference;
-    static propertyInterpolate5: ExternalReference;
-    static propertyInterpolate6: ExternalReference;
-    static propertyInterpolate7: ExternalReference;
-    static propertyInterpolate8: ExternalReference;
-    static propertyInterpolateV: ExternalReference;
     static i18n: ExternalReference;
     static i18nAttributes: ExternalReference;
     static i18nExp: ExternalReference;
