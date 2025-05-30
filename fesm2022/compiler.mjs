@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-5ccc654
+ * @license Angular v20.1.0-next.0+sha-a70f03a
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -23823,10 +23823,9 @@ function reifyCreateOperations(unit, ops) {
                             args = [];
                         }
                         else {
-                            if (op.trigger.targetSlot?.slot == null || op.trigger.targetSlotViewSteps === null) {
-                                throw new Error(`Slot or view steps not set in trigger reification for trigger kind ${op.trigger.kind}`);
-                            }
-                            args = [op.trigger.targetSlot.slot];
+                            // The slots not being defined at this point is invalid, however we
+                            // catch it during type checking. Pass in null in such cases.
+                            args = [op.trigger.targetSlot?.slot ?? null];
                             if (op.trigger.targetSlotViewSteps !== 0) {
                                 args.push(op.trigger.targetSlotViewSteps);
                             }
@@ -28561,7 +28560,7 @@ class OnTriggerParser {
                     this.trackTrigger('timer', createTimerTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan));
                     break;
                 case OnTriggerType.INTERACTION:
-                    this.trackTrigger('interaction', createInteractionTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.placeholder, this.validator));
+                    this.trackTrigger('interaction', createInteractionTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.validator));
                     break;
                 case OnTriggerType.IMMEDIATE:
                     this.trackTrigger('immediate', createImmediateTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan));
@@ -28570,7 +28569,7 @@ class OnTriggerParser {
                     this.trackTrigger('hover', createHoverTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.placeholder, this.validator));
                     break;
                 case OnTriggerType.VIEWPORT:
-                    this.trackTrigger('viewport', createViewportTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.placeholder, this.validator));
+                    this.trackTrigger('viewport', createViewportTrigger(parameters, nameSpan, sourceSpan, this.prefetchSpan, this.onSourceSpan, this.hydrateSpan, this.validator));
                     break;
                 default:
                     throw new Error(`Unrecognized trigger type "${identifier}"`);
@@ -28683,35 +28682,25 @@ function createImmediateTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, 
     return new ImmediateDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
 function createHoverTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, placeholder, validator) {
-    validator(OnTriggerType.HOVER, parameters, placeholder);
+    validator(OnTriggerType.HOVER, parameters);
     return new HoverDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createInteractionTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, placeholder, validator) {
-    validator(OnTriggerType.INTERACTION, parameters, placeholder);
+function createInteractionTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, validator) {
+    validator(OnTriggerType.INTERACTION, parameters);
     return new InteractionDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
-function createViewportTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, placeholder, validator) {
-    validator(OnTriggerType.VIEWPORT, parameters, placeholder);
+function createViewportTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, validator) {
+    validator(OnTriggerType.VIEWPORT, parameters);
     return new ViewportDeferredTrigger(parameters[0] ?? null, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
 /**
  * Checks whether the structure of a non-hydrate reference-based trigger is valid.
  * @param type Type of the trigger being validated.
  * @param parameters Parameters of the trigger.
- * @param placeholder Placeholder of the defer block.
  */
-function validatePlainReferenceBasedTrigger(type, parameters, placeholder) {
+function validatePlainReferenceBasedTrigger(type, parameters) {
     if (parameters.length > 1) {
         throw new Error(`"${type}" trigger can only have zero or one parameters`);
-    }
-    if (parameters.length === 0) {
-        if (placeholder === null) {
-            throw new Error(`"${type}" trigger with no parameters can only be placed on an @defer that has a @placeholder block`);
-        }
-        if (placeholder.children.length !== 1 || !(placeholder.children[0] instanceof Element$1)) {
-            throw new Error(`"${type}" trigger with no parameters can only be placed on an @defer that has a ` +
-                `@placeholder block with exactly one root element node`);
-        }
     }
 }
 /**
@@ -31222,7 +31211,7 @@ class R3BoundTarget {
         }
         const name = trigger.reference;
         if (name === null) {
-            let trigger = null;
+            let target = null;
             if (block.placeholder !== null) {
                 for (const child of block.placeholder.children) {
                     // Skip over comment nodes. Currently by default the template parser doesn't capture
@@ -31232,15 +31221,15 @@ class R3BoundTarget {
                     }
                     // We can only infer the trigger if there's one root element node. Any other
                     // nodes at the root make it so that we can't infer the trigger anymore.
-                    if (trigger !== null) {
+                    if (target !== null) {
                         return null;
                     }
                     if (child instanceof Element$1) {
-                        trigger = child;
+                        target = child;
                     }
                 }
             }
-            return trigger;
+            return target;
         }
         const outsideRef = this.findEntityInScope(block, name);
         // First try to resolve the target in the scope of the main deferred block. Note that we
@@ -33774,7 +33763,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33792,7 +33781,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33887,7 +33876,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34303,7 +34292,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34338,7 +34327,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34389,7 +34378,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34422,7 +34411,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34473,7 +34462,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-5ccc654'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-a70f03a'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34629,7 +34618,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0-next.0+sha-5ccc654');
+const VERSION = new Version('20.1.0-next.0+sha-a70f03a');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
