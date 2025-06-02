@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-744a1fa
+ * @license Angular v20.1.0-next.0+sha-5a76826
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2227,15 +2227,13 @@ declare const enum ParseFlags {
     Action = 1
 }
 declare class Parser {
-    private _lexer;
-    private _supportsDirectPipeReferences;
-    private errors;
+    private readonly _lexer;
+    private readonly _supportsDirectPipeReferences;
     constructor(_lexer: Lexer, _supportsDirectPipeReferences?: boolean);
     parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
     parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    private _reportError;
     private _parseBindingAst;
     /**
      * Parse microsyntax template expression and return a list of bindings or
@@ -2279,7 +2277,7 @@ declare class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input: string, location: string, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): SplitInterpolation;
+    splitInterpolation(input: string, location: string, errors: ParserError[], interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): SplitInterpolation;
     wrapLiteralPrimitive(input: string | null, location: string, absoluteOffset: number): ASTWithSource;
     private _stripComments;
     private _commentStart;

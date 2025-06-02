@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-744a1fa
+ * @license Angular v20.1.0-next.0+sha-5a76826
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18688,21 +18688,22 @@ class TemplateBindingParseResult {
 class Parser {
     _lexer;
     _supportsDirectPipeReferences;
-    errors = [];
     constructor(_lexer, _supportsDirectPipeReferences = false) {
         this._lexer = _lexer;
         this._supportsDirectPipeReferences = _supportsDirectPipeReferences;
     }
     parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        this._checkNoInterpolation(input, location, interpolationConfig);
+        const errors = [];
+        this._checkNoInterpolation(errors, input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(input, location, absoluteOffset, tokens, 1 /* ParseFlags.Action */, this.errors, 0, this._supportsDirectPipeReferences).parseChain();
-        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
+        const ast = new _ParseAST(input, location, absoluteOffset, tokens, 1 /* ParseFlags.Action */, errors, 0, this._supportsDirectPipeReferences).parseChain();
+        return new ASTWithSource(ast, input, location, absoluteOffset, errors);
     }
     parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
-        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
+        const errors = [];
+        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig, errors);
+        return new ASTWithSource(ast, input, location, absoluteOffset, errors);
     }
     checkSimpleExpression(ast) {
         const checker = new SimpleExpressionChecker();
@@ -18711,21 +18712,19 @@ class Parser {
     }
     // Host bindings parsed here
     parseSimpleBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig);
-        const errors = this.checkSimpleExpression(ast);
-        if (errors.length > 0) {
-            this._reportError(`Host binding expression cannot contain ${errors.join(' ')}`, input, location);
+        const errors = [];
+        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig, errors);
+        const simplExpressionErrors = this.checkSimpleExpression(ast);
+        if (simplExpressionErrors.length > 0) {
+            errors.push(new ParserError(`Host binding expression cannot contain ${simplExpressionErrors.join(' ')}`, input, location));
         }
-        return new ASTWithSource(ast, input, location, absoluteOffset, this.errors);
+        return new ASTWithSource(ast, input, location, absoluteOffset, errors);
     }
-    _reportError(message, input, errLocation, ctxLocation) {
-        this.errors.push(new ParserError(message, input, errLocation, ctxLocation));
-    }
-    _parseBindingAst(input, location, absoluteOffset, interpolationConfig) {
-        this._checkNoInterpolation(input, location, interpolationConfig);
+    _parseBindingAst(input, location, absoluteOffset, interpolationConfig, errors) {
+        this._checkNoInterpolation(errors, input, location, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0, this._supportsDirectPipeReferences).parseChain();
+        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
     }
     /**
      * Parse microsyntax template expression and return a list of bindings or
@@ -18755,14 +18754,16 @@ class Parser {
      */
     parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
         const tokens = this._lexer.tokenize(templateValue);
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0 /* relative offset */, this._supportsDirectPipeReferences);
+        const errors = [];
+        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, errors, 0 /* relative offset */, this._supportsDirectPipeReferences);
         return parser.parseTemplateBindings({
             source: templateKey,
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
         });
     }
     parseInterpolation(input, location, absoluteOffset, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
-        const { strings, expressions, offsets } = this.splitInterpolation(input, location, interpolatedTokens, interpolationConfig);
+        const errors = [];
+        const { strings, expressions, offsets } = this.splitInterpolation(input, location, errors, interpolatedTokens, interpolationConfig);
         if (expressions.length === 0)
             return null;
         const expressionNodes = [];
@@ -18770,10 +18771,10 @@ class Parser {
             const expressionText = expressions[i].text;
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, offsets[i], this._supportsDirectPipeReferences).parseChain();
+            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, offsets[i], this._supportsDirectPipeReferences).parseChain();
             expressionNodes.push(ast);
         }
-        return this.createInterpolationAst(strings.map((s) => s.text), expressionNodes, input, location, absoluteOffset);
+        return this.createInterpolationAst(strings.map((s) => s.text), expressionNodes, input, location, absoluteOffset, errors);
     }
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
@@ -18783,14 +18784,15 @@ class Parser {
     parseInterpolationExpression(expression, location, absoluteOffset) {
         const sourceToLex = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, this.errors, 0, this._supportsDirectPipeReferences).parseChain();
+        const errors = [];
+        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
         const strings = ['', '']; // The prefix and suffix strings are both empty
-        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset);
+        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset, errors);
     }
-    createInterpolationAst(strings, expressions, input, location, absoluteOffset) {
+    createInterpolationAst(strings, expressions, input, location, absoluteOffset, errors) {
         const span = new ParseSpan(0, input.length);
         const interpolation = new Interpolation$1(span, span.toAbsolute(absoluteOffset), strings, expressions);
-        return new ASTWithSource(interpolation, input, location, absoluteOffset, this.errors);
+        return new ASTWithSource(interpolation, input, location, absoluteOffset, errors);
     }
     /**
      * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -18799,7 +18801,7 @@ class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input, location, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    splitInterpolation(input, location, errors, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const strings = [];
         const expressions = [];
         const offsets = [];
@@ -18837,7 +18839,7 @@ class Parser {
                 const fullEnd = exprEnd + interpEnd.length;
                 const text = input.substring(exprStart, exprEnd);
                 if (text.trim().length === 0) {
-                    this._reportError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location);
+                    errors.push(new ParserError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location));
                 }
                 expressions.push({ text, start: fullStart, end: fullEnd });
                 const startInOriginalTemplate = inputToTemplateIndexMap?.get(fullStart) ?? fullStart;
@@ -18862,7 +18864,7 @@ class Parser {
     }
     wrapLiteralPrimitive(input, location, absoluteOffset) {
         const span = new ParseSpan(0, input == null ? 0 : input.length);
-        return new ASTWithSource(new LiteralPrimitive(span, span.toAbsolute(absoluteOffset), input), input, location, absoluteOffset, this.errors);
+        return new ASTWithSource(new LiteralPrimitive(span, span.toAbsolute(absoluteOffset), input), input, location, absoluteOffset, []);
     }
     _stripComments(input) {
         const i = this._commentStart(input);
@@ -18884,7 +18886,7 @@ class Parser {
         }
         return null;
     }
-    _checkNoInterpolation(input, location, { start, end }) {
+    _checkNoInterpolation(errors, input, location, { start, end }) {
         let startIndex = -1;
         let endIndex = -1;
         for (const charIndex of this._forEachUnquotedChar(input, 0)) {
@@ -18901,7 +18903,7 @@ class Parser {
             }
         }
         if (startIndex > -1 && endIndex > -1) {
-            this._reportError(`Got interpolation (${start}${end}) where expression was expected`, input, `at column ${startIndex} in`, location);
+            errors.push(new ParserError(`Got interpolation (${start}${end}) where expression was expected`, input, `at column ${startIndex} in`, location));
         }
     }
     /**
@@ -33763,7 +33765,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33781,7 +33783,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33876,7 +33878,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34292,7 +34294,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34327,7 +34329,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34378,7 +34380,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34411,7 +34413,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34462,7 +34464,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.0+sha-744a1fa'));
+    definitionMap.set('version', literal('20.1.0-next.0+sha-5a76826'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34618,7 +34620,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0-next.0+sha-744a1fa');
+const VERSION = new Version('20.1.0-next.0+sha-5a76826');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
