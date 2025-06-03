@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.0+sha-c663277
+ * @license Angular v20.1.0-next.0+sha-5813dbd
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -896,24 +896,25 @@ declare enum UnaryOperator {
 declare enum BinaryOperator {
     Equals = 0,
     NotEquals = 1,
-    Identical = 2,
-    NotIdentical = 3,
-    Minus = 4,
-    Plus = 5,
-    Divide = 6,
-    Multiply = 7,
-    Modulo = 8,
-    And = 9,
-    Or = 10,
-    BitwiseOr = 11,
-    BitwiseAnd = 12,
-    Lower = 13,
-    LowerEquals = 14,
-    Bigger = 15,
-    BiggerEquals = 16,
-    NullishCoalesce = 17,
-    Exponentiation = 18,
-    In = 19
+    Assign = 2,
+    Identical = 3,
+    NotIdentical = 4,
+    Minus = 5,
+    Plus = 6,
+    Divide = 7,
+    Multiply = 8,
+    Modulo = 9,
+    And = 10,
+    Or = 11,
+    BitwiseOr = 12,
+    BitwiseAnd = 13,
+    Lower = 14,
+    LowerEquals = 15,
+    Bigger = 16,
+    BiggerEquals = 17,
+    NullishCoalesce = 18,
+    Exponentiation = 19,
+    In = 20
 }
 declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -970,7 +971,7 @@ declare class ReadVarExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     clone(): ReadVarExpr;
-    set(value: Expression): WriteVarExpr;
+    set(value: Expression): BinaryOperatorExpr;
 }
 declare class TypeofExpr extends Expression {
     expr: Expression;
@@ -995,37 +996,6 @@ declare class WrappedNodeExpr<T> extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     clone(): WrappedNodeExpr<T>;
-}
-declare class WriteVarExpr extends Expression {
-    name: string;
-    value: Expression;
-    constructor(name: string, value: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
-    isEquivalent(e: Expression): boolean;
-    isConstant(): boolean;
-    visitExpression(visitor: ExpressionVisitor, context: any): any;
-    clone(): WriteVarExpr;
-    toDeclStmt(type?: Type$1 | null, modifiers?: StmtModifier): DeclareVarStmt;
-    toConstDecl(): DeclareVarStmt;
-}
-declare class WriteKeyExpr extends Expression {
-    receiver: Expression;
-    index: Expression;
-    value: Expression;
-    constructor(receiver: Expression, index: Expression, value: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
-    isEquivalent(e: Expression): boolean;
-    isConstant(): boolean;
-    visitExpression(visitor: ExpressionVisitor, context: any): any;
-    clone(): WriteKeyExpr;
-}
-declare class WritePropExpr extends Expression {
-    receiver: Expression;
-    name: string;
-    value: Expression;
-    constructor(receiver: Expression, name: string, value: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
-    isEquivalent(e: Expression): boolean;
-    isConstant(): boolean;
-    visitExpression(visitor: ExpressionVisitor, context: any): any;
-    clone(): WritePropExpr;
 }
 declare class InvokeFunctionExpr extends Expression {
     fn: Expression;
@@ -1251,7 +1221,7 @@ declare class ReadPropExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    set(value: Expression): WritePropExpr;
+    set(value: Expression): BinaryOperatorExpr;
     clone(): ReadPropExpr;
 }
 declare class ReadKeyExpr extends Expression {
@@ -1261,7 +1231,7 @@ declare class ReadKeyExpr extends Expression {
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
-    set(value: Expression): WriteKeyExpr;
+    set(value: Expression): BinaryOperatorExpr;
     clone(): ReadKeyExpr;
 }
 declare class LiteralArrayExpr extends Expression {
@@ -1299,9 +1269,6 @@ declare class CommaExpr extends Expression {
 }
 interface ExpressionVisitor {
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
-    visitWriteVarExpr(expr: WriteVarExpr, context: any): any;
-    visitWriteKeyExpr(expr: WriteKeyExpr, context: any): any;
-    visitWritePropExpr(expr: WritePropExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitTaggedTemplateLiteralExpr(ast: TaggedTemplateLiteralExpr, context: any): any;
     visitTemplateLiteralExpr(ast: TemplateLiteralExpr, context: any): any;
@@ -1416,9 +1383,6 @@ declare class RecursiveAstVisitor$1 implements StatementVisitor, ExpressionVisit
     visitTransplantedType(type: TransplantedType<unknown>, context: any): any;
     visitWrappedNodeExpr(ast: WrappedNodeExpr<any>, context: any): any;
     visitReadVarExpr(ast: ReadVarExpr, context: any): any;
-    visitWriteVarExpr(ast: WriteVarExpr, context: any): any;
-    visitWriteKeyExpr(ast: WriteKeyExpr, context: any): any;
-    visitWritePropExpr(ast: WritePropExpr, context: any): any;
     visitDynamicImportExpr(ast: DynamicImportExpr, context: any): any;
     visitInvokeFunctionExpr(ast: InvokeFunctionExpr, context: any): any;
     visitTaggedTemplateLiteralExpr(ast: TaggedTemplateLiteralExpr, context: any): any;
@@ -1603,12 +1567,6 @@ type output_ast_d_VoidExpr = VoidExpr;
 declare const output_ast_d_VoidExpr: typeof VoidExpr;
 type output_ast_d_WrappedNodeExpr<T> = WrappedNodeExpr<T>;
 declare const output_ast_d_WrappedNodeExpr: typeof WrappedNodeExpr;
-type output_ast_d_WriteKeyExpr = WriteKeyExpr;
-declare const output_ast_d_WriteKeyExpr: typeof WriteKeyExpr;
-type output_ast_d_WritePropExpr = WritePropExpr;
-declare const output_ast_d_WritePropExpr: typeof WritePropExpr;
-type output_ast_d_WriteVarExpr = WriteVarExpr;
-declare const output_ast_d_WriteVarExpr: typeof WriteVarExpr;
 declare const output_ast_d_areAllEquivalent: typeof areAllEquivalent;
 declare const output_ast_d_arrowFn: typeof arrowFn;
 declare const output_ast_d_expressionType: typeof expressionType;
@@ -1631,7 +1589,7 @@ declare const output_ast_d_typeofExpr: typeof typeofExpr;
 declare const output_ast_d_unary: typeof unary;
 declare const output_ast_d_variable: typeof variable;
 declare namespace output_ast_d {
-  export { output_ast_d_ArrayType as ArrayType, output_ast_d_ArrowFunctionExpr as ArrowFunctionExpr, output_ast_d_BOOL_TYPE as BOOL_TYPE, output_ast_d_BinaryOperator as BinaryOperator, output_ast_d_BinaryOperatorExpr as BinaryOperatorExpr, output_ast_d_BuiltinType as BuiltinType, output_ast_d_BuiltinTypeName as BuiltinTypeName, output_ast_d_CommaExpr as CommaExpr, output_ast_d_ConditionalExpr as ConditionalExpr, output_ast_d_DYNAMIC_TYPE as DYNAMIC_TYPE, output_ast_d_DeclareFunctionStmt as DeclareFunctionStmt, output_ast_d_DeclareVarStmt as DeclareVarStmt, output_ast_d_DynamicImportExpr as DynamicImportExpr, output_ast_d_Expression as Expression, output_ast_d_ExpressionStatement as ExpressionStatement, output_ast_d_ExpressionType as ExpressionType, output_ast_d_ExternalExpr as ExternalExpr, output_ast_d_ExternalReference as ExternalReference, output_ast_d_FUNCTION_TYPE as FUNCTION_TYPE, output_ast_d_FnParam as FnParam, output_ast_d_FunctionExpr as FunctionExpr, output_ast_d_INFERRED_TYPE as INFERRED_TYPE, output_ast_d_INT_TYPE as INT_TYPE, output_ast_d_IfStmt as IfStmt, output_ast_d_InstantiateExpr as InstantiateExpr, output_ast_d_InvokeFunctionExpr as InvokeFunctionExpr, output_ast_d_JSDocComment as JSDocComment, output_ast_d_JSDocTagName as JSDocTagName, output_ast_d_LeadingComment as LeadingComment, output_ast_d_LiteralArrayExpr as LiteralArrayExpr, output_ast_d_LiteralExpr as LiteralExpr, output_ast_d_LiteralMapEntry as LiteralMapEntry, output_ast_d_LiteralMapExpr as LiteralMapExpr, output_ast_d_LiteralPiece as LiteralPiece, output_ast_d_LocalizedString as LocalizedString, output_ast_d_MapType as MapType, output_ast_d_NONE_TYPE as NONE_TYPE, output_ast_d_NULL_EXPR as NULL_EXPR, output_ast_d_NUMBER_TYPE as NUMBER_TYPE, output_ast_d_NotExpr as NotExpr, output_ast_d_ParenthesizedExpr as ParenthesizedExpr, output_ast_d_PlaceholderPiece as PlaceholderPiece, output_ast_d_ReadKeyExpr as ReadKeyExpr, output_ast_d_ReadPropExpr as ReadPropExpr, output_ast_d_ReadVarExpr as ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, output_ast_d_ReturnStatement as ReturnStatement, output_ast_d_STRING_TYPE as STRING_TYPE, output_ast_d_Statement as Statement, output_ast_d_StmtModifier as StmtModifier, output_ast_d_TYPED_NULL_EXPR as TYPED_NULL_EXPR, output_ast_d_TaggedTemplateLiteralExpr as TaggedTemplateLiteralExpr, output_ast_d_TemplateLiteralElementExpr as TemplateLiteralElementExpr, output_ast_d_TemplateLiteralExpr as TemplateLiteralExpr, output_ast_d_TransplantedType as TransplantedType, Type$1 as Type, output_ast_d_TypeModifier as TypeModifier, output_ast_d_TypeofExpr as TypeofExpr, output_ast_d_UnaryOperator as UnaryOperator, output_ast_d_UnaryOperatorExpr as UnaryOperatorExpr, output_ast_d_VoidExpr as VoidExpr, output_ast_d_WrappedNodeExpr as WrappedNodeExpr, output_ast_d_WriteKeyExpr as WriteKeyExpr, output_ast_d_WritePropExpr as WritePropExpr, output_ast_d_WriteVarExpr as WriteVarExpr, output_ast_d_areAllEquivalent as areAllEquivalent, output_ast_d_arrowFn as arrowFn, output_ast_d_expressionType as expressionType, output_ast_d_fn as fn, output_ast_d_ifStmt as ifStmt, output_ast_d_importExpr as importExpr, output_ast_d_importType as importType, output_ast_d_isNull as isNull, output_ast_d_jsDocComment as jsDocComment, output_ast_d_leadingComment as leadingComment, output_ast_d_literal as literal, output_ast_d_literalArr as literalArr, output_ast_d_literalMap as literalMap, output_ast_d_localizedString as localizedString, output_ast_d_not as not, output_ast_d_nullSafeIsEquivalent as nullSafeIsEquivalent, output_ast_d_taggedTemplate as taggedTemplate, output_ast_d_transplantedType as transplantedType, output_ast_d_typeofExpr as typeofExpr, output_ast_d_unary as unary, output_ast_d_variable as variable };
+  export { output_ast_d_ArrayType as ArrayType, output_ast_d_ArrowFunctionExpr as ArrowFunctionExpr, output_ast_d_BOOL_TYPE as BOOL_TYPE, output_ast_d_BinaryOperator as BinaryOperator, output_ast_d_BinaryOperatorExpr as BinaryOperatorExpr, output_ast_d_BuiltinType as BuiltinType, output_ast_d_BuiltinTypeName as BuiltinTypeName, output_ast_d_CommaExpr as CommaExpr, output_ast_d_ConditionalExpr as ConditionalExpr, output_ast_d_DYNAMIC_TYPE as DYNAMIC_TYPE, output_ast_d_DeclareFunctionStmt as DeclareFunctionStmt, output_ast_d_DeclareVarStmt as DeclareVarStmt, output_ast_d_DynamicImportExpr as DynamicImportExpr, output_ast_d_Expression as Expression, output_ast_d_ExpressionStatement as ExpressionStatement, output_ast_d_ExpressionType as ExpressionType, output_ast_d_ExternalExpr as ExternalExpr, output_ast_d_ExternalReference as ExternalReference, output_ast_d_FUNCTION_TYPE as FUNCTION_TYPE, output_ast_d_FnParam as FnParam, output_ast_d_FunctionExpr as FunctionExpr, output_ast_d_INFERRED_TYPE as INFERRED_TYPE, output_ast_d_INT_TYPE as INT_TYPE, output_ast_d_IfStmt as IfStmt, output_ast_d_InstantiateExpr as InstantiateExpr, output_ast_d_InvokeFunctionExpr as InvokeFunctionExpr, output_ast_d_JSDocComment as JSDocComment, output_ast_d_JSDocTagName as JSDocTagName, output_ast_d_LeadingComment as LeadingComment, output_ast_d_LiteralArrayExpr as LiteralArrayExpr, output_ast_d_LiteralExpr as LiteralExpr, output_ast_d_LiteralMapEntry as LiteralMapEntry, output_ast_d_LiteralMapExpr as LiteralMapExpr, output_ast_d_LiteralPiece as LiteralPiece, output_ast_d_LocalizedString as LocalizedString, output_ast_d_MapType as MapType, output_ast_d_NONE_TYPE as NONE_TYPE, output_ast_d_NULL_EXPR as NULL_EXPR, output_ast_d_NUMBER_TYPE as NUMBER_TYPE, output_ast_d_NotExpr as NotExpr, output_ast_d_ParenthesizedExpr as ParenthesizedExpr, output_ast_d_PlaceholderPiece as PlaceholderPiece, output_ast_d_ReadKeyExpr as ReadKeyExpr, output_ast_d_ReadPropExpr as ReadPropExpr, output_ast_d_ReadVarExpr as ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, output_ast_d_ReturnStatement as ReturnStatement, output_ast_d_STRING_TYPE as STRING_TYPE, output_ast_d_Statement as Statement, output_ast_d_StmtModifier as StmtModifier, output_ast_d_TYPED_NULL_EXPR as TYPED_NULL_EXPR, output_ast_d_TaggedTemplateLiteralExpr as TaggedTemplateLiteralExpr, output_ast_d_TemplateLiteralElementExpr as TemplateLiteralElementExpr, output_ast_d_TemplateLiteralExpr as TemplateLiteralExpr, output_ast_d_TransplantedType as TransplantedType, Type$1 as Type, output_ast_d_TypeModifier as TypeModifier, output_ast_d_TypeofExpr as TypeofExpr, output_ast_d_UnaryOperator as UnaryOperator, output_ast_d_UnaryOperatorExpr as UnaryOperatorExpr, output_ast_d_VoidExpr as VoidExpr, output_ast_d_WrappedNodeExpr as WrappedNodeExpr, output_ast_d_areAllEquivalent as areAllEquivalent, output_ast_d_arrowFn as arrowFn, output_ast_d_expressionType as expressionType, output_ast_d_fn as fn, output_ast_d_ifStmt as ifStmt, output_ast_d_importExpr as importExpr, output_ast_d_importType as importType, output_ast_d_isNull as isNull, output_ast_d_jsDocComment as jsDocComment, output_ast_d_leadingComment as leadingComment, output_ast_d_literal as literal, output_ast_d_literalArr as literalArr, output_ast_d_literalMap as literalMap, output_ast_d_localizedString as localizedString, output_ast_d_not as not, output_ast_d_nullSafeIsEquivalent as nullSafeIsEquivalent, output_ast_d_taggedTemplate as taggedTemplate, output_ast_d_transplantedType as transplantedType, output_ast_d_typeofExpr as typeofExpr, output_ast_d_unary as unary, output_ast_d_variable as variable };
   export type { output_ast_d_CookedRawString as CookedRawString, output_ast_d_ExpressionVisitor as ExpressionVisitor, output_ast_d_JSDocTag as JSDocTag, output_ast_d_MessagePiece as MessagePiece, output_ast_d_StatementVisitor as StatementVisitor, output_ast_d_TypeVisitor as TypeVisitor };
 }
 
@@ -1765,13 +1723,6 @@ declare class PropertyRead extends ASTWithName {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan, receiver: AST, name: string);
     visit(visitor: AstVisitor, context?: any): any;
 }
-declare class PropertyWrite extends ASTWithName {
-    receiver: AST;
-    name: string;
-    value: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan, receiver: AST, name: string, value: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
 declare class SafePropertyRead extends ASTWithName {
     receiver: AST;
     name: string;
@@ -1788,13 +1739,6 @@ declare class SafeKeyedRead extends AST {
     receiver: AST;
     key: AST;
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class KeyedWrite extends AST {
-    receiver: AST;
-    key: AST;
-    value: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST, value: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
 /** Possible types for a pipe. */
@@ -2020,7 +1964,6 @@ interface AstVisitor {
     visitImplicitReceiver(ast: ImplicitReceiver, context: any): any;
     visitInterpolation(ast: Interpolation, context: any): any;
     visitKeyedRead(ast: KeyedRead, context: any): any;
-    visitKeyedWrite(ast: KeyedWrite, context: any): any;
     visitLiteralArray(ast: LiteralArray, context: any): any;
     visitLiteralMap(ast: LiteralMap, context: any): any;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
@@ -2030,7 +1973,6 @@ interface AstVisitor {
     visitVoidExpression(ast: TypeofExpression, context: any): any;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
-    visitPropertyWrite(ast: PropertyWrite, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
@@ -2059,7 +2001,6 @@ declare class RecursiveAstVisitor implements AstVisitor {
     visitThisReceiver(ast: ThisReceiver, context: any): any;
     visitInterpolation(ast: Interpolation, context: any): any;
     visitKeyedRead(ast: KeyedRead, context: any): any;
-    visitKeyedWrite(ast: KeyedWrite, context: any): any;
     visitLiteralArray(ast: LiteralArray, context: any): any;
     visitLiteralMap(ast: LiteralMap, context: any): any;
     visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
@@ -2068,7 +2009,6 @@ declare class RecursiveAstVisitor implements AstVisitor {
     visitVoidExpression(ast: VoidExpression, context: any): void;
     visitNonNullAssert(ast: NonNullAssert, context: any): any;
     visitPropertyRead(ast: PropertyRead, context: any): any;
-    visitPropertyWrite(ast: PropertyWrite, context: any): any;
     visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
     visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
     visitCall(ast: Call, context: any): any;
@@ -5777,5 +5717,5 @@ declare const enum QueryFlags {
  */
 declare function setEnableTemplateSourceLocations(value: boolean): void;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, KeyedWrite, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, PropertyWrite, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ResourceLoader, ReturnStatement, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, WriteKeyExpr, WritePropExpr, WriteVarExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ResourceLoader, ReturnStatement, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
 export type { AnimationTriggerNames, AstVisitor, BoundTarget, CompileClassMetadataFn, CompileIdentifierMetadata, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, ExpressionVisitor, InputOutputPropertySet, InterpolationPiece, LegacyInputPartialMapping, LexerRange, LiteralMapKey, MaybeForwardRefExpression, Node$1 as Node, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, StatementVisitor, TagDefinition, Target, TargetBinder, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeVisitor, Visitor$1 as Visitor };
