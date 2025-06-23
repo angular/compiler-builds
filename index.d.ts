@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.2+sha-f364d50
+ * @license Angular v20.1.0-next.2+sha-d25a6a0
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -914,7 +914,16 @@ declare enum BinaryOperator {
     BiggerEquals = 17,
     NullishCoalesce = 18,
     Exponentiation = 19,
-    In = 20
+    In = 20,
+    AdditionAssignment = 21,
+    SubtractionAssignment = 22,
+    MultiplicationAssignment = 23,
+    DivisionAssignment = 24,
+    RemainderAssignment = 25,
+    ExponentiationAssignment = 26,
+    AndAssignment = 27,
+    OrAssignment = 28,
+    NullishCoalesceAssignment = 29
 }
 declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -1212,6 +1221,7 @@ declare class BinaryOperatorExpr extends Expression {
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     clone(): BinaryOperatorExpr;
+    isAssignment(): boolean;
 }
 declare class ReadPropExpr extends Expression {
     receiver: Expression;
@@ -1654,13 +1664,6 @@ interface SharedConstantDefinition extends ExpressionKeyFn {
     toSharedConstantDeclaration(declName: string, keyExpr: Expression): Statement;
 }
 
-declare class ParserError {
-    input: string;
-    errLocation: string;
-    ctxLocation?: any | undefined;
-    message: string;
-    constructor(message: string, input: string, errLocation: string, ctxLocation?: any | undefined);
-}
 declare class ParseSpan {
     start: number;
     end: number;
@@ -1795,6 +1798,7 @@ declare class Binary extends AST {
     right: AST;
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operation: string, left: AST, right: AST);
     visit(visitor: AstVisitor, context?: any): any;
+    static isAssignmentOperation(op: string): boolean;
 }
 /**
  * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
@@ -1891,8 +1895,8 @@ declare class ASTWithSource<T extends AST = AST> extends AST {
     ast: T;
     source: string | null;
     location: string;
-    errors: ParserError[];
-    constructor(ast: T, source: string | null, location: string, absoluteOffset: number, errors: ParserError[]);
+    errors: ParseError[];
+    constructor(ast: T, source: string | null, location: string, absoluteOffset: number, errors: ParseError[]);
     visit(visitor: AstVisitor, context?: any): any;
     toString(): string;
 }
@@ -2153,8 +2157,8 @@ declare class SplitInterpolation {
 declare class TemplateBindingParseResult {
     templateBindings: TemplateBinding[];
     warnings: string[];
-    errors: ParserError[];
-    constructor(templateBindings: TemplateBinding[], warnings: string[], errors: ParserError[]);
+    errors: ParseError[];
+    constructor(templateBindings: TemplateBinding[], warnings: string[], errors: ParseError[]);
 }
 /**
  * Represents the possible parse modes to be used as a bitmask.
@@ -2170,10 +2174,10 @@ declare class Parser {
     private readonly _lexer;
     private readonly _supportsDirectPipeReferences;
     constructor(_lexer: Lexer, _supportsDirectPipeReferences?: boolean);
-    parseAction(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    parseBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseAction(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseBinding(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private checkSimpleExpression;
-    parseSimpleBinding(input: string, location: string, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseSimpleBinding(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
     private _parseBindingAst;
     /**
      * Parse microsyntax template expression and return a list of bindings or
@@ -2201,14 +2205,14 @@ declare class Parser {
      * @param absoluteKeyOffset start of the `templateKey`
      * @param absoluteValueOffset start of the `templateValue`
      */
-    parseTemplateBindings(templateKey: string, templateValue: string, templateUrl: string, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
-    parseInterpolation(input: string, location: string, absoluteOffset: number, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    parseTemplateBindings(templateKey: string, templateValue: string, parseSourceSpan: ParseSourceSpan$1, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
+    parseInterpolation(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
      * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
      * This is used for parsing the switch expression in ICUs.
      */
-    parseInterpolationExpression(expression: string, location: string, absoluteOffset: number): ASTWithSource;
+    parseInterpolationExpression(expression: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number): ASTWithSource;
     private createInterpolationAst;
     /**
      * Splits a string of text into "raw" text segments and expressions present in interpolations in
@@ -2217,8 +2221,8 @@ declare class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input: string, location: string, errors: ParserError[], interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): SplitInterpolation;
-    wrapLiteralPrimitive(input: string | null, location: string, absoluteOffset: number): ASTWithSource;
+    splitInterpolation(input: string, parseSourceSpan: ParseSourceSpan$1, errors: ParseError[], interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): SplitInterpolation;
+    wrapLiteralPrimitive(input: string | null, sourceSpanOrLocation: ParseSourceSpan$1 | string, absoluteOffset: number): ASTWithSource;
     private _stripComments;
     private _commentStart;
     private _checkNoInterpolation;
@@ -2481,6 +2485,7 @@ interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
     viewProviders: Provider[] | null;
     interpolation?: [string, string];
     changeDetection?: ChangeDetectionStrategy;
+    hasDirectiveDependencies: boolean;
 }
 type LegacyInputPartialMapping$1 = string | [bindingPropertyName: string, classPropertyName: string, transformFunction?: Function];
 interface R3DeclareDirectiveFacade {
@@ -4113,6 +4118,10 @@ interface R3ComponentMetadata<DeclarationT extends R3TemplateDependency> extends
      */
     relativeTemplatePath: string | null;
     /**
+     * Whether any of the component's dependencies are directives.
+     */
+    hasDirectiveDependencies: boolean;
+    /**
      * The imports expression as appears on the component decorate for standalone component. This
      * field is currently needed only for local compilation, and so in other compilation modes it may
      * not be set. If component has empty array imports then this field is not set.
@@ -4505,7 +4514,6 @@ declare class BindingParser {
     private _parseRegularEvent;
     private _parseAction;
     private _reportError;
-    private _reportExpressionParserErrors;
     /**
      * @param propName the name of the property / attribute
      * @param sourceSpan
@@ -5113,6 +5121,14 @@ declare class Identifiers {
     static element: ExternalReference;
     static elementStart: ExternalReference;
     static elementEnd: ExternalReference;
+    static domElement: ExternalReference;
+    static domElementStart: ExternalReference;
+    static domElementEnd: ExternalReference;
+    static domElementContainer: ExternalReference;
+    static domElementContainerStart: ExternalReference;
+    static domElementContainerEnd: ExternalReference;
+    static domTemplate: ExternalReference;
+    static domListener: ExternalReference;
     static advance: ExternalReference;
     static syntheticHostProperty: ExternalReference;
     static syntheticHostListener: ExternalReference;
@@ -5717,5 +5733,5 @@ declare const enum QueryFlags {
  */
 declare function setEnableTemplateSourceLocations(value: boolean): void;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ResourceLoader, ReturnStatement, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, ResourceLoader, ReturnStatement, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
 export type { AnimationTriggerNames, AstVisitor, BoundTarget, CompileClassMetadataFn, CompileIdentifierMetadata, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, ExpressionVisitor, InputOutputPropertySet, InterpolationPiece, LegacyInputPartialMapping, LexerRange, LiteralMapKey, MaybeForwardRefExpression, Node$1 as Node, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, StatementVisitor, TagDefinition, Target, TargetBinder, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeVisitor, Visitor$1 as Visitor };

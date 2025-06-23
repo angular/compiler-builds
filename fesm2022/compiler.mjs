@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0-next.2+sha-f364d50
+ * @license Angular v20.1.0-next.2+sha-d25a6a0
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -961,6 +961,15 @@ var BinaryOperator;
     BinaryOperator[BinaryOperator["NullishCoalesce"] = 18] = "NullishCoalesce";
     BinaryOperator[BinaryOperator["Exponentiation"] = 19] = "Exponentiation";
     BinaryOperator[BinaryOperator["In"] = 20] = "In";
+    BinaryOperator[BinaryOperator["AdditionAssignment"] = 21] = "AdditionAssignment";
+    BinaryOperator[BinaryOperator["SubtractionAssignment"] = 22] = "SubtractionAssignment";
+    BinaryOperator[BinaryOperator["MultiplicationAssignment"] = 23] = "MultiplicationAssignment";
+    BinaryOperator[BinaryOperator["DivisionAssignment"] = 24] = "DivisionAssignment";
+    BinaryOperator[BinaryOperator["RemainderAssignment"] = 25] = "RemainderAssignment";
+    BinaryOperator[BinaryOperator["ExponentiationAssignment"] = 26] = "ExponentiationAssignment";
+    BinaryOperator[BinaryOperator["AndAssignment"] = 27] = "AndAssignment";
+    BinaryOperator[BinaryOperator["OrAssignment"] = 28] = "OrAssignment";
+    BinaryOperator[BinaryOperator["NullishCoalesceAssignment"] = 29] = "NullishCoalesceAssignment";
 })(BinaryOperator || (BinaryOperator = {}));
 function nullSafeIsEquivalent(base, other) {
     if (base == null || other == null) {
@@ -1679,6 +1688,19 @@ class BinaryOperatorExpr extends Expression {
     }
     clone() {
         return new BinaryOperatorExpr(this.operator, this.lhs.clone(), this.rhs.clone(), this.type, this.sourceSpan);
+    }
+    isAssignment() {
+        const op = this.operator;
+        return (op === BinaryOperator.Assign ||
+            op === BinaryOperator.AdditionAssignment ||
+            op === BinaryOperator.SubtractionAssignment ||
+            op === BinaryOperator.MultiplicationAssignment ||
+            op === BinaryOperator.DivisionAssignment ||
+            op === BinaryOperator.RemainderAssignment ||
+            op === BinaryOperator.ExponentiationAssignment ||
+            op === BinaryOperator.AndAssignment ||
+            op === BinaryOperator.OrAssignment ||
+            op === BinaryOperator.NullishCoalesceAssignment);
     }
 }
 class ReadPropExpr extends Expression {
@@ -2596,6 +2618,23 @@ class Identifiers {
     static element = { name: 'ɵɵelement', moduleName: CORE };
     static elementStart = { name: 'ɵɵelementStart', moduleName: CORE };
     static elementEnd = { name: 'ɵɵelementEnd', moduleName: CORE };
+    static domElement = { name: 'ɵɵdomElement', moduleName: CORE };
+    static domElementStart = { name: 'ɵɵdomElementStart', moduleName: CORE };
+    static domElementEnd = { name: 'ɵɵdomElementEnd', moduleName: CORE };
+    static domElementContainer = {
+        name: 'ɵɵdomElementContainer',
+        moduleName: CORE,
+    };
+    static domElementContainerStart = {
+        name: 'ɵɵdomElementContainerStart',
+        moduleName: CORE,
+    };
+    static domElementContainerEnd = {
+        name: 'ɵɵdomElementContainerEnd',
+        moduleName: CORE,
+    };
+    static domTemplate = { name: 'ɵɵdomTemplate', moduleName: CORE };
+    static domListener = { name: 'ɵɵdomListener', moduleName: CORE };
     static advance = { name: 'ɵɵadvance', moduleName: CORE };
     static syntheticHostProperty = {
         name: 'ɵɵsyntheticHostProperty',
@@ -3210,6 +3249,38 @@ class _EmittedLine {
         this.indent = indent;
     }
 }
+const BINARY_OPERATORS$1 = new Map([
+    [BinaryOperator.And, '&&'],
+    [BinaryOperator.Bigger, '>'],
+    [BinaryOperator.BiggerEquals, '>='],
+    [BinaryOperator.BitwiseOr, '|'],
+    [BinaryOperator.BitwiseAnd, '&'],
+    [BinaryOperator.Divide, '/'],
+    [BinaryOperator.Assign, '='],
+    [BinaryOperator.Equals, '=='],
+    [BinaryOperator.Identical, '==='],
+    [BinaryOperator.Lower, '<'],
+    [BinaryOperator.LowerEquals, '<='],
+    [BinaryOperator.Minus, '-'],
+    [BinaryOperator.Modulo, '%'],
+    [BinaryOperator.Exponentiation, '**'],
+    [BinaryOperator.Multiply, '*'],
+    [BinaryOperator.NotEquals, '!='],
+    [BinaryOperator.NotIdentical, '!=='],
+    [BinaryOperator.NullishCoalesce, '??'],
+    [BinaryOperator.Or, '||'],
+    [BinaryOperator.Plus, '+'],
+    [BinaryOperator.In, 'in'],
+    [BinaryOperator.AdditionAssignment, '+='],
+    [BinaryOperator.SubtractionAssignment, '-='],
+    [BinaryOperator.MultiplicationAssignment, '*='],
+    [BinaryOperator.DivisionAssignment, '/='],
+    [BinaryOperator.RemainderAssignment, '%='],
+    [BinaryOperator.ExponentiationAssignment, '**='],
+    [BinaryOperator.AndAssignment, '&&='],
+    [BinaryOperator.OrAssignment, '||='],
+    [BinaryOperator.NullishCoalesceAssignment, '??='],
+]);
 class EmitterVisitorContext {
     _indent;
     static createRoot() {
@@ -3532,79 +3603,15 @@ class AbstractEmitterVisitor {
         return null;
     }
     visitBinaryOperatorExpr(ast, ctx) {
-        let opStr;
-        switch (ast.operator) {
-            case BinaryOperator.Assign:
-                opStr = '=';
-                break;
-            case BinaryOperator.Equals:
-                opStr = '==';
-                break;
-            case BinaryOperator.Identical:
-                opStr = '===';
-                break;
-            case BinaryOperator.NotEquals:
-                opStr = '!=';
-                break;
-            case BinaryOperator.NotIdentical:
-                opStr = '!==';
-                break;
-            case BinaryOperator.And:
-                opStr = '&&';
-                break;
-            case BinaryOperator.BitwiseOr:
-                opStr = '|';
-                break;
-            case BinaryOperator.BitwiseAnd:
-                opStr = '&';
-                break;
-            case BinaryOperator.Or:
-                opStr = '||';
-                break;
-            case BinaryOperator.Plus:
-                opStr = '+';
-                break;
-            case BinaryOperator.Minus:
-                opStr = '-';
-                break;
-            case BinaryOperator.Divide:
-                opStr = '/';
-                break;
-            case BinaryOperator.Multiply:
-                opStr = '*';
-                break;
-            case BinaryOperator.Modulo:
-                opStr = '%';
-                break;
-            case BinaryOperator.Exponentiation:
-                opStr = '**';
-                break;
-            case BinaryOperator.Lower:
-                opStr = '<';
-                break;
-            case BinaryOperator.LowerEquals:
-                opStr = '<=';
-                break;
-            case BinaryOperator.Bigger:
-                opStr = '>';
-                break;
-            case BinaryOperator.BiggerEquals:
-                opStr = '>=';
-                break;
-            case BinaryOperator.NullishCoalesce:
-                opStr = '??';
-                break;
-            case BinaryOperator.In:
-                opStr = 'in';
-                break;
-            default:
-                throw new Error(`Unknown operator ${ast.operator}`);
+        const operator = BINARY_OPERATORS$1.get(ast.operator);
+        if (!operator) {
+            throw new Error(`Unknown operator ${ast.operator}`);
         }
         const parens = ast !== this.lastIfCondition;
         if (parens)
             ctx.print(ast, `(`);
         ast.lhs.visitExpression(this, ctx);
-        ctx.print(ast, ` ${opStr} `);
+        ctx.print(ast, ` ${operator} `);
         ast.rhs.visitExpression(this, ctx);
         if (parens)
             ctx.print(ast, `)`);
@@ -3969,18 +3976,6 @@ function getInjectFn(target) {
     }
 }
 
-class ParserError {
-    input;
-    errLocation;
-    ctxLocation;
-    message;
-    constructor(message, input, errLocation, ctxLocation) {
-        this.input = input;
-        this.errLocation = errLocation;
-        this.ctxLocation = ctxLocation;
-        this.message = `Parser Error: ${message} ${errLocation} [${input}] in ${ctxLocation}`;
-    }
-}
 class ParseSpan {
     start;
     end;
@@ -4198,6 +4193,18 @@ class Binary extends AST {
     }
     visit(visitor, context = null) {
         return visitor.visitBinary(this, context);
+    }
+    static isAssignmentOperation(op) {
+        return (op === '=' ||
+            op === '+=' ||
+            op === '-=' ||
+            op === '*=' ||
+            op === '/=' ||
+            op === '%=' ||
+            op === '**=' ||
+            op === '&&=' ||
+            op === '||=' ||
+            op === '??=');
     }
 }
 /**
@@ -11148,6 +11155,14 @@ var CompilationJobKind;
     CompilationJobKind[CompilationJobKind["Host"] = 1] = "Host";
     CompilationJobKind[CompilationJobKind["Both"] = 2] = "Both";
 })(CompilationJobKind || (CompilationJobKind = {}));
+/** Possible modes in which a component's template can be compiled. */
+var TemplateCompilationMode;
+(function (TemplateCompilationMode) {
+    /** Supports the full instruction set, including directives. */
+    TemplateCompilationMode[TemplateCompilationMode["Full"] = 0] = "Full";
+    /** Uses a narrower instruction set that doesn't support directives and allows optimizations. */
+    TemplateCompilationMode[TemplateCompilationMode["DomOnly"] = 1] = "DomOnly";
+})(TemplateCompilationMode || (TemplateCompilationMode = {}));
 /**
  * An entire ongoing compilation, which will result in one or more template functions when complete.
  * Contains one or more corresponding compilation units.
@@ -11156,10 +11171,12 @@ class CompilationJob {
     componentName;
     pool;
     compatibility;
-    constructor(componentName, pool, compatibility) {
+    mode;
+    constructor(componentName, pool, compatibility, mode) {
         this.componentName = componentName;
         this.pool = pool;
         this.compatibility = compatibility;
+        this.mode = mode;
     }
     kind = CompilationJobKind.Both;
     /**
@@ -11184,8 +11201,8 @@ class ComponentCompilationJob extends CompilationJob {
     allDeferrableDepsFn;
     relativeTemplatePath;
     enableDebugLocations;
-    constructor(componentName, pool, compatibility, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
-        super(componentName, pool, compatibility);
+    constructor(componentName, pool, compatibility, mode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
+        super(componentName, pool, compatibility, mode);
         this.relativeContextFilePath = relativeContextFilePath;
         this.i18nUseExternalIds = i18nUseExternalIds;
         this.deferMeta = deferMeta;
@@ -11330,8 +11347,8 @@ class ViewCompilationUnit extends CompilationUnit {
  * Compilation-in-progress of a host binding, which contains a single unit for that host binding.
  */
 class HostBindingCompilationJob extends CompilationJob {
-    constructor(componentName, pool, compatibility) {
-        super(componentName, pool, compatibility);
+    constructor(componentName, pool, compatibility, mode) {
+        super(componentName, pool, compatibility, mode);
         this.root = new HostBindingCompilationUnit(this);
     }
     kind = CompilationJobKind.Host;
@@ -11764,6 +11781,14 @@ const CHAIN_COMPATIBILITY = new Map([
     [Identifiers.declareLet, Identifiers.declareLet],
     [Identifiers.conditionalCreate, Identifiers.conditionalBranchCreate],
     [Identifiers.conditionalBranchCreate, Identifiers.conditionalBranchCreate],
+    [Identifiers.domElement, Identifiers.domElement],
+    [Identifiers.domElementStart, Identifiers.domElementStart],
+    [Identifiers.domElementEnd, Identifiers.domElementEnd],
+    [Identifiers.domElementContainer, Identifiers.domElementContainer],
+    [Identifiers.domElementContainerStart, Identifiers.domElementContainerStart],
+    [Identifiers.domElementContainerEnd, Identifiers.domElementContainerEnd],
+    [Identifiers.domListener, Identifiers.domListener],
+    [Identifiers.domTemplate, Identifiers.domTemplate],
 ]);
 /**
  * Chaining results in repeated call expressions, causing a deep AST of receiver expressions. To prevent running out of
@@ -11936,6 +11961,15 @@ const BINARY_OPERATORS = new Map([
     ['||', BinaryOperator.Or],
     ['+', BinaryOperator.Plus],
     ['in', BinaryOperator.In],
+    ['+=', BinaryOperator.AdditionAssignment],
+    ['-=', BinaryOperator.SubtractionAssignment],
+    ['*=', BinaryOperator.MultiplicationAssignment],
+    ['/=', BinaryOperator.DivisionAssignment],
+    ['%=', BinaryOperator.RemainderAssignment],
+    ['**=', BinaryOperator.ExponentiationAssignment],
+    ['&&=', BinaryOperator.AndAssignment],
+    ['||=', BinaryOperator.OrAssignment],
+    ['??=', BinaryOperator.NullishCoalesceAssignment],
 ]);
 function namespaceForKey(namespacePrefixKey) {
     const NAMESPACES = new Map([
@@ -15714,13 +15748,6 @@ const NAMED_ENTITIES = {
 const NGSP_UNICODE = '\uE500';
 NAMED_ENTITIES['ngsp'] = NGSP_UNICODE;
 
-class TokenError extends ParseError {
-    tokenType;
-    constructor(errorMsg, tokenType, span) {
-        super(span, errorMsg);
-        this.tokenType = tokenType;
-    }
-}
 class TokenizeResult {
     tokens;
     errors;
@@ -15752,12 +15779,6 @@ var CharacterReferenceType;
     CharacterReferenceType["HEX"] = "hexadecimal";
     CharacterReferenceType["DEC"] = "decimal";
 })(CharacterReferenceType || (CharacterReferenceType = {}));
-class _ControlFlowError {
-    error;
-    constructor(error) {
-        this.error = error;
-    }
-}
 // See https://www.w3.org/TR/html51/syntax.html#writing-html-documents
 class _Tokenizer {
     _getTagDefinition;
@@ -16067,10 +16088,10 @@ class _Tokenizer {
     }
     _endToken(parts, end) {
         if (this._currentTokenStart === null) {
-            throw new TokenError('Programming error - attempted to end a token when there was no start to the token', this._currentTokenType, this._cursor.getSpan(end));
+            throw new ParseError(this._cursor.getSpan(end), 'Programming error - attempted to end a token when there was no start to the token');
         }
         if (this._currentTokenType === null) {
-            throw new TokenError('Programming error - attempted to end a token which has no token type', null, this._cursor.getSpan(this._currentTokenStart));
+            throw new ParseError(this._cursor.getSpan(this._currentTokenStart), 'Programming error - attempted to end a token which has no token type');
         }
         const token = {
             type: this._currentTokenType,
@@ -16086,17 +16107,17 @@ class _Tokenizer {
         if (this._isInExpansionForm()) {
             msg += ` (Do you have an unescaped "{" in your template? Use "{{ '{' }}") to escape it.)`;
         }
-        const error = new TokenError(msg, this._currentTokenType, span);
+        const error = new ParseError(span, msg);
         this._currentTokenStart = null;
         this._currentTokenType = null;
-        return new _ControlFlowError(error);
+        return error;
     }
     handleError(e) {
         if (e instanceof CursorError) {
             e = this._createError(e.msg, this._cursor.getSpan(e.cursor));
         }
-        if (e instanceof _ControlFlowError) {
-            this.errors.push(e.error);
+        if (e instanceof ParseError) {
+            this.errors.push(e);
         }
         else {
             throw e;
@@ -16336,7 +16357,7 @@ class _Tokenizer {
             }
         }
         catch (e) {
-            if (e instanceof _ControlFlowError) {
+            if (e instanceof ParseError) {
                 if (openToken) {
                     // We errored before we could close the opening tag, so it is incomplete.
                     openToken.type =
@@ -17117,7 +17138,7 @@ let Parser$1 = class Parser {
         const tokenizeResult = tokenize(source, url, this.getTagDefinition, options);
         const parser = new _TreeBuilder(tokenizeResult.tokens, this.getTagDefinition);
         parser.build();
-        return new ParseTreeResult(parser.rootNodes, tokenizeResult.errors.concat(parser.errors));
+        return new ParseTreeResult(parser.rootNodes, [...tokenizeResult.errors, ...parser.errors]);
     }
 };
 class _TreeBuilder {
@@ -18208,13 +18229,17 @@ class _Scanner {
             case $HASH:
                 return this.scanPrivateIdentifier();
             case $PLUS:
+                return this.scanComplexOperator(start, '+', $EQ, '=');
             case $MINUS:
+                return this.scanComplexOperator(start, '-', $EQ, '=');
             case $SLASH:
+                return this.scanComplexOperator(start, '/', $EQ, '=');
             case $PERCENT:
+                return this.scanComplexOperator(start, '%', $EQ, '=');
             case $CARET:
-                return this.scanOperator(start, String.fromCharCode(peek));
+                return this.scanOperator(start, '^');
             case $STAR:
-                return this.scanComplexOperator(start, '*', $STAR, '*');
+                return this.scanStar(start);
             case $QUESTION:
                 return this.scanQuestion(start);
             case $LT:
@@ -18224,9 +18249,9 @@ class _Scanner {
             case $EQ:
                 return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=', $EQ, '=');
             case $AMPERSAND:
-                return this.scanComplexOperator(start, '&', $AMPERSAND, '&');
+                return this.scanComplexOperator(start, '&', $AMPERSAND, '&', $EQ, '=');
             case $BAR:
-                return this.scanComplexOperator(start, '|', $BAR, '|');
+                return this.scanComplexOperator(start, '|', $BAR, '|', $EQ, '=');
             case $NBSP:
                 while (isWhitespace(this.peek))
                     this.advance();
@@ -18372,13 +18397,23 @@ class _Scanner {
     }
     scanQuestion(start) {
         this.advance();
-        let str = '?';
-        // Either `a ?? b` or 'a?.b'.
-        if (this.peek === $QUESTION || this.peek === $PERIOD) {
-            str += this.peek === $PERIOD ? '.' : '?';
+        let operator = '?';
+        // `a ?? b` or `a ??= b`.
+        if (this.peek === $QUESTION) {
+            operator += '?';
+            this.advance();
+            // @ts-expect-error
+            if (this.peek === $EQ) {
+                operator += '=';
+                this.advance();
+            }
+        }
+        else if (this.peek === $PERIOD) {
+            // `a?.b`
+            operator += '.';
             this.advance();
         }
-        return newOperatorToken(start, this.index, str);
+        return newOperatorToken(start, this.index, operator);
     }
     scanTemplateLiteralPart(start) {
         let buffer = '';
@@ -18442,6 +18477,25 @@ class _Scanner {
         buffer += String.fromCharCode(unescapedCode);
         return buffer;
     }
+    scanStar(start) {
+        this.advance();
+        // `*`, `**`, `**=` or `*=`
+        let operator = '*';
+        if (this.peek === $STAR) {
+            operator += '*';
+            this.advance();
+            // @ts-expect-error
+            if (this.peek === $EQ) {
+                operator += '=';
+                this.advance();
+            }
+        }
+        else if (this.peek === $EQ) {
+            operator += '=';
+            this.advance();
+        }
+        return newOperatorToken(start, this.index, operator);
+    }
 }
 function isIdentifierStart(code) {
     return (($a <= code && code <= $z) ||
@@ -18502,6 +18556,9 @@ class TemplateBindingParseResult {
         this.errors = errors;
     }
 }
+function getLocation(span) {
+    return span.start.toString() || '(unknown)';
+}
 class Parser {
     _lexer;
     _supportsDirectPipeReferences;
@@ -18509,18 +18566,18 @@ class Parser {
         this._lexer = _lexer;
         this._supportsDirectPipeReferences = _supportsDirectPipeReferences;
     }
-    parseAction(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseAction(input, parseSourceSpan, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const errors = [];
-        this._checkNoInterpolation(errors, input, location, interpolationConfig);
+        this._checkNoInterpolation(errors, input, parseSourceSpan, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        const ast = new _ParseAST(input, location, absoluteOffset, tokens, 1 /* ParseFlags.Action */, errors, 0, this._supportsDirectPipeReferences).parseChain();
-        return new ASTWithSource(ast, input, location, absoluteOffset, errors);
+        const ast = new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 1 /* ParseFlags.Action */, errors, 0, this._supportsDirectPipeReferences).parseChain();
+        return new ASTWithSource(ast, input, getLocation(parseSourceSpan), absoluteOffset, errors);
     }
-    parseBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseBinding(input, parseSourceSpan, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const errors = [];
-        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig, errors);
-        return new ASTWithSource(ast, input, location, absoluteOffset, errors);
+        const ast = this._parseBindingAst(input, parseSourceSpan, absoluteOffset, interpolationConfig, errors);
+        return new ASTWithSource(ast, input, getLocation(parseSourceSpan), absoluteOffset, errors);
     }
     checkSimpleExpression(ast) {
         const checker = new SimpleExpressionChecker();
@@ -18528,20 +18585,20 @@ class Parser {
         return checker.errors;
     }
     // Host bindings parsed here
-    parseSimpleBinding(input, location, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseSimpleBinding(input, parseSourceSpan, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const errors = [];
-        const ast = this._parseBindingAst(input, location, absoluteOffset, interpolationConfig, errors);
+        const ast = this._parseBindingAst(input, parseSourceSpan, absoluteOffset, interpolationConfig, errors);
         const simplExpressionErrors = this.checkSimpleExpression(ast);
         if (simplExpressionErrors.length > 0) {
-            errors.push(new ParserError(`Host binding expression cannot contain ${simplExpressionErrors.join(' ')}`, input, location));
+            errors.push(getParseError(`Host binding expression cannot contain ${simplExpressionErrors.join(' ')}`, input, '', parseSourceSpan));
         }
-        return new ASTWithSource(ast, input, location, absoluteOffset, errors);
+        return new ASTWithSource(ast, input, getLocation(parseSourceSpan), absoluteOffset, errors);
     }
-    _parseBindingAst(input, location, absoluteOffset, interpolationConfig, errors) {
-        this._checkNoInterpolation(errors, input, location, interpolationConfig);
+    _parseBindingAst(input, parseSourceSpan, absoluteOffset, interpolationConfig, errors) {
+        this._checkNoInterpolation(errors, input, parseSourceSpan, interpolationConfig);
         const sourceToLex = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
-        return new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
+        return new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
     }
     /**
      * Parse microsyntax template expression and return a list of bindings or
@@ -18569,18 +18626,18 @@ class Parser {
      * @param absoluteKeyOffset start of the `templateKey`
      * @param absoluteValueOffset start of the `templateValue`
      */
-    parseTemplateBindings(templateKey, templateValue, templateUrl, absoluteKeyOffset, absoluteValueOffset) {
+    parseTemplateBindings(templateKey, templateValue, parseSourceSpan, absoluteKeyOffset, absoluteValueOffset) {
         const tokens = this._lexer.tokenize(templateValue);
         const errors = [];
-        const parser = new _ParseAST(templateValue, templateUrl, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, errors, 0 /* relative offset */, this._supportsDirectPipeReferences);
+        const parser = new _ParseAST(templateValue, parseSourceSpan, absoluteValueOffset, tokens, 0 /* ParseFlags.None */, errors, 0 /* relative offset */, this._supportsDirectPipeReferences);
         return parser.parseTemplateBindings({
             source: templateKey,
             span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length),
         });
     }
-    parseInterpolation(input, location, absoluteOffset, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    parseInterpolation(input, parseSourceSpan, absoluteOffset, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const errors = [];
-        const { strings, expressions, offsets } = this.splitInterpolation(input, location, errors, interpolatedTokens, interpolationConfig);
+        const { strings, expressions, offsets } = this.splitInterpolation(input, parseSourceSpan, errors, interpolatedTokens, interpolationConfig);
         if (expressions.length === 0)
             return null;
         const expressionNodes = [];
@@ -18588,23 +18645,23 @@ class Parser {
             const expressionText = expressions[i].text;
             const sourceToLex = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
-            const ast = new _ParseAST(input, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, offsets[i], this._supportsDirectPipeReferences).parseChain();
+            const ast = new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, offsets[i], this._supportsDirectPipeReferences).parseChain();
             expressionNodes.push(ast);
         }
-        return this.createInterpolationAst(strings.map((s) => s.text), expressionNodes, input, location, absoluteOffset, errors);
+        return this.createInterpolationAst(strings.map((s) => s.text), expressionNodes, input, getLocation(parseSourceSpan), absoluteOffset, errors);
     }
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
      * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
      * This is used for parsing the switch expression in ICUs.
      */
-    parseInterpolationExpression(expression, location, absoluteOffset) {
+    parseInterpolationExpression(expression, parseSourceSpan, absoluteOffset) {
         const sourceToLex = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
         const errors = [];
-        const ast = new _ParseAST(expression, location, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
+        const ast = new _ParseAST(expression, parseSourceSpan, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
         const strings = ['', '']; // The prefix and suffix strings are both empty
-        return this.createInterpolationAst(strings, [ast], expression, location, absoluteOffset, errors);
+        return this.createInterpolationAst(strings, [ast], expression, getLocation(parseSourceSpan), absoluteOffset, errors);
     }
     createInterpolationAst(strings, expressions, input, location, absoluteOffset, errors) {
         const span = new ParseSpan(0, input.length);
@@ -18618,7 +18675,7 @@ class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input, location, errors, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
+    splitInterpolation(input, parseSourceSpan, errors, interpolatedTokens, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const strings = [];
         const expressions = [];
         const offsets = [];
@@ -18656,7 +18713,7 @@ class Parser {
                 const fullEnd = exprEnd + interpEnd.length;
                 const text = input.substring(exprStart, exprEnd);
                 if (text.trim().length === 0) {
-                    errors.push(new ParserError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, location));
+                    errors.push(getParseError('Blank expressions are not allowed in interpolated strings', input, `at column ${i} in`, parseSourceSpan));
                 }
                 expressions.push({ text, start: fullStart, end: fullEnd });
                 const startInOriginalTemplate = inputToTemplateIndexMap?.get(fullStart) ?? fullStart;
@@ -18679,9 +18736,11 @@ class Parser {
         }
         return new SplitInterpolation(strings, expressions, offsets);
     }
-    wrapLiteralPrimitive(input, location, absoluteOffset) {
+    wrapLiteralPrimitive(input, sourceSpanOrLocation, absoluteOffset) {
         const span = new ParseSpan(0, input == null ? 0 : input.length);
-        return new ASTWithSource(new LiteralPrimitive(span, span.toAbsolute(absoluteOffset), input), input, location, absoluteOffset, []);
+        return new ASTWithSource(new LiteralPrimitive(span, span.toAbsolute(absoluteOffset), input), input, typeof sourceSpanOrLocation === 'string'
+            ? sourceSpanOrLocation
+            : getLocation(sourceSpanOrLocation), absoluteOffset, []);
     }
     _stripComments(input) {
         const i = this._commentStart(input);
@@ -18703,7 +18762,7 @@ class Parser {
         }
         return null;
     }
-    _checkNoInterpolation(errors, input, location, { start, end }) {
+    _checkNoInterpolation(errors, input, parseSourceSpan, { start, end }) {
         let startIndex = -1;
         let endIndex = -1;
         for (const charIndex of this._forEachUnquotedChar(input, 0)) {
@@ -18720,7 +18779,7 @@ class Parser {
             }
         }
         if (startIndex > -1 && endIndex > -1) {
-            errors.push(new ParserError(`Got interpolation (${start}${end}) where expression was expected`, input, `at column ${startIndex} in`, location));
+            errors.push(getParseError(`Got interpolation (${start}${end}) where expression was expected`, input, `at column ${startIndex} in`, parseSourceSpan));
         }
     }
     /**
@@ -18779,7 +18838,7 @@ var ParseContextFlags;
 })(ParseContextFlags || (ParseContextFlags = {}));
 class _ParseAST {
     input;
-    location;
+    parseSourceSpan;
     absoluteOffset;
     tokens;
     parseFlags;
@@ -18796,9 +18855,9 @@ class _ParseAST {
     // and may change for subsequent expressions visited by the parser.
     sourceSpanCache = new Map();
     index = 0;
-    constructor(input, location, absoluteOffset, tokens, parseFlags, errors, offset, supportsDirectPipeReferences) {
+    constructor(input, parseSourceSpan, absoluteOffset, tokens, parseFlags, errors, offset, supportsDirectPipeReferences) {
         this.input = input;
-        this.location = location;
+        this.parseSourceSpan = parseSourceSpan;
         this.absoluteOffset = absoluteOffset;
         this.tokens = tokens;
         this.parseFlags = parseFlags;
@@ -18925,6 +18984,9 @@ class _ParseAST {
         else {
             return false;
         }
+    }
+    isAssignmentOperator(token) {
+        return token.type === TokenType.Operator && Binary.isAssignmentOperation(token.strValue);
     }
     expectOperator(operator) {
         if (this.consumeOptionalOperator(operator))
@@ -19409,7 +19471,8 @@ class _ParseAST {
         });
         const nameSpan = this.sourceSpan(nameStart);
         if (isSafe) {
-            if (this.consumeOptionalOperator('=')) {
+            if (this.isAssignmentOperator(this.next)) {
+                this.advance();
                 this.error("The '?.' operator cannot be used in the assignment");
                 return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
             }
@@ -19418,14 +19481,16 @@ class _ParseAST {
             }
         }
         else {
-            if (this.consumeOptionalOperator('=')) {
+            if (this.isAssignmentOperator(this.next)) {
+                const operation = this.next.strValue;
+                this.advance();
                 if (!(this.parseFlags & 1 /* ParseFlags.Action */)) {
                     this.error('Bindings cannot contain assignments');
                     return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
                 }
                 const receiver = new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
                 const value = this.parseConditional();
-                return new Binary(this.span(start), this.sourceSpan(start), '=', receiver, value);
+                return new Binary(this.span(start), this.sourceSpan(start), operation, receiver, value);
             }
             else {
                 return new PropertyRead(this.span(start), this.sourceSpan(start), nameSpan, readReceiver, id);
@@ -19540,14 +19605,16 @@ class _ParseAST {
             }
             this.rbracketsExpected--;
             this.expectCharacter($RBRACKET);
-            if (this.consumeOptionalOperator('=')) {
+            if (this.isAssignmentOperator(this.next)) {
+                const operation = this.next.strValue;
+                this.advance();
                 if (isSafe) {
                     this.error("The '?.' operator cannot be used in the assignment");
                 }
                 else {
                     const binaryReceiver = new KeyedRead(this.span(start), this.sourceSpan(start), receiver, key);
                     const value = this.parseConditional();
-                    return new Binary(this.span(start), this.sourceSpan(start), '=', binaryReceiver, value);
+                    return new Binary(this.span(start), this.sourceSpan(start), operation, binaryReceiver, value);
                 }
             }
             else {
@@ -19611,7 +19678,7 @@ class _ParseAST {
         const ast = this.parsePipe(); // example: "condition | async"
         const { start, end } = ast.span;
         const value = this.input.substring(start, end);
-        return new ASTWithSource(ast, value, this.location, this.absoluteOffset + start, this.errors);
+        return new ASTWithSource(ast, value, getLocation(this.parseSourceSpan), this.absoluteOffset + start, this.errors);
     }
     /**
      * Return the binding for a variable declared using `as`. Note that the order
@@ -19715,13 +19782,11 @@ class _ParseAST {
      * Records an error and skips over the token stream until reaching a recoverable point. See
      * `this.skip` for more details on token skipping.
      */
-    error(message, index = null) {
-        this.errors.push(new ParserError(message, this.input, this.locationText(index), this.location));
+    error(message, index = this.index) {
+        this.errors.push(getParseError(message, this.input, this.getErrorLocationText(index), this.parseSourceSpan));
         this.skip();
     }
-    locationText(index = null) {
-        if (index == null)
-            index = this.index;
+    getErrorLocationText(index) {
         return index < this.tokens.length
             ? `at column ${this.tokens[index].index + 1} in`
             : `at the end of the expression`;
@@ -19755,7 +19820,7 @@ class _ParseAST {
      *       none of the calling productions are not expecting the closing token else we will never
      *       make progress in the case of an extraneous group closing symbol (such as a stray ')').
      *       That is, we skip a closing symbol if we are not in a grouping production.
-     *   - '=' in a `Writable` context
+     *   - Assignment in a `Writable` context
      *     - In this context, we are able to recover after seeing the `=` operator, which
      *       signals the presence of an independent rvalue expression following the `=` operator.
      *
@@ -19770,14 +19835,22 @@ class _ParseAST {
             (this.rparensExpected <= 0 || !n.isCharacter($RPAREN)) &&
             (this.rbracesExpected <= 0 || !n.isCharacter($RBRACE)) &&
             (this.rbracketsExpected <= 0 || !n.isCharacter($RBRACKET)) &&
-            (!(this.context & ParseContextFlags.Writable) || !n.isOperator('='))) {
+            (!(this.context & ParseContextFlags.Writable) || !this.isAssignmentOperator(n))) {
             if (this.next.isError()) {
-                this.errors.push(new ParserError(this.next.toString(), this.input, this.locationText(), this.location));
+                this.errors.push(getParseError(this.next.toString(), this.input, this.getErrorLocationText(this.next.index), this.parseSourceSpan));
             }
             this.advance();
             n = this.next;
         }
     }
+}
+function getParseError(message, input, locationText, parseSourceSpan) {
+    if (locationText.length > 0) {
+        locationText = ` ${locationText} `;
+    }
+    const location = getLocation(parseSourceSpan);
+    const error = `Parser Error: ${message}${locationText}[${input}] in ${location}`;
+    return new ParseError(parseSourceSpan, error);
 }
 class SimpleExpressionChecker extends RecursiveAstVisitor {
     errors = [];
@@ -21033,7 +21106,7 @@ class _I18nVisitor {
     normalizeExpression(token) {
         const expression = token.parts[1];
         const expr = this._expressionParser.parseBinding(expression, 
-        /* location */ token.sourceSpan.start.toString(), 
+        /* location */ token.sourceSpan, 
         /* absoluteOffset */ token.sourceSpan.start.offset, this._interpolationConfig);
         return serialize(expr);
     }
@@ -21097,15 +21170,6 @@ ${nodes.map((node) => `"${node.sourceSpan.toString()}"`).join('\n')}
 const _CUSTOM_PH_EXP = /\/\/[\s\S]*i18n[\s\S]*\([\s\S]*ph[\s\S]*=[\s\S]*("|')([\s\S]*?)\1[\s\S]*\)/g;
 function extractPlaceholderName(input) {
     return input.split(_CUSTOM_PH_EXP)[2];
-}
-
-/**
- * An i18n error.
- */
-class I18nError extends ParseError {
-    constructor(span, msg) {
-        super(span, msg);
-    }
 }
 
 /**
@@ -21389,7 +21453,7 @@ class I18nMetaVisitor {
         }
     }
     _reportError(node, msg) {
-        this._errors.push(new I18nError(node.sourceSpan, msg));
+        this._errors.push(new ParseError(node.sourceSpan, msg));
     }
 }
 /** I18n separators for metadata **/
@@ -22973,21 +23037,7 @@ function elementOrContainerBase(instruction, slot, tag, constIndex, localRefInde
     }
     return call(instruction, args, sourceSpan);
 }
-function elementEnd(sourceSpan) {
-    return call(Identifiers.elementEnd, [], sourceSpan);
-}
-function elementContainerStart(slot, constIndex, localRefIndex, sourceSpan) {
-    return elementOrContainerBase(Identifiers.elementContainerStart, slot, 
-    /* tag */ null, constIndex, localRefIndex, sourceSpan);
-}
-function elementContainer(slot, constIndex, localRefIndex, sourceSpan) {
-    return elementOrContainerBase(Identifiers.elementContainer, slot, 
-    /* tag */ null, constIndex, localRefIndex, sourceSpan);
-}
-function elementContainerEnd() {
-    return call(Identifiers.elementContainerEnd, [], null);
-}
-function template(slot, templateFnRef, decls, vars, tag, constIndex, localRefs, sourceSpan) {
+function templateBase(instruction, slot, templateFnRef, decls, vars, tag, constIndex, localRefs, sourceSpan) {
     const args = [
         literal(slot),
         templateFnRef,
@@ -23003,7 +23053,37 @@ function template(slot, templateFnRef, decls, vars, tag, constIndex, localRefs, 
     while (args[args.length - 1].isEquivalent(NULL_EXPR)) {
         args.pop();
     }
-    return call(Identifiers.templateCreate, args, sourceSpan);
+    return call(instruction, args, sourceSpan);
+}
+function propertyBase(instruction, name, expression, sanitizer, sourceSpan) {
+    const args = [literal(name)];
+    if (expression instanceof Interpolation) {
+        args.push(interpolationToExpression(expression, sourceSpan));
+    }
+    else {
+        args.push(expression);
+    }
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    return call(instruction, args, sourceSpan);
+}
+function elementEnd(sourceSpan) {
+    return call(Identifiers.elementEnd, [], sourceSpan);
+}
+function elementContainerStart(slot, constIndex, localRefIndex, sourceSpan) {
+    return elementOrContainerBase(Identifiers.elementContainerStart, slot, 
+    /* tag */ null, constIndex, localRefIndex, sourceSpan);
+}
+function elementContainer(slot, constIndex, localRefIndex, sourceSpan) {
+    return elementOrContainerBase(Identifiers.elementContainer, slot, 
+    /* tag */ null, constIndex, localRefIndex, sourceSpan);
+}
+function elementContainerEnd() {
+    return call(Identifiers.elementContainerEnd, [], null);
+}
+function template(slot, templateFnRef, decls, vars, tag, constIndex, localRefs, sourceSpan) {
+    return templateBase(Identifiers.templateCreate, slot, templateFnRef, decls, vars, tag, constIndex, localRefs, sourceSpan);
 }
 function disableBindings() {
     return call(Identifiers.disableBindings, [], null);
@@ -23269,17 +23349,7 @@ function i18nAttributes(slot, i18nAttributesConfig) {
     return call(Identifiers.i18nAttributes, args, null);
 }
 function property(name, expression, sanitizer, sourceSpan) {
-    const args = [literal(name)];
-    if (expression instanceof Interpolation) {
-        args.push(interpolationToExpression(expression, sourceSpan));
-    }
-    else {
-        args.push(expression);
-    }
-    if (sanitizer !== null) {
-        args.push(sanitizer);
-    }
-    return call(Identifiers.property, args, sourceSpan);
+    return propertyBase(Identifiers.property, name, expression, sanitizer, sourceSpan);
 }
 function twoWayProperty(name, expression, sanitizer, sourceSpan) {
     const args = [literal(name), expression];
@@ -23332,6 +23402,36 @@ function classMap(expression, sourceSpan) {
         : expression;
     return call(Identifiers.classMap, [value], sourceSpan);
 }
+function domElement(slot, tag, constIndex, localRefIndex, sourceSpan) {
+    return elementOrContainerBase(Identifiers.domElement, slot, tag, constIndex, localRefIndex, sourceSpan);
+}
+function domElementStart(slot, tag, constIndex, localRefIndex, sourceSpan) {
+    return elementOrContainerBase(Identifiers.domElementStart, slot, tag, constIndex, localRefIndex, sourceSpan);
+}
+function domElementEnd(sourceSpan) {
+    return call(Identifiers.domElementEnd, [], sourceSpan);
+}
+function domElementContainerStart(slot, constIndex, localRefIndex, sourceSpan) {
+    return elementOrContainerBase(Identifiers.domElementContainerStart, slot, 
+    /* tag */ null, constIndex, localRefIndex, sourceSpan);
+}
+function domElementContainer(slot, constIndex, localRefIndex, sourceSpan) {
+    return elementOrContainerBase(Identifiers.domElementContainer, slot, 
+    /* tag */ null, constIndex, localRefIndex, sourceSpan);
+}
+function domElementContainerEnd() {
+    return call(Identifiers.domElementContainerEnd, [], null);
+}
+function domListener(name, handlerFn, eventTargetResolver, sourceSpan) {
+    const args = [literal(name), handlerFn];
+    if (eventTargetResolver !== null) {
+        args.push(importExpr(eventTargetResolver));
+    }
+    return call(Identifiers.domListener, args, sourceSpan);
+}
+function domTemplate(slot, templateFnRef, decls, vars, tag, constIndex, localRefs, sourceSpan) {
+    return templateBase(Identifiers.domTemplate, slot, templateFnRef, decls, vars, tag, constIndex, localRefs, sourceSpan);
+}
 const PIPE_BINDINGS = [
     Identifiers.pipeBind1,
     Identifiers.pipeBind2,
@@ -23359,11 +23459,7 @@ function i18nApply(slot, sourceSpan) {
     return call(Identifiers.i18nApply, [literal(slot)], sourceSpan);
 }
 function domProperty(name, expression, sanitizer, sourceSpan) {
-    const args = [literal(name), expression];
-    if (sanitizer !== null) {
-        args.push(sanitizer);
-    }
-    return call(Identifiers.domProperty, args, sourceSpan);
+    return propertyBase(Identifiers.domProperty, name, expression, sanitizer, sourceSpan);
 }
 function syntheticHostProperty(name, expression, sourceSpan) {
     return call(Identifiers.syntheticHostProperty, [literal(name), expression], sourceSpan);
@@ -23528,22 +23624,34 @@ function reifyCreateOperations(unit, ops) {
                 OpList.replace(op, text(op.handle.slot, op.initialValue, op.sourceSpan));
                 break;
             case OpKind.ElementStart:
-                OpList.replace(op, elementStart(op.handle.slot, op.tag, op.attributes, op.localRefs, op.startSourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domElementStart(op.handle.slot, op.tag, op.attributes, op.localRefs, op.startSourceSpan)
+                    : elementStart(op.handle.slot, op.tag, op.attributes, op.localRefs, op.startSourceSpan));
                 break;
             case OpKind.Element:
-                OpList.replace(op, element(op.handle.slot, op.tag, op.attributes, op.localRefs, op.wholeSourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domElement(op.handle.slot, op.tag, op.attributes, op.localRefs, op.wholeSourceSpan)
+                    : element(op.handle.slot, op.tag, op.attributes, op.localRefs, op.wholeSourceSpan));
                 break;
             case OpKind.ElementEnd:
-                OpList.replace(op, elementEnd(op.sourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domElementEnd(op.sourceSpan)
+                    : elementEnd(op.sourceSpan));
                 break;
             case OpKind.ContainerStart:
-                OpList.replace(op, elementContainerStart(op.handle.slot, op.attributes, op.localRefs, op.startSourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domElementContainerStart(op.handle.slot, op.attributes, op.localRefs, op.startSourceSpan)
+                    : elementContainerStart(op.handle.slot, op.attributes, op.localRefs, op.startSourceSpan));
                 break;
             case OpKind.Container:
-                OpList.replace(op, elementContainer(op.handle.slot, op.attributes, op.localRefs, op.wholeSourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domElementContainer(op.handle.slot, op.attributes, op.localRefs, op.wholeSourceSpan)
+                    : elementContainer(op.handle.slot, op.attributes, op.localRefs, op.wholeSourceSpan));
                 break;
             case OpKind.ContainerEnd:
-                OpList.replace(op, elementContainerEnd());
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domElementContainerEnd()
+                    : elementContainerEnd());
                 break;
             case OpKind.I18nStart:
                 OpList.replace(op, i18nStart(op.handle.slot, op.messageIndex, op.subTemplateIndex, op.sourceSpan));
@@ -23568,7 +23676,12 @@ function reifyCreateOperations(unit, ops) {
                     throw new Error(`AssertionError: local refs array should have been extracted into a constant`);
                 }
                 const childView = unit.job.views.get(op.xref);
-                OpList.replace(op, template(op.handle.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.localRefs, op.startSourceSpan));
+                OpList.replace(op, 
+                // Block templates can't have directives so we can always generate them as DOM-only.
+                op.templateKind === TemplateKind.Block ||
+                    unit.job.mode === TemplateCompilationMode.DomOnly
+                    ? domTemplate(op.handle.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.localRefs, op.startSourceSpan)
+                    : template(op.handle.slot, variable(childView.fnName), childView.decls, childView.vars, op.tag, op.attributes, op.localRefs, op.startSourceSpan));
                 break;
             case OpKind.DisableBindings:
                 OpList.replace(op, disableBindings());
@@ -23590,7 +23703,11 @@ function reifyCreateOperations(unit, ops) {
                 if (eventTargetResolver === undefined) {
                     throw new Error(`Unexpected global target '${op.eventTarget}' defined for '${op.name}' event. Supported list of global targets: window,document,body.`);
                 }
-                OpList.replace(op, listener(op.name, listenerFn, eventTargetResolver, op.hostListener && op.isAnimationListener, op.sourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly &&
+                    !op.hostListener &&
+                    !op.isAnimationListener
+                    ? domListener(op.name, listenerFn, eventTargetResolver, op.sourceSpan)
+                    : listener(op.name, listenerFn, eventTargetResolver, op.hostListener && op.isAnimationListener, op.sourceSpan));
                 break;
             case OpKind.TwoWayListener:
                 OpList.replace(op, twoWayListener(op.name, reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, true), op.sourceSpan));
@@ -23748,7 +23865,7 @@ function reifyCreateOperations(unit, ops) {
         }
     }
 }
-function reifyUpdateOperations(_unit, ops) {
+function reifyUpdateOperations(unit, ops) {
     for (const op of ops) {
         transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
         switch (op.kind) {
@@ -23756,7 +23873,9 @@ function reifyUpdateOperations(_unit, ops) {
                 OpList.replace(op, advance(op.delta, op.sourceSpan));
                 break;
             case OpKind.Property:
-                OpList.replace(op, property(op.name, op.expression, op.sanitizer, op.sourceSpan));
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly && !op.isAnimationTrigger
+                    ? domProperty(op.name, op.expression, op.sanitizer, op.sourceSpan)
+                    : property(op.name, op.expression, op.sanitizer, op.sourceSpan));
                 break;
             case OpKind.TwoWayProperty:
                 OpList.replace(op, twoWayProperty(op.name, op.expression, op.sanitizer, op.sourceSpan));
@@ -25994,8 +26113,8 @@ function isSingleI18nIcu(meta) {
  * representation.
  * TODO: Refactor more of the ingestion code into phases.
  */
-function ingestComponent(componentName, template, constantPool, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
-    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations);
+function ingestComponent(componentName, template, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
+    const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations);
     ingestNodes(job.root, template);
     return job;
 }
@@ -26004,7 +26123,7 @@ function ingestComponent(componentName, template, constantPool, relativeContextF
  * representation.
  */
 function ingestHostBinding(input, bindingParser, constantPool) {
-    const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode);
+    const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode, TemplateCompilationMode.DomOnly);
     for (const property of input.properties ?? []) {
         let bindingKind = BindingKind.Property;
         // TODO: this should really be handled in the parser.
@@ -27297,17 +27416,17 @@ class BindingParser {
         return targetEvents;
     }
     parseInterpolation(value, sourceSpan, interpolatedTokens) {
-        const sourceInfo = sourceSpan.start.toString();
         const absoluteOffset = sourceSpan.fullStart.offset;
         try {
-            const ast = this._exprParser.parseInterpolation(value, sourceInfo, absoluteOffset, interpolatedTokens, this._interpolationConfig);
-            if (ast)
-                this._reportExpressionParserErrors(ast.errors, sourceSpan);
+            const ast = this._exprParser.parseInterpolation(value, sourceSpan, absoluteOffset, interpolatedTokens, this._interpolationConfig);
+            if (ast) {
+                this.errors.push(...ast.errors);
+            }
             return ast;
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
         }
     }
     /**
@@ -27316,17 +27435,17 @@ class BindingParser {
      * This is used for parsing the switch expression in ICUs.
      */
     parseInterpolationExpression(expression, sourceSpan) {
-        const sourceInfo = sourceSpan.start.toString();
         const absoluteOffset = sourceSpan.start.offset;
         try {
-            const ast = this._exprParser.parseInterpolationExpression(expression, sourceInfo, absoluteOffset);
-            if (ast)
-                this._reportExpressionParserErrors(ast.errors, sourceSpan);
+            const ast = this._exprParser.parseInterpolationExpression(expression, sourceSpan, absoluteOffset);
+            if (ast) {
+                this.errors.push(...ast.errors);
+            }
             return ast;
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
         }
     }
     /**
@@ -27383,10 +27502,9 @@ class BindingParser {
      * @param absoluteValueOffset start of the `tplValue`
      */
     _parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset) {
-        const sourceInfo = sourceSpan.start.toString();
         try {
-            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceInfo, absoluteKeyOffset, absoluteValueOffset);
-            this._reportExpressionParserErrors(bindingsResult.errors, sourceSpan);
+            const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
+            bindingsResult.errors.forEach((e) => this.errors.push(e));
             bindingsResult.warnings.forEach((warning) => {
                 this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING);
             });
@@ -27463,18 +27581,18 @@ class BindingParser {
         targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan, keySpan, valueSpan));
     }
     parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
-        const sourceInfo = ((sourceSpan && sourceSpan.start) || '(unknown)').toString();
         try {
             const ast = isHostBinding
-                ? this._exprParser.parseSimpleBinding(value, sourceInfo, absoluteOffset, this._interpolationConfig)
-                : this._exprParser.parseBinding(value, sourceInfo, absoluteOffset, this._interpolationConfig);
-            if (ast)
-                this._reportExpressionParserErrors(ast.errors, sourceSpan);
+                ? this._exprParser.parseSimpleBinding(value, sourceSpan, absoluteOffset, this._interpolationConfig)
+                : this._exprParser.parseBinding(value, sourceSpan, absoluteOffset, this._interpolationConfig);
+            if (ast) {
+                this.errors.push(...ast.errors);
+            }
             return ast;
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
         }
     }
     createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
@@ -27588,31 +27706,25 @@ class BindingParser {
         // so don't add the event name to the matchableAttrs
     }
     _parseAction(value, sourceSpan) {
-        const sourceInfo = ((sourceSpan && sourceSpan.start) || '(unknown').toString();
         const absoluteOffset = sourceSpan && sourceSpan.start ? sourceSpan.start.offset : 0;
         try {
-            const ast = this._exprParser.parseAction(value, sourceInfo, absoluteOffset, this._interpolationConfig);
+            const ast = this._exprParser.parseAction(value, sourceSpan, absoluteOffset, this._interpolationConfig);
             if (ast) {
-                this._reportExpressionParserErrors(ast.errors, sourceSpan);
+                this.errors.push(...ast.errors);
             }
             if (!ast || ast.ast instanceof EmptyExpr$1) {
                 this._reportError(`Empty expressions are not allowed`, sourceSpan);
-                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
+                return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
             }
             return ast;
         }
         catch (e) {
             this._reportError(`${e}`, sourceSpan);
-            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceInfo, absoluteOffset);
+            return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
         }
     }
-    _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR, relatedError) {
-        this.errors.push(new ParseError(sourceSpan, message, level, relatedError));
-    }
-    _reportExpressionParserErrors(errors, sourceSpan) {
-        for (const error of errors) {
-            this._reportError(error.message, sourceSpan, undefined, error);
-        }
+    _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
+        this.errors.push(new ParseError(sourceSpan, message, level));
     }
     /**
      * @param propName the name of the property / attribute
@@ -29650,8 +29762,11 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
         constantPool.statements.push(new DeclareVarStmt(fnName, meta.defer.dependenciesFn, undefined, StmtModifier.Final));
         allDeferrableDepsFn = variable(fnName);
     }
+    const compilationMode = meta.isStandalone && !meta.hasDirectiveDependencies
+        ? TemplateCompilationMode.DomOnly
+        : TemplateCompilationMode.Full;
     // First the template is ingested into IR:
-    const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn, meta.relativeTemplatePath, getTemplateSourceLocationsEnabled());
+    const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, compilationMode, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn, meta.relativeTemplatePath, getTemplateSourceLocationsEnabled());
     // Then the IR is transformed to prepare it for cod egeneration.
     transform(tpl, CompilationJobKind.Tmpl);
     // Finally we emit the template function:
@@ -31513,6 +31628,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
             declarations.push(...decl.directives.map((dir) => convertDirectiveDeclarationToMetadata(dir)));
         decl.pipes && declarations.push(...convertPipeMapToMetadata(decl.pipes));
     }
+    const hasDirectiveDependencies = declarations.every(({ kind }) => kind === R3TemplateDependencyKind.Directive || kind === R3TemplateDependencyKind.NgModule);
     return {
         ...convertDeclareDirectiveFacadeToMetadata(decl, typeSourceSpan),
         template,
@@ -31528,6 +31644,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
         relativeContextFilePath: '',
         i18nUseExternalIds: true,
         relativeTemplatePath: null,
+        hasDirectiveDependencies,
     };
 }
 function convertDeclarationFacadeToMetadata(declaration) {
@@ -32271,7 +32388,7 @@ class _Visitor {
         this._msgCountAtSectionStart = undefined;
     }
     _reportError(node, msg) {
-        this._errors.push(new I18nError(node.sourceSpan, msg));
+        this._errors.push(new ParseError(node.sourceSpan, msg));
     }
 }
 function _isOpeningComment(n) {
@@ -32561,7 +32678,7 @@ class XliffParser {
     visitComponent(component, context) { }
     visitDirective(directive, context) { }
     _addError(node, message) {
-        this._errors.push(new I18nError(node.sourceSpan, message));
+        this._errors.push(new ParseError(node.sourceSpan, message));
     }
 }
 // Convert ml nodes (xliff syntax) to i18n nodes
@@ -32622,7 +32739,7 @@ let XmlToI18n$2 = class XmlToI18n {
         this._addError(directive, 'Unexpected node');
     }
     _addError(node, message) {
-        this._errors.push(new I18nError(node.sourceSpan, message));
+        this._errors.push(new ParseError(node.sourceSpan, message));
     }
 };
 function getCtypeForTag(tag) {
@@ -32884,7 +33001,7 @@ class Xliff2Parser {
     visitComponent(component, context) { }
     visitDirective(directive, context) { }
     _addError(node, message) {
-        this._errors.push(new I18nError(node.sourceSpan, message));
+        this._errors.push(new ParseError(node.sourceSpan, message));
     }
 }
 // Convert ml nodes (xliff syntax) to i18n nodes
@@ -32962,7 +33079,7 @@ let XmlToI18n$1 = class XmlToI18n {
         this._addError(directive, 'Unexpected node');
     }
     _addError(node, message) {
-        this._errors.push(new I18nError(node.sourceSpan, message));
+        this._errors.push(new ParseError(node.sourceSpan, message));
     }
 };
 function getTypeForTag(tag) {
@@ -33107,7 +33224,7 @@ class XtbParser {
         this._addError(directive, 'Unexpected node');
     }
     _addError(node, message) {
-        this._errors.push(new I18nError(node.sourceSpan, message));
+        this._errors.push(new ParseError(node.sourceSpan, message));
     }
 }
 // Convert ml nodes (xtb syntax) to i18n nodes
@@ -33166,7 +33283,7 @@ class XmlToI18n {
         this._addError(directive, 'Unexpected node');
     }
     _addError(node, message) {
-        this._errors.push(new I18nError(node.sourceSpan, message));
+        this._errors.push(new ParseError(node.sourceSpan, message));
     }
 }
 
@@ -33332,7 +33449,7 @@ class I18nToHtmlVisitor {
         return text;
     }
     _addError(el, msg) {
-        this._errors.push(new I18nError(el.sourceSpan, msg));
+        this._errors.push(new ParseError(el.sourceSpan, msg));
     }
 }
 
@@ -33569,7 +33686,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33587,7 +33704,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33682,7 +33799,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34098,7 +34215,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34133,7 +34250,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34184,7 +34301,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34217,7 +34334,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34268,7 +34385,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0-next.2+sha-f364d50'));
+    definitionMap.set('version', literal('20.1.0-next.2+sha-d25a6a0'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34424,7 +34541,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0-next.2+sha-f364d50');
+const VERSION = new Version('20.1.0-next.2+sha-d25a6a0');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
@@ -34450,5 +34567,5 @@ const VERSION = new Version('20.1.0-next.2+sha-f364d50');
 // the late binding of the Compiler to the @angular/core for jit compilation.
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, ParserError, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
