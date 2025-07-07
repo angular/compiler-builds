@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.0.6+sha-2c18043
+ * @license Angular v20.0.6+sha-403ba91
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -307,7 +307,7 @@ declare enum ParseErrorLevel {
     WARNING = 0,
     ERROR = 1
 }
-declare class ParseError {
+declare class ParseError extends Error {
     /** Location of the error. */
     readonly span: ParseSourceSpan$1;
     /** Error message. */
