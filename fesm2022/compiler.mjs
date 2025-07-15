@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.0+sha-4574095
+ * @license Angular v20.2.0-next.0+sha-18a6750
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -15784,6 +15784,19 @@ var CharacterReferenceType;
     CharacterReferenceType["HEX"] = "hexadecimal";
     CharacterReferenceType["DEC"] = "decimal";
 })(CharacterReferenceType || (CharacterReferenceType = {}));
+const SUPPORTED_BLOCKS = [
+    '@if',
+    '@else', // Covers `@else if` as well
+    '@for',
+    '@switch',
+    '@case',
+    '@default',
+    '@empty',
+    '@defer',
+    '@placeholder',
+    '@loading',
+    '@error',
+];
 // See https://www.w3.org/TR/html51/syntax.html#writing-html-documents
 class _Tokenizer {
     _getTagDefinition;
@@ -15874,10 +15887,10 @@ class _Tokenizer {
                     // don't want to advance in case it's not `@let`.
                     this._cursor.peek() === $AT &&
                     !this._inInterpolation &&
-                    this._attemptStr('@let')) {
+                    this._isLetStart()) {
                     this._consumeLetDeclaration(start);
                 }
-                else if (this._tokenizeBlocks && this._attemptCharCode($AT)) {
+                else if (this._tokenizeBlocks && this._isBlockStart()) {
                     this._consumeBlockStart(start);
                 }
                 else if (this._tokenizeBlocks &&
@@ -15917,6 +15930,7 @@ class _Tokenizer {
         return this._cursor.getChars(nameCursor).trim();
     }
     _consumeBlockStart(start) {
+        this._requireCharCode($AT);
         this._beginToken(24 /* TokenType.BLOCK_OPEN_START */, start);
         const startToken = this._endToken([this._getBlockName()]);
         if (this._cursor.peek() === $LPAREN) {
@@ -15989,6 +16003,7 @@ class _Tokenizer {
         }
     }
     _consumeLetDeclaration(start) {
+        this._requireStr('@let');
         this._beginToken(29 /* TokenType.LET_START */, start);
         // Require at least one white space after the `@let`.
         if (isWhitespace(this._cursor.peek())) {
@@ -16201,6 +16216,27 @@ class _Tokenizer {
         const char = String.fromCodePoint(this._cursor.peek());
         this._cursor.advance();
         return char;
+    }
+    _peekStr(chars) {
+        const len = chars.length;
+        if (this._cursor.charsLeft() < len) {
+            return false;
+        }
+        const cursor = this._cursor.clone();
+        for (let i = 0; i < len; i++) {
+            if (cursor.peek() !== chars.charCodeAt(i)) {
+                return false;
+            }
+            cursor.advance();
+        }
+        return true;
+    }
+    _isBlockStart() {
+        return (this._cursor.peek() === $AT &&
+            SUPPORTED_BLOCKS.some((blockName) => this._peekStr(blockName)));
+    }
+    _isLetStart() {
+        return this._cursor.peek() === $AT && this._peekStr('@let');
     }
     _consumeEntity(textTokenType) {
         this._beginToken(9 /* TokenType.ENCODED_ENTITY */);
@@ -16748,7 +16784,7 @@ class _Tokenizer {
         if (this._tokenizeBlocks &&
             !this._inInterpolation &&
             !this._isInExpansion() &&
-            (this._cursor.peek() === $AT || this._cursor.peek() === $RBRACE)) {
+            (this._isBlockStart() || this._isLetStart() || this._cursor.peek() === $RBRACE)) {
             return true;
         }
         return false;
@@ -33716,7 +33752,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33734,7 +33770,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33829,7 +33865,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34245,7 +34281,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34280,7 +34316,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34331,7 +34367,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34364,7 +34400,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34415,7 +34451,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.2.0-next.0+sha-4574095'));
+    definitionMap.set('version', literal('20.2.0-next.0+sha-18a6750'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34571,7 +34607,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.2.0-next.0+sha-4574095');
+const VERSION = new Version('20.2.0-next.0+sha-18a6750');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
