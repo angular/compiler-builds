@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.1+sha-f5f8f76
+ * @license Angular v20.2.0-next.1+sha-fc8247d
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2033,18 +2033,21 @@ declare class ParsedProperty {
     valueSpan: ParseSourceSpan$1 | undefined;
     readonly isLiteral: boolean;
     readonly isLegacyAnimation: boolean;
+    readonly isAnimation: boolean;
     constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1 | undefined);
 }
 declare enum ParsedPropertyType {
     DEFAULT = 0,
     LITERAL_ATTR = 1,
     LEGACY_ANIMATION = 2,
-    TWO_WAY = 3
+    TWO_WAY = 3,
+    ANIMATION = 4
 }
 declare enum ParsedEventType {
     Regular = 0,
     LegacyAnimation = 1,
-    TwoWay = 2
+    TwoWay = 2,
+    Animation = 3
 }
 declare class ParsedEvent {
     name: string;
@@ -2074,7 +2077,8 @@ declare enum BindingType {
     Class = 2,
     Style = 3,
     LegacyAnimation = 4,
-    TwoWay = 5
+    TwoWay = 5,
+    Animation = 6
 }
 declare class BoundElementProperty {
     name: string;
@@ -4499,6 +4503,7 @@ declare class BindingParser {
     parsePropertyBinding(name: string, expression: string, isHost: boolean, isPartOfAssignmentBinding: boolean, sourceSpan: ParseSourceSpan$1, absoluteOffset: number, valueSpan: ParseSourceSpan$1 | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan$1): void;
     parsePropertyInterpolation(name: string, value: string, sourceSpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1 | undefined, targetMatchableAttrs: string[][], targetProps: ParsedProperty[], keySpan: ParseSourceSpan$1, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): boolean;
     private _parsePropertyAst;
+    private _parseAnimation;
     private _parseLegacyAnimation;
     parseBinding(value: string, isHostBinding: boolean, sourceSpan: ParseSourceSpan$1, absoluteOffset: number): ASTWithSource;
     createBoundElementProperty(elementSelector: string | null, boundProp: ParsedProperty, skipValidation?: boolean, mapPropertyName?: boolean): BoundElementProperty;
@@ -5219,6 +5224,10 @@ declare class Identifiers {
     static pipeBindV: ExternalReference;
     static domProperty: ExternalReference;
     static property: ExternalReference;
+    static animationEnterListener: ExternalReference;
+    static animationLeaveListener: ExternalReference;
+    static animationEnter: ExternalReference;
+    static animationLeave: ExternalReference;
     static i18n: ExternalReference;
     static i18nAttributes: ExternalReference;
     static i18nExp: ExternalReference;

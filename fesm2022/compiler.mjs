@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.1+sha-f5f8f76
+ * @license Angular v20.2.0-next.1+sha-fc8247d
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2813,6 +2813,16 @@ class Identifiers {
     static pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE };
     static domProperty = { name: 'ɵɵdomProperty', moduleName: CORE };
     static property = { name: 'ɵɵproperty', moduleName: CORE };
+    static animationEnterListener = {
+        name: 'ɵɵanimateEnterListener',
+        moduleName: CORE,
+    };
+    static animationLeaveListener = {
+        name: 'ɵɵanimateLeaveListener',
+        moduleName: CORE,
+    };
+    static animationEnter = { name: 'ɵɵanimateEnter', moduleName: CORE };
+    static animationLeave = { name: 'ɵɵanimateLeave', moduleName: CORE };
     static i18n = { name: 'ɵɵi18n', moduleName: CORE };
     static i18nAttributes = { name: 'ɵɵi18nAttributes', moduleName: CORE };
     static i18nExp = { name: 'ɵɵi18nExp', moduleName: CORE };
@@ -4538,6 +4548,7 @@ class ParsedProperty {
     valueSpan;
     isLiteral;
     isLegacyAnimation;
+    isAnimation;
     constructor(name, expression, type, sourceSpan, keySpan, valueSpan) {
         this.name = name;
         this.expression = expression;
@@ -4547,6 +4558,7 @@ class ParsedProperty {
         this.valueSpan = valueSpan;
         this.isLiteral = this.type === ParsedPropertyType.LITERAL_ATTR;
         this.isLegacyAnimation = this.type === ParsedPropertyType.LEGACY_ANIMATION;
+        this.isAnimation = this.type === ParsedPropertyType.ANIMATION;
     }
 }
 var ParsedPropertyType;
@@ -4555,6 +4567,7 @@ var ParsedPropertyType;
     ParsedPropertyType[ParsedPropertyType["LITERAL_ATTR"] = 1] = "LITERAL_ATTR";
     ParsedPropertyType[ParsedPropertyType["LEGACY_ANIMATION"] = 2] = "LEGACY_ANIMATION";
     ParsedPropertyType[ParsedPropertyType["TWO_WAY"] = 3] = "TWO_WAY";
+    ParsedPropertyType[ParsedPropertyType["ANIMATION"] = 4] = "ANIMATION";
 })(ParsedPropertyType || (ParsedPropertyType = {}));
 var ParsedEventType;
 (function (ParsedEventType) {
@@ -4564,6 +4577,8 @@ var ParsedEventType;
     ParsedEventType[ParsedEventType["LegacyAnimation"] = 1] = "LegacyAnimation";
     // Event side of a two-way binding (e.g. `[(property)]="expression"`).
     ParsedEventType[ParsedEventType["TwoWay"] = 2] = "TwoWay";
+    // Animation specific event
+    ParsedEventType[ParsedEventType["Animation"] = 3] = "Animation";
 })(ParsedEventType || (ParsedEventType = {}));
 class ParsedEvent {
     name;
@@ -4614,6 +4629,8 @@ var BindingType;
     BindingType[BindingType["LegacyAnimation"] = 4] = "LegacyAnimation";
     // Property side of a two-way binding (e.g. `[(property)]="expression"`).
     BindingType[BindingType["TwoWay"] = 5] = "TwoWay";
+    // A binding to an animation CSS class or function (e.g. `[animate.leave]="expression"`).
+    BindingType[BindingType["Animation"] = 6] = "Animation";
 })(BindingType || (BindingType = {}));
 class BoundElementProperty {
     name;
@@ -8744,6 +8761,22 @@ var OpKind;
      * Creation op that attaches the location at which an element was defined in a template to it.
      */
     OpKind[OpKind["SourceLocation"] = 52] = "SourceLocation";
+    /**
+     * An operation to bind animation css classes to an element.
+     */
+    OpKind[OpKind["Animation"] = 53] = "Animation";
+    /**
+     * An operation to bind animation css classes to an element.
+     */
+    OpKind[OpKind["AnimationString"] = 54] = "AnimationString";
+    /**
+     * An operation to bind animation css classes to an element.
+     */
+    OpKind[OpKind["AnimationBinding"] = 55] = "AnimationBinding";
+    /**
+     * An operation to bind animation events to an element.
+     */
+    OpKind[OpKind["AnimationListener"] = 56] = "AnimationListener";
 })(OpKind || (OpKind = {}));
 /**
  * Distinguishes different kinds of IR expressions.
@@ -8934,6 +8967,10 @@ var BindingKind;
      * Property side of a two-way binding.
      */
     BindingKind[BindingKind["TwoWayProperty"] = 7] = "TwoWayProperty";
+    /**
+     * Property side of an animation binding.
+     */
+    BindingKind[BindingKind["Animation"] = 8] = "Animation";
 })(BindingKind || (BindingKind = {}));
 /**
  * Enumeration of possible times i18n params can be resolved.
@@ -9174,13 +9211,13 @@ function createBindingOp(target, kind, name, expression, unit, securityContext, 
 /**
  * Create a `PropertyOp`.
  */
-function createPropertyOp(target, name, expression, isLegacyAnimationTrigger, securityContext, isStructuralTemplateAttribute, templateKind, i18nContext, i18nMessage, sourceSpan) {
+function createPropertyOp(target, name, expression, bindingKind, securityContext, isStructuralTemplateAttribute, templateKind, i18nContext, i18nMessage, sourceSpan) {
     return {
         kind: OpKind.Property,
         target,
         name,
         expression,
-        isLegacyAnimationTrigger,
+        bindingKind,
         securityContext,
         sanitizer: null,
         isStructuralTemplateAttribute,
@@ -9329,6 +9366,24 @@ function createRepeaterOp(repeaterCreate, targetSlot, collection, sourceSpan) {
         sourceSpan,
         ...NEW_OP,
         ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
+    };
+}
+/**
+ * Create an `AnimationBindingOp`.
+ */
+function createAnimationBindingOp(name, target, animationKind, expression, securityContext, sourceSpan, animationBindingKind) {
+    return {
+        kind: OpKind.AnimationBinding,
+        name,
+        target,
+        animationKind,
+        expression,
+        i18nMessage: null,
+        securityContext,
+        sanitizer: null,
+        sourceSpan,
+        animationBindingKind,
+        ...NEW_OP,
     };
 }
 function createDeferWhenOp(target, expr, modifier, sourceSpan) {
@@ -10161,6 +10216,8 @@ function transformExpressionsInOp(op, transform, flags) {
         case OpKind.StyleMap:
         case OpKind.ClassProp:
         case OpKind.ClassMap:
+        case OpKind.AnimationString:
+        case OpKind.AnimationBinding:
         case OpKind.Binding:
             if (op.expression instanceof Interpolation) {
                 transformExpressionsInInterpolation(op.expression, transform, flags);
@@ -10213,6 +10270,8 @@ function transformExpressionsInOp(op, transform, flags) {
                 op.contextValue = transformExpressionsInExpression(op.contextValue, transform, flags);
             }
             break;
+        case OpKind.Animation:
+        case OpKind.AnimationListener:
         case OpKind.Listener:
         case OpKind.TwoWayListener:
             for (const innerOp of op.handlerOps) {
@@ -10865,6 +10924,43 @@ function createTextOp(xref, initialValue, icuPlaceholder, sourceSpan) {
     };
 }
 /**
+ * Create an `AnimationOp`.
+ */
+function createAnimationStringOp(name, target, animationKind, expression, securityContext, sourceSpan) {
+    return {
+        kind: OpKind.AnimationString,
+        name,
+        target,
+        animationKind,
+        expression,
+        i18nMessage: null,
+        securityContext,
+        sanitizer: null,
+        sourceSpan,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create an `AnimationOp`.
+ */
+function createAnimationOp(name, target, animationKind, callbackOps, securityContext, sourceSpan) {
+    const handlerOps = new OpList();
+    handlerOps.push(callbackOps);
+    return {
+        kind: OpKind.Animation,
+        name,
+        target,
+        animationKind,
+        handlerOps,
+        handlerFnName: null,
+        i18nMessage: null,
+        securityContext,
+        sanitizer: null,
+        sourceSpan,
+        ...NEW_OP,
+    };
+}
+/**
  * Create a `ListenerOp`. Host bindings reuse all the listener logic.
  */
 function createListenerOp(target, targetSlot, name, tag, handlerOps, legacyAnimationPhase, eventTarget, hostListener, sourceSpan) {
@@ -10882,6 +10978,28 @@ function createListenerOp(target, targetSlot, name, tag, handlerOps, legacyAnima
         consumesDollarEvent: false,
         isLegacyAnimationListener: legacyAnimationPhase !== null,
         legacyAnimationPhase: legacyAnimationPhase,
+        eventTarget,
+        sourceSpan,
+        ...NEW_OP,
+    };
+}
+/**
+ * Create a `ListenerOp`. Host bindings reuse all the listener logic.
+ */
+function createAnimationListenerOp(target, targetSlot, name, tag, handlerOps, animationKind, eventTarget, hostListener, sourceSpan) {
+    const handlerList = new OpList();
+    handlerList.push(handlerOps);
+    return {
+        kind: OpKind.AnimationListener,
+        target,
+        targetSlot,
+        tag,
+        hostListener,
+        name,
+        animationKind,
+        handlerOps: handlerList,
+        handlerFnName: null,
+        consumesDollarEvent: false,
         eventTarget,
         sourceSpan,
         ...NEW_OP,
@@ -11136,12 +11254,12 @@ function createSourceLocationOp(templatePath, locations) {
     };
 }
 
-function createDomPropertyOp(name, expression, isLegacyAnimationTrigger, i18nContext, securityContext, sourceSpan) {
+function createDomPropertyOp(name, expression, bindingKind, i18nContext, securityContext, sourceSpan) {
     return {
         kind: OpKind.DomProperty,
         name,
         expression,
-        isLegacyAnimationTrigger,
+        bindingKind,
         i18nContext,
         securityContext,
         sanitizer: null,
@@ -11308,7 +11426,10 @@ class CompilationUnit {
     *ops() {
         for (const op of this.create) {
             yield op;
-            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+            if (op.kind === OpKind.Listener ||
+                op.kind === OpKind.Animation ||
+                op.kind === OpKind.AnimationListener ||
+                op.kind === OpKind.TwoWayListener) {
                 for (const listenerOp of op.handlerOps) {
                     yield listenerOp;
                 }
@@ -11588,7 +11709,8 @@ function extractAttributes(job) {
                     extractAttributeOp(unit, op, elements);
                     break;
                 case OpKind.Property:
-                    if (!op.isLegacyAnimationTrigger) {
+                    if (op.bindingKind !== BindingKind.LegacyAnimation &&
+                        op.bindingKind !== BindingKind.Animation) {
                         let bindingKind;
                         if (op.i18nMessage !== null && op.templateKind === null) {
                             // If the binding has an i18n context, it is an i18n attribute, and should have that
@@ -11606,14 +11728,14 @@ function extractAttributes(job) {
                         createExtractedAttributeOp(op.target, bindingKind, null, op.name, 
                         /* expression */ null, 
                         /* i18nContext */ null, 
-                        /* i18nMessage */ null, op.securityContext), lookupElement$2(elements, op.target));
+                        /* i18nMessage */ null, op.securityContext), lookupElement$3(elements, op.target));
                     }
                     break;
                 case OpKind.TwoWayProperty:
                     OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.TwoWayProperty, null, op.name, 
                     /* expression */ null, 
                     /* i18nContext */ null, 
-                    /* i18nMessage */ null, op.securityContext), lookupElement$2(elements, op.target));
+                    /* i18nMessage */ null, op.securityContext), lookupElement$3(elements, op.target));
                     break;
                 case OpKind.StyleProp:
                 case OpKind.ClassProp:
@@ -11626,7 +11748,7 @@ function extractAttributes(job) {
                         OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, null, op.name, 
                         /* expression */ null, 
                         /* i18nContext */ null, 
-                        /* i18nMessage */ null, SecurityContext.STYLE), lookupElement$2(elements, op.target));
+                        /* i18nMessage */ null, SecurityContext.STYLE), lookupElement$3(elements, op.target));
                     }
                     break;
                 case OpKind.Listener:
@@ -11646,7 +11768,7 @@ function extractAttributes(job) {
                             unit.create.push(extractedAttributeOp);
                         }
                         else {
-                            OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
+                            OpList.insertBefore(extractedAttributeOp, lookupElement$3(elements, op.target));
                         }
                     }
                     break;
@@ -11657,7 +11779,7 @@ function extractAttributes(job) {
                         /* expression */ null, 
                         /* i18nContext */ null, 
                         /* i18nMessage */ null, SecurityContext.NONE);
-                        OpList.insertBefore(extractedAttributeOp, lookupElement$2(elements, op.target));
+                        OpList.insertBefore(extractedAttributeOp, lookupElement$3(elements, op.target));
                     }
                     break;
             }
@@ -11667,7 +11789,7 @@ function extractAttributes(job) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$2(elements, xref) {
+function lookupElement$3(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -11695,7 +11817,7 @@ function extractAttributeOp(unit, op, elements) {
             unit.create.push(extractedAttributeOp);
         }
         else {
-            const ownerOp = lookupElement$2(elements, op.target);
+            const ownerOp = lookupElement$3(elements, op.target);
             OpList.insertBefore(extractedAttributeOp, ownerOp);
         }
         OpList.remove(op);
@@ -11705,7 +11827,7 @@ function extractAttributeOp(unit, op, elements) {
 /**
  * Looks up an element in the given map by xref ID.
  */
-function lookupElement$1(elements, xref) {
+function lookupElement$2(elements, xref) {
     const el = elements.get(xref);
     if (el === undefined) {
         throw new Error('All attributes should have an element-like target.');
@@ -11731,21 +11853,27 @@ function specializeBindings(job) {
                 case BindingKind.Attribute:
                     if (op.name === 'ngNonBindable') {
                         OpList.remove(op);
-                        const target = lookupElement$1(elements, op.target);
+                        const target = lookupElement$2(elements, op.target);
                         target.nonBindable = true;
+                    }
+                    else if (op.name.startsWith('animate.')) {
+                        OpList.replace(op, createAnimationBindingOp(op.name, op.target, op.name === 'animate.enter' ? "enter" /* ir.AnimationKind.ENTER */ : "leave" /* ir.AnimationKind.LEAVE */, op.expression, op.securityContext, op.sourceSpan, 0 /* ir.AnimationBindingKind.STRING */));
                     }
                     else {
                         const [namespace, name] = splitNsName(op.name);
                         OpList.replace(op, createAttributeOp(op.target, namespace, name, op.expression, op.securityContext, op.isTextAttribute, op.isStructuralTemplateAttribute, op.templateKind, op.i18nMessage, op.sourceSpan));
                     }
                     break;
+                case BindingKind.Animation:
+                    OpList.replace(op, createAnimationBindingOp(op.name, op.target, op.name === 'animate.enter' ? "enter" /* ir.AnimationKind.ENTER */ : "leave" /* ir.AnimationKind.LEAVE */, op.expression, op.securityContext, op.sourceSpan, 1 /* ir.AnimationBindingKind.VALUE */));
+                    break;
                 case BindingKind.Property:
                 case BindingKind.LegacyAnimation:
                     if (job.kind === CompilationJobKind.Host) {
-                        OpList.replace(op, createDomPropertyOp(op.name, op.expression, op.bindingKind === BindingKind.LegacyAnimation, op.i18nContext, op.securityContext, op.sourceSpan));
+                        OpList.replace(op, createDomPropertyOp(op.name, op.expression, op.bindingKind, op.i18nContext, op.securityContext, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind === BindingKind.LegacyAnimation, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
+                        OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
                     }
                     break;
                 case BindingKind.TwoWayProperty:
@@ -11797,6 +11925,10 @@ const CHAIN_COMPATIBILITY = new Map([
     [Identifiers.domElementContainerEnd, Identifiers.domElementContainerEnd],
     [Identifiers.domListener, Identifiers.domListener],
     [Identifiers.domTemplate, Identifiers.domTemplate],
+    [Identifiers.animationEnter, Identifiers.animationEnter],
+    [Identifiers.animationLeave, Identifiers.animationLeave],
+    [Identifiers.animationEnterListener, Identifiers.animationEnterListener],
+    [Identifiers.animationLeaveListener, Identifiers.animationLeaveListener],
 ]);
 /**
  * Chaining results in repeated call expressions, causing a deep AST of receiver expressions. To prevent running out of
@@ -12215,6 +12347,52 @@ function serializeAttributes({ attributes, bindings, classes, i18n, projectAs, s
         attrArray.push(literal(6 /* core.AttributeMarker.I18n */), ...i18n);
     }
     return literalArr(attrArray);
+}
+
+/**
+ * Looks up an element in the given map by xref ID.
+ */
+function lookupElement$1(elements, xref) {
+    const el = elements.get(xref);
+    if (el === undefined) {
+        throw new Error('All attributes should have an element-like target.');
+    }
+    return el;
+}
+function convertAnimations(job) {
+    const elements = new Map();
+    for (const unit of job.units) {
+        for (const op of unit.create) {
+            if (!isElementOrContainerOp(op)) {
+                continue;
+            }
+            elements.set(op.xref, op);
+        }
+    }
+    for (const unit of job.units) {
+        for (const op of unit.ops()) {
+            if (op.kind === OpKind.AnimationBinding) {
+                const createAnimationOp = getAnimationOp(op);
+                if (job.kind === CompilationJobKind.Host) {
+                    unit.create.push(createAnimationOp);
+                }
+                else {
+                    OpList.insertAfter(createAnimationOp, lookupElement$1(elements, op.target));
+                }
+                OpList.remove(op);
+            }
+        }
+    }
+}
+function getAnimationOp(op) {
+    if (op.animationBindingKind === 0 /* ir.AnimationBindingKind.STRING */) {
+        // this is a simple string case
+        return createAnimationStringOp(op.name, op.target, op.name === 'animate.enter' ? "enter" /* ir.AnimationKind.ENTER */ : "leave" /* ir.AnimationKind.LEAVE */, op.expression, op.securityContext, op.sourceSpan);
+    }
+    else {
+        const expression = op.expression;
+        return createAnimationOp(op.name, op.target, op.name === 'animate.enter' ? "enter" /* ir.AnimationKind.ENTER */ : "leave" /* ir.AnimationKind.LEAVE */, [createStatementOp(new ReturnStatement(expression, expression.sourceSpan))], op.securityContext, op.sourceSpan);
+    }
 }
 
 /**
@@ -13105,6 +13283,8 @@ function recursivelyProcessView(view, parentScope) {
                     op.trackByOps.prepend(generateVariablesInScopeForView(view, scope, false));
                 }
                 break;
+            case OpKind.Animation:
+            case OpKind.AnimationListener:
             case OpKind.Listener:
             case OpKind.TwoWayListener:
                 // Prepend variables to listener handler functions.
@@ -13187,7 +13367,7 @@ function getScopeForView(view, parent) {
  * This is a recursive process, as views inherit variables available from their parent view, which
  * itself may have inherited variables, etc.
  */
-function generateVariablesInScopeForView(view, scope, isListener) {
+function generateVariablesInScopeForView(view, scope, isCallback) {
     const newOps = [];
     if (scope.view !== view.xref) {
         // Before generating variables for a parent view, we need to switch to the context of the parent
@@ -13211,7 +13391,7 @@ function generateVariablesInScopeForView(view, scope, isListener) {
     for (const ref of scope.references) {
         newOps.push(createVariableOp(view.job.allocateXrefId(), ref.variable, new ReferenceExpr(ref.targetId, ref.targetSlot, ref.offset), VariableFlags.None));
     }
-    if (scope.view !== view.xref || isListener) {
+    if (scope.view !== view.xref || isCallback) {
         for (const decl of scope.letDeclarations) {
             newOps.push(createVariableOp(view.job.allocateXrefId(), decl.variable, new ContextLetReferenceExpr(decl.targetId, decl.targetSlot), VariableFlags.None));
         }
@@ -22379,9 +22559,32 @@ function addNamesToView(unit, baseName, state, compatibility) {
         switch (op.kind) {
             case OpKind.Property:
             case OpKind.DomProperty:
-                if (op.isLegacyAnimationTrigger) {
+                if (op.bindingKind === BindingKind.LegacyAnimation) {
                     op.name = '@' + op.name;
                 }
+                break;
+            case OpKind.Animation:
+                if (op.handlerFnName === null) {
+                    const animationKind = op.name.replace('.', '');
+                    op.handlerFnName = `${unit.fnName}_${animationKind}_cb`;
+                    op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
+                }
+                break;
+            case OpKind.AnimationListener:
+                if (op.handlerFnName !== null) {
+                    break;
+                }
+                if (!op.hostListener && op.targetSlot.slot === null) {
+                    throw new Error(`Expected a slot to be assigned`);
+                }
+                const animationKind = op.name.replace('.', '');
+                if (op.hostListener) {
+                    op.handlerFnName = `${baseName}_${animationKind}_HostBindingHandler`;
+                }
+                else {
+                    op.handlerFnName = `${unit.fnName}_${op.tag.replace('-', '_')}_${animationKind}_${op.targetSlot.slot}_listener`;
+                }
+                op.handlerFnName = sanitizeIdentifier(op.handlerFnName);
                 break;
             case OpKind.Listener:
                 if (op.handlerFnName !== null) {
@@ -22540,7 +22743,10 @@ function stripImportant(name) {
 function mergeNextContextExpressions(job) {
     for (const unit of job.units) {
         for (const op of unit.create) {
-            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+            if (op.kind === OpKind.Listener ||
+                op.kind === OpKind.Animation ||
+                op.kind === OpKind.AnimationListener ||
+                op.kind === OpKind.TwoWayListener) {
                 mergeNextContextsInOps(op.handlerOps);
             }
         }
@@ -22661,7 +22867,9 @@ function kindWithInterpolationTest(kind, interpolation) {
 }
 function basicListenerKindTest(op) {
     return ((op.kind === OpKind.Listener && !(op.hostListener && op.isLegacyAnimationListener)) ||
-        op.kind === OpKind.TwoWayListener);
+        op.kind === OpKind.TwoWayListener ||
+        op.kind === OpKind.Animation ||
+        op.kind === OpKind.AnimationListener);
 }
 function nonInterpolationPropertyKindTest(op) {
     return ((op.kind === OpKind.Property || op.kind === OpKind.TwoWayProperty) &&
@@ -22708,6 +22916,7 @@ const UPDATE_HOST_ORDERING = [
 const handledOpKinds = new Set([
     OpKind.Listener,
     OpKind.TwoWayListener,
+    OpKind.AnimationListener,
     OpKind.StyleMap,
     OpKind.ClassMap,
     OpKind.StyleProp,
@@ -22716,6 +22925,7 @@ const handledOpKinds = new Set([
     OpKind.TwoWayProperty,
     OpKind.DomProperty,
     OpKind.Attribute,
+    OpKind.Animation,
 ]);
 /**
  * Many type of operations have ordering constraints that must be respected. For example, a
@@ -23519,6 +23729,36 @@ function i18nApply(slot, sourceSpan) {
 function domProperty(name, expression, sanitizer, sourceSpan) {
     return propertyBase(Identifiers.domProperty, name, expression, sanitizer, sourceSpan);
 }
+function animation(animationKind, handlerFn, sanitizer, sourceSpan) {
+    const args = [handlerFn];
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    const identifier = animationKind === "enter" /* ir.AnimationKind.ENTER */
+        ? Identifiers.animationEnter
+        : Identifiers.animationLeave;
+    return call(identifier, args, sourceSpan);
+}
+function animationString(animationKind, expression, sanitizer, sourceSpan) {
+    const value = expression instanceof Interpolation
+        ? interpolationToExpression(expression, sourceSpan)
+        : expression;
+    const args = [value];
+    if (sanitizer !== null) {
+        args.push(sanitizer);
+    }
+    const identifier = animationKind === "enter" /* ir.AnimationKind.ENTER */
+        ? Identifiers.animationEnter
+        : Identifiers.animationLeave;
+    return call(identifier, args, sourceSpan);
+}
+function animationListener(animationKind, handlerFn, eventTargetResolver, sourceSpan) {
+    const args = [handlerFn];
+    const identifier = animationKind === "enter" /* ir.AnimationKind.ENTER */
+        ? Identifiers.animationEnterListener
+        : Identifiers.animationLeaveListener;
+    return call(identifier, args, sourceSpan);
+}
 function syntheticHostProperty(name, expression, sourceSpan) {
     return call(Identifiers.syntheticHostProperty, [literal(name), expression], sourceSpan);
 }
@@ -23765,6 +24005,18 @@ function reifyCreateOperations(unit, ops) {
             case OpKind.DeclareLet:
                 OpList.replace(op, declareLet(op.handle.slot, op.sourceSpan));
                 break;
+            case OpKind.AnimationString:
+                OpList.replace(op, animationString(op.animationKind, op.expression, op.sanitizer, op.sourceSpan));
+                break;
+            case OpKind.Animation:
+                const animationCallbackFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, 
+                /* consumesDollarEvent */ false);
+                OpList.replace(op, animation(op.animationKind, animationCallbackFn, op.sanitizer, op.sourceSpan));
+                break;
+            case OpKind.AnimationListener:
+                const animationListenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
+                OpList.replace(op, animationListener(op.animationKind, animationListenerFn, null, op.sourceSpan));
+                break;
             case OpKind.Listener:
                 const listenerFn = reifyListenerHandler(unit, op.handlerFnName, op.handlerOps, op.consumesDollarEvent);
                 const eventTargetResolver = op.eventTarget
@@ -23943,7 +24195,9 @@ function reifyUpdateOperations(unit, ops) {
                 OpList.replace(op, advance(op.delta, op.sourceSpan));
                 break;
             case OpKind.Property:
-                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly && !op.isLegacyAnimationTrigger
+                OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly &&
+                    op.bindingKind !== BindingKind.LegacyAnimation &&
+                    op.bindingKind !== BindingKind.Animation
                     ? domProperty(DOM_PROPERTY_REMAPPING.get(op.name) ?? op.name, op.expression, op.sanitizer, op.sourceSpan)
                     : property(op.name, op.expression, op.sanitizer, op.sourceSpan));
                 break;
@@ -23979,7 +24233,8 @@ function reifyUpdateOperations(unit, ops) {
                     throw new Error('not yet handled');
                 }
                 else {
-                    if (op.isLegacyAnimationTrigger) {
+                    if (op.bindingKind === BindingKind.LegacyAnimation ||
+                        op.bindingKind === BindingKind.Animation) {
                         OpList.replace(op, syntheticHostProperty(op.name, op.expression, op.sourceSpan));
                     }
                     else {
@@ -24256,6 +24511,8 @@ function processLexicalScope$1(view, ops) {
                         break;
                 }
                 break;
+            case OpKind.Animation:
+            case OpKind.AnimationListener:
             case OpKind.Listener:
             case OpKind.TwoWayListener:
                 processLexicalScope$1(view, op.handlerOps);
@@ -24321,11 +24578,13 @@ function resolveDollarEvent(job) {
 }
 function transformDollarEvent(ops) {
     for (const op of ops) {
-        if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+        if (op.kind === OpKind.Listener ||
+            op.kind === OpKind.TwoWayListener ||
+            op.kind === OpKind.AnimationListener) {
             transformExpressionsInOp(op, (expr) => {
                 if (expr instanceof LexicalReadExpr && expr.name === '$event') {
                     // Two-way listeners always consume `$event` so they omit this field.
-                    if (op.kind === OpKind.Listener) {
+                    if (op.kind === OpKind.Listener || op.kind === OpKind.AnimationListener) {
                         op.consumesDollarEvent = true;
                     }
                     return new ReadVarExpr(expr.name);
@@ -24716,6 +24975,8 @@ function processLexicalScope(unit, ops, savedView) {
                         break;
                 }
                 break;
+            case OpKind.Animation:
+            case OpKind.AnimationListener:
             case OpKind.Listener:
             case OpKind.TwoWayListener:
                 // Listener functions have separate variable declarations, so process them as a separate
@@ -24733,7 +24994,10 @@ function processLexicalScope(unit, ops, savedView) {
     // scope. Also, look for `ir.RestoreViewExpr`s and match them with the snapshotted view context
     // variable.
     for (const op of ops) {
-        if (op.kind == OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+        if (op.kind == OpKind.Listener ||
+            op.kind === OpKind.TwoWayListener ||
+            op.kind === OpKind.Animation ||
+            op.kind === OpKind.AnimationListener) {
             // Listeners were already processed above with their own scopes.
             continue;
         }
@@ -24902,7 +25166,10 @@ function saveAndRestoreView(job) {
             }, new GetCurrentViewExpr(), VariableFlags.None),
         ]);
         for (const op of unit.create) {
-            if (op.kind !== OpKind.Listener && op.kind !== OpKind.TwoWayListener) {
+            if (op.kind !== OpKind.Listener &&
+                op.kind !== OpKind.TwoWayListener &&
+                op.kind !== OpKind.Animation &&
+                op.kind !== OpKind.AnimationListener) {
                 continue;
             }
             // Embedded views always need the save/restore view operation.
@@ -25222,7 +25489,10 @@ function generateTemporaries(ops) {
         // Add declarations for the temp vars.
         generatedStatements.push(...Array.from(new Set(defs.values())).map((name) => createStatementOp(new DeclareVarStmt(name))));
         opCount++;
-        if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+        if (op.kind === OpKind.Listener ||
+            op.kind === OpKind.Animation ||
+            op.kind === OpKind.AnimationListener ||
+            op.kind === OpKind.TwoWayListener) {
             op.handlerOps.prepend(generateTemporaries(op.handlerOps));
         }
         else if (op.kind === OpKind.RepeaterCreate && op.trackByOps !== null) {
@@ -25566,7 +25836,10 @@ function optimizeVariables(job) {
         inlineAlwaysInlineVariables(unit.create);
         inlineAlwaysInlineVariables(unit.update);
         for (const op of unit.create) {
-            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+            if (op.kind === OpKind.Listener ||
+                op.kind === OpKind.Animation ||
+                op.kind === OpKind.AnimationListener ||
+                op.kind === OpKind.TwoWayListener) {
                 inlineAlwaysInlineVariables(op.handlerOps);
             }
             else if (op.kind === OpKind.RepeaterCreate && op.trackByOps !== null) {
@@ -25576,7 +25849,10 @@ function optimizeVariables(job) {
         optimizeVariablesInOpList(unit.create, job.compatibility);
         optimizeVariablesInOpList(unit.update, job.compatibility);
         for (const op of unit.create) {
-            if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener) {
+            if (op.kind === OpKind.Listener ||
+                op.kind === OpKind.Animation ||
+                op.kind === OpKind.AnimationListener ||
+                op.kind === OpKind.TwoWayListener) {
                 optimizeVariablesInOpList(op.handlerOps, job.compatibility);
             }
             else if (op.kind === OpKind.RepeaterCreate && op.trackByOps !== null) {
@@ -26013,6 +26289,7 @@ const phases = [
     { kind: CompilationJobKind.Both, fn: deduplicateTextBindings },
     { kind: CompilationJobKind.Both, fn: specializeStyleBindings },
     { kind: CompilationJobKind.Both, fn: specializeBindings },
+    { kind: CompilationJobKind.Both, fn: convertAnimations },
     { kind: CompilationJobKind.Both, fn: extractAttributes },
     { kind: CompilationJobKind.Tmpl, fn: createI18nContexts },
     { kind: CompilationJobKind.Both, fn: parseExtractedStyles },
@@ -26172,6 +26449,8 @@ const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
 const domSchema = new DomElementSchemaRegistry();
 // Tag name of the `ng-template` element.
 const NG_TEMPLATE_TAG_NAME = 'ng-template';
+// prefix for any animation binding
+const ANIMATE_PREFIX$1 = 'animate.';
 function isI18nRootNode(meta) {
     return meta instanceof Message;
 }
@@ -26203,6 +26482,9 @@ function ingestHostBinding(input, bindingParser, constantPool) {
         }
         if (property.isLegacyAnimation) {
             bindingKind = BindingKind.LegacyAnimation;
+        }
+        if (property.isAnimation) {
+            bindingKind = BindingKind.Animation;
         }
         const securityContexts = bindingParser
             .calcPossibleSecurityContexts(input.componentSelector, property.name, bindingKind === BindingKind.Attribute)
@@ -26870,6 +27152,7 @@ const BINDING_KINDS = new Map([
     [BindingType.Class, BindingKind.ClassName],
     [BindingType.Style, BindingKind.StyleProperty],
     [BindingType.LegacyAnimation, BindingKind.LegacyAnimation],
+    [BindingType.Animation, BindingKind.Animation],
 ]);
 /**
  * Checks whether the given template is a plain ng-template (as opposed to another kind of template
@@ -26933,6 +27216,9 @@ function ingestElementBindings(unit, op, element) {
         }
         if (output.type === ParsedEventType.TwoWay) {
             unit.create.push(createTwoWayListenerOp(op.xref, op.handle, output.name, op.tag, makeTwoWayListenerHandlerOps(unit, output.handler, output.handlerSpan), output.sourceSpan));
+        }
+        else if (output.type === ParsedEventType.Animation) {
+            unit.create.push(createAnimationListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.name.endsWith('enter') ? "enter" /* ir.AnimationKind.ENTER */ : "leave" /* ir.AnimationKind.LEAVE */, output.target, false, output.sourceSpan));
         }
         else {
             unit.create.push(createListenerOp(op.xref, op.handle, output.name, op.tag, makeListenerHandlerOps(unit, output.handler, output.handlerSpan), output.phase, output.target, false, output.sourceSpan));
@@ -27042,7 +27328,9 @@ function createTemplateBinding(view, xref, type, name, value, unit, securityCont
             }
         }
         if (!isTextBinding &&
-            (type === BindingType.Attribute || type === BindingType.LegacyAnimation)) {
+            (type === BindingType.Attribute ||
+                type === BindingType.LegacyAnimation ||
+                type === BindingType.Animation)) {
             // Again, this binding doesn't really target the ng-template; it actually targets the element
             // inside the structural template. In the case of non-text attribute or animation bindings,
             // the binding doesn't even show up on the ng-template const array, so we just skip it
@@ -27200,14 +27488,18 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
     if (root !== null) {
         // Collect the static attributes for content projection purposes.
         for (const attr of root.attributes) {
-            const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME, attr.name, true);
-            unit.update.push(createBindingOp(xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+            if (!attr.name.startsWith(ANIMATE_PREFIX$1)) {
+                const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME, attr.name, true);
+                unit.update.push(createBindingOp(xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
+            }
         }
         // Also collect the inputs since they participate in content projection as well.
         // Note that TDB used to collect the outputs as well, but it wasn't passing them into
         // the template instruction. Here we just don't collect them.
         for (const attr of root.inputs) {
-            if (attr.type !== BindingType.LegacyAnimation && attr.type !== BindingType.Attribute) {
+            if (attr.type !== BindingType.LegacyAnimation &&
+                attr.type !== BindingType.Animation &&
+                attr.type !== BindingType.Attribute) {
                 const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME, attr.name, true);
                 unit.create.push(createExtractedAttributeOp(xref, BindingKind.Property, null, attr.name, null, null, null, securityContext));
             }
@@ -27425,6 +27717,7 @@ class HtmlParser extends Parser$1 {
 
 const PROPERTY_PARTS_SEPARATOR = '.';
 const ATTRIBUTE_PREFIX = 'attr';
+const ANIMATE_PREFIX = 'animate';
 const CLASS_PREFIX = 'class';
 const STYLE_PREFIX = 'style';
 const TEMPLATE_ATTR_PREFIX$1 = '*';
@@ -27624,6 +27917,9 @@ class BindingParser {
         if (isLegacyAnimationProp) {
             this._parseLegacyAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
+        else if (name.startsWith(ANIMATE_PREFIX)) {
+            this._parseAnimation(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+        }
         else {
             this._parsePropertyAst(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
         }
@@ -27639,6 +27935,10 @@ class BindingParser {
     _parsePropertyAst(name, ast, isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
         targetMatchableAttrs.push([name, ast.source]);
         targetProps.push(new ParsedProperty(name, ast, isPartOfAssignmentBinding ? ParsedPropertyType.TWO_WAY : ParsedPropertyType.DEFAULT, sourceSpan, keySpan, valueSpan));
+    }
+    _parseAnimation(name, ast, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+        targetMatchableAttrs.push([name, ast.source]);
+        targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan, keySpan, valueSpan));
     }
     _parseLegacyAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
         if (name.length === 0) {
@@ -27702,6 +28002,11 @@ class BindingParser {
                 bindingType = BindingType.Style;
                 securityContexts = [SecurityContext.STYLE];
             }
+            else if (parts[0] == ANIMATE_PREFIX) {
+                boundPropertyName = boundProp.name;
+                bindingType = BindingType.Animation;
+                securityContexts = [SecurityContext.NONE];
+            }
         }
         // If not a special case, use the full property name
         if (boundPropertyName === null) {
@@ -27716,7 +28021,6 @@ class BindingParser {
         }
         return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
     }
-    // TODO: keySpan should be required but was made optional to avoid changing VE parser.
     parseEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
         if (name.length === 0) {
             this._reportError(`Event name is missing in binding`, sourceSpan);
@@ -27772,7 +28076,14 @@ class BindingParser {
         if (isAssignmentEvent && isValid && !this._isAllowedAssignmentEvent(ast)) {
             this._reportError('Unsupported expression in a two-way binding', sourceSpan);
         }
-        targetEvents.push(new ParsedEvent(eventName, target, isAssignmentEvent ? ParsedEventType.TwoWay : ParsedEventType.Regular, ast, sourceSpan, handlerSpan, keySpan));
+        let eventType = ParsedEventType.Regular;
+        if (isAssignmentEvent) {
+            eventType = ParsedEventType.TwoWay;
+        }
+        if (name.startsWith(ANIMATE_PREFIX)) {
+            eventType = ParsedEventType.Animation;
+        }
+        targetEvents.push(new ParsedEvent(eventName, target, eventType, ast, sourceSpan, handlerSpan, keySpan));
         // Don't detect directives for event names for now,
         // so don't add the event name to the matchableAttrs
     }
@@ -29343,7 +29654,7 @@ class HtmlAstToIvyAst {
                 const identifier = bindParts[IDENT_KW_IDX];
                 const keySpan = createKeySpan(srcSpan, bindParts[KW_BINDON_IDX], identifier);
                 this.bindingParser.parsePropertyBinding(identifier, value, false, true, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
-                this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan);
+                this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan, absoluteOffset);
             }
             else if (bindParts[KW_AT_IDX]) {
                 const keySpan = createKeySpan(srcSpan, '', name);
@@ -29374,7 +29685,7 @@ class HtmlAstToIvyAst {
             const keySpan = createKeySpan(srcSpan, delims.start, identifier);
             if (delims.start === BINDING_DELIMS.BANANA_BOX.start) {
                 this.bindingParser.parsePropertyBinding(identifier, value, false, true, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
-                this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan);
+                this.parseAssignmentEvent(identifier, value, srcSpan, attribute.valueSpan, matchableAttributes, boundEvents, keySpan, absoluteOffset);
             }
             else if (delims.start === BINDING_DELIMS.PROPERTY.start) {
                 this.bindingParser.parsePropertyBinding(identifier, value, false, false, srcSpan, absoluteOffset, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan);
@@ -29494,7 +29805,7 @@ class HtmlAstToIvyAst {
         }
         references.push(new Reference(identifier, value, sourceSpan, keySpan, valueSpan));
     }
-    parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents, keySpan) {
+    parseAssignmentEvent(name, expression, sourceSpan, valueSpan, targetMatchableAttrs, boundEvents, keySpan, absoluteOffset) {
         const events = [];
         this.bindingParser.parseEvent(`${name}Change`, expression, 
         /* isAssignmentEvent */ true, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
@@ -33757,7 +34068,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33775,7 +34086,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33870,7 +34181,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34286,7 +34597,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34321,7 +34632,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34372,7 +34683,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34405,7 +34716,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34456,7 +34767,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-f5f8f76'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-fc8247d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34612,7 +34923,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.2.0-next.1+sha-f5f8f76');
+const VERSION = new Version('20.2.0-next.1+sha-fc8247d');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
