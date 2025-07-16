@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0+sha-70c8780
+ * @license Angular v20.1.0+sha-9506cdf
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2987,6 +2987,7 @@ class Identifiers {
     static InputSignalBrandWriteType = { name: 'ɵINPUT_SIGNAL_BRAND_WRITE_TYPE', moduleName: CORE };
     static UnwrapDirectiveSignalInputs = { name: 'ɵUnwrapDirectiveSignalInputs', moduleName: CORE };
     static unwrapWritableSignal = { name: 'ɵunwrapWritableSignal', moduleName: CORE };
+    static assertType = { name: 'ɵassertType', moduleName: CORE };
 }
 
 const DASH_CASE_REGEXP = /-+([a-z0-9])/g;
@@ -4815,8 +4816,9 @@ let Element$1 = class Element {
     sourceSpan;
     startSourceSpan;
     endSourceSpan;
+    isVoid;
     i18n;
-    constructor(name, attributes, inputs, outputs, directives, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+    constructor(name, attributes, inputs, outputs, directives, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, isVoid, i18n) {
         this.name = name;
         this.attributes = attributes;
         this.inputs = inputs;
@@ -4828,6 +4830,7 @@ let Element$1 = class Element {
         this.sourceSpan = sourceSpan;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
+        this.isVoid = isVoid;
         this.i18n = i18n;
     }
     visit(visitor) {
@@ -13438,7 +13441,8 @@ class Element extends NodeWithI18n {
     isSelfClosing;
     startSourceSpan;
     endSourceSpan;
-    constructor(name, attrs, directives, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, i18n) {
+    isVoid;
+    constructor(name, attrs, directives, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, isVoid, i18n) {
         super(sourceSpan, i18n);
         this.name = name;
         this.attrs = attrs;
@@ -13447,6 +13451,7 @@ class Element extends NodeWithI18n {
         this.isSelfClosing = isSelfClosing;
         this.startSourceSpan = startSourceSpan;
         this.endSourceSpan = endSourceSpan;
+        this.isVoid = isVoid;
     }
     visit(visitor, context) {
         return visitor.visitElement(this, context);
@@ -17421,13 +17426,13 @@ class _TreeBuilder {
         const directives = [];
         this._consumeAttributesAndDirectives(attrs, directives);
         const fullName = this._getElementFullName(startTagToken, this._getClosestElementLikeParent());
+        const tagDef = this._getTagDefinition(fullName);
         let selfClosing = false;
         // Note: There could have been a tokenizer error
         // so that we don't get a token for the end tag...
         if (this._peek.type === 2 /* TokenType.TAG_OPEN_END_VOID */) {
             this._advance();
             selfClosing = true;
-            const tagDef = this._getTagDefinition(fullName);
             if (!(tagDef?.canSelfClose || getNsPrefix(fullName) !== null || tagDef?.isVoid)) {
                 this.errors.push(TreeError.create(fullName, startTagToken.sourceSpan, `Only void, custom and foreign elements can be self closed "${startTagToken.parts[1]}"`));
             }
@@ -17440,7 +17445,7 @@ class _TreeBuilder {
         const span = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
         // Create a separate `startSpan` because `span` will be modified when there is an `end` span.
         const startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
-        const el = new Element(fullName, attrs, directives, [], selfClosing, span, startSpan, undefined);
+        const el = new Element(fullName, attrs, directives, [], selfClosing, span, startSpan, undefined, tagDef?.isVoid ?? false);
         const parent = this._getContainer();
         const isClosedByChild = parent !== null && !!this._getTagDefinition(parent)?.isClosedByChild(el.name);
         this._pushContainer(el, isClosedByChild);
@@ -17883,11 +17888,11 @@ class WhitespaceVisitor {
         if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
             // don't descent into elements where we need to preserve whitespaces
             // but still visit all attributes to eliminate one used as a market to preserve WS
-            const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), visitAllWithSiblings(this, element.directives), element.children, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), visitAllWithSiblings(this, element.directives), element.children, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n);
             this.originalNodeMap?.set(newElement, element);
             return newElement;
         }
-        const newElement = new Element(element.name, element.attrs, element.directives, visitAllWithSiblings(this, element.children), element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+        const newElement = new Element(element.name, element.attrs, element.directives, visitAllWithSiblings(this, element.children), element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n);
         this.originalNodeMap?.set(newElement, element);
         return newElement;
     }
@@ -29026,7 +29031,7 @@ class HtmlAstToIvyAst {
         }
         else {
             const attrs = this.categorizePropertyAttributes(element.name, parsedProperties, i18nAttrsMeta);
-            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, directives, children, references, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+            parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, directives, children, references, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n);
         }
         if (elementHasInlineTemplate) {
             // If this node is an inline-template (e.g. has *ngFor) then we need to create a template
@@ -29532,7 +29537,7 @@ class NonBindableVisitor {
         /* inputs */ [], 
         /* outputs */ [], 
         /* directives */ [], children, 
-        /* references */ [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        /* references */ [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.isVoid);
     }
     visitComment(comment) {
         return null;
@@ -29573,7 +29578,7 @@ class NonBindableVisitor {
         /* inputs */ [], 
         /* outputs */ [], 
         /* directives */ [], children, 
-        /* references */ [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan);
+        /* references */ [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, false);
     }
     visitDirective(directive, context) {
         return null;
@@ -32080,7 +32085,7 @@ class _Visitor {
         this._init(_VisitorMode.Merge, interpolationConfig);
         this._translations = translations;
         // Construct a single fake root element
-        const wrapper = new Element('wrapper', [], [], nodes, false, undefined, undefined, undefined);
+        const wrapper = new Element('wrapper', [], [], nodes, false, undefined, undefined, undefined, false);
         const translatedNode = wrapper.visit(this, null);
         if (this._inI18nBlock) {
             this._reportError(nodes[nodes.length - 1], 'Unclosed block');
@@ -32258,7 +32263,7 @@ class _Visitor {
         this._inImplicitNode = wasInImplicitNode;
         if (this._mode === _VisitorMode.Merge) {
             if (node instanceof Element) {
-                return new Element(node.name, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
+                return new Element(node.name, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.isVoid);
             }
             else {
                 return new Component(node.componentName, node.tagName, node.fullName, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
@@ -33752,7 +33757,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33770,7 +33775,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33865,7 +33870,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34281,7 +34286,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34316,7 +34321,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34367,7 +34372,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34400,7 +34405,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34451,7 +34456,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.0+sha-70c8780'));
+    definitionMap.set('version', literal('20.1.0+sha-9506cdf'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34607,7 +34612,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.0+sha-70c8780');
+const VERSION = new Version('20.1.0+sha-9506cdf');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //

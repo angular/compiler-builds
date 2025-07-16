@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.0+sha-70c8780
+ * @license Angular v20.1.0+sha-9506cdf
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -610,7 +610,8 @@ declare class Element$1 extends NodeWithI18n {
     readonly isSelfClosing: boolean;
     startSourceSpan: ParseSourceSpan$1;
     endSourceSpan: ParseSourceSpan$1 | null;
-    constructor(name: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan?: ParseSourceSpan$1 | null, i18n?: I18nMeta$1);
+    readonly isVoid: boolean;
+    constructor(name: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: (ParseSourceSpan$1 | null) | undefined, isVoid: boolean, i18n?: I18nMeta$1);
     visit(visitor: Visitor$1, context: any): any;
 }
 declare class Comment$1 implements BaseNode {
@@ -3542,8 +3543,9 @@ declare class Element implements Node {
     sourceSpan: ParseSourceSpan$1;
     startSourceSpan: ParseSourceSpan$1;
     endSourceSpan: ParseSourceSpan$1 | null;
+    readonly isVoid: boolean;
     i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, isVoid: boolean, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare abstract class DeferredTrigger implements Node {
@@ -5315,6 +5317,10 @@ declare class Identifiers {
         moduleName: string;
     };
     static unwrapWritableSignal: {
+        name: string;
+        moduleName: string;
+    };
+    static assertType: {
         name: string;
         moduleName: string;
     };
