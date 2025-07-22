@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.1+sha-db3c928
+ * @license Angular v20.2.0-next.1+sha-4138aca
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5223,6 +5223,7 @@ declare class Identifiers {
     static pipeBind4: ExternalReference;
     static pipeBindV: ExternalReference;
     static domProperty: ExternalReference;
+    static ariaProperty: ExternalReference;
     static property: ExternalReference;
     static animationEnterListener: ExternalReference;
     static animationLeaveListener: ExternalReference;

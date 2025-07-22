@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.1+sha-db3c928
+ * @license Angular v20.2.0-next.1+sha-4138aca
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2812,6 +2812,7 @@ class Identifiers {
     static pipeBind4 = { name: 'ɵɵpipeBind4', moduleName: CORE };
     static pipeBindV = { name: 'ɵɵpipeBindV', moduleName: CORE };
     static domProperty = { name: 'ɵɵdomProperty', moduleName: CORE };
+    static ariaProperty = { name: 'ɵɵariaProperty', moduleName: CORE };
     static property = { name: 'ɵɵproperty', moduleName: CORE };
     static animationEnterListener = {
         name: 'ɵɵanimateEnterListener',
@@ -11895,6 +11896,7 @@ function specializeBindings(job) {
 }
 
 const CHAIN_COMPATIBILITY = new Map([
+    [Identifiers.ariaProperty, Identifiers.ariaProperty],
     [Identifiers.attribute, Identifiers.attribute],
     [Identifiers.classProp, Identifiers.classProp],
     [Identifiers.element, Identifiers.element],
@@ -20613,6 +20615,44 @@ const _ATTR_TO_PROP = new Map(Object.entries({
     'innerHtml': 'innerHTML',
     'readonly': 'readOnly',
     'tabindex': 'tabIndex',
+    // https://www.w3.org/TR/wai-aria-1.2/#accessibilityroleandproperties-correspondence
+    'aria-atomic': 'ariaAtomic',
+    'aria-autocomplete': 'ariaAutoComplete',
+    'aria-busy': 'ariaBusy',
+    'aria-checked': 'ariaChecked',
+    'aria-colcount': 'ariaColCount',
+    'aria-colindex': 'ariaColIndex',
+    'aria-colspan': 'ariaColSpan',
+    'aria-current': 'ariaCurrent',
+    'aria-disabled': 'ariaDisabled',
+    'aria-expanded': 'ariaExpanded',
+    'aria-haspopup': 'ariaHasPopup',
+    'aria-hidden': 'ariaHidden',
+    'aria-invalid': 'ariaInvalid',
+    'aria-keyshortcuts': 'ariaKeyShortcuts',
+    'aria-label': 'ariaLabel',
+    'aria-level': 'ariaLevel',
+    'aria-live': 'ariaLive',
+    'aria-modal': 'ariaModal',
+    'aria-multiline': 'ariaMultiLine',
+    'aria-multiselectable': 'ariaMultiSelectable',
+    'aria-orientation': 'ariaOrientation',
+    'aria-placeholder': 'ariaPlaceholder',
+    'aria-posinset': 'ariaPosInSet',
+    'aria-pressed': 'ariaPressed',
+    'aria-readonly': 'ariaReadOnly',
+    'aria-required': 'ariaRequired',
+    'aria-roledescription': 'ariaRoleDescription',
+    'aria-rowcount': 'ariaRowCount',
+    'aria-rowindex': 'ariaRowIndex',
+    'aria-rowspan': 'ariaRowSpan',
+    'aria-selected': 'ariaSelected',
+    'aria-setsize': 'ariaSetSize',
+    'aria-sort': 'ariaSort',
+    'aria-valuemax': 'ariaValueMax',
+    'aria-valuemin': 'ariaValueMin',
+    'aria-valuenow': 'ariaValueNow',
+    'aria-valuetext': 'ariaValueText',
 }));
 // Invert _ATTR_TO_PROP.
 const _PROP_TO_ATTR = Array.from(_ATTR_TO_PROP).reduce((inverted, [propertyName, attributeName]) => {
@@ -23616,6 +23656,9 @@ function i18nAttributes(slot, i18nAttributesConfig) {
     const args = [literal(slot), literal(i18nAttributesConfig)];
     return call(Identifiers.i18nAttributes, args, null);
 }
+function ariaProperty(name, expression, sourceSpan) {
+    return propertyBase(Identifiers.ariaProperty, name, expression, null, sourceSpan);
+}
 function property(name, expression, sanitizer, sourceSpan) {
     return propertyBase(Identifiers.property, name, expression, sanitizer, sourceSpan);
 }
@@ -23892,6 +23935,7 @@ function callVariadicInstruction(config, baseArgs, interpolationArgs, extraArgs,
     return createStatementOp(callVariadicInstructionExpr(config, baseArgs, interpolationArgs, extraArgs, sourceSpan).toStmt());
 }
 
+const ARIA_PREFIX = 'aria';
 /**
  * Map of target resolvers for event listeners.
  */
@@ -24198,8 +24242,8 @@ function reifyUpdateOperations(unit, ops) {
                 OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly &&
                     op.bindingKind !== BindingKind.LegacyAnimation &&
                     op.bindingKind !== BindingKind.Animation
-                    ? domProperty(DOM_PROPERTY_REMAPPING.get(op.name) ?? op.name, op.expression, op.sanitizer, op.sourceSpan)
-                    : property(op.name, op.expression, op.sanitizer, op.sourceSpan));
+                    ? reifyDomProperty(op)
+                    : reifyProperty(op));
                 break;
             case OpKind.TwoWayProperty:
                 OpList.replace(op, twoWayProperty(op.name, op.expression, op.sanitizer, op.sourceSpan));
@@ -24238,7 +24282,7 @@ function reifyUpdateOperations(unit, ops) {
                         OpList.replace(op, syntheticHostProperty(op.name, op.expression, op.sourceSpan));
                     }
                     else {
-                        OpList.replace(op, domProperty(DOM_PROPERTY_REMAPPING.get(op.name) ?? op.name, op.expression, op.sanitizer, op.sourceSpan));
+                        OpList.replace(op, reifyDomProperty(op));
                     }
                 }
                 break;
@@ -24269,6 +24313,61 @@ function reifyUpdateOperations(unit, ops) {
                 throw new Error(`AssertionError: Unsupported reification of update op ${OpKind[op.kind]}`);
         }
     }
+}
+/**
+ * Converts an ARIA property name to its corresponding attribute name, if necessary.
+ *
+ * For example, converts `ariaLabel` to `aria-label`.
+ *
+ * https://www.w3.org/TR/wai-aria-1.2/#accessibilityroleandproperties-correspondence
+ *
+ * This must be kept in sync with the the function of the same name in
+ * packages/core/src/render3/instructions/aria_property.ts.
+ *
+ * @param name A property name that starts with `aria`.
+ * @returns The corresponding attribute name.
+ */
+function ariaAttrName(name) {
+    return name.charAt(ARIA_PREFIX.length) !== '-'
+        ? ARIA_PREFIX + '-' + name.slice(ARIA_PREFIX.length).toLowerCase()
+        : name; // Property already has attribute name.
+}
+/**
+ * Returns whether `name` is an ARIA property (or attribute) name.
+ *
+ * This is a heuristic based on whether name begins with and is longer than `aria`. For example,
+ * this returns true for both `ariaLabel` and `aria-label`.
+ */
+function isAriaProperty(name) {
+    return name.startsWith(ARIA_PREFIX) && name.length > ARIA_PREFIX.length;
+}
+/**
+ * Reifies a DOM property binding operation.
+ *
+ * This is an optimized version of {@link reifyProperty} that avoids unnecessarily trying to bind
+ * to directive inputs at runtime for views that don't import any directives.
+ *
+ * @param op A property binding operation.
+ * @returns A statement to update the property at runtime.
+ */
+function reifyDomProperty(op) {
+    return isAriaProperty(op.name)
+        ? attribute(ariaAttrName(op.name), op.expression, null, null, op.sourceSpan)
+        : domProperty(DOM_PROPERTY_REMAPPING.get(op.name) ?? op.name, op.expression, op.sanitizer, op.sourceSpan);
+}
+/**
+ * Reifies a property binding operation.
+ *
+ * The returned statement attempts to bind to directive inputs before falling back to a DOM
+ * property.
+ *
+ * @param op A property binding operation.
+ * @returns A statement to update the property at runtime.
+ */
+function reifyProperty(op) {
+    return isAriaProperty(op.name)
+        ? ariaProperty(op.name, op.expression, op.sourceSpan)
+        : property(op.name, op.expression, op.sanitizer, op.sourceSpan);
 }
 function reifyIrExpression(expr) {
     if (!isIrExpression(expr)) {
@@ -34068,7 +34167,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34086,7 +34185,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34181,7 +34280,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34597,7 +34696,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34632,7 +34731,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34683,7 +34782,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34716,7 +34815,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34767,7 +34866,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.2.0-next.1+sha-db3c928'));
+    definitionMap.set('version', literal('20.2.0-next.1+sha-4138aca'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34923,7 +35022,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.2.0-next.1+sha-db3c928');
+const VERSION = new Version('20.2.0-next.1+sha-4138aca');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
