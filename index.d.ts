@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.1+sha-cec91c0
+ * @license Angular v20.2.0-next.1+sha-882522c
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5307,6 +5307,7 @@ declare class Identifiers {
     static ProvidersFeature: ExternalReference;
     static HostDirectivesFeature: ExternalReference;
     static ExternalStylesFeature: ExternalReference;
+    static AnimationsFeature: ExternalReference;
     static listener: ExternalReference;
     static getInheritedFactory: ExternalReference;
     static sanitizeHtml: ExternalReference;
