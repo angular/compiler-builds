@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.1.3+sha-d53649c
+ * @license Angular v20.1.3+sha-15670d8
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -18621,7 +18621,7 @@ class Parser {
     parseAction(input, parseSourceSpan, absoluteOffset, interpolationConfig = DEFAULT_INTERPOLATION_CONFIG) {
         const errors = [];
         this._checkNoInterpolation(errors, input, parseSourceSpan, interpolationConfig);
-        const sourceToLex = this._stripComments(input);
+        const { stripped: sourceToLex } = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
         const ast = new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 1 /* ParseFlags.Action */, errors, 0, this._supportsDirectPipeReferences).parseChain();
         return new ASTWithSource(ast, input, getLocation(parseSourceSpan), absoluteOffset, errors);
@@ -18648,7 +18648,7 @@ class Parser {
     }
     _parseBindingAst(input, parseSourceSpan, absoluteOffset, interpolationConfig, errors) {
         this._checkNoInterpolation(errors, input, parseSourceSpan, interpolationConfig);
-        const sourceToLex = this._stripComments(input);
+        const { stripped: sourceToLex } = this._stripComments(input);
         const tokens = this._lexer.tokenize(sourceToLex);
         return new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
     }
@@ -18699,8 +18699,13 @@ class Parser {
             // indexes inside the tokens.
             const expressionSpan = interpolatedTokens?.[i * 2 + 1]?.sourceSpan;
             const expressionText = expressions[i].text;
-            const sourceToLex = this._stripComments(expressionText);
+            const { stripped: sourceToLex, hasComments } = this._stripComments(expressionText);
             const tokens = this._lexer.tokenize(sourceToLex);
+            if (hasComments && sourceToLex.trim().length === 0 && tokens.length === 0) {
+                // Empty expressions error are handled futher down, here we only take care of the comment case
+                errors.push(getParseError('Interpolation expression cannot only contain a comment', input, `at column ${expressions[i].start} in`, parseSourceSpan));
+                continue;
+            }
             const ast = new _ParseAST(expressionSpan ? expressionText : input, expressionSpan || parseSourceSpan, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, offsets[i], this._supportsDirectPipeReferences).parseChain();
             expressionNodes.push(ast);
         }
@@ -18712,7 +18717,7 @@ class Parser {
      * This is used for parsing the switch expression in ICUs.
      */
     parseInterpolationExpression(expression, parseSourceSpan, absoluteOffset) {
-        const sourceToLex = this._stripComments(expression);
+        const { stripped: sourceToLex } = this._stripComments(expression);
         const tokens = this._lexer.tokenize(sourceToLex);
         const errors = [];
         const ast = new _ParseAST(expression, parseSourceSpan, absoluteOffset, tokens, 0 /* ParseFlags.None */, errors, 0, this._supportsDirectPipeReferences).parseChain();
@@ -18800,7 +18805,9 @@ class Parser {
     }
     _stripComments(input) {
         const i = this._commentStart(input);
-        return i != null ? input.substring(0, i) : input;
+        return i != null
+            ? { stripped: input.substring(0, i), hasComments: true }
+            : { stripped: input, hasComments: false };
     }
     _commentStart(input) {
         let outerQuote = null;
@@ -33757,7 +33764,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -33775,7 +33782,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -33870,7 +33877,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34286,7 +34293,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34321,7 +34328,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34372,7 +34379,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34405,7 +34412,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34456,7 +34463,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.1.3+sha-d53649c'));
+    definitionMap.set('version', literal('20.1.3+sha-15670d8'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -34612,7 +34619,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.1.3+sha-d53649c');
+const VERSION = new Version('20.1.3+sha-15670d8');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
