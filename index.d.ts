@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.2.0-next.3+sha-6597ac0
+ * @license Angular v20.2.0-next.3+sha-5802f80
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5392,18 +5392,21 @@ type ScopedNode = Template | SwitchBlockCase | IfBlockBranch | ForLoopBlock | Fo
 /** Possible values that a reference can be resolved to. */
 type ReferenceTarget<DirectiveT> = {
     directive: DirectiveT;
-    node: DirectiveOwner;
+    node: Exclude<DirectiveOwner, HostElement>;
 } | Element | Template;
 /** Entity that is local to the template and defined within the template. */
 type TemplateEntity = Reference | Variable | LetDeclaration;
 /** Nodes that can have directives applied to them. */
-type DirectiveOwner = Element | Template | Component | Directive;
+type DirectiveOwner = Element | Template | Component | Directive | HostElement;
 /**
  * A logical target for analysis, which could contain a template or other types of bindings.
  */
-interface Target {
+interface Target<DirectiveT> {
     template?: Node[];
-    host?: HostElement;
+    host?: {
+        node: HostElement;
+        directives: DirectiveT[];
+    };
 }
 /**
  * A data structure which can indicate whether a given property name is present or not.
@@ -5480,7 +5483,7 @@ interface DirectiveMeta {
  * The returned `BoundTarget` has an API for extracting information about the processed target.
  */
 interface TargetBinder<D extends DirectiveMeta> {
-    bind(target: Target): BoundTarget<D>;
+    bind(target: Target<D>): BoundTarget<D>;
 }
 /**
  * Result of performing the binding operation against a `Target`.
@@ -5494,7 +5497,7 @@ interface BoundTarget<DirectiveT extends DirectiveMeta> {
     /**
      * Get the original `Target` that was bound.
      */
-    readonly target: Target;
+    readonly target: Target<DirectiveT>;
     /**
      * For a given template node (either an `Element` or a `Template`), get the set of directives
      * which matched the node, if any.
@@ -5619,7 +5622,7 @@ declare class R3TargetBinder<DirectiveT extends DirectiveMeta> implements Target
      * Perform a binding operation on the given `Target` and return a `BoundTarget` which contains
      * metadata about the types referenced in the template.
      */
-    bind(target: Target): BoundTarget<DirectiveT>;
+    bind(target: Target<DirectiveT>): BoundTarget<DirectiveT>;
 }
 
 /*!
