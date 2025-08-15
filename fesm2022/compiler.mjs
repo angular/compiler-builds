@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.0+sha-5129dae
+ * @license Angular v21.0.0-next.0+sha-5b3933f
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -23226,6 +23226,11 @@ function propagateI18nBlocksToTemplates(unit, subTemplateIndex) {
                     subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.emptyView), i18nBlock, op.emptyI18nPlaceholder, subTemplateIndex);
                 }
                 break;
+            case OpKind.Projection:
+                if (op.fallbackView !== null) {
+                    subTemplateIndex = propagateI18nBlocksForView(unit.job.views.get(op.fallbackView), i18nBlock, op.fallbackViewI18nPlaceholder, subTemplateIndex);
+                }
+                break;
         }
     }
     return subTemplateIndex;
@@ -24808,6 +24813,21 @@ function resolvePlaceholdersForView(job, unit, i18nContexts, elements, pendingSt
                     recordElementClose(op, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
                     // Clear out the pending structural directive now that its been accounted for.
                     pendingStructuralDirective = undefined;
+                }
+                if (op.fallbackView !== null) {
+                    const view = job.views.get(op.fallbackView);
+                    if (op.fallbackViewI18nPlaceholder === undefined) {
+                        resolvePlaceholdersForView(job, view, i18nContexts, elements);
+                    }
+                    else {
+                        if (currentOps === null) {
+                            throw Error('i18n tag placeholder should only occur inside an i18n block');
+                        }
+                        recordTemplateStart(job, view, op.handle.slot, op.fallbackViewI18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        resolvePlaceholdersForView(job, view, i18nContexts, elements);
+                        recordTemplateClose(job, view, op.handle.slot, op.fallbackViewI18nPlaceholder, currentOps.i18nContext, currentOps.i18nBlock, pendingStructuralDirective);
+                        pendingStructuralDirective = undefined;
+                    }
                 }
                 break;
             case OpKind.ConditionalCreate:
@@ -29722,11 +29742,11 @@ class HtmlAstToIvyAst {
                 const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
                 const parsedVariables = [];
                 const absoluteValueOffset = attribute.valueSpan
-                    ? attribute.valueSpan.start.offset
+                    ? attribute.valueSpan.fullStart.offset
                     : // If there is no value span the attribute does not have a value, like `attr` in
                         //`<div attr></div>`. In this case, point to one character beyond the last character of
                         // the attribute name.
-                        attribute.sourceSpan.start.offset + attribute.name.length;
+                        attribute.sourceSpan.fullStart.offset + attribute.name.length;
                 this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables, true /* isIvyAst */);
                 templateVariables.push(...parsedVariables.map((v) => new Variable(v.name, v.value, v.sourceSpan, v.keySpan, v.valueSpan)));
             }
@@ -34276,7 +34296,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34294,7 +34314,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34389,7 +34409,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34805,7 +34825,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34840,7 +34860,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34891,7 +34911,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34924,7 +34944,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34975,7 +34995,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('21.0.0-next.0+sha-5129dae'));
+    definitionMap.set('version', literal('21.0.0-next.0+sha-5b3933f'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -35131,7 +35151,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('21.0.0-next.0+sha-5129dae');
+const VERSION = new Version('21.0.0-next.0+sha-5b3933f');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
