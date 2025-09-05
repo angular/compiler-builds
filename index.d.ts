@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.2+sha-8401f89
+ * @license Angular v20.3.0-next.0+sha-11a54d1
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -8,8 +8,7 @@ declare const emitDistinctChangesOnlyDefaultValue = true;
 declare enum ViewEncapsulation$1 {
     Emulated = 0,
     None = 2,
-    ShadowDom = 3,
-    IsolatedShadowDom = 4
+    ShadowDom = 3
 }
 declare enum ChangeDetectionStrategy$1 {
     OnPush = 0,
@@ -2604,8 +2603,7 @@ interface R3DeclareInjectableFacade {
 declare enum ViewEncapsulation {
     Emulated = 0,
     None = 2,
-    ShadowDom = 3,
-    IsolatedShadowDom = 4
+    ShadowDom = 3
 }
 type ChangeDetectionStrategy = number;
 interface R3QueryMetadataFacade {
