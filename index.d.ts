@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.3+sha-94a0880
+ * @license Angular v21.0.0-next.3+sha-7a4b225
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5309,7 +5309,6 @@ declare class Identifiers {
     static ProvidersFeature: ExternalReference;
     static HostDirectivesFeature: ExternalReference;
     static ExternalStylesFeature: ExternalReference;
-    static AnimationsFeature: ExternalReference;
     static listener: ExternalReference;
     static getInheritedFactory: ExternalReference;
     static sanitizeHtml: ExternalReference;
