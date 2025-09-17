@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.3+sha-7d3919e
+ * @license Angular v21.0.0-next.3+sha-a53ef1d
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -1237,27 +1237,6 @@ class InstantiateExpr extends Expression {
         return new InstantiateExpr(this.classExpr.clone(), this.args.map((arg) => arg.clone()), this.type, this.sourceSpan);
     }
 }
-let RegularExpressionLiteral$1 = class RegularExpressionLiteral extends Expression {
-    body;
-    flags;
-    constructor(body, flags, sourceSpan) {
-        super(null, sourceSpan);
-        this.body = body;
-        this.flags = flags;
-    }
-    isEquivalent(e) {
-        return e instanceof RegularExpressionLiteral && this.body === e.body && this.flags === e.flags;
-    }
-    isConstant() {
-        return true;
-    }
-    visitExpression(visitor, context) {
-        return visitor.visitRegularExpressionLiteral(this, context);
-    }
-    clone() {
-        return new RegularExpressionLiteral(this.body, this.flags, this.sourceSpan);
-    }
-};
 class LiteralExpr extends Expression {
     value;
     constructor(value, type, sourceSpan) {
@@ -2051,9 +2030,6 @@ let RecursiveAstVisitor$1 = class RecursiveAstVisitor {
     visitLiteralExpr(ast, context) {
         return this.visitExpression(ast, context);
     }
-    visitRegularExpressionLiteral(ast, context) {
-        return this.visitExpression(ast, context);
-    }
     visitLocalizedString(ast, context) {
         return this.visitExpression(ast, context);
     }
@@ -2314,7 +2290,6 @@ var output_ast = /*#__PURE__*/Object.freeze({
     ReadPropExpr: ReadPropExpr,
     ReadVarExpr: ReadVarExpr,
     RecursiveAstVisitor: RecursiveAstVisitor$1,
-    RegularExpressionLiteral: RegularExpressionLiteral$1,
     ReturnStatement: ReturnStatement,
     STRING_TYPE: STRING_TYPE,
     Statement: Statement,
@@ -2589,9 +2564,6 @@ class GenericKeyFn {
         }
         else if (expr instanceof LiteralExpr) {
             return String(expr.value);
-        }
-        else if (expr instanceof RegularExpressionLiteral$1) {
-            return `/${expr.body}/${expr.flags ?? ''}`;
         }
         else if (expr instanceof LiteralArrayExpr) {
             const entries = [];
@@ -3594,10 +3566,6 @@ class AbstractEmitterVisitor {
         }
         return null;
     }
-    visitRegularExpressionLiteral(ast, ctx) {
-        ctx.print(ast, `/${ast.body}/${ast.flags || ''}`);
-        return null;
-    }
     visitLocalizedString(ast, ctx) {
         const head = ast.serializeI18nHead();
         ctx.print(ast, '$localize `' + head.raw);
@@ -4406,18 +4374,6 @@ class ParenthesizedExpression extends AST {
         return visitor.visitParenthesizedExpression(this, context);
     }
 }
-class RegularExpressionLiteral extends AST {
-    body;
-    flags;
-    constructor(span, sourceSpan, body, flags) {
-        super(span, sourceSpan);
-        this.body = body;
-        this.flags = flags;
-    }
-    visit(visitor, context) {
-        return visitor.visitRegularExpressionLiteral(this, context);
-    }
-}
 /**
  * Records the absolute position of a text span in a source file, where `start` and `end` are the
  * starting and ending byte offsets, respectively, of the text span in a source file.
@@ -4578,7 +4534,6 @@ class RecursiveAstVisitor {
     visitParenthesizedExpression(ast, context) {
         this.visit(ast.expression, context);
     }
-    visitRegularExpressionLiteral(ast, context) { }
     // This is not part of the AstVisitor interface, just a helper method
     visitAll(asts, context) {
         for (const ast of asts) {
@@ -10494,8 +10449,7 @@ function transformExpressionsInExpression(expr, transform, flags) {
     }
     else if (expr instanceof ReadVarExpr ||
         expr instanceof ExternalExpr ||
-        expr instanceof LiteralExpr ||
-        expr instanceof RegularExpressionLiteral$1) ;
+        expr instanceof LiteralExpr) ;
     else {
         throw new Error(`Unhandled expression kind: ${expr.constructor.name}`);
     }
@@ -18295,9 +18249,7 @@ var TokenType;
     TokenType[TokenType["String"] = 4] = "String";
     TokenType[TokenType["Operator"] = 5] = "Operator";
     TokenType[TokenType["Number"] = 6] = "Number";
-    TokenType[TokenType["RegExpBody"] = 7] = "RegExpBody";
-    TokenType[TokenType["RegExpFlags"] = 8] = "RegExpFlags";
-    TokenType[TokenType["Error"] = 9] = "Error";
+    TokenType[TokenType["Error"] = 7] = "Error";
 })(TokenType || (TokenType = {}));
 var StringTokenKind;
 (function (StringTokenKind) {
@@ -18392,12 +18344,6 @@ class Token {
     isError() {
         return this.type === TokenType.Error;
     }
-    isRegExpBody() {
-        return this.type === TokenType.RegExpBody;
-    }
-    isRegExpFlags() {
-        return this.type === TokenType.RegExpFlags;
-    }
     toNumber() {
         return this.type === TokenType.Number ? this.numValue : -1;
     }
@@ -18424,8 +18370,6 @@ class Token {
             case TokenType.PrivateIdentifier:
             case TokenType.String:
             case TokenType.Error:
-            case TokenType.RegExpBody:
-            case TokenType.RegExpFlags:
                 return this.strValue;
             case TokenType.Number:
                 return this.numValue.toString();
@@ -18461,12 +18405,6 @@ function newNumberToken(index, end, n) {
 }
 function newErrorToken(index, end, message) {
     return new Token(index, end, TokenType.Error, 0, message);
-}
-function newRegExpBodyToken(index, end, text) {
-    return new Token(index, end, TokenType.RegExpBody, 0, text);
-}
-function newRegExpFlagsToken(index, end, text) {
-    return new Token(index, end, TokenType.RegExpFlags, 0, text);
 }
 const EOF = new Token(-1, -1, TokenType.Character, 0, '');
 class _Scanner {
@@ -18551,9 +18489,6 @@ class _Scanner {
             case $MINUS:
                 return this.scanComplexOperator(start, '-', $EQ, '=');
             case $SLASH:
-                if (this.isStartOfRegex()) {
-                    return this.scanRegex(index);
-                }
                 return this.scanComplexOperator(start, '/', $EQ, '=');
             case $PERCENT:
                 return this.scanComplexOperator(start, '%', $EQ, '=');
@@ -18816,67 +18751,6 @@ class _Scanner {
             this.advance();
         }
         return newOperatorToken(start, this.index, operator);
-    }
-    isStartOfRegex() {
-        if (this.tokens.length === 0) {
-            return true;
-        }
-        const lastToken = this.tokens[this.tokens.length - 1];
-        return (!lastToken.isIdentifier() &&
-            !lastToken.isPrivateIdentifier() &&
-            !lastToken.isNumber() &&
-            !lastToken.isString() &&
-            !lastToken.isKeyword() &&
-            !lastToken.isCharacter($RPAREN) &&
-            !lastToken.isCharacter($RBRACKET));
-    }
-    scanRegex(tokenStart) {
-        this.advance();
-        const textStart = this.index;
-        let inEscape = false;
-        let inCharacterClass = false;
-        while (true) {
-            const peek = this.peek;
-            if (peek === $EOF) {
-                return this.error('Unterminated regular expression', 0);
-            }
-            if (inEscape) {
-                inEscape = false;
-            }
-            else if (peek === $BACKSLASH) {
-                inEscape = true;
-            }
-            else if (peek === $LBRACKET) {
-                inCharacterClass = true;
-            }
-            else if (peek === $RBRACKET) {
-                inCharacterClass = false;
-            }
-            else if (peek === $SLASH && !inCharacterClass) {
-                break;
-            }
-            this.advance();
-        }
-        // Note that we want the text without the slashes,
-        // but we still want the slashes to be part of the span.
-        const value = this.input.substring(textStart, this.index);
-        this.advance();
-        const bodyToken = newRegExpBodyToken(tokenStart, this.index, value);
-        const flagsToken = this.scanRegexFlags(this.index);
-        if (flagsToken !== null) {
-            this.tokens.push(bodyToken);
-            return flagsToken;
-        }
-        return bodyToken;
-    }
-    scanRegexFlags(start) {
-        if (!isAsciiLetter(this.peek)) {
-            return null;
-        }
-        while (isAsciiLetter(this.peek)) {
-            this.advance();
-        }
-        return newRegExpFlagsToken(start, this.index, this.input.substring(start, this.index));
     }
 }
 function isIdentifierStart(code) {
@@ -19229,8 +19103,6 @@ var ParseContextFlags;
      */
     ParseContextFlags[ParseContextFlags["Writable"] = 1] = "Writable";
 })(ParseContextFlags || (ParseContextFlags = {}));
-/** Possible flags that can be used in a regex literal. */
-const SUPPORTED_REGEX_FLAGS = new Set(['d', 'g', 'i', 'm', 's', 'u', 'v', 'y']);
 class _ParseAST {
     input;
     parseSourceSpan;
@@ -19800,9 +19672,6 @@ class _ParseAST {
             this._reportErrorForPrivateIdentifier(this.next, null);
             return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
         }
-        else if (this.next.isRegExpBody()) {
-            return this.parseRegularExpressionLiteral();
-        }
         else if (this.index >= this.tokens.length) {
             this.error(`Unexpected end of expression: ${this.input}`);
             return new EmptyExpr$1(this.span(start), this.sourceSpan(start));
@@ -20172,35 +20041,6 @@ class _ParseAST {
         }
         return new TemplateLiteral(this.span(start), this.sourceSpan(start), elements, expressions);
     }
-    parseRegularExpressionLiteral() {
-        const bodyToken = this.next;
-        this.advance();
-        if (!bodyToken.isRegExpBody()) {
-            return new EmptyExpr$1(this.span(this.inputIndex), this.sourceSpan(this.inputIndex));
-        }
-        let flagsToken = null;
-        if (this.next.isRegExpFlags()) {
-            flagsToken = this.next;
-            this.advance();
-            const seenFlags = new Set();
-            for (let i = 0; i < flagsToken.strValue.length; i++) {
-                const char = flagsToken.strValue[i];
-                if (!SUPPORTED_REGEX_FLAGS.has(char)) {
-                    this.error(`Unsupported regular expression flag "${char}". The supported flags are: ` +
-                        Array.from(SUPPORTED_REGEX_FLAGS, (f) => `"${f}"`).join(', '), flagsToken.index + i);
-                }
-                else if (seenFlags.has(char)) {
-                    this.error(`Duplicate regular expression flag "${char}"`, flagsToken.index + i);
-                }
-                else {
-                    seenFlags.add(char);
-                }
-            }
-        }
-        const start = bodyToken.index;
-        const end = flagsToken ? flagsToken.end : bodyToken.end;
-        return new RegularExpressionLiteral(this.span(start, end), this.sourceSpan(start, end), bodyToken.strValue, flagsToken ? flagsToken.strValue : null);
-    }
     /**
      * Consume the optional statement terminator: semicolon or comma.
      */
@@ -20413,9 +20253,6 @@ class SerializeExpressionVisitor {
     }
     visitVoidExpression(ast, context) {
         return `void ${ast.expression.visit(this, context)}`;
-    }
-    visitRegularExpressionLiteral(ast, context) {
-        return `/${ast.body}/${ast.flags || ''}`;
     }
     visitASTWithSource(ast, context) {
         return ast.ast.visit(this, context);
@@ -23519,27 +23356,6 @@ function transformLiteralMap(expr) {
     return new PureFunctionExpr(literalMap(derivedEntries), nonConstantArgs);
 }
 
-/** Optimizes regular expressions used in expressions. */
-function optimizeRegularExpressions(job) {
-    for (const view of job.units) {
-        for (const op of view.ops()) {
-            transformExpressionsInOp(op, (expr) => {
-                if (expr instanceof RegularExpressionLiteral$1 &&
-                    // We can't optimize global regexes, because they're stateful.
-                    (expr.flags === null || !expr.flags.includes('g'))) {
-                    return job.pool.getSharedConstant(new RegularExpressionConstant(), expr);
-                }
-                return expr;
-            }, VisitorContextFlag.None);
-        }
-    }
-}
-class RegularExpressionConstant extends GenericKeyFn {
-    toSharedConstantDeclaration(declName, keyExpr) {
-        return new DeclareVarStmt(declName, keyExpr, undefined, StmtModifier.Final);
-    }
-}
-
 // This file contains helpers for generating calls to Ivy instructions. In particular, each
 // instruction type is represented as a function, which may select a specific instruction variant
 // depending on the exact arguments.
@@ -26631,7 +26447,6 @@ function wrapI18nIcus(job) {
  */
 const phases = [
     { kind: CompilationJobKind.Tmpl, fn: removeContentSelectors },
-    { kind: CompilationJobKind.Both, fn: optimizeRegularExpressions },
     { kind: CompilationJobKind.Host, fn: parseHostStyleProperties },
     { kind: CompilationJobKind.Tmpl, fn: emitNamespaceChanges },
     { kind: CompilationJobKind.Tmpl, fn: propagateI18nBlocks },
@@ -27477,9 +27292,6 @@ function convertAst(ast, job, baseSourceSpan) {
     }
     else if (ast instanceof ParenthesizedExpression) {
         return new ParenthesizedExpr(convertAst(ast.expression, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
-    }
-    else if (ast instanceof RegularExpressionLiteral) {
-        return new RegularExpressionLiteral$1(ast.body, ast.flags, baseSourceSpan);
     }
     else {
         throw new Error(`Unhandled expression type "${ast.constructor.name}" in file "${baseSourceSpan?.start.file.url}"`);
@@ -34449,7 +34261,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34467,7 +34279,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34562,7 +34374,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34978,7 +34790,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -35013,7 +34825,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -35064,7 +34876,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -35097,7 +34909,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35148,7 +34960,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('21.0.0-next.3+sha-7d3919e'));
+    definitionMap.set('version', literal('21.0.0-next.3+sha-a53ef1d'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -35304,7 +35116,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('21.0.0-next.3+sha-7d3919e');
+const VERSION = new Version('21.0.0-next.3+sha-a53ef1d');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
@@ -35330,5 +35142,5 @@ const VERSION = new Version('21.0.0-next.3+sha-7d3919e');
 // the late binding of the Compiler to the @angular/core for jit compilation.
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DEFAULT_INTERPOLATION_CONFIG, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InterpolationConfig, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
