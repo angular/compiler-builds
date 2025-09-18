@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.3.1+sha-d40867c
+ * @license Angular v20.3.1+sha-ba40153
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -5318,6 +5318,12 @@ declare class Identifiers {
     static trustConstantHtml: ExternalReference;
     static trustConstantResourceUrl: ExternalReference;
     static validateIframeAttribute: ExternalReference;
+    static inputDecorator: ExternalReference;
+    static outputDecorator: ExternalReference;
+    static viewChildDecorator: ExternalReference;
+    static viewChildrenDecorator: ExternalReference;
+    static contentChildDecorator: ExternalReference;
+    static contentChildrenDecorator: ExternalReference;
     static InputSignalBrandWriteType: {
         name: string;
         moduleName: string;
