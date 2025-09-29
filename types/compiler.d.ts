@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.5+sha-fc643c9
+ * @license Angular v21.0.0-next.5+sha-04462ed
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -699,14 +699,6 @@ declare class RecursiveVisitor$1 implements Visitor$1 {
     private visitChildren;
 }
 
-declare class InterpolationConfig {
-    start: string;
-    end: string;
-    static fromArray(markers: [string, string] | null): InterpolationConfig;
-    constructor(start: string, end: string);
-}
-declare const DEFAULT_INTERPOLATION_CONFIG: InterpolationConfig;
-
 declare enum TagContentType {
     RAW_TEXT = 0,
     ESCAPABLE_RAW_TEXT = 1,
@@ -742,8 +734,6 @@ interface LexerRange {
 interface TokenizeOptions {
     /** Whether to tokenize ICU messages (considered as text nodes when false). */
     tokenizeExpansionForms?: boolean;
-    /** How to tokenize interpolation markers. */
-    interpolationConfig?: InterpolationConfig;
     /**
      * The start and end point of the text to parse within the `source` string.
      * The entire `source` string is parsed if this is not provided.
@@ -2203,10 +2193,10 @@ declare class Parser {
     private readonly _lexer;
     private readonly _supportsDirectPipeReferences;
     constructor(_lexer: Lexer, _supportsDirectPipeReferences?: boolean);
-    parseAction(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
-    parseBinding(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseAction(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number): ASTWithSource;
+    parseBinding(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number): ASTWithSource;
     private checkSimpleExpression;
-    parseSimpleBinding(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolationConfig?: InterpolationConfig): ASTWithSource;
+    parseSimpleBinding(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number): ASTWithSource;
     private _parseBindingAst;
     /**
      * Parse microsyntax template expression and return a list of bindings or
@@ -2235,7 +2225,7 @@ declare class Parser {
      * @param absoluteValueOffset start of the `templateValue`
      */
     parseTemplateBindings(templateKey: string, templateValue: string, parseSourceSpan: ParseSourceSpan$1, absoluteKeyOffset: number, absoluteValueOffset: number): TemplateBindingParseResult;
-    parseInterpolation(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): ASTWithSource | null;
+    parseInterpolation(input: string, parseSourceSpan: ParseSourceSpan$1, absoluteOffset: number, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): ASTWithSource | null;
     /**
      * Similar to `parseInterpolation`, but treats the provided string as a single expression
      * element that would normally appear within the interpolation prefix and suffix (`{{` and `}}`).
@@ -2250,7 +2240,7 @@ declare class Parser {
      * `SplitInterpolation` with splits that look like
      *   <raw text> <expression> <raw text> ... <raw text> <expression> <raw text>
      */
-    splitInterpolation(input: string, parseSourceSpan: ParseSourceSpan$1, errors: ParseError[], interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null, interpolationConfig?: InterpolationConfig): SplitInterpolation;
+    splitInterpolation(input: string, parseSourceSpan: ParseSourceSpan$1, errors: ParseError[], interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): SplitInterpolation;
     wrapLiteralPrimitive(input: string | null, sourceSpanOrLocation: ParseSourceSpan$1 | string, absoluteOffset: number): ASTWithSource;
     private _stripComments;
     private _commentStart;
@@ -2331,7 +2321,7 @@ declare class MessageBundle {
     constructor(_htmlParser: HtmlParser, _implicitTags: string[], _implicitAttrs: {
         [k: string]: string[];
     }, _locale?: string | null, _preserveWhitespace?: boolean);
-    updateFromTemplate(source: string, url: string, interpolationConfig: InterpolationConfig): ParseError[];
+    updateFromTemplate(source: string, url: string): ParseError[];
     getMessages(): Message[];
     write(serializer: Serializer, filterSources?: (path: string) => string): string;
 }
@@ -2512,7 +2502,6 @@ interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
     styles: string[];
     encapsulation: ViewEncapsulation;
     viewProviders: Provider[] | null;
-    interpolation?: [string, string];
     changeDetection?: ChangeDetectionStrategy;
     hasDirectiveDependencies: boolean;
 }
@@ -2571,7 +2560,6 @@ interface R3DeclareComponentFacade extends R3DeclareDirectiveFacade {
     animations?: OpaqueValue;
     changeDetection?: ChangeDetectionStrategy;
     encapsulation?: ViewEncapsulation;
-    interpolation?: [string, string];
     preserveWhitespaces?: boolean;
 }
 type R3DeclareTemplateDependencyFacade = {
@@ -2962,6 +2950,17 @@ declare class CompilerFacadeImpl implements CompilerFacade {
 }
 declare function publishFacade(global: any): void;
 
+declare class InterpolationConfig {
+    start: string;
+    end: string;
+    static fromArray(markers: [string, string] | null): InterpolationConfig;
+    constructor(start: string, end: string);
+}
+/**
+ * This symbol is referenced inside G3 and will require some cleanup.
+ */
+declare const DEFAULT_INTERPOLATION_CONFIG: InterpolationConfig;
+
 declare class HtmlTagDefinition implements TagDefinition {
     private closedByChildren;
     private contentType;
@@ -3183,10 +3182,6 @@ interface R3DeclareComponentMetadata extends R3DeclareDirectiveMetadata {
      * Defaults to `ViewEncapsulation.Emulated`.
      */
     encapsulation?: ViewEncapsulation$1;
-    /**
-     * Overrides the default interpolation start and end delimiters. Defaults to {{ and }}.
-     */
-    interpolation?: [string, string];
     /**
      * Whether whitespace in the template should be preserved. Defaults to false.
      */
@@ -4132,10 +4127,6 @@ interface R3ComponentMetadata<DeclarationT extends R3TemplateDependency> extends
      */
     i18nUseExternalIds: boolean;
     /**
-     * Overrides the default interpolation start and end delimiters ({{ and }}).
-     */
-    interpolation: InterpolationConfig;
-    /**
      * Strategy used for detecting changes in the component.
      *
      * In global compilation mode the value is ChangeDetectionStrategy if available as it is
@@ -4484,11 +4475,9 @@ interface HostListeners {
  */
 declare class BindingParser {
     private _exprParser;
-    private _interpolationConfig;
     private _schemaRegistry;
     errors: ParseError[];
-    constructor(_exprParser: Parser, _interpolationConfig: InterpolationConfig, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[]);
-    get interpolationConfig(): InterpolationConfig;
+    constructor(_exprParser: Parser, _schemaRegistry: ElementSchemaRegistry, errors: ParseError[]);
     createBoundHostProperties(properties: HostProperties, sourceSpan: ParseSourceSpan$1): ParsedProperty[] | null;
     createDirectiveHostEventAsts(hostListeners: HostListeners, sourceSpan: ParseSourceSpan$1): ParsedEvent[] | null;
     parseInterpolation(value: string, sourceSpan: ParseSourceSpan$1, interpolatedTokens: InterpolatedAttributeToken[] | InterpolatedTextToken[] | null): ASTWithSource;
@@ -4575,10 +4564,6 @@ interface ParseTemplateOptions {
      * Preserve whitespace significant to rendering.
      */
     preserveSignificantWhitespace?: boolean;
-    /**
-     * How to parse interpolation markers.
-     */
-    interpolationConfig?: InterpolationConfig;
     /**
      * The start and end point of the text to parse within the `source` string.
      * The entire `source` string is parsed if this is not provided.
@@ -4674,7 +4659,7 @@ declare function parseTemplate(template: string, templateUrl: string, options?: 
 /**
  * Construct a `BindingParser` with a default configuration.
  */
-declare function makeBindingParser(interpolationConfig?: InterpolationConfig, selectorlessEnabled?: boolean): BindingParser;
+declare function makeBindingParser(selectorlessEnabled?: boolean): BindingParser;
 /**
  * Information about the template which was extracted during parsing.
  *
@@ -4686,10 +4671,6 @@ interface ParsedTemplate {
      * Include whitespace nodes in the parsed output.
      */
     preserveWhitespaces?: boolean;
-    /**
-     * How to parse interpolation markers.
-     */
-    interpolationConfig?: InterpolationConfig;
     /**
      * Any errors from parsing the template the first time.
      *
