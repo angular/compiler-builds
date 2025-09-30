@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.5+sha-31bc9e4
+ * @license Angular v21.0.0-next.5+sha-159be56
  * (c) 2010-2025 Google LLC. https://angular.io/
  * License: MIT
  */
@@ -2153,7 +2153,6 @@ declare class Token {
     isTemplateLiteralPart(): this is StringToken;
     isTemplateLiteralEnd(): this is StringToken;
     isTemplateLiteralInterpolationStart(): boolean;
-    isTemplateLiteralInterpolationEnd(): boolean;
     toString(): string | null;
 }
 declare class StringToken extends Token {
