@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.6+sha-548ea02
+ * @license Angular v21.0.0-next.6+sha-effccff
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5230,6 +5230,8 @@ declare class Identifiers {
     static domProperty: ExternalReference;
     static ariaProperty: ExternalReference;
     static property: ExternalReference;
+    static control: ExternalReference;
+    static controlCreate: ExternalReference;
     static animationEnterListener: ExternalReference;
     static animationLeaveListener: ExternalReference;
     static animationEnter: ExternalReference;
