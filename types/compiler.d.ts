@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.7+sha-f521c1f
+ * @license Angular v21.0.0-next.7+sha-68df976
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3603,8 +3603,9 @@ declare class InteractionDeferredTrigger extends DeferredTrigger {
     constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
 }
 declare class ViewportDeferredTrigger extends DeferredTrigger {
-    reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
+    readonly reference: string | null;
+    readonly options: LiteralMap | null;
+    constructor(reference: string | null, options: LiteralMap | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
 }
 declare class BlockNode {
     nameSpan: ParseSourceSpan$1;
