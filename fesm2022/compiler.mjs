@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.3.4+sha-9cbe5b6
+ * @license Angular v20.3.4+sha-b4b19b6
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -28560,6 +28560,7 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
             // main `for` body, use `mainSourceSpan`.
             const endSpan = empty?.endSourceSpan ?? ast.endSourceSpan;
             const sourceSpan = new ParseSourceSpan(ast.sourceSpan.start, endSpan?.end ?? ast.sourceSpan.end);
+            validateTrackByExpression(params.trackBy.expression, params.trackBy.keywordSpan, errors);
             node = new ForLoopBlock(params.itemName, params.expression, params.trackBy.expression, params.trackBy.keywordSpan, params.context, visitAll(visitor, ast.children, ast.children), empty, sourceSpan, ast.sourceSpan, ast.startSourceSpan, endSpan, ast.nameSpan, ast.i18n);
         }
     }
@@ -28658,6 +28659,13 @@ function parseForLoopParameters(block, errors, bindingParser) {
         errors.push(new ParseError(param.sourceSpan, `Unrecognized @for loop parameter "${param.expression}"`));
     }
     return result;
+}
+function validateTrackByExpression(expression, parseSourceSpan, errors) {
+    const visitor = new PipeVisitor();
+    expression.ast.visit(visitor);
+    if (visitor.hasPipe) {
+        errors.push(new ParseError(parseSourceSpan, 'Cannot use pipes in track expressions'));
+    }
 }
 /** Parses the `let` parameter of a `for` loop block. */
 function parseLetParameter(sourceSpan, expression, span, loopItemName, context, errors) {
@@ -28868,6 +28876,12 @@ function stripOptionalParentheses(param, errors) {
         return null;
     }
     return expression.slice(start, end);
+}
+class PipeVisitor extends RecursiveAstVisitor {
+    hasPipe = false;
+    visitPipe() {
+        this.hasPipe = true;
+    }
 }
 
 /** Pattern for a timing value in a trigger. */
@@ -34263,7 +34277,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34281,7 +34295,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34376,7 +34390,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34792,7 +34806,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34827,7 +34841,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34878,7 +34892,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34911,7 +34925,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -34962,7 +34976,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.3.4+sha-9cbe5b6'));
+    definitionMap.set('version', literal('20.3.4+sha-b4b19b6'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -35118,7 +35132,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.3.4+sha-9cbe5b6');
+const VERSION = new Version('20.3.4+sha-b4b19b6');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
