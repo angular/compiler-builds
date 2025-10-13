@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.7+sha-84f6e36
+ * @license Angular v21.0.0-next.7+sha-62cda78
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -8798,14 +8798,14 @@ var OpKind;
      */
     OpKind[OpKind["AnimationListener"] = 56] = "AnimationListener";
     /**
-     * An operation to bind an expression to a `control` property of an element.
+     * An operation to bind an expression to a `field` property of an element.
      */
     OpKind[OpKind["Control"] = 57] = "Control";
     /**
      * An operation to set up a corresponding {@link Control} operation.
      *
      * This is responsible for setting up event listeners on a native or custom form control when
-     * bound to a specialized control directive.
+     * bound to a specialized field directive.
      */
     OpKind[OpKind["ControlCreate"] = 58] = "ControlCreate";
 })(OpKind || (OpKind = {}));
@@ -11791,7 +11791,7 @@ function extractAttributes(job) {
                 case OpKind.Control:
                     OpList.insertBefore(
                     // Deliberately null i18nMessage value
-                    createExtractedAttributeOp(op.target, BindingKind.Property, null, 'control', 
+                    createExtractedAttributeOp(op.target, BindingKind.Property, null, 'field', 
                     /* expression */ null, 
                     /* i18nContext */ null, 
                     /* i18nMessage */ null, op.securityContext), lookupElement$3(elements, op.target));
@@ -11955,7 +11955,7 @@ function specializeBindings(job) {
                     else if (job.kind === CompilationJobKind.Host) {
                         OpList.replace(op, createDomPropertyOp(op.name, op.expression, op.bindingKind, op.i18nContext, op.securityContext, op.sourceSpan));
                     }
-                    else if (op.name === 'control') {
+                    else if (op.name === 'field') {
                         OpList.replace(op, createControlOp(op));
                     }
                     else {
@@ -27674,9 +27674,9 @@ function ingestElementBindings(unit, op, element) {
         }
         // All dynamic bindings (both attribute and property bindings).
         bindings.push(createBindingOp(op.xref, BINDING_KINDS.get(input.type), input.name, convertAstWithInterpolation(unit.job, astOf(input.value), input.i18n), input.unit, input.securityContext, false, false, null, asMessage(input.i18n) ?? null, input.sourceSpan));
-        // If the input name is 'control', this could be a form control binding which requires a
+        // If the input name is 'field', this could be a form control binding which requires a
         // `ControlCreateOp` to properly initialize.
-        if (input.type === BindingType.Property && input.name === 'control') {
+        if (input.type === BindingType.Property && input.name === 'field') {
             unit.create.push(createControlCreateOp(input.sourceSpan));
         }
     }
@@ -28861,6 +28861,7 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
             // main `for` body, use `mainSourceSpan`.
             const endSpan = empty?.endSourceSpan ?? ast.endSourceSpan;
             const sourceSpan = new ParseSourceSpan(ast.sourceSpan.start, endSpan?.end ?? ast.sourceSpan.end);
+            validateTrackByExpression(params.trackBy.expression, params.trackBy.keywordSpan, errors);
             node = new ForLoopBlock(params.itemName, params.expression, params.trackBy.expression, params.trackBy.keywordSpan, params.context, visitAll(visitor, ast.children, ast.children), empty, sourceSpan, ast.sourceSpan, ast.startSourceSpan, endSpan, ast.nameSpan, ast.i18n);
         }
     }
@@ -28959,6 +28960,13 @@ function parseForLoopParameters(block, errors, bindingParser) {
         errors.push(new ParseError(param.sourceSpan, `Unrecognized @for loop parameter "${param.expression}"`));
     }
     return result;
+}
+function validateTrackByExpression(expression, parseSourceSpan, errors) {
+    const visitor = new PipeVisitor();
+    expression.ast.visit(visitor);
+    if (visitor.hasPipe) {
+        errors.push(new ParseError(parseSourceSpan, 'Cannot use pipes in track expressions'));
+    }
 }
 /** Parses the `let` parameter of a `for` loop block. */
 function parseLetParameter(sourceSpan, expression, span, loopItemName, context, errors) {
@@ -29169,6 +29177,12 @@ function stripOptionalParentheses(param, errors) {
         return null;
     }
     return expression.slice(start, end);
+}
+class PipeVisitor extends RecursiveAstVisitor {
+    hasPipe = false;
+    visitPipe() {
+        this.hasPipe = true;
+    }
 }
 
 /** Pattern for a timing value in a trigger. */
@@ -34624,7 +34638,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34642,7 +34656,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34737,7 +34751,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -35150,7 +35164,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -35185,7 +35199,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -35236,7 +35250,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -35269,7 +35283,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35320,7 +35334,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('21.0.0-next.7+sha-84f6e36'));
+    definitionMap.set('version', literal('21.0.0-next.7+sha-62cda78'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -35476,7 +35490,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('21.0.0-next.7+sha-84f6e36');
+const VERSION = new Version('21.0.0-next.7+sha-62cda78');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
