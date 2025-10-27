@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-next.9+sha-04dd75b
+ * @license Angular v21.0.0-next.9+sha-8511759
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5063,14 +5063,6 @@ interface R3ClassDebugInfo {
  */
 declare function compileClassDebugInfo(debugInfo: R3ClassDebugInfo): Expression;
 
-/*!
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.dev/license
- */
-
 /** Metadata necessary to compile HMR-related code call. */
 interface R3HmrMetadata {
     /** Component class for which HMR is being enabled. */
@@ -5638,14 +5630,6 @@ declare class R3TargetBinder<DirectiveT extends DirectiveMeta> implements Target
     bind(target: Target<DirectiveT>): BoundTarget<DirectiveT>;
 }
 
-/*!
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.dev/license
- */
-
 /**
  * Visitor that traverses all template and expression AST nodes in a template.
  * Useful for cases where every single node needs to be visited.
@@ -5798,13 +5782,6 @@ declare const enum QueryFlags {
     emitDistinctChangesOnly = 4
 }
 
-/*!
- * @license
- * Copyright Google LLC All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.dev/license
- */
 /**
  * Utility function to enable source locations. Intended to be used **only** inside unit tests.
  */
