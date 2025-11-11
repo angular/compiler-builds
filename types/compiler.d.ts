@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-rc.1+sha-91dbb4b
+ * @license Angular v21.0.0-rc.1+sha-c9f9778
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3973,10 +3973,6 @@ interface R3DirectiveMetadata {
      */
     usesInheritance: boolean;
     /**
-     * Whether or not the component or directive inherits its entire decorator from its base class.
-     */
-    fullInheritance: boolean;
-    /**
      * Reference name under which to export the directive's type in a template,
      * if any.
      */
@@ -5305,7 +5301,6 @@ declare class Identifiers {
     static attachSourceLocations: ExternalReference;
     static NgOnChangesFeature: ExternalReference;
     static InheritDefinitionFeature: ExternalReference;
-    static CopyDefinitionFeature: ExternalReference;
     static ProvidersFeature: ExternalReference;
     static HostDirectivesFeature: ExternalReference;
     static ExternalStylesFeature: ExternalReference;
