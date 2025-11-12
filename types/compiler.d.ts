@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.0-rc.2+sha-eb9034d
+ * @license Angular v21.0.0-rc.2+sha-be37129
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5326,10 +5326,6 @@ declare class Identifiers {
         moduleName: string;
     };
     static UnwrapDirectiveSignalInputs: {
-        name: string;
-        moduleName: string;
-    };
-    static ExtractFormControlValue: {
         name: string;
         moduleName: string;
     };
