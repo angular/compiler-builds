@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.1+sha-fec1f1a
+ * @license Angular v21.0.1+sha-78fd159
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -52,7 +52,8 @@ declare enum SecurityContext {
     STYLE = 2,
     SCRIPT = 3,
     URL = 4,
-    RESOURCE_URL = 5
+    RESOURCE_URL = 5,
+    ATTRIBUTE_NO_BINDING = 6
 }
 /**
  * Injection flags for DI.
@@ -5297,13 +5298,13 @@ declare class Identifiers {
     static getInheritedFactory: ExternalReference;
     static sanitizeHtml: ExternalReference;
     static sanitizeStyle: ExternalReference;
+    static validateAttribute: ExternalReference;
     static sanitizeResourceUrl: ExternalReference;
     static sanitizeScript: ExternalReference;
     static sanitizeUrl: ExternalReference;
     static sanitizeUrlOrResourceUrl: ExternalReference;
     static trustConstantHtml: ExternalReference;
     static trustConstantResourceUrl: ExternalReference;
-    static validateIframeAttribute: ExternalReference;
     static inputDecorator: ExternalReference;
     static outputDecorator: ExternalReference;
     static viewChildDecorator: ExternalReference;
