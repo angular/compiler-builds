@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.1.0-next.0+sha-8f3fdc3
+ * @license Angular v21.1.0-next.0+sha-1c6b070
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -352,6 +352,7 @@ var SecurityContext;
   SecurityContext[SecurityContext["SCRIPT"] = 3] = "SCRIPT";
   SecurityContext[SecurityContext["URL"] = 4] = "URL";
   SecurityContext[SecurityContext["RESOURCE_URL"] = 5] = "RESOURCE_URL";
+  SecurityContext[SecurityContext["ATTRIBUTE_NO_BINDING"] = 6] = "ATTRIBUTE_NO_BINDING";
 })(SecurityContext || (SecurityContext = {}));
 var MissingTranslationStrategy;
 (function (MissingTranslationStrategy) {
@@ -3019,6 +3020,10 @@ class Identifiers {
     name: 'ɵɵsanitizeStyle',
     moduleName: CORE
   };
+  static validateAttribute = {
+    name: 'ɵɵvalidateAttribute',
+    moduleName: CORE
+  };
   static sanitizeResourceUrl = {
     name: 'ɵɵsanitizeResourceUrl',
     moduleName: CORE
@@ -3041,10 +3046,6 @@ class Identifiers {
   };
   static trustConstantResourceUrl = {
     name: 'ɵɵtrustConstantResourceUrl',
-    moduleName: CORE
-  };
-  static validateIframeAttribute = {
-    name: 'ɵɵvalidateIframeAttribute',
     moduleName: CORE
   };
   static inputDecorator = {
@@ -17042,17 +17043,14 @@ function SECURITY_SCHEMA() {
     _SECURITY_SCHEMA = {};
     registerContext(SecurityContext.HTML, ['iframe|srcdoc', '*|innerHTML', '*|outerHTML']);
     registerContext(SecurityContext.STYLE, ['*|style']);
-    registerContext(SecurityContext.URL, ['*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href', 'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action', 'img|src', 'input|src', 'ins|cite', 'q|cite', 'source|src', 'track|src', 'video|poster', 'video|src']);
+    registerContext(SecurityContext.URL, ['*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href', 'a|xlink:href', 'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action', 'img|src', 'input|src', 'ins|cite', 'q|cite', 'source|src', 'track|src', 'video|poster', 'video|src', 'annotation|href', 'annotation|xlink:href', 'annotation-xml|href', 'annotation-xml|xlink:href', 'maction|href', 'maction|xlink:href', 'malignmark|href', 'malignmark|xlink:href', 'math|href', 'math|xlink:href', 'mroot|href', 'mroot|xlink:href', 'msqrt|href', 'msqrt|xlink:href', 'merror|href', 'merror|xlink:href', 'mfrac|href', 'mfrac|xlink:href', 'mglyph|href', 'mglyph|xlink:href', 'msub|href', 'msub|xlink:href', 'msup|href', 'msup|xlink:href', 'msubsup|href', 'msubsup|xlink:href', 'mmultiscripts|href', 'mmultiscripts|xlink:href', 'mprescripts|href', 'mprescripts|xlink:href', 'mi|href', 'mi|xlink:href', 'mn|href', 'mn|xlink:href', 'mo|href', 'mo|xlink:href', 'mpadded|href', 'mpadded|xlink:href', 'mphantom|href', 'mphantom|xlink:href', 'mrow|href', 'mrow|xlink:href', 'ms|href', 'ms|xlink:href', 'mspace|href', 'mspace|xlink:href', 'mstyle|href', 'mstyle|xlink:href', 'mtable|href', 'mtable|xlink:href', 'mtd|href', 'mtd|xlink:href', 'mtr|href', 'mtr|xlink:href', 'mtext|href', 'mtext|xlink:href', 'mover|href', 'mover|xlink:href', 'munder|href', 'munder|xlink:href', 'munderover|href', 'munderover|xlink:href', 'semantics|href', 'semantics|xlink:href', 'none|href', 'none|xlink:href']);
     registerContext(SecurityContext.RESOURCE_URL, ['applet|code', 'applet|codebase', 'base|href', 'embed|src', 'frame|src', 'head|profile', 'html|manifest', 'iframe|src', 'link|href', 'media|src', 'object|codebase', 'object|data', 'script|src']);
+    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, ['animate|attributeName', 'set|attributeName', 'animateMotion|attributeName', 'animateTransform|attributeName', 'unknown|attributeName', 'iframe|sandbox', 'iframe|allow', 'iframe|allowFullscreen', 'iframe|referrerPolicy', 'iframe|csp', 'iframe|fetchPriority', 'unknown|sandbox', 'unknown|allow', 'unknown|allowFullscreen', 'unknown|referrerPolicy', 'unknown|csp', 'unknown|fetchPriority']);
   }
   return _SECURITY_SCHEMA;
 }
 function registerContext(ctx, specs) {
   for (const spec of specs) _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
-}
-const IFRAME_SECURITY_SENSITIVE_ATTRS = new Set(['sandbox', 'allow', 'allowfullscreen', 'referrerpolicy', 'csp', 'fetchpriority']);
-function isIframeSecuritySensitiveAttr(attrName) {
-  return IFRAME_SECURITY_SENSITIVE_ATTRS.has(attrName.toLowerCase());
 }
 
 class ElementSchemaRegistry {}
@@ -20617,11 +20615,10 @@ function processLexicalScope(unit, ops, savedView) {
   }
 }
 
-const sanitizerFns = new Map([[SecurityContext.HTML, Identifiers.sanitizeHtml], [SecurityContext.RESOURCE_URL, Identifiers.sanitizeResourceUrl], [SecurityContext.SCRIPT, Identifiers.sanitizeScript], [SecurityContext.STYLE, Identifiers.sanitizeStyle], [SecurityContext.URL, Identifiers.sanitizeUrl]]);
+const sanitizerFns = new Map([[SecurityContext.HTML, Identifiers.sanitizeHtml], [SecurityContext.RESOURCE_URL, Identifiers.sanitizeResourceUrl], [SecurityContext.SCRIPT, Identifiers.sanitizeScript], [SecurityContext.STYLE, Identifiers.sanitizeStyle], [SecurityContext.URL, Identifiers.sanitizeUrl], [SecurityContext.ATTRIBUTE_NO_BINDING, Identifiers.validateAttribute]]);
 const trustedValueFns = new Map([[SecurityContext.HTML, Identifiers.trustConstantHtml], [SecurityContext.RESOURCE_URL, Identifiers.trustConstantResourceUrl]]);
 function resolveSanitizers(job) {
   for (const unit of job.units) {
-    const elements = createOpXrefMap(unit);
     if (job.kind !== CompilationJobKind.Host) {
       for (const op of unit.create) {
         if (op.kind === OpKind.ExtractedAttribute) {
@@ -20636,34 +20633,16 @@ function resolveSanitizers(job) {
         case OpKind.Attribute:
         case OpKind.DomProperty:
           let sanitizerFn = null;
-          if (Array.isArray(op.securityContext) && op.securityContext.length === 2 && op.securityContext.indexOf(SecurityContext.URL) > -1 && op.securityContext.indexOf(SecurityContext.RESOURCE_URL) > -1) {
+          if (Array.isArray(op.securityContext) && op.securityContext.length === 2 && op.securityContext.includes(SecurityContext.URL) && op.securityContext.includes(SecurityContext.RESOURCE_URL)) {
             sanitizerFn = Identifiers.sanitizeUrlOrResourceUrl;
           } else {
             sanitizerFn = sanitizerFns.get(getOnlySecurityContext(op.securityContext)) ?? null;
           }
           op.sanitizer = sanitizerFn !== null ? importExpr(sanitizerFn) : null;
-          if (op.sanitizer === null) {
-            let isIframe = false;
-            if (job.kind === CompilationJobKind.Host || op.kind === OpKind.DomProperty) {
-              isIframe = true;
-            } else {
-              const ownerOp = elements.get(op.target);
-              if (ownerOp === undefined || !isElementOrContainerOp(ownerOp)) {
-                throw Error('Property should have an element-like owner');
-              }
-              isIframe = isIframeElement(ownerOp);
-            }
-            if (isIframe && isIframeSecuritySensitiveAttr(op.name)) {
-              op.sanitizer = importExpr(Identifiers.validateIframeAttribute);
-            }
-          }
           break;
       }
     }
   }
-}
-function isIframeElement(op) {
-  return op.kind === OpKind.ElementStart && op.tag?.toLowerCase() === 'iframe';
 }
 function getOnlySecurityContext(securityContext) {
   if (Array.isArray(securityContext)) {
@@ -28044,7 +28023,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28062,7 +28041,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28135,7 +28114,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28467,7 +28446,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28493,7 +28472,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28534,7 +28513,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -28561,7 +28540,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -28599,7 +28578,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.1.0-next.0+sha-8f3fdc3'));
+  definitionMap.set('version', literal('21.1.0-next.0+sha-1c6b070'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -28673,7 +28652,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.1.0-next.0+sha-8f3fdc3');
+const VERSION = new Version('21.1.0-next.0+sha-1c6b070');
 
 publishFacade(_global);
 
