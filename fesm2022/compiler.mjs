@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.1.0-next.1+sha-253dc95
+ * @license Angular v21.1.0-next.1+sha-9ace7d7
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -22488,7 +22488,7 @@ function getQueryPredicate(query, constantPool) {
     }
   }
 }
-function createQueryCreateCall(query, constantPool, queryTypeFns, prependParams) {
+function getQueryCreateParameters(query, constantPool, prependParams) {
   const parameters = [];
   if (prependParams !== undefined) {
     parameters.push(...prependParams);
@@ -22500,8 +22500,7 @@ function createQueryCreateCall(query, constantPool, queryTypeFns, prependParams)
   if (query.read) {
     parameters.push(query.read);
   }
-  const queryCreateFn = query.isSignal ? queryTypeFns.signalBased : queryTypeFns.nonSignal;
-  return importExpr(queryCreateFn).callFn(parameters);
+  return parameters;
 }
 const queryAdvancePlaceholder = Symbol('queryAdvancePlaceholder');
 function collapseAdvanceStatements(statements) {
@@ -22529,12 +22528,17 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
   const createStatements = [];
   const updateStatements = [];
   const tempAllocator = temporaryAllocator(st => updateStatements.push(st), TEMPORARY_NAME);
+  let viewQuerySignalCall = null;
+  let viewQueryCall = null;
   viewQueries.forEach(query => {
-    const queryDefinitionCall = createQueryCreateCall(query, constantPool, {
-      signalBased: Identifiers.viewQuerySignal,
-      nonSignal: Identifiers.viewQuery
-    });
-    createStatements.push(queryDefinitionCall.toStmt());
+    const params = getQueryCreateParameters(query, constantPool);
+    if (query.isSignal) {
+      viewQuerySignalCall ??= importExpr(Identifiers.viewQuerySignal);
+      viewQuerySignalCall = viewQuerySignalCall.callFn(params);
+    } else {
+      viewQueryCall ??= importExpr(Identifiers.viewQuery);
+      viewQueryCall = viewQueryCall.callFn(params);
+    }
     if (query.isSignal) {
       updateStatements.push(queryAdvancePlaceholder);
       return;
@@ -22545,6 +22549,12 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     const updateDirective = variable(CONTEXT_NAME).prop(query.propertyName).set(query.first ? temporary.prop('first') : temporary);
     updateStatements.push(refresh.and(updateDirective).toStmt());
   });
+  if (viewQuerySignalCall !== null) {
+    createStatements.push(new ExpressionStatement(viewQuerySignalCall));
+  }
+  if (viewQueryCall !== null) {
+    createStatements.push(new ExpressionStatement(viewQueryCall));
+  }
   const viewQueryFnName = name ? `${name}_Query` : null;
   return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, viewQueryFnName);
 }
@@ -22552,11 +22562,17 @@ function createContentQueriesFunction(queries, constantPool, name) {
   const createStatements = [];
   const updateStatements = [];
   const tempAllocator = temporaryAllocator(st => updateStatements.push(st), TEMPORARY_NAME);
+  let contentQuerySignalCall = null;
+  let contentQueryCall = null;
   for (const query of queries) {
-    createStatements.push(createQueryCreateCall(query, constantPool, {
-      nonSignal: Identifiers.contentQuery,
-      signalBased: Identifiers.contentQuerySignal
-    }, [variable('dirIndex')]).toStmt());
+    const params = getQueryCreateParameters(query, constantPool, [variable('dirIndex')]);
+    if (query.isSignal) {
+      contentQuerySignalCall ??= importExpr(Identifiers.contentQuerySignal);
+      contentQuerySignalCall = contentQuerySignalCall.callFn(params);
+    } else {
+      contentQueryCall ??= importExpr(Identifiers.contentQuery);
+      contentQueryCall = contentQueryCall.callFn(params);
+    }
     if (query.isSignal) {
       updateStatements.push(queryAdvancePlaceholder);
       continue;
@@ -22566,6 +22582,12 @@ function createContentQueriesFunction(queries, constantPool, name) {
     const refresh = importExpr(Identifiers.queryRefresh).callFn([temporary.set(getQueryList)]);
     const updateDirective = variable(CONTEXT_NAME).prop(query.propertyName).set(query.first ? temporary.prop('first') : temporary);
     updateStatements.push(refresh.and(updateDirective).toStmt());
+  }
+  if (contentQuerySignalCall !== null) {
+    createStatements.push(new ExpressionStatement(contentQuerySignalCall));
+  }
+  if (contentQueryCall !== null) {
+    createStatements.push(new ExpressionStatement(contentQueryCall));
   }
   const contentQueriesFnName = name ? `${name}_ContentQueries` : null;
   return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null), new FnParam('dirIndex', null)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, contentQueriesFnName);
@@ -28024,7 +28046,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28042,7 +28064,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28115,7 +28137,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28447,7 +28469,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28473,7 +28495,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28514,7 +28536,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -28541,7 +28563,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -28579,7 +28601,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.1.0-next.1+sha-253dc95'));
+  definitionMap.set('version', literal('21.1.0-next.1+sha-9ace7d7'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -28653,7 +28675,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.1.0-next.1+sha-253dc95');
+const VERSION = new Version('21.1.0-next.1+sha-9ace7d7');
 
 publishFacade(_global);
 
