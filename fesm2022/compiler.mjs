@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.5+sha-87d20fd
+ * @license Angular v21.0.5+sha-81772b4
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -17043,8 +17043,8 @@ function SECURITY_SCHEMA() {
     _SECURITY_SCHEMA = {};
     registerContext(SecurityContext.HTML, ['iframe|srcdoc', '*|innerHTML', '*|outerHTML']);
     registerContext(SecurityContext.STYLE, ['*|style']);
-    registerContext(SecurityContext.URL, ['*|formAction', 'area|href', 'area|ping', 'audio|src', 'a|href', 'a|xlink:href', 'a|ping', 'blockquote|cite', 'body|background', 'del|cite', 'form|action', 'img|src', 'input|src', 'ins|cite', 'q|cite', 'source|src', 'track|src', 'video|poster', 'video|src', 'annotation|href', 'annotation|xlink:href', 'annotation-xml|href', 'annotation-xml|xlink:href', 'maction|href', 'maction|xlink:href', 'malignmark|href', 'malignmark|xlink:href', 'math|href', 'math|xlink:href', 'mroot|href', 'mroot|xlink:href', 'msqrt|href', 'msqrt|xlink:href', 'merror|href', 'merror|xlink:href', 'mfrac|href', 'mfrac|xlink:href', 'mglyph|href', 'mglyph|xlink:href', 'msub|href', 'msub|xlink:href', 'msup|href', 'msup|xlink:href', 'msubsup|href', 'msubsup|xlink:href', 'mmultiscripts|href', 'mmultiscripts|xlink:href', 'mprescripts|href', 'mprescripts|xlink:href', 'mi|href', 'mi|xlink:href', 'mn|href', 'mn|xlink:href', 'mo|href', 'mo|xlink:href', 'mpadded|href', 'mpadded|xlink:href', 'mphantom|href', 'mphantom|xlink:href', 'mrow|href', 'mrow|xlink:href', 'ms|href', 'ms|xlink:href', 'mspace|href', 'mspace|xlink:href', 'mstyle|href', 'mstyle|xlink:href', 'mtable|href', 'mtable|xlink:href', 'mtd|href', 'mtd|xlink:href', 'mtr|href', 'mtr|xlink:href', 'mtext|href', 'mtext|xlink:href', 'mover|href', 'mover|xlink:href', 'munder|href', 'munder|xlink:href', 'munderover|href', 'munderover|xlink:href', 'semantics|href', 'semantics|xlink:href', 'none|href', 'none|xlink:href']);
-    registerContext(SecurityContext.RESOURCE_URL, ['applet|code', 'applet|codebase', 'base|href', 'embed|src', 'frame|src', 'head|profile', 'html|manifest', 'iframe|src', 'link|href', 'media|src', 'object|codebase', 'object|data', 'script|src']);
+    registerContext(SecurityContext.URL, ['*|formAction', 'area|href', 'a|href', 'a|xlink:href', 'form|action', 'annotation|href', 'annotation|xlink:href', 'annotation-xml|href', 'annotation-xml|xlink:href', 'maction|href', 'maction|xlink:href', 'malignmark|href', 'malignmark|xlink:href', 'math|href', 'math|xlink:href', 'mroot|href', 'mroot|xlink:href', 'msqrt|href', 'msqrt|xlink:href', 'merror|href', 'merror|xlink:href', 'mfrac|href', 'mfrac|xlink:href', 'mglyph|href', 'mglyph|xlink:href', 'msub|href', 'msub|xlink:href', 'msup|href', 'msup|xlink:href', 'msubsup|href', 'msubsup|xlink:href', 'mmultiscripts|href', 'mmultiscripts|xlink:href', 'mprescripts|href', 'mprescripts|xlink:href', 'mi|href', 'mi|xlink:href', 'mn|href', 'mn|xlink:href', 'mo|href', 'mo|xlink:href', 'mpadded|href', 'mpadded|xlink:href', 'mphantom|href', 'mphantom|xlink:href', 'mrow|href', 'mrow|xlink:href', 'ms|href', 'ms|xlink:href', 'mspace|href', 'mspace|xlink:href', 'mstyle|href', 'mstyle|xlink:href', 'mtable|href', 'mtable|xlink:href', 'mtd|href', 'mtd|xlink:href', 'mtr|href', 'mtr|xlink:href', 'mtext|href', 'mtext|xlink:href', 'mover|href', 'mover|xlink:href', 'munder|href', 'munder|xlink:href', 'munderover|href', 'munderover|xlink:href', 'semantics|href', 'semantics|xlink:href', 'none|href', 'none|xlink:href']);
+    registerContext(SecurityContext.RESOURCE_URL, ['base|href', 'embed|src', 'frame|src', 'iframe|src', 'link|href', 'object|codebase', 'object|data', 'script|src']);
     registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, ['animate|attributeName', 'set|attributeName', 'animateMotion|attributeName', 'animateTransform|attributeName', 'unknown|attributeName', 'iframe|sandbox', 'iframe|allow', 'iframe|allowFullscreen', 'iframe|referrerPolicy', 'iframe|csp', 'iframe|fetchPriority', 'unknown|sandbox', 'unknown|allow', 'unknown|allowFullscreen', 'unknown|referrerPolicy', 'unknown|csp', 'unknown|fetchPriority']);
   }
   return _SECURITY_SCHEMA;
@@ -28046,7 +28046,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28064,7 +28064,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28137,7 +28137,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28469,7 +28469,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28495,7 +28495,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28536,7 +28536,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -28563,7 +28563,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -28601,7 +28601,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.0.5+sha-87d20fd'));
+  definitionMap.set('version', literal('21.0.5+sha-81772b4'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -28675,7 +28675,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.0.5+sha-87d20fd');
+const VERSION = new Version('21.0.5+sha-81772b4');
 
 publishFacade(_global);
 
