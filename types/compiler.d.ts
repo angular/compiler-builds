@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.6+sha-069974a
+ * @license Angular v21.0.6+sha-d370c4b
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1700,15 +1700,7 @@ declare class EmptyExpr extends AST {
 declare class ImplicitReceiver extends AST {
     visit(visitor: AstVisitor, context?: any): any;
 }
-/**
- * Receiver when something is accessed through `this` (e.g. `this.foo`). Note that this class
- * inherits from `ImplicitReceiver`, because accessing something through `this` is treated the
- * same as accessing it implicitly inside of an Angular template (e.g. `[attr.title]="this.title"`
- * is the same as `[attr.title]="title"`.). Inheriting allows for the `this` accesses to be treated
- * the same as implicit ones, except for a couple of exceptions like `$event` and `$any`.
- * TODO: we should find a way for this class not to extend from `ImplicitReceiver` in the future.
- */
-declare class ThisReceiver extends ImplicitReceiver {
+declare class ThisReceiver extends AST {
     visit(visitor: AstVisitor, context?: any): any;
 }
 /**
@@ -1781,11 +1773,13 @@ declare class LiteralArray extends AST {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: any[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
-type LiteralMapKey = {
+interface LiteralMapKey {
     key: string;
     quoted: boolean;
+    span: ParseSpan;
+    sourceSpan: AbsoluteSourceSpan;
     isShorthandInitialized?: boolean;
-};
+}
 declare class LiteralMap extends AST {
     keys: LiteralMapKey[];
     values: any[];
