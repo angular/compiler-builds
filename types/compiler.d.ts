@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.1.0-next.4+sha-b93d5ec
+ * @license Angular v21.1.0-next.4+sha-10da2f9
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1707,8 +1707,8 @@ declare class ThisReceiver extends AST {
  * Multiple expressions separated by a semicolon.
  */
 declare class Chain extends AST {
-    expressions: any[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: any[]);
+    expressions: AST[];
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: AST[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 declare class Conditional extends AST {
@@ -1758,19 +1758,19 @@ declare enum BindingPipeType {
 declare class BindingPipe extends ASTWithName {
     exp: AST;
     name: string;
-    args: any[];
+    args: AST[];
     readonly type: BindingPipeType;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: any[], type: BindingPipeType, nameSpan: AbsoluteSourceSpan);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: AST[], type: BindingPipeType, nameSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
 declare class LiteralPrimitive extends AST {
-    value: any;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, value: any);
+    value: string | number | boolean | null | undefined;
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, value: string | number | boolean | null | undefined);
     visit(visitor: AstVisitor, context?: any): any;
 }
 declare class LiteralArray extends AST {
-    expressions: any[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: any[]);
+    expressions: AST[];
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: AST[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 interface LiteralMapKey {
@@ -1782,8 +1782,8 @@ interface LiteralMapKey {
 }
 declare class LiteralMap extends AST {
     keys: LiteralMapKey[];
-    values: any[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, keys: LiteralMapKey[], values: any[]);
+    values: AST[];
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, keys: LiteralMapKey[], values: AST[]);
     visit(visitor: AstVisitor, context?: any): any;
 }
 declare class Interpolation extends AST {
