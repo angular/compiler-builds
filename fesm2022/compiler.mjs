@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.0.6+sha-c3adc5a
+ * @license Angular v21.0.6+sha-ff53175
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -19551,7 +19551,7 @@ function pipeBindV(slot, varOffset, args) {
 }
 function textInterpolate(strings, expressions, sourceSpan) {
   const interpolationArgs = collateInterpolationArgs(strings, expressions);
-  return callVariadicInstruction(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
+  return callVariadicInstruction(TEXT_INTERPOLATE_CONFIG, [], interpolationArgs, sourceSpan);
 }
 function i18nExp(expr, sourceSpan) {
   return call(Identifiers.i18nExp, [expr], sourceSpan);
@@ -19588,7 +19588,7 @@ function syntheticHostProperty(name, expression, sourceSpan) {
   return call(Identifiers.syntheticHostProperty, [literal(name), expression], sourceSpan);
 }
 function pureFunction(varOffset, fn, args) {
-  return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [literal(varOffset), fn], args, [], null);
+  return callVariadicInstructionExpr(PURE_FUNCTION_CONFIG, [literal(varOffset), fn], args, null);
 }
 function attachSourceLocation(templatePath, locations) {
   return call(Identifiers.attachSourceLocations, [literal(templatePath), locations], null);
@@ -19611,7 +19611,7 @@ function collateInterpolationArgs(strings, expressions) {
 }
 function interpolationToExpression(interpolation, sourceSpan) {
   const interpolationArgs = collateInterpolationArgs(interpolation.strings, interpolation.expressions);
-  return callVariadicInstructionExpr(VALUE_INTERPOLATE_CONFIG, [], interpolationArgs, [], sourceSpan);
+  return callVariadicInstructionExpr(VALUE_INTERPOLATE_CONFIG, [], interpolationArgs, sourceSpan);
 }
 function call(instruction, args, sourceSpan) {
   const expr = importExpr(instruction).callFn(args, sourceSpan);
@@ -19649,22 +19649,22 @@ const PURE_FUNCTION_CONFIG = {
   variable: Identifiers.pureFunctionV,
   mapping: n => n
 };
-function callVariadicInstructionExpr(config, baseArgs, interpolationArgs, extraArgs, sourceSpan) {
+function callVariadicInstructionExpr(config, baseArgs, interpolationArgs, sourceSpan) {
   const n = config.mapping(interpolationArgs.length);
   const lastInterpolationArg = interpolationArgs.at(-1);
-  if (extraArgs.length === 0 && interpolationArgs.length > 1 && lastInterpolationArg instanceof LiteralExpr && lastInterpolationArg.value === '') {
+  if (interpolationArgs.length > 1 && lastInterpolationArg instanceof LiteralExpr && lastInterpolationArg.value === '') {
     interpolationArgs.pop();
   }
   if (n < config.constant.length) {
-    return importExpr(config.constant[n]).callFn([...baseArgs, ...interpolationArgs, ...extraArgs], sourceSpan);
+    return importExpr(config.constant[n]).callFn([...baseArgs, ...interpolationArgs], sourceSpan);
   } else if (config.variable !== null) {
-    return importExpr(config.variable).callFn([...baseArgs, literalArr(interpolationArgs), ...extraArgs], sourceSpan);
+    return importExpr(config.variable).callFn([...baseArgs, literalArr(interpolationArgs)], sourceSpan);
   } else {
     throw new Error(`AssertionError: unable to call variadic function`);
   }
 }
-function callVariadicInstruction(config, baseArgs, interpolationArgs, extraArgs, sourceSpan) {
-  return createStatementOp(callVariadicInstructionExpr(config, baseArgs, interpolationArgs, extraArgs, sourceSpan).toStmt());
+function callVariadicInstruction(config, baseArgs, interpolationArgs, sourceSpan) {
+  return createStatementOp(callVariadicInstructionExpr(config, baseArgs, interpolationArgs, sourceSpan).toStmt());
 }
 
 const GLOBAL_TARGET_RESOLVERS = new Map([['window', Identifiers.resolveWindow], ['document', Identifiers.resolveDocument], ['body', Identifiers.resolveBody]]);
@@ -28049,7 +28049,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28067,7 +28067,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28140,7 +28140,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28472,7 +28472,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28498,7 +28498,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28539,7 +28539,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -28566,7 +28566,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -28604,7 +28604,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.0.6+sha-c3adc5a'));
+  definitionMap.set('version', literal('21.0.6+sha-ff53175'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -28678,7 +28678,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.0.6+sha-c3adc5a');
+const VERSION = new Version('21.0.6+sha-ff53175');
 
 publishFacade(_global);
 
