@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.1.0-next.4+sha-f811c6c
+ * @license Angular v21.1.0-next.4+sha-640693d
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -4879,12 +4879,12 @@ class DeferredBlock extends BlockNode {
 }
 class SwitchBlock extends BlockNode {
   expression;
-  cases;
+  groups;
   unknownBlocks;
-  constructor(expression, cases, unknownBlocks, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
+  constructor(expression, groups, unknownBlocks, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
     super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
     this.expression = expression;
-    this.cases = cases;
+    this.groups = groups;
     this.unknownBlocks = unknownBlocks;
   }
   visit(visitor) {
@@ -4893,16 +4893,26 @@ class SwitchBlock extends BlockNode {
 }
 class SwitchBlockCase extends BlockNode {
   expression;
-  children;
-  i18n;
-  constructor(expression, children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
+  constructor(expression, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
     super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
     this.expression = expression;
+  }
+  visit(visitor) {
+    return visitor.visitSwitchBlockCase(this);
+  }
+}
+class SwitchBlockCaseGroup extends BlockNode {
+  cases;
+  children;
+  i18n;
+  constructor(cases, children, sourceSpan, startSourceSpan, endSourceSpan, nameSpan, i18n) {
+    super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
+    this.cases = cases;
     this.children = children;
     this.i18n = i18n;
   }
   visit(visitor) {
-    return visitor.visitSwitchBlockCase(this);
+    return visitor.visitSwitchBlockCaseGroup(this);
   }
 }
 class ForLoopBlock extends BlockNode {
@@ -5216,9 +5226,11 @@ let RecursiveVisitor$1 = class RecursiveVisitor {
     visitAll$1(this, block.children);
   }
   visitSwitchBlock(block) {
-    visitAll$1(this, block.cases);
+    visitAll$1(this, block.groups);
   }
-  visitSwitchBlockCase(block) {
+  visitSwitchBlockCase(block) {}
+  visitSwitchBlockCaseGroup(block) {
+    visitAll$1(this, block.cases);
     visitAll$1(this, block.children);
   }
   visitForLoopBlock(block) {
@@ -13557,6 +13569,11 @@ class _Tokenizer {
     }
     if (this._attemptCharCode($LBRACE)) {
       this._beginToken(25);
+      this._endToken([]);
+    } else if (this._isBlockStart() && (startToken.parts[0] === 'case' || startToken.parts[0] === 'default')) {
+      this._beginToken(25);
+      this._endToken([]);
+      this._beginToken(26);
       this._endToken([]);
     } else {
       startToken.type = 28;
@@ -21914,32 +21931,34 @@ function ingestIfBlock(unit, ifBlock) {
   unit.update.push(createConditionalOp(firstXref, null, conditions, ifBlock.sourceSpan));
 }
 function ingestSwitchBlock(unit, switchBlock) {
-  if (switchBlock.cases.length === 0) {
+  if (switchBlock.groups.length === 0) {
     return;
   }
   let firstXref = null;
   let conditions = [];
-  for (let i = 0; i < switchBlock.cases.length; i++) {
-    const switchCase = switchBlock.cases[i];
+  for (let i = 0; i < switchBlock.groups.length; i++) {
+    const switchCaseGroup = switchBlock.groups[i];
     const cView = unit.job.allocateView(unit.xref);
-    const tagName = ingestControlFlowInsertionPoint(unit, cView.xref, switchCase);
+    const tagName = ingestControlFlowInsertionPoint(unit, cView.xref, switchCaseGroup);
     let switchCaseI18nMeta = undefined;
-    if (switchCase.i18n !== undefined) {
-      if (!(switchCase.i18n instanceof BlockPlaceholder)) {
-        throw Error(`Unhandled i18n metadata type for switch block: ${switchCase.i18n?.constructor.name}`);
+    if (switchCaseGroup.i18n !== undefined) {
+      if (!(switchCaseGroup.i18n instanceof BlockPlaceholder)) {
+        throw Error(`Unhandled i18n metadata type for switch block: ${switchCaseGroup.i18n?.constructor.name}`);
       }
-      switchCaseI18nMeta = switchCase.i18n;
+      switchCaseI18nMeta = switchCaseGroup.i18n;
     }
     const createOp = i === 0 ? createConditionalCreateOp : createConditionalBranchCreateOp;
-    const conditionalCreateOp = createOp(cView.xref, TemplateKind.Block, tagName, 'Case', Namespace.HTML, switchCaseI18nMeta, switchCase.startSourceSpan, switchCase.sourceSpan);
+    const conditionalCreateOp = createOp(cView.xref, TemplateKind.Block, tagName, 'Case', Namespace.HTML, switchCaseI18nMeta, switchCaseGroup.startSourceSpan, switchCaseGroup.sourceSpan);
     unit.create.push(conditionalCreateOp);
     if (firstXref === null) {
       firstXref = cView.xref;
     }
-    const caseExpr = switchCase.expression ? convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) : null;
-    const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, conditionalCreateOp.xref, conditionalCreateOp.handle);
-    conditions.push(conditionalCaseExpr);
-    ingestNodes(cView, switchCase.children);
+    for (const switchCase of switchCaseGroup.cases) {
+      const caseExpr = switchCase.expression ? convertAst(switchCase.expression, unit.job, switchBlock.startSourceSpan) : null;
+      const conditionalCaseExpr = new ConditionalCaseExpr(caseExpr, conditionalCreateOp.xref, conditionalCreateOp.handle);
+      conditions.push(conditionalCaseExpr);
+    }
+    ingestNodes(cView, switchCaseGroup.children);
   }
   unit.update.push(createConditionalOp(firstXref, convertAst(switchBlock.expression, unit.job, null), conditions, switchBlock.sourceSpan));
 }
@@ -23144,9 +23163,10 @@ function createForLoop(ast, connectedBlocks, visitor, bindingParser) {
 function createSwitchBlock(ast, visitor, bindingParser) {
   const errors = validateSwitchBlock(ast);
   const primaryExpression = ast.parameters.length > 0 ? parseBlockParameterToBinding(ast.parameters[0], bindingParser) : bindingParser.parseBinding('', false, ast.sourceSpan, 0);
-  const cases = [];
+  const groups = [];
   const unknownBlocks = [];
-  let defaultCase = null;
+  let collectedCases = [];
+  let firstCaseStart = null;
   for (const node of ast.children) {
     if (!(node instanceof Block)) {
       continue;
@@ -23155,19 +23175,34 @@ function createSwitchBlock(ast, visitor, bindingParser) {
       unknownBlocks.push(new UnknownBlock(node.name, node.sourceSpan, node.nameSpan));
       continue;
     }
-    const expression = node.name === 'case' ? parseBlockParameterToBinding(node.parameters[0], bindingParser) : null;
-    const ast = new SwitchBlockCase(expression, visitAll(visitor, node.children, node.children), node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan, node.i18n);
-    if (expression === null) {
-      defaultCase = ast;
-    } else {
-      cases.push(ast);
+    const isCase = node.name === 'case';
+    let expression = null;
+    if (isCase) {
+      expression = parseBlockParameterToBinding(node.parameters[0], bindingParser);
     }
+    const switchCase = new SwitchBlockCase(expression, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan);
+    collectedCases.push(switchCase);
+    const caseWithoutBody = node.children.length === 0;
+    if (caseWithoutBody) {
+      if (firstCaseStart === null) {
+        firstCaseStart = node.sourceSpan;
+      }
+      continue;
+    }
+    let sourceSpan = node.sourceSpan;
+    let startSourceSpan = node.startSourceSpan;
+    if (firstCaseStart !== null) {
+      sourceSpan = new ParseSourceSpan(firstCaseStart.start, node.sourceSpan.end);
+      startSourceSpan = new ParseSourceSpan(firstCaseStart.start, node.startSourceSpan.end);
+      firstCaseStart = null;
+    }
+    const group = new SwitchBlockCaseGroup(collectedCases, visitAll(visitor, node.children, node.children), sourceSpan, startSourceSpan, node.endSourceSpan, node.nameSpan, node.i18n);
+    groups.push(group);
+    collectedCases = [];
   }
-  if (defaultCase !== null) {
-    cases.push(defaultCase);
-  }
+  const node = new SwitchBlock(primaryExpression, groups, unknownBlocks, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.nameSpan);
   return {
-    node: new SwitchBlock(primaryExpression, cases, unknownBlocks, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.nameSpan),
+    node,
     errors
   };
 }
@@ -25102,10 +25137,13 @@ class CombinedRecursiveAstVisitor extends RecursiveAstVisitor {
   }
   visitSwitchBlock(block) {
     this.visit(block.expression);
-    this.visitAllTemplateNodes(block.cases);
+    this.visitAllTemplateNodes(block.groups);
   }
   visitSwitchBlockCase(block) {
     block.expression && this.visit(block.expression);
+  }
+  visitSwitchBlockCaseGroup(block) {
+    this.visitAllTemplateNodes(block.cases);
     this.visitAllTemplateNodes(block.children);
   }
   visitForLoopBlock(block) {
@@ -25264,7 +25302,7 @@ class Scope {
       this.visitVariable(nodeOrNodes.item);
       nodeOrNodes.contextVariables.forEach(v => this.visitVariable(v));
       nodeOrNodes.children.forEach(node => node.visit(this));
-    } else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty || nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError || nodeOrNodes instanceof DeferredBlockPlaceholder || nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof Content) {
+    } else if (nodeOrNodes instanceof SwitchBlockCaseGroup || nodeOrNodes instanceof ForLoopBlockEmpty || nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError || nodeOrNodes instanceof DeferredBlockPlaceholder || nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof Content) {
       nodeOrNodes.children.forEach(node => node.visit(this));
     } else if (!(nodeOrNodes instanceof HostElement)) {
       nodeOrNodes.forEach(node => node.visit(this));
@@ -25300,9 +25338,10 @@ class Scope {
     this.ingestScopedNode(block);
   }
   visitSwitchBlock(block) {
-    block.cases.forEach(node => node.visit(this));
+    block.groups.forEach(node => node.visit(this));
   }
-  visitSwitchBlockCase(block) {
+  visitSwitchBlockCase(block) {}
+  visitSwitchBlockCaseGroup(block) {
     this.ingestScopedNode(block);
   }
   visitForLoopBlock(block) {
@@ -25419,9 +25458,10 @@ class DirectiveBinder {
     block.children.forEach(child => child.visit(this));
   }
   visitSwitchBlock(block) {
-    block.cases.forEach(node => node.visit(this));
+    block.groups.forEach(node => node.visit(this));
   }
-  visitSwitchBlockCase(block) {
+  visitSwitchBlockCase(block) {}
+  visitSwitchBlockCaseGroup(block) {
     block.children.forEach(node => node.visit(this));
   }
   visitForLoopBlock(block) {
@@ -25607,7 +25647,7 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
       this.deferBlocks.push([nodeOrNodes, this.scope]);
       nodeOrNodes.children.forEach(node => node.visit(this));
       this.nestingLevel.set(nodeOrNodes, this.level);
-    } else if (nodeOrNodes instanceof SwitchBlockCase || nodeOrNodes instanceof ForLoopBlockEmpty || nodeOrNodes instanceof DeferredBlockError || nodeOrNodes instanceof DeferredBlockPlaceholder || nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof Content) {
+    } else if (nodeOrNodes instanceof SwitchBlockCaseGroup || nodeOrNodes instanceof ForLoopBlockEmpty || nodeOrNodes instanceof DeferredBlockError || nodeOrNodes instanceof DeferredBlockPlaceholder || nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof Content) {
       nodeOrNodes.children.forEach(node => node.visit(this));
       this.nestingLevel.set(nodeOrNodes, this.level);
     } else if (nodeOrNodes instanceof HostElement) {
@@ -25655,6 +25695,9 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
   }
   visitSwitchBlockCase(block) {
     block.expression?.visit(this);
+  }
+  visitSwitchBlockCaseGroup(block) {
+    block.cases.forEach(caseNode => caseNode.visit(this));
     this.ingestScopedNode(block);
   }
   visitForLoopBlock(block) {
@@ -28049,7 +28092,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28067,7 +28110,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28140,7 +28183,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28466,13 +28509,16 @@ class BlockPresenceVisitor extends RecursiveVisitor$1 {
   visitSwitchBlockCase() {
     this.hasBlocks = true;
   }
+  visitSwitchBlockCaseGroup() {
+    this.hasBlocks = true;
+  }
 }
 
 const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28498,7 +28544,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28539,7 +28585,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -28566,7 +28612,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -28604,7 +28650,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.1.0-next.4+sha-f811c6c'));
+  definitionMap.set('version', literal('21.1.0-next.4+sha-640693d'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -28678,9 +28724,9 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.1.0-next.4+sha-f811c6c');
+const VERSION = new Version('21.1.0-next.4+sha-640693d');
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
