@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.0+sha-da364d2
+ * @license Angular v21.2.0-next.0+sha-99db2e9
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1357,7 +1357,7 @@ class FunctionExpr extends Expression {
     return new FunctionExpr(this.params.map(p => p.clone()), this.statements, this.type, this.sourceSpan, this.name);
   }
 }
-class ArrowFunctionExpr extends Expression {
+let ArrowFunctionExpr$1 = class ArrowFunctionExpr extends Expression {
   params;
   body;
   constructor(params, body, type, sourceSpan) {
@@ -1389,7 +1389,7 @@ class ArrowFunctionExpr extends Expression {
   toDeclStmt(name, modifiers) {
     return new DeclareVarStmt(name, this, INFERRED_TYPE, modifiers, this.sourceSpan);
   }
-}
+};
 class UnaryOperatorExpr extends Expression {
   operator;
   expr;
@@ -1981,7 +1981,7 @@ function fn(params, body, type, sourceSpan, name) {
   return new FunctionExpr(params, body, type, sourceSpan, name);
 }
 function arrowFn(params, body, type, sourceSpan) {
-  return new ArrowFunctionExpr(params, body, type, sourceSpan);
+  return new ArrowFunctionExpr$1(params, body, type, sourceSpan);
 }
 function ifStmt(condition, thenClause, elseClause, sourceSpan, leadingComments) {
   return new IfStmt(condition, thenClause, elseClause, sourceSpan, leadingComments);
@@ -2029,7 +2029,7 @@ function serializeTags(tags) {
 var output_ast = /*#__PURE__*/Object.freeze({
     __proto__: null,
     ArrayType: ArrayType,
-    ArrowFunctionExpr: ArrowFunctionExpr,
+    ArrowFunctionExpr: ArrowFunctionExpr$1,
     BOOL_TYPE: BOOL_TYPE,
     get BinaryOperator () { return BinaryOperator; },
     BinaryOperatorExpr: BinaryOperatorExpr,
@@ -2197,7 +2197,7 @@ class ConstantPool {
     return this.sharedConstants.get(key);
   }
   getSharedFunctionReference(fn, prefix, useUniqueName = true) {
-    const isArrow = fn instanceof ArrowFunctionExpr;
+    const isArrow = fn instanceof ArrowFunctionExpr$1;
     for (const current of this.statements) {
       if (isArrow && current instanceof DeclareVarStmt && current.value?.isEquivalent(fn)) {
         return variable(current.name);
@@ -2995,6 +2995,10 @@ class Identifiers {
     name: 'ɵɵreadContextLet',
     moduleName: CORE
   };
+  static arrowFunction = {
+    name: 'ɵɵarrowFunction',
+    moduleName: CORE
+  };
   static attachSourceLocations = {
     name: 'ɵɵattachSourceLocations',
     moduleName: CORE
@@ -3528,7 +3532,7 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitInvokeFunctionExpr(expr, ctx) {
-    const shouldParenthesize = expr.fn instanceof ArrowFunctionExpr;
+    const shouldParenthesize = expr.fn instanceof ArrowFunctionExpr$1;
     if (shouldParenthesize) {
       ctx.print(expr.fn, '(');
     }
@@ -4319,6 +4323,28 @@ class ParenthesizedExpression extends AST {
     return visitor.visitParenthesizedExpression(this, context);
   }
 }
+class ArrowFunctionIdentifierParameter {
+  name;
+  span;
+  sourceSpan;
+  constructor(name, span, sourceSpan) {
+    this.name = name;
+    this.span = span;
+    this.sourceSpan = sourceSpan;
+  }
+}
+class ArrowFunction extends AST {
+  parameters;
+  body;
+  constructor(span, sourceSpan, parameters, body) {
+    super(span, sourceSpan);
+    this.parameters = parameters;
+    this.body = body;
+  }
+  visit(visitor, context) {
+    return visitor.visitArrowFunction(this, context);
+  }
+}
 class RegularExpressionLiteral extends AST {
   body;
   flags;
@@ -4466,6 +4492,9 @@ class RecursiveAstVisitor {
   }
   visitParenthesizedExpression(ast, context) {
     this.visit(ast.expression, context);
+  }
+  visitArrowFunction(ast, context) {
+    this.visit(ast.body, context);
   }
   visitRegularExpressionLiteral(ast, context) {}
   visitSpreadElement(ast, context) {
@@ -7467,6 +7496,7 @@ var ExpressionKind;
   ExpressionKind[ExpressionKind["ConditionalCase"] = 23] = "ConditionalCase";
   ExpressionKind[ExpressionKind["ConstCollected"] = 24] = "ConstCollected";
   ExpressionKind[ExpressionKind["TwoWayBindingSet"] = 25] = "TwoWayBindingSet";
+  ExpressionKind[ExpressionKind["ArrowFunction"] = 26] = "ArrowFunction";
 })(ExpressionKind || (ExpressionKind = {}));
 var VariableFlags;
 (function (VariableFlags) {
@@ -7545,6 +7575,219 @@ var TemplateKind;
   TemplateKind[TemplateKind["Block"] = 2] = "Block";
 })(TemplateKind || (TemplateKind = {}));
 
+class OpList {
+  static nextListId = 0;
+  debugListId = OpList.nextListId++;
+  head = {
+    kind: OpKind.ListEnd,
+    next: null,
+    prev: null,
+    debugListId: this.debugListId
+  };
+  tail = {
+    kind: OpKind.ListEnd,
+    next: null,
+    prev: null,
+    debugListId: this.debugListId
+  };
+  constructor() {
+    this.head.next = this.tail;
+    this.tail.prev = this.head;
+  }
+  push(op) {
+    if (Array.isArray(op)) {
+      for (const o of op) {
+        this.push(o);
+      }
+      return;
+    }
+    OpList.assertIsNotEnd(op);
+    OpList.assertIsUnowned(op);
+    op.debugListId = this.debugListId;
+    const oldLast = this.tail.prev;
+    op.prev = oldLast;
+    oldLast.next = op;
+    op.next = this.tail;
+    this.tail.prev = op;
+  }
+  prepend(ops) {
+    if (ops.length === 0) {
+      return;
+    }
+    for (const op of ops) {
+      OpList.assertIsNotEnd(op);
+      OpList.assertIsUnowned(op);
+      op.debugListId = this.debugListId;
+    }
+    const first = this.head.next;
+    let prev = this.head;
+    for (const op of ops) {
+      prev.next = op;
+      op.prev = prev;
+      prev = op;
+    }
+    prev.next = first;
+    first.prev = prev;
+  }
+  *[Symbol.iterator]() {
+    let current = this.head.next;
+    while (current !== this.tail) {
+      OpList.assertIsOwned(current, this.debugListId);
+      const next = current.next;
+      yield current;
+      current = next;
+    }
+  }
+  *reversed() {
+    let current = this.tail.prev;
+    while (current !== this.head) {
+      OpList.assertIsOwned(current, this.debugListId);
+      const prev = current.prev;
+      yield current;
+      current = prev;
+    }
+  }
+  static replace(oldOp, newOp) {
+    OpList.assertIsNotEnd(oldOp);
+    OpList.assertIsNotEnd(newOp);
+    OpList.assertIsOwned(oldOp);
+    OpList.assertIsUnowned(newOp);
+    newOp.debugListId = oldOp.debugListId;
+    if (oldOp.prev !== null) {
+      oldOp.prev.next = newOp;
+      newOp.prev = oldOp.prev;
+    }
+    if (oldOp.next !== null) {
+      oldOp.next.prev = newOp;
+      newOp.next = oldOp.next;
+    }
+    oldOp.debugListId = null;
+    oldOp.prev = null;
+    oldOp.next = null;
+  }
+  static replaceWithMany(oldOp, newOps) {
+    if (newOps.length === 0) {
+      OpList.remove(oldOp);
+      return;
+    }
+    OpList.assertIsNotEnd(oldOp);
+    OpList.assertIsOwned(oldOp);
+    const listId = oldOp.debugListId;
+    oldOp.debugListId = null;
+    for (const newOp of newOps) {
+      OpList.assertIsNotEnd(newOp);
+      OpList.assertIsUnowned(newOp);
+    }
+    const {
+      prev: oldPrev,
+      next: oldNext
+    } = oldOp;
+    oldOp.prev = null;
+    oldOp.next = null;
+    let prev = oldPrev;
+    for (const newOp of newOps) {
+      OpList.assertIsUnowned(newOp);
+      newOp.debugListId = listId;
+      prev.next = newOp;
+      newOp.prev = prev;
+      newOp.next = null;
+      prev = newOp;
+    }
+    const first = newOps[0];
+    const last = prev;
+    if (oldPrev !== null) {
+      oldPrev.next = first;
+      first.prev = oldPrev;
+    }
+    if (oldNext !== null) {
+      oldNext.prev = last;
+      last.next = oldNext;
+    }
+  }
+  static remove(op) {
+    OpList.assertIsNotEnd(op);
+    OpList.assertIsOwned(op);
+    op.prev.next = op.next;
+    op.next.prev = op.prev;
+    op.debugListId = null;
+    op.prev = null;
+    op.next = null;
+  }
+  static insertBefore(op, target) {
+    if (Array.isArray(op)) {
+      for (const o of op) {
+        OpList.insertBefore(o, target);
+      }
+      return;
+    }
+    OpList.assertIsOwned(target);
+    if (target.prev === null) {
+      throw new Error(`AssertionError: illegal operation on list start`);
+    }
+    OpList.assertIsNotEnd(op);
+    OpList.assertIsUnowned(op);
+    op.debugListId = target.debugListId;
+    op.prev = null;
+    target.prev.next = op;
+    op.prev = target.prev;
+    op.next = target;
+    target.prev = op;
+  }
+  static insertAfter(op, target) {
+    OpList.assertIsOwned(target);
+    if (target.next === null) {
+      throw new Error(`AssertionError: illegal operation on list end`);
+    }
+    OpList.assertIsNotEnd(op);
+    OpList.assertIsUnowned(op);
+    op.debugListId = target.debugListId;
+    target.next.prev = op;
+    op.next = target.next;
+    op.prev = target;
+    target.next = op;
+  }
+  static assertIsUnowned(op) {
+    if (op.debugListId !== null) {
+      throw new Error(`AssertionError: illegal operation on owned node: ${OpKind[op.kind]}`);
+    }
+  }
+  static assertIsOwned(op, byList) {
+    if (op.debugListId === null) {
+      throw new Error(`AssertionError: illegal operation on unowned node: ${OpKind[op.kind]}`);
+    } else if (byList !== undefined && op.debugListId !== byList) {
+      throw new Error(`AssertionError: node belongs to the wrong list (expected ${byList}, actual ${op.debugListId})`);
+    }
+  }
+  static assertIsNotEnd(op) {
+    if (op.kind === OpKind.ListEnd) {
+      throw new Error(`AssertionError: illegal operation on list head or tail`);
+    }
+  }
+}
+
+function createStatementOp(statement) {
+  return {
+    kind: OpKind.Statement,
+    statement,
+    ...NEW_OP
+  };
+}
+function createVariableOp(xref, variable, initializer, flags) {
+  return {
+    kind: OpKind.Variable,
+    xref,
+    variable,
+    initializer,
+    flags,
+    ...NEW_OP
+  };
+}
+const NEW_OP = {
+  debugListId: null,
+  prev: null,
+  next: null
+};
+
 const ConsumesSlot = Symbol('ConsumesSlot');
 const DependsOnSlotContext = Symbol('DependsOnSlotContext');
 const ConsumesVarsTrait = Symbol('ConsumesVars');
@@ -7571,29 +7814,6 @@ function hasConsumesVarsTrait(value) {
 function hasUsesVarOffsetTrait(expr) {
   return expr[UsesVarOffset] === true;
 }
-
-function createStatementOp(statement) {
-  return {
-    kind: OpKind.Statement,
-    statement,
-    ...NEW_OP
-  };
-}
-function createVariableOp(xref, variable, initializer, flags) {
-  return {
-    kind: OpKind.Variable,
-    xref,
-    variable,
-    initializer,
-    flags,
-    ...NEW_OP
-  };
-}
-const NEW_OP = {
-  debugListId: null,
-  prev: null,
-  next: null
-};
 
 function createInterpolateTextOp(xref, interpolation, sourceSpan) {
   return {
@@ -8000,9 +8220,6 @@ class TrackContextExpr extends ExpressionBase {
 class NextContextExpr extends ExpressionBase {
   kind = ExpressionKind.NextContext;
   steps = 1;
-  constructor() {
-    super();
-  }
   visitExpression() {}
   isEquivalent(e) {
     return e instanceof NextContextExpr && e.steps === this.steps;
@@ -8533,6 +8750,48 @@ class ConstCollectedExpr extends ExpressionBase {
     return new ConstCollectedExpr(this.expr);
   }
 }
+class ArrowFunctionExpr extends ExpressionBase {
+  parameters;
+  body;
+  kind = ExpressionKind.ArrowFunction;
+  [ConsumesVarsTrait] = true;
+  [UsesVarOffset] = true;
+  contextName = 'ctx';
+  currentViewName = 'view';
+  varOffset = null;
+  ops;
+  constructor(parameters, body) {
+    super();
+    this.parameters = parameters;
+    this.body = body;
+    this.ops = new OpList();
+    this.ops.push([createStatementOp(new ReturnStatement(body, body.sourceSpan))]);
+  }
+  visitExpression(visitor, context) {
+    for (const op of this.ops) {
+      visitExpressionsInOp(op, expr => {
+        expr.visitExpression(visitor, context);
+      });
+    }
+  }
+  isEquivalent(e) {
+    return e instanceof ArrowFunctionExpr && e.parameters.length === this.parameters.length && e.parameters.every((param, index) => param.isEquivalent(this.parameters[index])) && e.body.isEquivalent(this.body);
+  }
+  isConstant() {
+    return false;
+  }
+  transformInternalExpressions(transform, flags) {
+    for (const op of this.ops) {
+      transformExpressionsInOp(op, transform, flags | (VisitorContextFlag.InChildOperation | VisitorContextFlag.InArrowFunctionOperation));
+    }
+  }
+  clone() {
+    const expr = new ArrowFunctionExpr(this.parameters, this.body);
+    expr.varOffset = this.varOffset;
+    expr.ops = this.ops;
+    return expr;
+  }
+}
 function visitExpressionsInOp(op, visitor) {
   transformExpressionsInOp(op, (expr, flags) => {
     visitor(expr, flags);
@@ -8543,6 +8802,7 @@ var VisitorContextFlag;
 (function (VisitorContextFlag) {
   VisitorContextFlag[VisitorContextFlag["None"] = 0] = "None";
   VisitorContextFlag[VisitorContextFlag["InChildOperation"] = 1] = "InChildOperation";
+  VisitorContextFlag[VisitorContextFlag["InArrowFunctionOperation"] = 2] = "InArrowFunctionOperation";
 })(VisitorContextFlag || (VisitorContextFlag = {}));
 function transformExpressionsInInterpolation(interpolation, transform, flags) {
   for (let i = 0; i < interpolation.expressions.length; i++) {
@@ -8741,13 +9001,13 @@ function transformExpressionsInExpression(expr, transform, flags) {
   } else if (expr instanceof TaggedTemplateLiteralExpr) {
     expr.tag = transformExpressionsInExpression(expr.tag, transform, flags);
     expr.template.expressions = expr.template.expressions.map(e => transformExpressionsInExpression(e, transform, flags));
-  } else if (expr instanceof ArrowFunctionExpr) {
+  } else if (expr instanceof ArrowFunctionExpr$1) {
     if (Array.isArray(expr.body)) {
       for (let i = 0; i < expr.body.length; i++) {
-        transformExpressionsInStatement(expr.body[i], transform, flags);
+        transformExpressionsInStatement(expr.body[i], transform, flags | VisitorContextFlag.InChildOperation);
       }
     } else {
-      expr.body = transformExpressionsInExpression(expr.body, transform, flags);
+      expr.body = transformExpressionsInExpression(expr.body, transform, flags | VisitorContextFlag.InChildOperation);
     }
   } else if (expr instanceof WrappedNodeExpr) ; else if (expr instanceof TemplateLiteralExpr) {
     for (let i = 0; i < expr.expressions.length; i++) {
@@ -8785,196 +9045,6 @@ function transformExpressionsInStatement(stmt, transform, flags) {
 }
 function isStringLiteral(expr) {
   return expr instanceof LiteralExpr && typeof expr.value === 'string';
-}
-
-class OpList {
-  static nextListId = 0;
-  debugListId = OpList.nextListId++;
-  head = {
-    kind: OpKind.ListEnd,
-    next: null,
-    prev: null,
-    debugListId: this.debugListId
-  };
-  tail = {
-    kind: OpKind.ListEnd,
-    next: null,
-    prev: null,
-    debugListId: this.debugListId
-  };
-  constructor() {
-    this.head.next = this.tail;
-    this.tail.prev = this.head;
-  }
-  push(op) {
-    if (Array.isArray(op)) {
-      for (const o of op) {
-        this.push(o);
-      }
-      return;
-    }
-    OpList.assertIsNotEnd(op);
-    OpList.assertIsUnowned(op);
-    op.debugListId = this.debugListId;
-    const oldLast = this.tail.prev;
-    op.prev = oldLast;
-    oldLast.next = op;
-    op.next = this.tail;
-    this.tail.prev = op;
-  }
-  prepend(ops) {
-    if (ops.length === 0) {
-      return;
-    }
-    for (const op of ops) {
-      OpList.assertIsNotEnd(op);
-      OpList.assertIsUnowned(op);
-      op.debugListId = this.debugListId;
-    }
-    const first = this.head.next;
-    let prev = this.head;
-    for (const op of ops) {
-      prev.next = op;
-      op.prev = prev;
-      prev = op;
-    }
-    prev.next = first;
-    first.prev = prev;
-  }
-  *[Symbol.iterator]() {
-    let current = this.head.next;
-    while (current !== this.tail) {
-      OpList.assertIsOwned(current, this.debugListId);
-      const next = current.next;
-      yield current;
-      current = next;
-    }
-  }
-  *reversed() {
-    let current = this.tail.prev;
-    while (current !== this.head) {
-      OpList.assertIsOwned(current, this.debugListId);
-      const prev = current.prev;
-      yield current;
-      current = prev;
-    }
-  }
-  static replace(oldOp, newOp) {
-    OpList.assertIsNotEnd(oldOp);
-    OpList.assertIsNotEnd(newOp);
-    OpList.assertIsOwned(oldOp);
-    OpList.assertIsUnowned(newOp);
-    newOp.debugListId = oldOp.debugListId;
-    if (oldOp.prev !== null) {
-      oldOp.prev.next = newOp;
-      newOp.prev = oldOp.prev;
-    }
-    if (oldOp.next !== null) {
-      oldOp.next.prev = newOp;
-      newOp.next = oldOp.next;
-    }
-    oldOp.debugListId = null;
-    oldOp.prev = null;
-    oldOp.next = null;
-  }
-  static replaceWithMany(oldOp, newOps) {
-    if (newOps.length === 0) {
-      OpList.remove(oldOp);
-      return;
-    }
-    OpList.assertIsNotEnd(oldOp);
-    OpList.assertIsOwned(oldOp);
-    const listId = oldOp.debugListId;
-    oldOp.debugListId = null;
-    for (const newOp of newOps) {
-      OpList.assertIsNotEnd(newOp);
-      OpList.assertIsUnowned(newOp);
-    }
-    const {
-      prev: oldPrev,
-      next: oldNext
-    } = oldOp;
-    oldOp.prev = null;
-    oldOp.next = null;
-    let prev = oldPrev;
-    for (const newOp of newOps) {
-      OpList.assertIsUnowned(newOp);
-      newOp.debugListId = listId;
-      prev.next = newOp;
-      newOp.prev = prev;
-      newOp.next = null;
-      prev = newOp;
-    }
-    const first = newOps[0];
-    const last = prev;
-    if (oldPrev !== null) {
-      oldPrev.next = first;
-      first.prev = oldPrev;
-    }
-    if (oldNext !== null) {
-      oldNext.prev = last;
-      last.next = oldNext;
-    }
-  }
-  static remove(op) {
-    OpList.assertIsNotEnd(op);
-    OpList.assertIsOwned(op);
-    op.prev.next = op.next;
-    op.next.prev = op.prev;
-    op.debugListId = null;
-    op.prev = null;
-    op.next = null;
-  }
-  static insertBefore(op, target) {
-    if (Array.isArray(op)) {
-      for (const o of op) {
-        OpList.insertBefore(o, target);
-      }
-      return;
-    }
-    OpList.assertIsOwned(target);
-    if (target.prev === null) {
-      throw new Error(`AssertionError: illegal operation on list start`);
-    }
-    OpList.assertIsNotEnd(op);
-    OpList.assertIsUnowned(op);
-    op.debugListId = target.debugListId;
-    op.prev = null;
-    target.prev.next = op;
-    op.prev = target.prev;
-    op.next = target;
-    target.prev = op;
-  }
-  static insertAfter(op, target) {
-    OpList.assertIsOwned(target);
-    if (target.next === null) {
-      throw new Error(`AssertionError: illegal operation on list end`);
-    }
-    OpList.assertIsNotEnd(op);
-    OpList.assertIsUnowned(op);
-    op.debugListId = target.debugListId;
-    target.next.prev = op;
-    op.next = target.next;
-    op.prev = target;
-    target.next = op;
-  }
-  static assertIsUnowned(op) {
-    if (op.debugListId !== null) {
-      throw new Error(`AssertionError: illegal operation on owned node: ${OpKind[op.kind]}`);
-    }
-  }
-  static assertIsOwned(op, byList) {
-    if (op.debugListId === null) {
-      throw new Error(`AssertionError: illegal operation on unowned node: ${OpKind[op.kind]}`);
-    } else if (byList !== undefined && op.debugListId !== byList) {
-      throw new Error(`AssertionError: node belongs to the wrong list (expected ${byList}, actual ${op.debugListId})`);
-    }
-  }
-  static assertIsNotEnd(op) {
-    if (op.kind === OpKind.ListEnd) {
-      throw new Error(`AssertionError: illegal operation on list head or tail`);
-    }
-  }
 }
 
 class SlotHandle {
@@ -9527,9 +9597,15 @@ class CompilationUnit {
   }
   create = new OpList();
   update = new OpList();
+  functions = new Set();
   fnName = null;
   vars = null;
   *ops() {
+    for (const expr of this.functions) {
+      for (const op of expr.ops) {
+        yield op;
+      }
+    }
     for (const op of this.create) {
       yield op;
       if (op.kind === OpKind.Listener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener || op.kind === OpKind.TwoWayListener) {
@@ -10873,6 +10949,9 @@ function recursivelyProcessView(view, parentScope) {
     }
   }
   view.update.prepend(generateVariablesInScopeForView(view, scope, false));
+  for (const expr of view.functions) {
+    expr.ops.prepend(generateVariablesInScopeForView(view, getScopeForView(view, parentScope), true));
+  }
 }
 function getScopeForView(view, parent) {
   const scope = {
@@ -15621,8 +15700,9 @@ class _Scanner {
       case $GT:
         return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=');
       case $BANG:
+        return this.scanComplexOperator(start, '!', $EQ, '=', $EQ, '=');
       case $EQ:
-        return this.scanComplexOperator(start, String.fromCharCode(peek), $EQ, '=', $EQ, '=');
+        return this.scanEquals(start);
       case $AMPERSAND:
         return this.scanComplexOperator(start, '&', $AMPERSAND, '&', $EQ, '=');
       case $BAR:
@@ -15666,6 +15746,23 @@ class _Scanner {
     if (threeCode != null && this.peek == threeCode) {
       this.advance();
       str += three;
+    }
+    return newOperatorToken(start, this.index, str);
+  }
+  scanEquals(start) {
+    this.advance();
+    let str = '=';
+    if (this.peek === $EQ) {
+      this.advance();
+      str += '=';
+    } else if (this.peek === $GT) {
+      this.advance();
+      str += '>';
+      return newOperatorToken(start, this.index, str);
+    }
+    if (this.peek === $EQ) {
+      this.advance();
+      str += '=';
     }
     return newOperatorToken(start, this.index, str);
   }
@@ -16578,7 +16675,9 @@ class _ParseAST {
   }
   parsePrimary() {
     const start = this.inputIndex;
-    if (this.consumeOptionalCharacter($LPAREN)) {
+    if (this.isArrowFunction()) {
+      return this.parseArrowFunction(start);
+    } else if (this.consumeOptionalCharacter($LPAREN)) {
       this.rparensExpected++;
       const result = this.parsePipe();
       if (!this.consumeOptionalCharacter($RPAREN)) {
@@ -16592,7 +16691,7 @@ class _ParseAST {
       return new LiteralPrimitive(this.span(start), this.sourceSpan(start), null);
     } else if (this.next.isKeywordUndefined()) {
       this.advance();
-      return new LiteralPrimitive(this.span(start), this.sourceSpan(start), void 0);
+      return new LiteralPrimitive(this.span(start), this.sourceSpan(start), undefined);
     } else if (this.next.isKeywordTrue()) {
       this.advance();
       return new LiteralPrimitive(this.span(start), this.sourceSpan(start), true);
@@ -16953,6 +17052,78 @@ class _ParseAST {
     const end = flagsToken ? flagsToken.end : bodyToken.end;
     return new RegularExpressionLiteral(this.span(start, end), this.sourceSpan(start, end), bodyToken.strValue, flagsToken ? flagsToken.strValue : null);
   }
+  parseArrowFunction(start) {
+    let params;
+    if (this.next.isIdentifier()) {
+      const token = this.next;
+      this.advance();
+      params = [this.getArrowFunctionIdentifierArg(token)];
+    } else if (this.next.isCharacter($LPAREN)) {
+      this.rparensExpected++;
+      this.advance();
+      params = this.parseArrowFunctionParameters();
+      this.rparensExpected--;
+    } else {
+      params = [];
+      this.error(`Unexpected token ${this.next}`);
+    }
+    this.expectOperator('=>');
+    let body;
+    if (this.next.isCharacter($LBRACE)) {
+      this.error('Multi-line arrow functions are not supported. If you meant to return an object literal, wrap it with parentheses.');
+      body = new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+    } else {
+      const prevFlags = this.parseFlags;
+      this.parseFlags = 1;
+      body = this.parseExpression();
+      this.parseFlags = prevFlags;
+    }
+    return new ArrowFunction(this.span(start), this.sourceSpan(start), params, body);
+  }
+  parseArrowFunctionParameters() {
+    const params = [];
+    if (!this.consumeOptionalCharacter($RPAREN)) {
+      while (this.next !== EOF) {
+        if (this.next.isIdentifier()) {
+          const token = this.next;
+          this.advance();
+          params.push(this.getArrowFunctionIdentifierArg(token));
+          if (this.consumeOptionalCharacter($RPAREN)) {
+            break;
+          } else {
+            this.expectCharacter($COMMA);
+          }
+        } else {
+          this.error(`Unexpected token ${this.next}`);
+          break;
+        }
+      }
+    }
+    return params;
+  }
+  getArrowFunctionIdentifierArg(token) {
+    return new ArrowFunctionIdentifierParameter(token.strValue, this.span(token.index), this.sourceSpan(token.index));
+  }
+  isArrowFunction() {
+    const start = this.index;
+    const tokens = this.tokens;
+    if (start > tokens.length - 2) {
+      return false;
+    }
+    if (tokens[start].isIdentifier() && tokens[start + 1].isOperator('=>')) {
+      return true;
+    }
+    if (tokens[start].isCharacter($LPAREN)) {
+      let i = start + 1;
+      for (i; i < tokens.length; i++) {
+        if (!tokens[i].isIdentifier() && !tokens[i].isCharacter($COMMA)) {
+          break;
+        }
+      }
+      return i < tokens.length - 1 && tokens[i].isCharacter($RPAREN) && tokens[i + 1].isOperator('=>');
+    }
+    return false;
+  }
   consumeStatementTerminator() {
     this.consumeOptionalCharacter($SEMICOLON) || this.consumeOptionalCharacter($COMMA);
   }
@@ -17106,6 +17277,15 @@ class SerializeExpressionVisitor {
   }
   visitRegularExpressionLiteral(ast, context) {
     return `/${ast.body}/${ast.flags || ''}`;
+  }
+  visitArrowFunction(ast, context) {
+    let params;
+    if (ast.parameters.length === 1) {
+      params = ast.parameters[0].name;
+    } else {
+      params = `(${ast.parameters.map(e => e.name).join(', ')})`;
+    }
+    return `${params} => ${ast.body.visit(this, context)}`;
   }
   visitASTWithSource(ast, context) {
     return ast.ast.visit(this, context);
@@ -18860,6 +19040,9 @@ function stripImportant(name) {
 
 function mergeNextContextExpressions(job) {
   for (const unit of job.units) {
+    for (const expr of unit.functions) {
+      mergeNextContextsInOps(expr.ops);
+    }
     for (const op of unit.create) {
       if (op.kind === OpKind.Listener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener || op.kind === OpKind.TwoWayListener) {
         mergeNextContextsInOps(op.handlerOps);
@@ -19228,7 +19411,7 @@ class PureFunctionConstant extends GenericKeyFn {
       }
       return variable('a' + expr.index);
     }, VisitorContextFlag.None);
-    return new DeclareVarStmt(declName, new ArrowFunctionExpr(fnParams, returnExpr), undefined, StmtModifier.Final);
+    return new DeclareVarStmt(declName, new ArrowFunctionExpr$1(fnParams, returnExpr), undefined, StmtModifier.Final);
   }
 }
 
@@ -19720,6 +19903,9 @@ function pureFunction(varOffset, fn, args) {
 function attachSourceLocation(templatePath, locations) {
   return call(Identifiers.attachSourceLocations, [literal(templatePath), locations], null);
 }
+function arrowFunction(slotOffset, factory, contextRef) {
+  return importExpr(Identifiers.arrowFunction).callFn([literal(slotOffset), factory, contextRef]);
+}
 function collateInterpolationArgs(strings, expressions) {
   if (strings.length < 1 || expressions.length !== strings.length - 1) {
     throw new Error(`AssertionError: expected specific shape of args for strings/expressions in interpolation`);
@@ -19804,7 +19990,7 @@ function reify(job) {
 }
 function reifyCreateOperations(unit, ops) {
   for (const op of ops) {
-    transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
+    transformExpressionsInOp(op, expr => reifyIrExpression(unit, expr), VisitorContextFlag.None);
     switch (op.kind) {
       case OpKind.Text:
         OpList.replace(op, text(op.handle.slot, op.initialValue, op.sourceSpan));
@@ -20051,7 +20237,7 @@ function reifyCreateOperations(unit, ops) {
 }
 function reifyUpdateOperations(unit, ops) {
   for (const op of ops) {
-    transformExpressionsInOp(op, reifyIrExpression, VisitorContextFlag.None);
+    transformExpressionsInOp(op, expr => reifyIrExpression(unit, expr), VisitorContextFlag.None);
     switch (op.kind) {
       case OpKind.Advance:
         OpList.replace(op, advance(op.delta, op.sourceSpan));
@@ -20136,7 +20322,7 @@ function reifyProperty(op) {
 function reifyControl(op) {
   return control(op.name, op.expression, op.sanitizer, op.sourceSpan);
 }
-function reifyIrExpression(expr) {
+function reifyIrExpression(unit, expr) {
   if (!isIrExpression(expr)) {
     return expr;
   }
@@ -20192,6 +20378,11 @@ function reifyIrExpression(expr) {
       return storeLet(expr.value, expr.sourceSpan);
     case ExpressionKind.TrackContext:
       return variable('this');
+    case ExpressionKind.ArrowFunction:
+      if (expr.varOffset === null) {
+        throw new Error(`AssertionError: variable offset was not assigned to arrow function`);
+      }
+      return arrowFunction(expr.varOffset, unit.job.pool.getSharedFunctionReference(getArrowFunctionFactory(unit, expr), 'arrowFn'), variable('ctx'));
     default:
       throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
   }
@@ -20232,6 +20423,18 @@ function reifyTrackBy(unit, op) {
   }
   op.trackByFn = unit.job.pool.getSharedFunctionReference(fn$1, '_forTrack');
   return op.trackByFn;
+}
+function getArrowFunctionFactory(unit, expr) {
+  reifyUpdateOperations(unit, expr.ops);
+  const statements = [];
+  for (const op of expr.ops) {
+    if (op.kind !== OpKind.Statement) {
+      throw new Error(`AssertionError: expected reified statements, but found op ${OpKind[op.kind]}`);
+    }
+    statements.push(op.statement);
+  }
+  const body = statements.length === 1 && statements[0] instanceof ReturnStatement ? statements[0].value : statements;
+  return arrowFn([new FnParam(expr.contextName), new FnParam(expr.currentViewName)], arrowFn(expr.parameters, body));
 }
 
 function removeEmptyBindings(job) {
@@ -20308,6 +20511,9 @@ function removeUnusedI18nAttributesOps(job) {
 
 function resolveContexts(job) {
   for (const unit of job.units) {
+    for (const expr of unit.functions) {
+      processLexicalScope$1(unit, expr.ops);
+    }
     processLexicalScope$1(unit, unit.create);
     processLexicalScope$1(unit, unit.update);
   }
@@ -20664,6 +20870,9 @@ function updatePlaceholder(op, value, i18nContexts, icuPlaceholders) {
 
 function resolveNames(job) {
   for (const unit of job.units) {
+    for (const expr of unit.functions) {
+      processLexicalScope(unit, expr.ops, null);
+    }
     processLexicalScope(unit, unit.create, null);
     processLexicalScope(unit, unit.update, null);
   }
@@ -20714,7 +20923,7 @@ function processLexicalScope(unit, ops, savedView) {
     }
   }
   for (const op of ops) {
-    if (op.kind == OpKind.Listener || op.kind === OpKind.TwoWayListener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener) {
+    if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener) {
       continue;
     }
     transformExpressionsInOp(op, expr => {
@@ -20787,38 +20996,45 @@ function getOnlySecurityContext(securityContext) {
 
 function saveAndRestoreView(job) {
   for (const unit of job.units) {
+    for (const expr of unit.functions) {
+      if (needsRestoreView(job, unit, expr.ops)) {
+        addSaveRestoreViewOperation(unit, expr.ops, variable(expr.currentViewName));
+      }
+    }
     unit.create.prepend([createVariableOp(unit.job.allocateXrefId(), {
       kind: SemanticVariableKind.SavedView,
       name: null,
       view: unit.xref
     }, new GetCurrentViewExpr(), VariableFlags.None)]);
     for (const op of unit.create) {
-      if (op.kind !== OpKind.Listener && op.kind !== OpKind.TwoWayListener && op.kind !== OpKind.Animation && op.kind !== OpKind.AnimationListener) {
-        continue;
-      }
-      let needsRestoreView = unit !== job.root;
-      if (!needsRestoreView) {
-        for (const handlerOp of op.handlerOps) {
-          visitExpressionsInOp(handlerOp, expr => {
-            if (expr instanceof ReferenceExpr || expr instanceof ContextLetReferenceExpr) {
-              needsRestoreView = true;
-            }
-          });
+      if (op.kind === OpKind.Listener || op.kind === OpKind.TwoWayListener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener) {
+        if (needsRestoreView(job, unit, op.handlerOps)) {
+          addSaveRestoreViewOperation(unit, op.handlerOps, unit.xref);
         }
-      }
-      if (needsRestoreView) {
-        addSaveRestoreViewOperationToListener(unit, op);
       }
     }
   }
 }
-function addSaveRestoreViewOperationToListener(unit, op) {
-  op.handlerOps.prepend([createVariableOp(unit.job.allocateXrefId(), {
+function needsRestoreView(job, unit, opList) {
+  let result = unit !== job.root;
+  if (!result) {
+    for (const innerOp of opList) {
+      visitExpressionsInOp(innerOp, expr => {
+        if (expr instanceof ReferenceExpr || expr instanceof ContextLetReferenceExpr) {
+          result = true;
+        }
+      });
+    }
+  }
+  return result;
+}
+function addSaveRestoreViewOperation(unit, opList, restoreViewTarget) {
+  opList.prepend([createVariableOp(unit.job.allocateXrefId(), {
     kind: SemanticVariableKind.Context,
     name: null,
     view: unit.xref
-  }, new RestoreViewExpr(unit.xref), VariableFlags.None)]);
-  for (const handlerOp of op.handlerOps) {
+  }, new RestoreViewExpr(restoreViewTarget), VariableFlags.None)]);
+  for (const handlerOp of opList) {
     if (handlerOp.kind === OpKind.Statement && handlerOp.statement instanceof ReturnStatement) {
       handlerOp.statement.value = new ResetViewExpr(handlerOp.statement.value);
     }
@@ -20976,6 +21192,9 @@ function generateTemporaryVariables(job) {
   for (const unit of job.units) {
     unit.create.prepend(generateTemporaries(unit.create));
     unit.update.prepend(generateTemporaries(unit.update));
+    for (const expr of unit.functions) {
+      expr.ops.prepend(generateTemporaries(expr.ops));
+    }
   }
 }
 function generateTemporaries(ops) {
@@ -21138,35 +21357,43 @@ function countVariables(job) {
         varCount += varsUsedByOp(op);
       }
     }
-    for (const op of unit.ops()) {
-      visitExpressionsInOp(op, expr => {
-        if (!isIrExpression(expr)) {
-          return;
-        }
-        if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder && expr instanceof PureFunctionExpr) {
-          return;
-        }
-        if (hasUsesVarOffsetTrait(expr)) {
-          expr.varOffset = varCount;
-        }
-        if (hasConsumesVarsTrait(expr)) {
-          varCount += varsUsedByIrExpression(expr);
-        }
-      });
+    const firstPassCountExpressionVars = expr => {
+      if (!isIrExpression(expr)) {
+        return;
+      }
+      if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder && expr instanceof PureFunctionExpr) {
+        return;
+      }
+      if (hasUsesVarOffsetTrait(expr)) {
+        expr.varOffset = varCount;
+      }
+      if (hasConsumesVarsTrait(expr)) {
+        varCount += varsUsedByIrExpression(expr);
+      }
+    };
+    const secondPassCountExpressionVars = expr => {
+      if (!isIrExpression(expr) || !(expr instanceof PureFunctionExpr)) {
+        return;
+      }
+      if (hasUsesVarOffsetTrait(expr)) {
+        expr.varOffset = varCount;
+      }
+      if (hasConsumesVarsTrait(expr)) {
+        varCount += varsUsedByIrExpression(expr);
+      }
+    };
+    for (const createOp of unit.create) {
+      visitExpressionsInOp(createOp, firstPassCountExpressionVars);
+    }
+    for (const updateOp of unit.update) {
+      visitExpressionsInOp(updateOp, firstPassCountExpressionVars);
     }
     if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-      for (const op of unit.ops()) {
-        visitExpressionsInOp(op, expr => {
-          if (!isIrExpression(expr) || !(expr instanceof PureFunctionExpr)) {
-            return;
-          }
-          if (hasUsesVarOffsetTrait(expr)) {
-            expr.varOffset = varCount;
-          }
-          if (hasConsumesVarsTrait(expr)) {
-            varCount += varsUsedByIrExpression(expr);
-          }
-        });
+      for (const createOp of unit.create) {
+        visitExpressionsInOp(createOp, secondPassCountExpressionVars);
+      }
+      for (const updateOp of unit.update) {
+        visitExpressionsInOp(updateOp, secondPassCountExpressionVars);
       }
     }
     unit.vars = varCount;
@@ -21234,6 +21461,7 @@ function varsUsedByIrExpression(expr) {
     case ExpressionKind.PipeBindingVariadic:
       return 1 + expr.numArgs;
     case ExpressionKind.StoreLet:
+    case ExpressionKind.ArrowFunction:
       return 1;
     default:
       throw new Error(`AssertionError: unhandled ConsumesVarsTrait expression ${expr.constructor.name}`);
@@ -21251,6 +21479,9 @@ function isSingletonInterpolation(expr) {
 
 function optimizeVariables(job) {
   for (const unit of job.units) {
+    for (const expr of unit.functions) {
+      inlineAlwaysInlineVariables(expr.ops);
+    }
     inlineAlwaysInlineVariables(unit.create);
     inlineAlwaysInlineVariables(unit.update);
     for (const op of unit.create) {
@@ -21260,13 +21491,16 @@ function optimizeVariables(job) {
         inlineAlwaysInlineVariables(op.trackByOps);
       }
     }
-    optimizeVariablesInOpList(unit.create, job.compatibility);
-    optimizeVariablesInOpList(unit.update, job.compatibility);
+    for (const expr of unit.functions) {
+      optimizeVariablesInOpList(expr.ops, job.compatibility, null);
+    }
+    optimizeVariablesInOpList(unit.create, job.compatibility, skipArrowFunctionOps);
+    optimizeVariablesInOpList(unit.update, job.compatibility, skipArrowFunctionOps);
     for (const op of unit.create) {
       if (op.kind === OpKind.Listener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener || op.kind === OpKind.TwoWayListener) {
-        optimizeVariablesInOpList(op.handlerOps, job.compatibility);
+        optimizeVariablesInOpList(op.handlerOps, job.compatibility, skipArrowFunctionOps);
       } else if (op.kind === OpKind.RepeaterCreate && op.trackByOps !== null) {
-        optimizeVariablesInOpList(op.trackByOps, job.compatibility);
+        optimizeVariablesInOpList(op.trackByOps, job.compatibility, skipArrowFunctionOps);
       }
     }
   }
@@ -21278,6 +21512,9 @@ var Fence;
   Fence[Fence["ViewContextWrite"] = 2] = "ViewContextWrite";
   Fence[Fence["SideEffectful"] = 4] = "SideEffectful";
 })(Fence || (Fence = {}));
+function skipArrowFunctionOps(flags) {
+  return !(flags & VisitorContextFlag.InArrowFunctionOperation);
+}
 function inlineAlwaysInlineVariables(ops) {
   const vars = new Map();
   for (const op of ops) {
@@ -21301,7 +21538,7 @@ function inlineAlwaysInlineVariables(ops) {
     OpList.remove(op);
   }
 }
-function optimizeVariablesInOpList(ops, compatibility) {
+function optimizeVariablesInOpList(ops, compatibility, predicate) {
   const varDecls = new Map();
   const varUsages = new Map();
   const varRemoteUsages = new Set();
@@ -21314,8 +21551,8 @@ function optimizeVariablesInOpList(ops, compatibility) {
       varDecls.set(op.xref, op);
       varUsages.set(op.xref, 0);
     }
-    opMap.set(op, collectOpInfo(op));
-    countVariableUsages(op, varUsages, varRemoteUsages);
+    opMap.set(op, collectOpInfo(op, predicate));
+    countVariableUsages(op, varUsages, varRemoteUsages, predicate);
   }
   let contextIsUsed = false;
   for (const op of ops.reversed()) {
@@ -21398,19 +21635,17 @@ function fencesForIrExpression(expr) {
       return Fence.None;
   }
 }
-function collectOpInfo(op) {
+function collectOpInfo(op, predicate) {
   let fences = Fence.None;
   const variablesUsed = new Set();
-  visitExpressionsInOp(op, expr => {
-    if (!isIrExpression(expr)) {
+  visitExpressionsInOp(op, (expr, flags) => {
+    if (!isIrExpression(expr) || predicate !== null && !predicate(flags)) {
       return;
     }
-    switch (expr.kind) {
-      case ExpressionKind.ReadVariable:
-        variablesUsed.add(expr.xref);
-        break;
-      default:
-        fences |= fencesForIrExpression(expr);
+    if (expr.kind === ExpressionKind.ReadVariable) {
+      variablesUsed.add(expr.xref);
+    } else {
+      fences |= fencesForIrExpression(expr);
     }
   });
   return {
@@ -21418,9 +21653,9 @@ function collectOpInfo(op) {
     variablesUsed
   };
 }
-function countVariableUsages(op, varUsages, varRemoteUsage) {
+function countVariableUsages(op, varUsages, varRemoteUsage, predicate) {
   visitExpressionsInOp(op, (expr, flags) => {
-    if (!isIrExpression(expr)) {
+    if (!isIrExpression(expr) || predicate !== null && !predicate(flags)) {
       return;
     }
     if (expr.kind !== ExpressionKind.ReadVariable) {
@@ -21536,6 +21771,32 @@ function wrapI18nIcus(job) {
   }
 }
 
+function generateArrowFunctions(job) {
+  for (const unit of job.units) {
+    for (const op of unit.create) {
+      if (op.kind !== OpKind.Animation && op.kind !== OpKind.AnimationListener && op.kind !== OpKind.Listener && op.kind !== OpKind.TwoWayListener) {
+        addArrowFunctions(unit, op);
+      }
+    }
+    for (const op of unit.update) {
+      addArrowFunctions(unit, op);
+    }
+  }
+}
+function addArrowFunctions(unit, op) {
+  transformExpressionsInOp(op, (expr, flags) => {
+    if (!(expr instanceof ArrowFunctionExpr$1) || flags & VisitorContextFlag.InChildOperation) {
+      return expr;
+    }
+    if (Array.isArray(expr.body)) {
+      throw new Error('AssertionError: unexpected multi-line arrow function');
+    }
+    const arrowFunction = new ArrowFunctionExpr(expr.params, expr.body);
+    unit.functions.add(arrowFunction);
+    return arrowFunction;
+  }, VisitorContextFlag.None);
+}
+
 /**
  *
  * @license
@@ -21604,6 +21865,9 @@ const phases = [{
 }, {
   kind: CompilationJobKind.Tmpl,
   fn: createVariadicPipes
+}, {
+  kind: CompilationJobKind.Both,
+  fn: generateArrowFunctions
 }, {
   kind: CompilationJobKind.Both,
   fn: generatePureLiteralStructures
@@ -22366,6 +22630,8 @@ function convertAst(ast, job, baseSourceSpan) {
     return new RegularExpressionLiteralExpr(ast.body, ast.flags, baseSourceSpan);
   } else if (ast instanceof SpreadElement) {
     return new SpreadElementExpr(convertAst(ast.expression, job, baseSourceSpan));
+  } else if (ast instanceof ArrowFunction) {
+    return updateParameterReferences(arrowFn(ast.parameters.map(arg => new FnParam(arg.name)), convertAst(ast.body, job, baseSourceSpan)));
   } else {
     throw new Error(`Unhandled expression type "${ast.constructor.name}" in file "${baseSourceSpan?.start.file.url}"`);
   }
@@ -22588,6 +22854,19 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
     return tagName === NG_TEMPLATE_TAG_NAME ? null : tagName;
   }
   return null;
+}
+function updateParameterReferences(root) {
+  const parameterNames = new Set(root.params.map(param => param.name));
+  return transformExpressionsInExpression(root, expr => {
+    if (expr instanceof ArrowFunctionExpr$1) {
+      for (const param of expr.params) {
+        parameterNames.add(param.name);
+      }
+    } else if (expr instanceof LexicalReadExpr && parameterNames.has(expr.name)) {
+      return variable(expr.name);
+    }
+    return expr;
+  }, VisitorContextFlag.None);
 }
 
 let ENABLE_TEMPLATE_SOURCE_LOCATIONS = false;
@@ -28206,7 +28485,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28224,7 +28503,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28297,7 +28576,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28632,7 +28911,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28658,7 +28937,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28699,7 +28978,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -28726,7 +29005,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -28764,7 +29043,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-da364d2'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-99db2e9'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -28838,9 +29117,9 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.2.0-next.0+sha-da364d2');
+const VERSION = new Version('21.2.0-next.0+sha-99db2e9');
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunctionExpr, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
