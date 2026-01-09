@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.0+sha-ac865b5
+ * @license Angular v21.2.0-next.0+sha-4fb24ca
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1831,7 +1831,7 @@ declare class Binary extends AST {
     right: AST;
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operation: BinaryOperation, left: AST, right: AST);
     visit(visitor: AstVisitor, context?: any): any;
-    static isAssignmentOperation(op: string): boolean;
+    static isAssignmentOperation(op: string): op is AssignmentOperation;
 }
 /**
  * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
