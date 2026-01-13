@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.0+sha-69da639
+ * @license Angular v21.2.0-next.0+sha-e8f8ac2
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -908,15 +908,16 @@ declare enum BinaryOperator {
     NullishCoalesce = 18,
     Exponentiation = 19,
     In = 20,
-    AdditionAssignment = 21,
-    SubtractionAssignment = 22,
-    MultiplicationAssignment = 23,
-    DivisionAssignment = 24,
-    RemainderAssignment = 25,
-    ExponentiationAssignment = 26,
-    AndAssignment = 27,
-    OrAssignment = 28,
-    NullishCoalesceAssignment = 29
+    InstanceOf = 21,
+    AdditionAssignment = 22,
+    SubtractionAssignment = 23,
+    MultiplicationAssignment = 24,
+    DivisionAssignment = 25,
+    RemainderAssignment = 26,
+    ExponentiationAssignment = 27,
+    AndAssignment = 28,
+    OrAssignment = 29,
+    NullishCoalesceAssignment = 30
 }
 declare function nullSafeIsEquivalent<T extends {
     isEquivalent(other: T): boolean;
@@ -1824,7 +1825,7 @@ declare class Interpolation extends AST {
     visit(visitor: AstVisitor, context?: any): any;
 }
 type AssignmentOperation = '=' | '+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '&&=' | '||=' | '??=';
-type BinaryOperation = AssignmentOperation | '&&' | '||' | '??' | '==' | '!=' | '===' | '!==' | '<' | '>' | '<=' | '>=' | 'in' | '+' | '-' | '*' | '%' | '/' | '**';
+type BinaryOperation = AssignmentOperation | '&&' | '||' | '??' | '==' | '!=' | '===' | '!==' | '<' | '>' | '<=' | '>=' | 'in' | 'instanceof' | '+' | '-' | '*' | '%' | '/' | '**';
 declare class Binary extends AST {
     operation: BinaryOperation;
     left: AST;
@@ -2195,6 +2196,7 @@ declare class Token {
     isKeywordTypeof(): boolean;
     isKeywordVoid(): boolean;
     isKeywordIn(): boolean;
+    isKeywordInstanceOf(): boolean;
     isError(): boolean;
     isRegExpBody(): boolean;
     isRegExpFlags(): boolean;

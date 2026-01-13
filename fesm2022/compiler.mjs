@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.0+sha-69da639
+ * @license Angular v21.2.0-next.0+sha-e8f8ac2
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -784,15 +784,16 @@ var BinaryOperator;
   BinaryOperator[BinaryOperator["NullishCoalesce"] = 18] = "NullishCoalesce";
   BinaryOperator[BinaryOperator["Exponentiation"] = 19] = "Exponentiation";
   BinaryOperator[BinaryOperator["In"] = 20] = "In";
-  BinaryOperator[BinaryOperator["AdditionAssignment"] = 21] = "AdditionAssignment";
-  BinaryOperator[BinaryOperator["SubtractionAssignment"] = 22] = "SubtractionAssignment";
-  BinaryOperator[BinaryOperator["MultiplicationAssignment"] = 23] = "MultiplicationAssignment";
-  BinaryOperator[BinaryOperator["DivisionAssignment"] = 24] = "DivisionAssignment";
-  BinaryOperator[BinaryOperator["RemainderAssignment"] = 25] = "RemainderAssignment";
-  BinaryOperator[BinaryOperator["ExponentiationAssignment"] = 26] = "ExponentiationAssignment";
-  BinaryOperator[BinaryOperator["AndAssignment"] = 27] = "AndAssignment";
-  BinaryOperator[BinaryOperator["OrAssignment"] = 28] = "OrAssignment";
-  BinaryOperator[BinaryOperator["NullishCoalesceAssignment"] = 29] = "NullishCoalesceAssignment";
+  BinaryOperator[BinaryOperator["InstanceOf"] = 21] = "InstanceOf";
+  BinaryOperator[BinaryOperator["AdditionAssignment"] = 22] = "AdditionAssignment";
+  BinaryOperator[BinaryOperator["SubtractionAssignment"] = 23] = "SubtractionAssignment";
+  BinaryOperator[BinaryOperator["MultiplicationAssignment"] = 24] = "MultiplicationAssignment";
+  BinaryOperator[BinaryOperator["DivisionAssignment"] = 25] = "DivisionAssignment";
+  BinaryOperator[BinaryOperator["RemainderAssignment"] = 26] = "RemainderAssignment";
+  BinaryOperator[BinaryOperator["ExponentiationAssignment"] = 27] = "ExponentiationAssignment";
+  BinaryOperator[BinaryOperator["AndAssignment"] = 28] = "AndAssignment";
+  BinaryOperator[BinaryOperator["OrAssignment"] = 29] = "OrAssignment";
+  BinaryOperator[BinaryOperator["NullishCoalesceAssignment"] = 30] = "NullishCoalesceAssignment";
 })(BinaryOperator || (BinaryOperator = {}));
 function nullSafeIsEquivalent(base, other) {
   if (base == null || other == null) {
@@ -3348,7 +3349,7 @@ class _EmittedLine {
     this.indent = indent;
   }
 }
-const BINARY_OPERATORS$1 = new Map([[BinaryOperator.And, '&&'], [BinaryOperator.Bigger, '>'], [BinaryOperator.BiggerEquals, '>='], [BinaryOperator.BitwiseOr, '|'], [BinaryOperator.BitwiseAnd, '&'], [BinaryOperator.Divide, '/'], [BinaryOperator.Assign, '='], [BinaryOperator.Equals, '=='], [BinaryOperator.Identical, '==='], [BinaryOperator.Lower, '<'], [BinaryOperator.LowerEquals, '<='], [BinaryOperator.Minus, '-'], [BinaryOperator.Modulo, '%'], [BinaryOperator.Exponentiation, '**'], [BinaryOperator.Multiply, '*'], [BinaryOperator.NotEquals, '!='], [BinaryOperator.NotIdentical, '!=='], [BinaryOperator.NullishCoalesce, '??'], [BinaryOperator.Or, '||'], [BinaryOperator.Plus, '+'], [BinaryOperator.In, 'in'], [BinaryOperator.AdditionAssignment, '+='], [BinaryOperator.SubtractionAssignment, '-='], [BinaryOperator.MultiplicationAssignment, '*='], [BinaryOperator.DivisionAssignment, '/='], [BinaryOperator.RemainderAssignment, '%='], [BinaryOperator.ExponentiationAssignment, '**='], [BinaryOperator.AndAssignment, '&&='], [BinaryOperator.OrAssignment, '||='], [BinaryOperator.NullishCoalesceAssignment, '??=']]);
+const BINARY_OPERATORS$1 = new Map([[BinaryOperator.And, '&&'], [BinaryOperator.Bigger, '>'], [BinaryOperator.BiggerEquals, '>='], [BinaryOperator.BitwiseOr, '|'], [BinaryOperator.BitwiseAnd, '&'], [BinaryOperator.Divide, '/'], [BinaryOperator.Assign, '='], [BinaryOperator.Equals, '=='], [BinaryOperator.Identical, '==='], [BinaryOperator.Lower, '<'], [BinaryOperator.LowerEquals, '<='], [BinaryOperator.Minus, '-'], [BinaryOperator.Modulo, '%'], [BinaryOperator.Exponentiation, '**'], [BinaryOperator.Multiply, '*'], [BinaryOperator.NotEquals, '!='], [BinaryOperator.NotIdentical, '!=='], [BinaryOperator.NullishCoalesce, '??'], [BinaryOperator.Or, '||'], [BinaryOperator.Plus, '+'], [BinaryOperator.In, 'in'], [BinaryOperator.InstanceOf, 'instanceof'], [BinaryOperator.AdditionAssignment, '+='], [BinaryOperator.SubtractionAssignment, '-='], [BinaryOperator.MultiplicationAssignment, '*='], [BinaryOperator.DivisionAssignment, '/='], [BinaryOperator.RemainderAssignment, '%='], [BinaryOperator.ExponentiationAssignment, '**='], [BinaryOperator.AndAssignment, '&&='], [BinaryOperator.OrAssignment, '||='], [BinaryOperator.NullishCoalesceAssignment, '??=']]);
 class EmitterVisitorContext {
   _indent;
   static createRoot() {
@@ -10047,7 +10048,7 @@ function generateConditionalExpressions(job) {
   }
 }
 
-const BINARY_OPERATORS = new Map([['&&', BinaryOperator.And], ['>', BinaryOperator.Bigger], ['>=', BinaryOperator.BiggerEquals], ['|', BinaryOperator.BitwiseOr], ['&', BinaryOperator.BitwiseAnd], ['/', BinaryOperator.Divide], ['=', BinaryOperator.Assign], ['==', BinaryOperator.Equals], ['===', BinaryOperator.Identical], ['<', BinaryOperator.Lower], ['<=', BinaryOperator.LowerEquals], ['-', BinaryOperator.Minus], ['%', BinaryOperator.Modulo], ['**', BinaryOperator.Exponentiation], ['*', BinaryOperator.Multiply], ['!=', BinaryOperator.NotEquals], ['!==', BinaryOperator.NotIdentical], ['??', BinaryOperator.NullishCoalesce], ['||', BinaryOperator.Or], ['+', BinaryOperator.Plus], ['in', BinaryOperator.In], ['+=', BinaryOperator.AdditionAssignment], ['-=', BinaryOperator.SubtractionAssignment], ['*=', BinaryOperator.MultiplicationAssignment], ['/=', BinaryOperator.DivisionAssignment], ['%=', BinaryOperator.RemainderAssignment], ['**=', BinaryOperator.ExponentiationAssignment], ['&&=', BinaryOperator.AndAssignment], ['||=', BinaryOperator.OrAssignment], ['??=', BinaryOperator.NullishCoalesceAssignment]]);
+const BINARY_OPERATORS = new Map([['&&', BinaryOperator.And], ['>', BinaryOperator.Bigger], ['>=', BinaryOperator.BiggerEquals], ['|', BinaryOperator.BitwiseOr], ['&', BinaryOperator.BitwiseAnd], ['/', BinaryOperator.Divide], ['=', BinaryOperator.Assign], ['==', BinaryOperator.Equals], ['===', BinaryOperator.Identical], ['<', BinaryOperator.Lower], ['<=', BinaryOperator.LowerEquals], ['-', BinaryOperator.Minus], ['%', BinaryOperator.Modulo], ['**', BinaryOperator.Exponentiation], ['*', BinaryOperator.Multiply], ['!=', BinaryOperator.NotEquals], ['!==', BinaryOperator.NotIdentical], ['??', BinaryOperator.NullishCoalesce], ['||', BinaryOperator.Or], ['+', BinaryOperator.Plus], ['in', BinaryOperator.In], ['instanceof', BinaryOperator.InstanceOf], ['+=', BinaryOperator.AdditionAssignment], ['-=', BinaryOperator.SubtractionAssignment], ['*=', BinaryOperator.MultiplicationAssignment], ['/=', BinaryOperator.DivisionAssignment], ['%=', BinaryOperator.RemainderAssignment], ['**=', BinaryOperator.ExponentiationAssignment], ['&&=', BinaryOperator.AndAssignment], ['||=', BinaryOperator.OrAssignment], ['??=', BinaryOperator.NullishCoalesceAssignment]]);
 function namespaceForKey(namespacePrefixKey) {
   const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
   if (namespacePrefixKey === null) {
@@ -15454,7 +15455,7 @@ var StringTokenKind;
   StringTokenKind[StringTokenKind["TemplateLiteralPart"] = 1] = "TemplateLiteralPart";
   StringTokenKind[StringTokenKind["TemplateLiteralEnd"] = 2] = "TemplateLiteralEnd";
 })(StringTokenKind || (StringTokenKind = {}));
-const KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this', 'typeof', 'void', 'in'];
+const KEYWORDS = ['var', 'let', 'as', 'null', 'undefined', 'true', 'false', 'if', 'else', 'this', 'typeof', 'void', 'in', 'instanceof'];
 class Lexer {
   tokenize(text) {
     return new _Scanner(text).scan();
@@ -15523,6 +15524,9 @@ class Token {
   }
   isKeywordIn() {
     return this.type === TokenType.Keyword && this.strValue === 'in';
+  }
+  isKeywordInstanceOf() {
+    return this.type === TokenType.Keyword && this.strValue === 'instanceof';
   }
   isError() {
     return this.type === TokenType.Error;
@@ -16549,7 +16553,7 @@ class _ParseAST {
   parseRelational() {
     const start = this.inputIndex;
     let result = this.parseAdditive();
-    while (this.next.type == TokenType.Operator || this.next.isKeywordIn) {
+    while (this.next.type == TokenType.Operator || this.next.isKeywordIn() || this.next.isKeywordInstanceOf()) {
       const operator = this.next.strValue;
       switch (operator) {
         case '<':
@@ -16557,6 +16561,7 @@ class _ParseAST {
         case '<=':
         case '>=':
         case 'in':
+        case 'instanceof':
           this.advance();
           const right = this.parseAdditive();
           result = new Binary(this.span(start), this.sourceSpan(start), operator, result, right);
@@ -28487,7 +28492,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28505,7 +28510,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28578,7 +28583,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28913,7 +28918,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28939,7 +28944,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28980,7 +28985,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29007,7 +29012,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29045,7 +29050,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-69da639'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-e8f8ac2'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29119,7 +29124,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.2.0-next.0+sha-69da639');
+const VERSION = new Version('21.2.0-next.0+sha-e8f8ac2');
 
 publishFacade(_global);
 
