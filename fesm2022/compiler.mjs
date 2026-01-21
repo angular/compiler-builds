@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.0+sha-b275206
+ * @license Angular v21.2.0-next.0+sha-0fa8099
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -8754,7 +8754,7 @@ class ArrowFunctionExpr extends ExpressionBase {
   kind = ExpressionKind.ArrowFunction;
   [ConsumesVarsTrait] = true;
   [UsesVarOffset] = true;
-  contextName = 'ctx';
+  contextName = CONTEXT_NAME;
   currentViewName = 'view';
   varOffset = null;
   ops;
@@ -19016,7 +19016,7 @@ function getVariableName(unit, variable, state) {
         break;
       case SemanticVariableKind.Identifier:
         if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-          const compatPrefix = variable.identifier === 'ctx' ? 'i' : '';
+          const compatPrefix = variable.identifier === CONTEXT_NAME ? 'i' : '';
           variable.name = `${variable.identifier}_${compatPrefix}r${++state.index}`;
         } else {
           variable.name = `${variable.identifier}_i${state.index++}`;
@@ -20386,7 +20386,7 @@ function reifyIrExpression(unit, expr) {
       if (expr.varOffset === null) {
         throw new Error(`AssertionError: variable offset was not assigned to arrow function`);
       }
-      return arrowFunction(expr.varOffset, unit.job.pool.getSharedFunctionReference(getArrowFunctionFactory(unit, expr), 'arrowFn'), variable('ctx'));
+      return arrowFunction(expr.varOffset, unit.job.pool.getSharedFunctionReference(getArrowFunctionFactory(unit, expr), 'arrowFn'), variable(CONTEXT_NAME));
     default:
       throw new Error(`AssertionError: Unsupported reification of ir.Expression kind: ${ExpressionKind[expr.kind]}`);
   }
@@ -20524,7 +20524,7 @@ function resolveContexts(job) {
 }
 function processLexicalScope$1(view, ops) {
   const scope = new Map();
-  scope.set(view.xref, variable('ctx'));
+  scope.set(view.xref, variable(CONTEXT_NAME));
   for (const op of ops) {
     switch (op.kind) {
       case OpKind.Variable:
@@ -20548,7 +20548,7 @@ function processLexicalScope$1(view, ops) {
     }
   }
   if (view === view.job.root) {
-    scope.set(view.xref, variable('ctx'));
+    scope.set(view.xref, variable(CONTEXT_NAME));
   }
   for (const op of ops) {
     transformExpressionsInOp(op, expr => {
@@ -21737,7 +21737,7 @@ function tryInlineVariableInitializer(id, initializer, target, declFences) {
 function allowConservativeInlining(decl, target) {
   switch (decl.variable.kind) {
     case SemanticVariableKind.Identifier:
-      if (decl.initializer instanceof ReadVarExpr && decl.initializer.name === 'ctx') {
+      if (decl.initializer instanceof ReadVarExpr && decl.initializer.name === CONTEXT_NAME) {
         return true;
       }
       return false;
@@ -22063,13 +22063,13 @@ function emitView(view) {
   }
   const createCond = maybeGenerateRfBlock(1, createStatements);
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
-  return fn([new FnParam('rf'), new FnParam('ctx')], [...createCond, ...updateCond], undefined, undefined, view.fnName);
+  return fn([new FnParam(RENDER_FLAGS), new FnParam(CONTEXT_NAME)], [...createCond, ...updateCond], undefined, undefined, view.fnName);
 }
 function maybeGenerateRfBlock(flag, statements) {
   if (statements.length === 0) {
     return [];
   }
-  return [ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, variable('rf'), literal(flag)), statements)];
+  return [ifStmt(new BinaryOperatorExpr(BinaryOperator.BitwiseAnd, variable(RENDER_FLAGS), literal(flag)), statements)];
 }
 function emitHostBindingFunction(job) {
   if (job.root.fnName === null) {
@@ -22094,7 +22094,7 @@ function emitHostBindingFunction(job) {
   }
   const createCond = maybeGenerateRfBlock(1, createStatements);
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
-  return fn([new FnParam('rf'), new FnParam('ctx')], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
+  return fn([new FnParam(RENDER_FLAGS), new FnParam(CONTEXT_NAME)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
 }
 
 const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
@@ -28499,7 +28499,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28517,7 +28517,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28590,7 +28590,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28925,7 +28925,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28951,7 +28951,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28992,7 +28992,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29019,7 +29019,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29057,7 +29057,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.0+sha-b275206'));
+  definitionMap.set('version', literal('21.2.0-next.0+sha-0fa8099'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29131,7 +29131,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.2.0-next.0+sha-b275206');
+const VERSION = new Version('21.2.0-next.0+sha-0fa8099');
 
 publishFacade(_global);
 
