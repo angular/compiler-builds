@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.0+sha-ed78fa0
+ * @license Angular v21.2.0-next.0+sha-94a8f79
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5159,9 +5159,6 @@ declare function compileHmrUpdateCallback(definitions: {
 }[], constantStatements: Statement[], meta: R3HmrMetadata): DeclareFunctionStmt;
 
 declare class Identifiers {
-    static NEW_METHOD: string;
-    static TRANSFORM_METHOD: string;
-    static PATCH_DEPS: string;
     static core: ExternalReference;
     static namespaceHTML: ExternalReference;
     static namespaceMathML: ExternalReference;
