@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.1+sha-6990f88
+ * @license Angular v21.2.0-next.1+sha-a67e007
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -2537,6 +2537,9 @@ interface R3DirectiveMetadataFacade {
     })[];
     outputs: string[];
     usesInheritance: boolean;
+    controlCreate: {
+        passThroughInput: string | null;
+    } | null;
     exportAs: string[] | null;
     providers: Provider[] | null;
     viewQueries: R3QueryMetadataFacade[];
@@ -2591,6 +2594,9 @@ interface R3DeclareDirectiveFacade {
     exportAs?: string[];
     usesInheritance?: boolean;
     usesOnChanges?: boolean;
+    controlCreate?: {
+        passThroughInput: string | null;
+    };
     isStandalone?: boolean;
     isSignal?: boolean;
     hostDirectives?: R3HostDirectiveMetadataFacade[] | null;
@@ -3137,6 +3143,9 @@ interface R3DeclareDirectiveMetadata extends R3PartialDeclaration {
      * Whether the directive implements the `ngOnChanges` hook. Defaults to false.
      */
     usesOnChanges?: boolean;
+    controlCreate?: {
+        passThroughInput: string | null;
+    };
     /**
      * Whether the directive is standalone. Defaults to false.
      */
@@ -4017,6 +4026,12 @@ interface R3DirectiveMetadata {
      * Whether or not the component or directive inherits from another class
      */
     usesInheritance: boolean;
+    /**
+     * Whether or not the component or directive uses the private `ɵngControlCreate` hook.
+     */
+    controlCreate: {
+        passThroughInput: string | null;
+    } | null;
     /**
      * Reference name under which to export the directive's type in a template,
      * if any.
@@ -5343,6 +5358,7 @@ declare class Identifiers {
     static arrowFunction: ExternalReference;
     static attachSourceLocations: ExternalReference;
     static NgOnChangesFeature: ExternalReference;
+    static ControlFeature: ExternalReference;
     static InheritDefinitionFeature: ExternalReference;
     static ProvidersFeature: ExternalReference;
     static HostDirectivesFeature: ExternalReference;

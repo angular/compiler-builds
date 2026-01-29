@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.1+sha-6990f88
+ * @license Angular v21.2.0-next.1+sha-a67e007
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3003,6 +3003,10 @@ class Identifiers {
   };
   static NgOnChangesFeature = {
     name: 'ɵɵNgOnChangesFeature',
+    moduleName: CORE
+  };
+  static ControlFeature = {
+    name: 'ɵɵControlFeature',
     moduleName: CORE
   };
   static InheritDefinitionFeature = {
@@ -8059,22 +8063,12 @@ function createStoreLetOp(target, declaredName, value, sourceSpan) {
     ...NEW_OP
   };
 }
-function createControlOp(op) {
+function createControlOp(target, sourceSpan) {
   return {
     kind: OpKind.Control,
-    target: op.target,
-    name: op.name,
-    expression: op.expression,
-    bindingKind: op.bindingKind,
-    securityContext: op.securityContext,
-    sanitizer: null,
-    isStructuralTemplateAttribute: op.isStructuralTemplateAttribute,
-    templateKind: op.templateKind,
-    i18nContext: op.i18nContext,
-    i18nMessage: op.i18nMessage,
-    sourceSpan: op.sourceSpan,
+    sourceSpan,
+    target,
     ...TRAIT_DEPENDS_ON_SLOT_CONTEXT,
-    ...TRAIT_CONSUMES_VARS,
     ...NEW_OP
   };
 }
@@ -8825,7 +8819,6 @@ function transformExpressionsInOp(op, transform, flags) {
     case OpKind.Property:
     case OpKind.DomProperty:
     case OpKind.Attribute:
-    case OpKind.Control:
       if (op.expression instanceof Interpolation) {
         transformExpressionsInInterpolation(op.expression, transform, flags);
       } else {
@@ -8944,6 +8937,7 @@ function transformExpressionsInOp(op, transform, flags) {
     case OpKind.SourceLocation:
     case OpKind.ConditionalCreate:
     case OpKind.ConditionalBranchCreate:
+    case OpKind.Control:
     case OpKind.ControlCreate:
       break;
     default:
@@ -9824,9 +9818,6 @@ function extractAttributes(job) {
             OpList.insertBefore(createExtractedAttributeOp(op.target, bindingKind, null, op.name, null, null, null, op.securityContext), lookupElement$3(elements, op.target));
           }
           break;
-        case OpKind.Control:
-          OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, null, op.name, null, null, null, op.securityContext), lookupElement$3(elements, op.target));
-          break;
         case OpKind.TwoWayProperty:
           OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.TwoWayProperty, null, op.name, null, null, null, op.securityContext), lookupElement$3(elements, op.target));
           break;
@@ -9935,8 +9926,6 @@ function specializeBindings(job) {
             OpList.replace(op, createAttributeOp(op.target, null, op.name, op.expression, op.securityContext, false, op.isStructuralTemplateAttribute, op.templateKind, op.i18nMessage, op.sourceSpan));
           } else if (job.kind === CompilationJobKind.Host) {
             OpList.replace(op, createDomPropertyOp(op.name, op.expression, op.bindingKind, op.i18nContext, op.securityContext, op.sourceSpan));
-          } else if (op.name === 'formField') {
-            OpList.replace(op, createControlOp(op));
           } else {
             OpList.replace(op, createPropertyOp(op.target, op.name, op.expression, op.bindingKind, op.securityContext, op.isStructuralTemplateAttribute, op.templateKind, op.i18nContext, op.i18nMessage, op.sourceSpan));
           }
@@ -19763,18 +19752,8 @@ function ariaProperty(name, expression, sourceSpan) {
 function property(name, expression, sanitizer, sourceSpan) {
   return propertyBase(Identifiers.property, name, expression, sanitizer, sourceSpan);
 }
-function control(name, expression, sanitizer, sourceSpan) {
-  const args = [];
-  if (expression instanceof Interpolation) {
-    args.push(interpolationToExpression(expression, sourceSpan));
-  } else {
-    args.push(expression);
-  }
-  args.push(literal(name));
-  if (sanitizer !== null) {
-    args.push(sanitizer);
-  }
-  return call(Identifiers.control, args, sourceSpan);
+function control(sourceSpan) {
+  return call(Identifiers.control, [], sourceSpan);
 }
 function controlCreate(sourceSpan) {
   return call(Identifiers.controlCreate, [], sourceSpan);
@@ -20324,7 +20303,7 @@ function reifyProperty(op) {
   return isAriaAttribute(op.name) ? ariaProperty(op.name, op.expression, op.sourceSpan) : property(op.name, op.expression, op.sanitizer, op.sourceSpan);
 }
 function reifyControl(op) {
-  return control(op.name, op.expression, op.sanitizer, op.sourceSpan);
+  return control(op.sourceSpan);
 }
 function reifyIrExpression(unit, expr) {
   if (!isIrExpression(expr)) {
@@ -21811,6 +21790,46 @@ function addArrowFunctions(unit, op) {
   }, VisitorContextFlag.None);
 }
 
+const ELIGIBLE_CONTROL_PROPERTIES = new Set(['formField']);
+function specializeControlProperties(job) {
+  for (const unit of job.units) {
+    processView(unit);
+  }
+}
+function processView(view) {
+  for (const op of view.update) {
+    if (op.kind !== OpKind.Property) {
+      continue;
+    }
+    if (ELIGIBLE_CONTROL_PROPERTIES.has(op.name)) {
+      addControlInstruction(view, op);
+    }
+  }
+}
+const CONTROL_OP_CREATE_KINDS = new Set([OpKind.Container, OpKind.ContainerStart, OpKind.ContainerEnd, OpKind.Element, OpKind.ElementStart, OpKind.ElementEnd, OpKind.Template]);
+function isRelevantCreateOp(createOp) {
+  return CONTROL_OP_CREATE_KINDS.has(createOp.kind);
+}
+function findCreateInstruction(view, target) {
+  let lastFoundOp = null;
+  for (const createOp of view.create) {
+    if (!isRelevantCreateOp(createOp) || createOp.xref !== target) {
+      continue;
+    }
+    lastFoundOp = createOp;
+  }
+  return lastFoundOp;
+}
+function addControlInstruction(view, propertyOp) {
+  const targetCreateOp = findCreateInstruction(view, propertyOp.target);
+  if (targetCreateOp === null) {
+    throw new Error(`No create instruction found for control target ${propertyOp.target}`);
+  }
+  const controlCreateOp = createControlCreateOp(propertyOp.sourceSpan);
+  OpList.insertAfter(controlCreateOp, targetCreateOp);
+  OpList.insertAfter(createControlOp(propertyOp.target, propertyOp.sourceSpan), propertyOp);
+}
+
 /**
  *
  * @license
@@ -21846,6 +21865,9 @@ const phases = [{
 }, {
   kind: CompilationJobKind.Both,
   fn: specializeBindings
+}, {
+  kind: CompilationJobKind.Tmpl,
+  fn: specializeControlProperties
 }, {
   kind: CompilationJobKind.Both,
   fn: convertAnimations
@@ -22209,10 +22231,6 @@ function ingestElement(unit, element) {
   ingestNodes(unit, element.children);
   const endOp = createElementEndOp(id, element.endSourceSpan ?? element.startSourceSpan);
   unit.create.push(endOp);
-  const fieldInput = element.inputs.find(input => input.name === 'formField' && input.type === BindingType.Property);
-  if (fieldInput) {
-    unit.create.push(createControlCreateOp(fieldInput.sourceSpan));
-  }
   if (i18nBlockId !== null) {
     OpList.insertBefore(createI18nEndOp(i18nBlockId, element.endSourceSpan ?? element.startSourceSpan), endOp);
   }
@@ -25109,6 +25127,9 @@ function addFeatures(definitionMap, meta) {
   if (meta.lifecycle.usesOnChanges) {
     features.push(importExpr(Identifiers.NgOnChangesFeature));
   }
+  if (meta.controlCreate !== null) {
+    features.push(importExpr(Identifiers.ControlFeature).callFn([literal(meta.controlCreate.passThroughInput)]));
+  }
   if ('externalStyles' in meta && meta.externalStyles?.length) {
     const externalStyleNodes = meta.externalStyles.map(externalStyle => literal(externalStyle));
     features.push(importExpr(Identifiers.ExternalStylesFeature).callFn([literalArr(externalStyleNodes)]));
@@ -26616,6 +26637,7 @@ function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
     providers: declaration.providers !== undefined ? new WrappedNodeExpr(declaration.providers) : null,
     exportAs: declaration.exportAs ?? null,
     usesInheritance: declaration.usesInheritance ?? false,
+    controlCreate: declaration.controlCreate ?? null,
     lifecycle: {
       usesOnChanges: declaration.usesOnChanges ?? false
     },
@@ -28499,7 +28521,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28517,7 +28539,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28590,7 +28612,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28619,6 +28641,13 @@ function createDirectiveDefinitionMap(meta) {
   }
   if (meta.lifecycle.usesOnChanges) {
     definitionMap.set('usesOnChanges', literal(true));
+  }
+  if (meta.controlCreate) {
+    definitionMap.set('controlCreate', literalMap([{
+      key: 'passThroughInput',
+      value: literal(meta.controlCreate.passThroughInput),
+      quoted: false
+    }]));
   }
   if (meta.hostDirectives?.length) {
     definitionMap.set('hostDirectives', createHostDirectives(meta.hostDirectives));
@@ -28925,7 +28954,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28951,7 +28980,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -28992,7 +29021,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29019,7 +29048,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29057,7 +29086,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.1+sha-6990f88'));
+  definitionMap.set('version', literal('21.2.0-next.1+sha-a67e007'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29131,7 +29160,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.2.0-next.1+sha-6990f88');
+const VERSION = new Version('21.2.0-next.1+sha-a67e007');
 
 publishFacade(_global);
 
