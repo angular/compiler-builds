@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.1+sha-424ecf8
+ * @license Angular v21.2.0-next.1+sha-8d5210c
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -13,7 +13,8 @@ declare enum ViewEncapsulation$1 {
 }
 declare enum ChangeDetectionStrategy$1 {
     OnPush = 0,
-    Default = 1
+    Default = 1,
+    Eager = 1
 }
 interface Input {
     alias?: string;
