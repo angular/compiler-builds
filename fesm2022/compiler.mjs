@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.0-next.3+sha-815e1a0
+ * @license Angular v21.2.0-next.3+sha-9f4c025
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -7513,11 +7513,6 @@ var SemanticVariableKind;
   SemanticVariableKind[SemanticVariableKind["SavedView"] = 2] = "SavedView";
   SemanticVariableKind[SemanticVariableKind["Alias"] = 3] = "Alias";
 })(SemanticVariableKind || (SemanticVariableKind = {}));
-var CompatibilityMode;
-(function (CompatibilityMode) {
-  CompatibilityMode[CompatibilityMode["Normal"] = 0] = "Normal";
-  CompatibilityMode[CompatibilityMode["TemplateDefinitionBuilder"] = 1] = "TemplateDefinitionBuilder";
-})(CompatibilityMode || (CompatibilityMode = {}));
 var BindingKind;
 (function (BindingKind) {
   BindingKind[BindingKind["Attribute"] = 0] = "Attribute";
@@ -9522,12 +9517,10 @@ var TemplateCompilationMode;
 class CompilationJob {
   componentName;
   pool;
-  compatibility;
   mode;
-  constructor(componentName, pool, compatibility, mode) {
+  constructor(componentName, pool, mode) {
     this.componentName = componentName;
     this.pool = pool;
-    this.compatibility = compatibility;
     this.mode = mode;
   }
   kind = CompilationJobKind.Both;
@@ -9543,8 +9536,8 @@ class ComponentCompilationJob extends CompilationJob {
   allDeferrableDepsFn;
   relativeTemplatePath;
   enableDebugLocations;
-  constructor(componentName, pool, compatibility, mode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
-    super(componentName, pool, compatibility, mode);
+  constructor(componentName, pool, mode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
+    super(componentName, pool, mode);
     this.relativeContextFilePath = relativeContextFilePath;
     this.i18nUseExternalIds = i18nUseExternalIds;
     this.deferMeta = deferMeta;
@@ -9629,8 +9622,8 @@ class ViewCompilationUnit extends CompilationUnit {
   decls = null;
 }
 class HostBindingCompilationJob extends CompilationJob {
-  constructor(componentName, pool, compatibility, mode) {
-    super(componentName, pool, compatibility, mode);
+  constructor(componentName, pool, mode) {
+    super(componentName, pool, mode);
     this.root = new HostBindingCompilationUnit(this);
   }
   kind = CompilationJobKind.Host;
@@ -9824,7 +9817,7 @@ function extractAttributes(job) {
           break;
         case OpKind.StyleProp:
         case OpKind.ClassProp:
-          if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder && op.expression instanceof EmptyExpr) {
+          if (op.expression instanceof EmptyExpr) {
             OpList.insertBefore(createExtractedAttributeOp(op.target, BindingKind.Property, null, op.name, null, null, null, SecurityContext.STYLE), lookupElement$3(elements, op.target));
           }
           break;
@@ -9832,10 +9825,7 @@ function extractAttributes(job) {
           if (!op.isLegacyAnimationListener) {
             const extractedAttributeOp = createExtractedAttributeOp(op.target, BindingKind.Property, null, op.name, null, null, null, SecurityContext.NONE);
             if (job.kind === CompilationJobKind.Host) {
-              if (job.compatibility) {
-                break;
-              }
-              unit.create.push(extractedAttributeOp);
+              break;
             } else {
               OpList.insertBefore(extractedAttributeOp, lookupElement$3(elements, op.target));
             }
@@ -9862,11 +9852,7 @@ function extractAttributeOp(unit, op, elements) {
   if (op.expression instanceof Interpolation) {
     return;
   }
-  let extractable = op.isTextAttribute || op.expression.isConstant();
-  if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-    extractable &&= op.isTextAttribute;
-  }
-  if (extractable) {
+  if (op.isTextAttribute) {
     const extractedAttributeOp = createExtractedAttributeOp(op.target, op.isStructuralTemplateAttribute ? BindingKind.Template : BindingKind.Attribute, op.namespace, op.name, op.expression, op.i18nContext, op.i18nMessage, op.securityContext);
     if (unit.job.kind === CompilationJobKind.Host) {
       unit.create.push(extractedAttributeOp);
@@ -10070,7 +10056,7 @@ function collectElementConsts(job) {
   for (const unit of job.units) {
     for (const op of unit.create) {
       if (op.kind === OpKind.ExtractedAttribute) {
-        const attributes = allElementAttributes.get(op.target) || new ElementAttributes(job.compatibility);
+        const attributes = allElementAttributes.get(op.target) || new ElementAttributes();
         allElementAttributes.set(op.target, attributes);
         attributes.add(op.bindingKind, op.name, op.expression, op.namespace, op.trustedValueFn);
         OpList.remove(op);
@@ -10120,7 +10106,6 @@ function getConstIndex(job, allElementAttributes, xref) {
 }
 const FLYWEIGHT_ARRAY = Object.freeze([]);
 class ElementAttributes {
-  compatibility;
   known = new Map();
   byKind = new Map();
   propertyBindings = null;
@@ -10143,9 +10128,6 @@ class ElementAttributes {
   get i18n() {
     return this.byKind.get(BindingKind.I18n) ?? FLYWEIGHT_ARRAY;
   }
-  constructor(compatibility) {
-    this.compatibility = compatibility;
-  }
   isKnown(kind, name) {
     const nameToValue = this.known.get(kind) ?? new Set();
     this.known.set(kind, nameToValue);
@@ -10156,7 +10138,7 @@ class ElementAttributes {
     return false;
   }
   add(kind, name, value, namespace, trustedValueFn) {
-    const allowDuplicates = this.compatibility === CompatibilityMode.TemplateDefinitionBuilder && (kind === BindingKind.Attribute || kind === BindingKind.ClassName || kind === BindingKind.StyleProperty);
+    const allowDuplicates = kind === BindingKind.Attribute || kind === BindingKind.ClassName || kind === BindingKind.StyleProperty;
     if (!allowDuplicates && this.isKnown(kind, name)) {
       return;
     }
@@ -10396,12 +10378,8 @@ function deduplicateTextBindings(job) {
     for (const op of unit.update.reversed()) {
       if (op.kind === OpKind.Binding && op.isTextAttribute) {
         const seenForElement = seen.get(op.target) || new Set();
-        if (seenForElement.has(op.name)) {
-          if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-            if (op.name === 'style' || op.name === 'class') {
-              OpList.remove(op);
-            }
-          }
+        if (seenForElement.has(op.name) && (op.name === 'style' || op.name === 'class')) {
+          OpList.remove(op);
         }
         seenForElement.add(op.name);
         seen.set(op.target, seenForElement);
@@ -10591,7 +10569,7 @@ function eliminateTemporaryAssignments(e, tmps, ctx) {
   transformExpressionsInExpression(e, e => {
     if (e instanceof AssignTemporaryExpr && tmps.has(e.xref)) {
       const read = new ReadTemporaryExpr(e.xref);
-      return ctx.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder ? new AssignTemporaryExpr(read, read.xref) : read;
+      return new AssignTemporaryExpr(read, read.xref);
     }
     return e;
   }, VisitorContextFlag.None);
@@ -10604,7 +10582,7 @@ function safeTernaryWithTemporary(guard, body, ctx) {
     result = [new AssignTemporaryExpr(guard, xref), new ReadTemporaryExpr(xref)];
   } else {
     result = [guard, guard.clone()];
-    eliminateTemporaryAssignments(result[1], temporariesIn(result[0]), ctx);
+    eliminateTemporaryAssignments(result[1], temporariesIn(result[0]));
   }
   return new SafeTernaryExpr(result[0], body(result[1]));
 }
@@ -10880,7 +10858,7 @@ function generateLocalLetReferences(job) {
 }
 
 function generateProjectionDefs(job) {
-  const share = job.compatibility === CompatibilityMode.TemplateDefinitionBuilder;
+  const share = true;
   const selectors = [];
   let projectionSlotIndex = 0;
   for (const unit of job.units) {
@@ -18874,9 +18852,9 @@ function parseExtractedStyles(job) {
 function nameFunctionsAndVariables(job) {
   addNamesToView(job.root, job.componentName, {
     index: 0
-  }, job.compatibility === CompatibilityMode.TemplateDefinitionBuilder);
+  });
 }
-function addNamesToView(unit, baseName, state, compatibility) {
+function addNamesToView(unit, baseName, state) {
   if (unit.fnName === null) {
     unit.fnName = unit.job.pool.uniqueName(sanitizeIdentifier(`${baseName}_${unit.job.fnSuffix}`), false);
   }
@@ -18940,7 +18918,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
         op.handlerFnName = sanitizeIdentifier(`${unit.fnName}_${op.tag.replace('-', '_')}_${op.name}_${op.targetSlot.slot}_listener`);
         break;
       case OpKind.Variable:
-        varNames.set(op.xref, getVariableName(unit, op.variable, state));
+        varNames.set(op.xref, getVariableName(op.variable, state));
         break;
       case OpKind.RepeaterCreate:
         if (!(unit instanceof ViewCompilationUnit)) {
@@ -18951,9 +18929,9 @@ function addNamesToView(unit, baseName, state, compatibility) {
         }
         if (op.emptyView !== null) {
           const emptyView = unit.job.views.get(op.emptyView);
-          addNamesToView(emptyView, `${baseName}_${op.functionNameSuffix}Empty_${op.handle.slot + 2}`, state, compatibility);
+          addNamesToView(emptyView, `${baseName}_${op.functionNameSuffix}Empty_${op.handle.slot + 2}`, state);
         }
-        addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.handle.slot + 1}`, state, compatibility);
+        addNamesToView(unit.job.views.get(op.xref), `${baseName}_${op.functionNameSuffix}_${op.handle.slot + 1}`, state);
         break;
       case OpKind.Projection:
         if (!(unit instanceof ViewCompilationUnit)) {
@@ -18964,7 +18942,7 @@ function addNamesToView(unit, baseName, state, compatibility) {
         }
         if (op.fallbackView !== null) {
           const fallbackView = unit.job.views.get(op.fallbackView);
-          addNamesToView(fallbackView, `${baseName}_ProjectionFallback_${op.handle.slot}`, state, compatibility);
+          addNamesToView(fallbackView, `${baseName}_ProjectionFallback_${op.handle.slot}`, state);
         }
         break;
       case OpKind.ConditionalCreate:
@@ -18978,18 +18956,13 @@ function addNamesToView(unit, baseName, state, compatibility) {
           throw new Error(`Expected slot to be assigned`);
         }
         const suffix = op.functionNameSuffix.length === 0 ? '' : `_${op.functionNameSuffix}`;
-        addNamesToView(childView, `${baseName}${suffix}_${op.handle.slot}`, state, compatibility);
+        addNamesToView(childView, `${baseName}${suffix}_${op.handle.slot}`, state);
         break;
       case OpKind.StyleProp:
-        op.name = normalizeStylePropName(op.name);
-        if (compatibility) {
-          op.name = stripImportant(op.name);
-        }
+        op.name = stripImportant(normalizeStylePropName(op.name));
         break;
       case OpKind.ClassProp:
-        if (compatibility) {
-          op.name = stripImportant(op.name);
-        }
+        op.name = stripImportant(op.name);
         break;
     }
   }
@@ -19005,19 +18978,15 @@ function addNamesToView(unit, baseName, state, compatibility) {
     });
   }
 }
-function getVariableName(unit, variable, state) {
+function getVariableName(variable, state) {
   if (variable.name === null) {
     switch (variable.kind) {
       case SemanticVariableKind.Context:
         variable.name = `ctx_r${state.index++}`;
         break;
       case SemanticVariableKind.Identifier:
-        if (unit.job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-          const compatPrefix = variable.identifier === CONTEXT_NAME ? 'i' : '';
-          variable.name = `${variable.identifier}_${compatPrefix}r${++state.index}`;
-        } else {
-          variable.name = `${variable.identifier}_i${state.index++}`;
-        }
+        const compatPrefix = variable.identifier === CONTEXT_NAME ? 'i' : '';
+        variable.name = `${variable.identifier}_${compatPrefix}r${++state.index}`;
         break;
       default:
         variable.name = `_r${++state.index}`;
@@ -19272,15 +19241,11 @@ function processPipeBindingsInView(unit) {
       if (flags & VisitorContextFlag.InChildOperation) {
         throw new Error(`AssertionError: pipe bindings should not appear in child expressions`);
       }
-      if (unit.job.compatibility) {
-        const slotHandle = updateOp.target;
-        if (slotHandle == undefined) {
-          throw new Error(`AssertionError: expected slot handle to be assigned for pipe creation`);
-        }
-        addPipeToCreationBlock(unit, updateOp.target, expr);
-      } else {
-        unit.create.push(createPipeOp(expr.target, expr.targetSlot, expr.name));
+      const slotHandle = updateOp.target;
+      if (slotHandle == undefined) {
+        throw new Error(`AssertionError: expected slot handle to be assigned for pipe creation`);
       }
+      addPipeToCreationBlock(unit, updateOp.target, expr);
     });
   }
 }
@@ -21352,7 +21317,7 @@ function countVariables(job) {
       if (!isIrExpression(expr)) {
         return;
       }
-      if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder && expr instanceof PureFunctionExpr) {
+      if (expr instanceof PureFunctionExpr) {
         return;
       }
       if (hasUsesVarOffsetTrait(expr)) {
@@ -21379,13 +21344,11 @@ function countVariables(job) {
     for (const updateOp of unit.update) {
       visitExpressionsInOp(updateOp, firstPassCountExpressionVars);
     }
-    if (job.compatibility === CompatibilityMode.TemplateDefinitionBuilder) {
-      for (const createOp of unit.create) {
-        visitExpressionsInOp(createOp, secondPassCountExpressionVars);
-      }
-      for (const updateOp of unit.update) {
-        visitExpressionsInOp(updateOp, secondPassCountExpressionVars);
-      }
+    for (const createOp of unit.create) {
+      visitExpressionsInOp(createOp, secondPassCountExpressionVars);
+    }
+    for (const updateOp of unit.update) {
+      visitExpressionsInOp(updateOp, secondPassCountExpressionVars);
     }
     unit.vars = varCount;
   }
@@ -21483,19 +21446,19 @@ function optimizeVariables(job) {
       }
     }
     for (const expr of unit.functions) {
-      optimizeVariablesInOpList(expr.ops, job.compatibility, null);
+      optimizeVariablesInOpList(expr.ops, null);
       optimizeSaveRestoreView(expr.ops);
     }
     for (const op of unit.create) {
       if (op.kind === OpKind.Listener || op.kind === OpKind.Animation || op.kind === OpKind.AnimationListener || op.kind === OpKind.TwoWayListener) {
-        optimizeVariablesInOpList(op.handlerOps, job.compatibility, skipArrowFunctionOps);
+        optimizeVariablesInOpList(op.handlerOps, skipArrowFunctionOps);
         optimizeSaveRestoreView(op.handlerOps);
       } else if (op.kind === OpKind.RepeaterCreate && op.trackByOps !== null) {
-        optimizeVariablesInOpList(op.trackByOps, job.compatibility, skipArrowFunctionOps);
+        optimizeVariablesInOpList(op.trackByOps, skipArrowFunctionOps);
       }
     }
-    optimizeVariablesInOpList(unit.create, job.compatibility, skipArrowFunctionOps);
-    optimizeVariablesInOpList(unit.update, job.compatibility, skipArrowFunctionOps);
+    optimizeVariablesInOpList(unit.create, skipArrowFunctionOps);
+    optimizeVariablesInOpList(unit.update, skipArrowFunctionOps);
   }
 }
 var Fence;
@@ -21531,7 +21494,7 @@ function inlineAlwaysInlineVariables(ops) {
     OpList.remove(op);
   }
 }
-function optimizeVariablesInOpList(ops, compatibility, predicate) {
+function optimizeVariablesInOpList(ops, predicate) {
   const varDecls = new Map();
   const varUsages = new Map();
   const varRemoteUsages = new Set();
@@ -21591,7 +21554,7 @@ function optimizeVariablesInOpList(ops, compatibility, predicate) {
     for (let targetOp = decl.next; targetOp.kind !== OpKind.ListEnd; targetOp = targetOp.next) {
       const opInfo = opMap.get(targetOp);
       if (opInfo.variablesUsed.has(candidate)) {
-        if (compatibility === CompatibilityMode.TemplateDefinitionBuilder && !allowConservativeInlining(decl, targetOp)) {
+        if (!allowConservativeInlining(decl, targetOp)) {
           break;
         }
         if (tryInlineVariableInitializer(candidate, decl.initializer, targetOp, varInfo.fences)) {
@@ -22127,7 +22090,6 @@ function emitHostBindingFunction(job) {
   return fn([new FnParam(RENDER_FLAGS), new FnParam(CONTEXT_NAME)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
 }
 
-const compatibilityMode = CompatibilityMode.TemplateDefinitionBuilder;
 const domSchema = new DomElementSchemaRegistry();
 const NG_TEMPLATE_TAG_NAME = 'ng-template';
 const ANIMATE_PREFIX$1 = 'animate.';
@@ -22138,12 +22100,12 @@ function isSingleI18nIcu(meta) {
   return isI18nRootNode(meta) && meta.nodes.length === 1 && meta.nodes[0] instanceof Icu;
 }
 function ingestComponent(componentName, template, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations) {
-  const job = new ComponentCompilationJob(componentName, constantPool, compatibilityMode, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations);
+  const job = new ComponentCompilationJob(componentName, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations);
   ingestNodes(job.root, template);
   return job;
 }
 function ingestHostBinding(input, bindingParser, constantPool) {
-  const job = new HostBindingCompilationJob(input.componentName, constantPool, compatibilityMode, TemplateCompilationMode.DomOnly);
+  const job = new HostBindingCompilationJob(input.componentName, constantPool, TemplateCompilationMode.DomOnly);
   for (const property of input.properties ?? []) {
     let bindingKind = BindingKind.Property;
     if (property.name.startsWith('attr.')) {
@@ -22311,8 +22273,7 @@ function ingestBoundText(unit, text, icuPlaceholder) {
   }
   const textXref = unit.job.allocateXrefId();
   unit.create.push(createTextOp(textXref, '', icuPlaceholder, text.sourceSpan));
-  const baseSourceSpan = unit.job.compatibility ? null : text.sourceSpan;
-  unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, baseSourceSpan)), i18nPlaceholders), text.sourceSpan));
+  unit.update.push(createInterpolateTextOp(textXref, new Interpolation(value.strings, value.expressions.map(expr => convertAst(expr, unit.job, null)), i18nPlaceholders), text.sourceSpan));
 }
 function ingestIfBlock(unit, ifBlock) {
   let firstXref = null;
@@ -28529,7 +28490,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28547,7 +28508,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28620,7 +28581,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28962,7 +28923,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28988,7 +28949,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29029,7 +28990,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29056,7 +29017,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29094,7 +29055,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.2.0-next.3+sha-815e1a0'));
+  definitionMap.set('version', literal('21.2.0-next.3+sha-9f4c025'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29168,7 +29129,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.2.0-next.3+sha-815e1a0');
+const VERSION = new Version('21.2.0-next.3+sha-9f4c025');
 
 publishFacade(_global);
 
