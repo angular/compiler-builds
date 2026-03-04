@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.0+sha-d9e40cb
+ * @license Angular v22.0.0-next.0+sha-0c40212
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3637,6 +3637,8 @@ declare class BoundDeferredTrigger extends DeferredTrigger {
 declare class NeverDeferredTrigger extends DeferredTrigger {
 }
 declare class IdleDeferredTrigger extends DeferredTrigger {
+    timeout: number | null;
+    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null, timeout: number | null);
 }
 declare class ImmediateDeferredTrigger extends DeferredTrigger {
 }

@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.0+sha-d9e40cb
+ * @license Angular v22.0.0-next.0+sha-0c40212
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -4820,7 +4820,13 @@ class BoundDeferredTrigger extends DeferredTrigger {
   }
 }
 class NeverDeferredTrigger extends DeferredTrigger {}
-class IdleDeferredTrigger extends DeferredTrigger {}
+class IdleDeferredTrigger extends DeferredTrigger {
+  timeout;
+  constructor(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, timeout) {
+    super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
+    this.timeout = timeout;
+  }
+}
 class ImmediateDeferredTrigger extends DeferredTrigger {}
 class HoverDeferredTrigger extends DeferredTrigger {
   reference;
@@ -20070,8 +20076,12 @@ function reifyCreateOperations(unit, ops) {
         let args = [];
         switch (op.trigger.kind) {
           case DeferTriggerKind.Never:
-          case DeferTriggerKind.Idle:
           case DeferTriggerKind.Immediate:
+            break;
+          case DeferTriggerKind.Idle:
+            if (op.trigger.timeout != null) {
+              args = [literal(op.trigger.timeout)];
+            }
             break;
           case DeferTriggerKind.Timer:
             args = [literal(op.trigger.delay)];
@@ -22396,7 +22406,8 @@ function ingestDeferBlock(unit, deferBlock) {
   const hasConcreteTrigger = deferOnOps.some(op => op.modifier === "none") || deferWhenOps.some(op => op.modifier === "none");
   if (!hasConcreteTrigger) {
     deferOnOps.push(createDeferOnOp(deferXref, {
-      kind: DeferTriggerKind.Idle
+      kind: DeferTriggerKind.Idle,
+      timeout: null
     }, "none", null));
   }
   unit.create.push(deferOnOps);
@@ -22411,7 +22422,8 @@ function calcDeferBlockFlags(deferBlockDetails) {
 function ingestDeferTriggers(modifier, triggers, onOps, whenOps, unit, deferXref) {
   if (triggers.idle !== undefined) {
     const deferOnOp = createDeferOnOp(deferXref, {
-      kind: DeferTriggerKind.Idle
+      kind: DeferTriggerKind.Idle,
+      timeout: triggers.idle.timeout ?? null
     }, modifier, triggers.idle.sourceSpan);
     onOps.push(deferOnOp);
   }
@@ -24105,10 +24117,17 @@ function trackTrigger(name, allTriggers, errors, trigger) {
   }
 }
 function createIdleTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
-  if (parameters.length > 0) {
-    throw new Error(`"${OnTriggerType.IDLE}" trigger cannot have parameters`);
+  if (parameters.length > 1) {
+    throw new Error(`"${OnTriggerType.IDLE}" trigger can only have zero or one parameters`);
   }
-  return new IdleDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
+  let timeout = null;
+  if (parameters[0]) {
+    timeout = parseDeferredTime(parameters[0].expression);
+    if (timeout === null) {
+      throw new Error(`Could not parse time value of trigger "${OnTriggerType.IDLE}"`);
+    }
+  }
+  return new IdleDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, timeout);
 }
 function createTimerTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
   if (parameters.length !== 1) {
@@ -28522,7 +28541,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28540,7 +28559,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28613,7 +28632,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28955,7 +28974,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28981,7 +29000,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29022,7 +29041,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29049,7 +29068,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29087,7 +29106,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.0+sha-d9e40cb'));
+  definitionMap.set('version', literal('22.0.0-next.0+sha-0c40212'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29161,7 +29180,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.0+sha-d9e40cb');
+const VERSION = new Version('22.0.0-next.0+sha-0c40212');
 
 publishFacade(_global);
 
