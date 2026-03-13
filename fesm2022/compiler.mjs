@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.4+sha-6f41efc
+ * @license Angular v21.2.4+sha-334ae10
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -19386,7 +19386,7 @@ class PureFunctionConstant extends GenericKeyFn {
   toSharedConstantDeclaration(declName, keyExpr) {
     const fnParams = [];
     for (let idx = 0; idx < this.numArgs; idx++) {
-      fnParams.push(new FnParam('a' + idx));
+      fnParams.push(new FnParam('a' + idx, DYNAMIC_TYPE));
     }
     const returnExpr = transformExpressionsInExpression(keyExpr, expr => {
       if (!(expr instanceof PureFunctionParameterExpr)) {
@@ -20371,7 +20371,7 @@ function reifyListenerHandler(unit, name, handlerOps, consumesDollarEvent) {
   }
   const params = [];
   if (consumesDollarEvent) {
-    params.push(new FnParam('$event'));
+    params.push(new FnParam('$event', DYNAMIC_TYPE));
   }
   return fn(params, handlerStmts, undefined, undefined, name);
 }
@@ -20379,7 +20379,7 @@ function reifyTrackBy(unit, op) {
   if (op.trackByFn !== null) {
     return op.trackByFn;
   }
-  const params = [new FnParam('$index'), new FnParam('$item')];
+  const params = [new FnParam('$index', NUMBER_TYPE), new FnParam('$item', DYNAMIC_TYPE)];
   let fn$1;
   if (op.trackByOps === null) {
     fn$1 = op.usesComponentInstance ? fn(params, [new ReturnStatement(op.track)]) : arrowFn(params, op.track);
@@ -20407,7 +20407,7 @@ function getArrowFunctionFactory(unit, expr) {
     statements.push(op.statement);
   }
   const body = statements.length === 1 && statements[0] instanceof ReturnStatement ? statements[0].value : statements;
-  return arrowFn([new FnParam(expr.contextName), new FnParam(expr.currentViewName)], arrowFn(expr.parameters, body));
+  return arrowFn([new FnParam(expr.contextName, DYNAMIC_TYPE), new FnParam(expr.currentViewName, DYNAMIC_TYPE)], arrowFn(expr.parameters, body));
 }
 
 function removeEmptyBindings(job) {
@@ -22073,7 +22073,7 @@ function emitView(view) {
   }
   const createCond = maybeGenerateRfBlock(1, createStatements);
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
-  return fn([new FnParam(RENDER_FLAGS), new FnParam(CONTEXT_NAME)], [...createCond, ...updateCond], undefined, undefined, view.fnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, view.fnName);
 }
 function maybeGenerateRfBlock(flag, statements) {
   if (statements.length === 0) {
@@ -22104,7 +22104,7 @@ function emitHostBindingFunction(job) {
   }
   const createCond = maybeGenerateRfBlock(1, createStatements);
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
-  return fn([new FnParam(RENDER_FLAGS), new FnParam(CONTEXT_NAME)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
 }
 
 const domSchema = new DomElementSchemaRegistry();
@@ -22649,7 +22649,7 @@ function convertAst(ast, job, baseSourceSpan) {
   } else if (ast instanceof SpreadElement) {
     return new SpreadElementExpr(convertAst(ast.expression, job, baseSourceSpan));
   } else if (ast instanceof ArrowFunction) {
-    return updateParameterReferences(arrowFn(ast.parameters.map(arg => new FnParam(arg.name)), convertAst(ast.body, job, baseSourceSpan)));
+    return updateParameterReferences(arrowFn(ast.parameters.map(arg => new FnParam(arg.name, DYNAMIC_TYPE)), convertAst(ast.body, job, baseSourceSpan)));
   } else {
     throw new Error(`Unhandled expression type "${ast.constructor.name}" in file "${baseSourceSpan?.start.file.url}"`);
   }
@@ -22987,7 +22987,7 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     createStatements.push(new ExpressionStatement(viewQueryCall));
   }
   const viewQueryFnName = name ? `${name}_Query` : null;
-  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, viewQueryFnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, viewQueryFnName);
 }
 function createContentQueriesFunction(queries, constantPool, name) {
   const createStatements = [];
@@ -23021,7 +23021,7 @@ function createContentQueriesFunction(queries, constantPool, name) {
     createStatements.push(new ExpressionStatement(contentQueryCall));
   }
   const contentQueriesFnName = name ? `${name}_ContentQueries` : null;
-  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, null), new FnParam('dirIndex', null)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, contentQueriesFnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE), new FnParam('dirIndex', NUMBER_TYPE)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, contentQueriesFnName);
 }
 
 class HtmlParser extends Parser$1 {
@@ -28529,7 +28529,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28547,7 +28547,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28620,7 +28620,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28962,7 +28962,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28988,7 +28988,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29029,7 +29029,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29056,7 +29056,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29094,7 +29094,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('21.2.4+sha-6f41efc'));
+  definitionMap.set('version', literal('21.2.4+sha-334ae10'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29137,10 +29137,10 @@ function compileHmrInitializer(meta) {
   });
   const defaultRead = variable(moduleName).prop('default');
   const replaceCall = importExpr(Identifiers.replaceMetadata).callFn([meta.type, defaultRead, literalArr(namespaces), literalArr(meta.localDependencies.map(l => l.runtimeRepresentation)), variable('import').prop('meta'), variable(idName)]);
-  const replaceCallback = arrowFn([new FnParam(moduleName)], defaultRead.and(replaceCall));
+  const replaceCallback = arrowFn([new FnParam(moduleName, DYNAMIC_TYPE)], defaultRead.and(replaceCall));
   const url = importExpr(Identifiers.getReplaceMetadataURL).callFn([variable(idName), variable(timestampName), variable('import').prop('meta').prop('url')]);
-  const importCallback = new DeclareFunctionStmt(importCallbackName, [new FnParam(timestampName)], [new DynamicImportExpr(url, null, '@vite-ignore').prop('then').callFn([replaceCallback]).toStmt()], null, StmtModifier.Final);
-  const updateCallback = arrowFn([new FnParam(dataName)], variable(dataName).prop('id').identical(variable(idName)).and(variable(importCallbackName).callFn([variable(dataName).prop('timestamp')])));
+  const importCallback = new DeclareFunctionStmt(importCallbackName, [new FnParam(timestampName, DYNAMIC_TYPE)], [new DynamicImportExpr(url, null, '@vite-ignore').prop('then').callFn([replaceCallback]).toStmt()], null, StmtModifier.Final);
+  const updateCallback = arrowFn([new FnParam(dataName, DYNAMIC_TYPE)], variable(dataName).prop('id').identical(variable(idName)).and(variable(importCallbackName).callFn([variable(dataName).prop('timestamp')])));
   const initialCall = variable(importCallbackName).callFn([variable('Date').prop('now').callFn([])]);
   const hotRead = variable('import').prop('meta').prop('hot');
   const hotListener = hotRead.clone().prop('on').callFn([literal('angular:component-update'), updateCallback]);
@@ -29151,7 +29151,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   const params = [meta.className, namespaces].map(name => new FnParam(name, DYNAMIC_TYPE));
   const body = [];
   for (const local of meta.localDependencies) {
-    params.push(new FnParam(local.name));
+    params.push(new FnParam(local.name, DYNAMIC_TYPE));
   }
   for (let i = 0; i < meta.namespaceDependencies.length; i++) {
     body.push(new DeclareVarStmt(meta.namespaceDependencies[i].assignedName, variable(namespaces).key(literal(i)), DYNAMIC_TYPE, StmtModifier.Final));
@@ -29168,7 +29168,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('21.2.4+sha-6f41efc');
+const VERSION = new Version('21.2.4+sha-334ae10');
 
 publishFacade(_global);
 
