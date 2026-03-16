@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.3+sha-ada150c
+ * @license Angular v22.0.0-next.3+sha-dc04465
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -818,9 +818,11 @@ function areAllEquivalent(base, other) {
   return areAllEquivalentPredicate(base, other, (baseElement, otherElement) => baseElement.isEquivalent(otherElement));
 }
 class Expression {
+  leadingComments;
   type;
   sourceSpan;
-  constructor(type, sourceSpan) {
+  constructor(type, sourceSpan, leadingComments) {
+    this.leadingComments = leadingComments;
     this.type = type || null;
     this.sourceSpan = sourceSpan || null;
   }
@@ -830,13 +832,13 @@ class Expression {
   key(index, type, sourceSpan) {
     return new ReadKeyExpr(this, index, type, sourceSpan);
   }
-  callFn(params, sourceSpan, pure) {
-    return new InvokeFunctionExpr(this, params, null, sourceSpan, pure);
+  callFn(params, sourceSpan, pure, leadingComments) {
+    return new InvokeFunctionExpr(this, params, null, sourceSpan, pure, leadingComments);
   }
-  instantiate(params, type, sourceSpan) {
+  instantiate(params, type, sourceSpan, leadingComments) {
     return new InstantiateExpr(this, params, type, sourceSpan);
   }
-  conditional(trueCase, falseCase = null, sourceSpan) {
+  conditional(trueCase, falseCase = null, sourceSpan, leadingComments) {
     return new ConditionalExpr(this, trueCase, falseCase, null, sourceSpan);
   }
   equals(rhs, sourceSpan) {
@@ -905,8 +907,8 @@ class Expression {
 }
 class ReadVarExpr extends Expression {
   name;
-  constructor(name, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(name, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.name = name;
   }
   isEquivalent(e) {
@@ -927,8 +929,8 @@ class ReadVarExpr extends Expression {
 }
 class TypeofExpr extends Expression {
   expr;
-  constructor(expr, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(expr, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.expr = expr;
   }
   visitExpression(visitor, context) {
@@ -946,8 +948,8 @@ class TypeofExpr extends Expression {
 }
 class VoidExpr extends Expression {
   expr;
-  constructor(expr, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(expr, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.expr = expr;
   }
   visitExpression(visitor, context) {
@@ -965,8 +967,8 @@ class VoidExpr extends Expression {
 }
 class WrappedNodeExpr extends Expression {
   node;
-  constructor(node, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(node, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.node = node;
   }
   isEquivalent(e) {
@@ -986,8 +988,8 @@ class InvokeFunctionExpr extends Expression {
   fn;
   args;
   pure;
-  constructor(fn, args, type, sourceSpan, pure = false) {
-    super(type, sourceSpan);
+  constructor(fn, args, type, sourceSpan, pure = false, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.fn = fn;
     this.args = args;
     this.pure = pure;
@@ -1011,8 +1013,8 @@ class InvokeFunctionExpr extends Expression {
 class TaggedTemplateLiteralExpr extends Expression {
   tag;
   template;
-  constructor(tag, template, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(tag, template, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.tag = tag;
     this.template = template;
   }
@@ -1032,8 +1034,8 @@ class TaggedTemplateLiteralExpr extends Expression {
 class InstantiateExpr extends Expression {
   classExpr;
   args;
-  constructor(classExpr, args, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(classExpr, args, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.classExpr = classExpr;
     this.args = args;
   }
@@ -1053,8 +1055,8 @@ class InstantiateExpr extends Expression {
 class RegularExpressionLiteralExpr extends Expression {
   body;
   flags;
-  constructor(body, flags, sourceSpan) {
-    super(null, sourceSpan);
+  constructor(body, flags, sourceSpan, leadingComments) {
+    super(null, sourceSpan, leadingComments);
     this.body = body;
     this.flags = flags;
   }
@@ -1073,8 +1075,8 @@ class RegularExpressionLiteralExpr extends Expression {
 }
 class LiteralExpr extends Expression {
   value;
-  constructor(value, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(value, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.value = value;
   }
   isEquivalent(e) {
@@ -1093,8 +1095,8 @@ class LiteralExpr extends Expression {
 class TemplateLiteralExpr extends Expression {
   elements;
   expressions;
-  constructor(elements, expressions, sourceSpan) {
-    super(null, sourceSpan);
+  constructor(elements, expressions, sourceSpan, leadingComments) {
+    super(null, sourceSpan, leadingComments);
     this.elements = elements;
     this.expressions = expressions;
   }
@@ -1114,8 +1116,8 @@ class TemplateLiteralExpr extends Expression {
 class TemplateLiteralElementExpr extends Expression {
   text;
   rawText;
-  constructor(text, sourceSpan, rawText) {
-    super(STRING_TYPE, sourceSpan);
+  constructor(text, sourceSpan, rawText, leadingComments) {
+    super(STRING_TYPE, sourceSpan, leadingComments);
     this.text = text;
     this.rawText = rawText ?? escapeForTemplateLiteral(escapeSlashes(text));
   }
@@ -1158,8 +1160,8 @@ class LocalizedString extends Expression {
   messageParts;
   placeHolderNames;
   expressions;
-  constructor(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan) {
-    super(STRING_TYPE, sourceSpan);
+  constructor(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan, leadingComments) {
+    super(STRING_TYPE, sourceSpan, leadingComments);
     this.metaBlock = metaBlock;
     this.messageParts = messageParts;
     this.placeHolderNames = placeHolderNames;
@@ -1230,8 +1232,8 @@ function createCookedRawString(metaBlock, messagePart, range) {
 class ExternalExpr extends Expression {
   value;
   typeParams;
-  constructor(value, type, typeParams = null, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(value, type, typeParams = null, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.value = value;
     this.typeParams = typeParams;
   }
@@ -1260,8 +1262,8 @@ class ConditionalExpr extends Expression {
   condition;
   falseCase;
   trueCase;
-  constructor(condition, trueCase, falseCase = null, type, sourceSpan) {
-    super(type || trueCase.type, sourceSpan);
+  constructor(condition, trueCase, falseCase = null, type, sourceSpan, leadingComments) {
+    super(type || trueCase.type, sourceSpan, leadingComments);
     this.condition = condition;
     this.falseCase = falseCase;
     this.trueCase = trueCase;
@@ -1282,8 +1284,8 @@ class ConditionalExpr extends Expression {
 class DynamicImportExpr extends Expression {
   url;
   urlComment;
-  constructor(url, sourceSpan, urlComment) {
-    super(null, sourceSpan);
+  constructor(url, sourceSpan, urlComment, leadingComments) {
+    super(null, sourceSpan, leadingComments);
     this.url = url;
     this.urlComment = urlComment;
   }
@@ -1302,8 +1304,8 @@ class DynamicImportExpr extends Expression {
 }
 class NotExpr extends Expression {
   condition;
-  constructor(condition, sourceSpan) {
-    super(BOOL_TYPE, sourceSpan);
+  constructor(condition, sourceSpan, leadingComments) {
+    super(BOOL_TYPE, sourceSpan, leadingComments);
     this.condition = condition;
   }
   isEquivalent(e) {
@@ -1337,8 +1339,8 @@ class FunctionExpr extends Expression {
   params;
   statements;
   name;
-  constructor(params, statements, type, sourceSpan, name) {
-    super(type, sourceSpan);
+  constructor(params, statements, type, sourceSpan, name, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.params = params;
     this.statements = statements;
     this.name = name;
@@ -1362,8 +1364,8 @@ class FunctionExpr extends Expression {
 let ArrowFunctionExpr$1 = class ArrowFunctionExpr extends Expression {
   params;
   body;
-  constructor(params, body, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(params, body, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.params = params;
     this.body = body;
   }
@@ -1396,8 +1398,8 @@ class UnaryOperatorExpr extends Expression {
   operator;
   expr;
   parens;
-  constructor(operator, expr, type, sourceSpan, parens = true) {
-    super(type || NUMBER_TYPE, sourceSpan);
+  constructor(operator, expr, type, sourceSpan, parens = true, leadingComments) {
+    super(type || NUMBER_TYPE, sourceSpan, leadingComments);
     this.operator = operator;
     this.expr = expr;
     this.parens = parens;
@@ -1417,8 +1419,8 @@ class UnaryOperatorExpr extends Expression {
 }
 class ParenthesizedExpr extends Expression {
   expr;
-  constructor(expr, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(expr, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.expr = expr;
   }
   visitExpression(visitor, context) {
@@ -1438,8 +1440,8 @@ class BinaryOperatorExpr extends Expression {
   operator;
   rhs;
   lhs;
-  constructor(operator, lhs, rhs, type, sourceSpan) {
-    super(type || lhs.type, sourceSpan);
+  constructor(operator, lhs, rhs, type, sourceSpan, leadingComments) {
+    super(type || lhs.type, sourceSpan, leadingComments);
     this.operator = operator;
     this.rhs = rhs;
     this.lhs = lhs;
@@ -1464,8 +1466,8 @@ class BinaryOperatorExpr extends Expression {
 class ReadPropExpr extends Expression {
   receiver;
   name;
-  constructor(receiver, name, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(receiver, name, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.receiver = receiver;
     this.name = name;
   }
@@ -1491,8 +1493,8 @@ class ReadPropExpr extends Expression {
 class ReadKeyExpr extends Expression {
   receiver;
   index;
-  constructor(receiver, index, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(receiver, index, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.receiver = receiver;
     this.index = index;
   }
@@ -1514,8 +1516,8 @@ class ReadKeyExpr extends Expression {
 }
 class LiteralArrayExpr extends Expression {
   entries;
-  constructor(entries, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(entries, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.entries = entries;
   }
   isConstant() {
@@ -1568,8 +1570,8 @@ class LiteralMapSpreadAssignment {
 class LiteralMapExpr extends Expression {
   entries;
   valueType = null;
-  constructor(entries, type, sourceSpan) {
-    super(type, sourceSpan);
+  constructor(entries, type, sourceSpan, leadingComments) {
+    super(type, sourceSpan, leadingComments);
     this.entries = entries;
     if (type) {
       this.valueType = type.valueType;
@@ -1591,8 +1593,8 @@ class LiteralMapExpr extends Expression {
 }
 class CommaExpr extends Expression {
   parts;
-  constructor(parts, sourceSpan) {
-    super(parts[parts.length - 1].type, sourceSpan);
+  constructor(parts, sourceSpan, leadingComments) {
+    super(parts[parts.length - 1].type, sourceSpan, leadingComments);
     this.parts = parts;
   }
   isEquivalent(e) {
@@ -1610,8 +1612,8 @@ class CommaExpr extends Expression {
 }
 class SpreadElementExpr extends Expression {
   expression;
-  constructor(expression, sourceSpan) {
-    super(null, sourceSpan);
+  constructor(expression, sourceSpan, leadingComments) {
+    super(null, sourceSpan, leadingComments);
     this.expression = expression;
   }
   isEquivalent(e) {
@@ -1949,8 +1951,8 @@ function leadingComment(text, multiline = false, trailingNewline = true) {
 function jsDocComment(tags = []) {
   return new JSDocComment(tags);
 }
-function variable(name, type, sourceSpan) {
-  return new ReadVarExpr(name, type, sourceSpan);
+function variable(name, type, sourceSpan, leadingComments) {
+  return new ReadVarExpr(name, type, sourceSpan, leadingComments);
 }
 function importExpr(id, typeParams = null, sourceSpan) {
   return new ExternalExpr(id, null, typeParams, sourceSpan);
@@ -3475,19 +3477,19 @@ class AbstractEmitterVisitor {
   constructor(_escapeDollarInStrings) {
     this._escapeDollarInStrings = _escapeDollarInStrings;
   }
-  printLeadingComments(stmt, ctx) {
-    if (stmt.leadingComments === undefined) {
+  printLeadingComments(node, ctx) {
+    if (node.leadingComments === undefined) {
       return;
     }
-    for (const comment of stmt.leadingComments) {
+    for (const comment of node.leadingComments) {
       if (comment instanceof JSDocComment) {
-        ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
+        ctx.print(node, `/*${comment.toString()}*/`, comment.trailingNewline);
       } else {
         if (comment.multiline) {
-          ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
+          ctx.print(node, `/* ${comment.text} */`, comment.trailingNewline);
         } else {
           comment.text.split('\n').forEach(line => {
-            ctx.println(stmt, `// ${line}`);
+            ctx.println(node, `// ${line}`);
           });
         }
       }
@@ -3535,6 +3537,7 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitInvokeFunctionExpr(expr, ctx) {
+    this.printLeadingComments(expr, ctx);
     const shouldParenthesize = expr.fn instanceof ArrowFunctionExpr$1;
     if (shouldParenthesize) {
       ctx.print(expr.fn, '(');
@@ -3549,11 +3552,13 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitTaggedTemplateLiteralExpr(expr, ctx) {
+    this.printLeadingComments(expr, ctx);
     expr.tag.visitExpression(this, ctx);
     expr.template.visitExpression(this, ctx);
     return null;
   }
   visitTemplateLiteralExpr(expr, ctx) {
+    this.printLeadingComments(expr, ctx);
     ctx.print(expr, '`');
     for (let i = 0; i < expr.elements.length; i++) {
       expr.elements[i].visitExpression(this, ctx);
@@ -3567,24 +3572,29 @@ class AbstractEmitterVisitor {
     ctx.print(expr, '`');
   }
   visitTemplateLiteralElementExpr(expr, ctx) {
+    this.printLeadingComments(expr, ctx);
     ctx.print(expr, expr.rawText);
   }
   visitWrappedNodeExpr(ast, ctx) {
     throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
   }
   visitTypeofExpr(expr, ctx) {
+    this.printLeadingComments(expr, ctx);
     ctx.print(expr, 'typeof ');
     expr.expr.visitExpression(this, ctx);
   }
   visitVoidExpr(expr, ctx) {
+    this.printLeadingComments(expr, ctx);
     ctx.print(expr, 'void ');
     expr.expr.visitExpression(this, ctx);
   }
   visitReadVarExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, ast.name);
     return null;
   }
   visitInstantiateExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `new `);
     ast.classExpr.visitExpression(this, ctx);
     ctx.print(ast, `(`);
@@ -3593,6 +3603,7 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitLiteralExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     const value = ast.value;
     if (typeof value === 'string') {
       ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
@@ -3602,10 +3613,12 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitRegularExpressionLiteral(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `/${ast.body}/${ast.flags || ''}`);
     return null;
   }
   visitLocalizedString(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     const head = ast.serializeI18nHead();
     ctx.print(ast, '$localize `' + head.raw);
     for (let i = 1; i < ast.messageParts.length; i++) {
@@ -3617,6 +3630,7 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitConditionalExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `(`);
     ast.condition.visitExpression(this, ctx);
     ctx.print(ast, '? ');
@@ -3627,14 +3641,17 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitDynamicImportExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `import(${ast.url})`);
   }
   visitNotExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, '!');
     ast.condition.visitExpression(this, ctx);
     return null;
   }
   visitUnaryOperatorExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     let opStr;
     switch (ast.operator) {
       case UnaryOperator.Plus:
@@ -3654,6 +3671,7 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitBinaryOperatorExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     const operator = BINARY_OPERATORS$1.get(ast.operator);
     if (!operator) {
       throw new Error(`Unknown operator ${ast.operator}`);
@@ -3667,12 +3685,14 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitReadPropExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ast.receiver.visitExpression(this, ctx);
     ctx.print(ast, `.`);
     ctx.print(ast, ast.name);
     return null;
   }
   visitReadKeyExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ast.receiver.visitExpression(this, ctx);
     ctx.print(ast, `[`);
     ast.index.visitExpression(this, ctx);
@@ -3680,12 +3700,14 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitLiteralArrayExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `[`);
     this.visitAllExpressions(ast.entries, ctx, ',');
     ctx.print(ast, `]`);
     return null;
   }
   visitLiteralMapExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `{`);
     this.visitAllObjects(entry => {
       if (entry instanceof LiteralMapSpreadAssignment) {
@@ -3700,15 +3722,18 @@ class AbstractEmitterVisitor {
     return null;
   }
   visitCommaExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, '(');
     this.visitAllExpressions(ast.parts, ctx, ',');
     ctx.print(ast, ')');
     return null;
   }
   visitParenthesizedExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ast.expr.visitExpression(this, ctx);
   }
   visitSpreadElementExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
     ctx.print(ast, '...');
     ast.expression.visitExpression(this, ctx);
   }
@@ -3807,6 +3832,9 @@ function refsToArray(refs, shouldForwardDeclare) {
   const values = literalArr(refs.map(ref => ref.value));
   return shouldForwardDeclare ? arrowFn([], values) : values;
 }
+function tsIgnoreComment() {
+  return leadingComment('@ts-ignore', true, true);
+}
 function createMayBeForwardRefExpression(expression, forwardRef) {
   return {
     expression,
@@ -3851,7 +3879,7 @@ function compileFactoryFunction(meta) {
   let retExpr = null;
   function makeConditionalFactory(nonCtorExpr) {
     const r = variable('__ngConditionalFactory__');
-    body.push(new DeclareVarStmt(r.name, NULL_EXPR, INFERRED_TYPE));
+    body.push(new DeclareVarStmt(r.name, NULL_EXPR, DYNAMIC_TYPE));
     const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt() : importExpr(Identifiers.invalidFactory).callFn([]).toStmt();
     body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
     return r;
@@ -3876,7 +3904,7 @@ function compileFactoryFunction(meta) {
   }
   let factoryFn = fn([new FnParam(t.name, DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
   if (baseFactoryVar !== null) {
-    factoryFn = arrowFn([], [new DeclareVarStmt(baseFactoryVar.name), new ReturnStatement(factoryFn)]).callFn([], undefined, true);
+    factoryFn = arrowFn([], [new DeclareVarStmt(baseFactoryVar.name, undefined, DYNAMIC_TYPE), new ReturnStatement(factoryFn)]).callFn([], undefined, true);
   }
   return {
     expression: factoryFn,
@@ -18347,7 +18375,6 @@ function i18nMetaToJSDoc(meta) {
   return jsDocComment(tags);
 }
 
-const GOOG_GET_MSG = 'goog.getMsg';
 function createGoogleGetMsgStatements(variable$1, message, closureVar, placeholderValues) {
   const messageString = serializeI18nMessageForGetMsg(message);
   const args = [literal(messageString)];
@@ -18361,7 +18388,7 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, placehold
       })))
     }));
   }
-  const googGetMsgStmt = new DeclareVarStmt(closureVar.name, variable(GOOG_GET_MSG).callFn(args), INFERRED_TYPE, StmtModifier.Final);
+  const googGetMsgStmt = new DeclareVarStmt(closureVar.name, variable('goog').prop('getMsg').callFn(args, null, undefined, [tsIgnoreComment()]), INFERRED_TYPE, StmtModifier.Final);
   googGetMsgStmt.addLeadingComment(i18nMetaToJSDoc(message));
   const i18nAssignmentStmt = new ExpressionStatement(variable$1.set(closureVar));
   return [googGetMsgStmt, i18nAssignmentStmt];
@@ -18406,7 +18433,7 @@ function createLocalizeStatements(variable, message, params) {
   const expressions = placeHolders.map(ph => params[ph.text]);
   const localizedString$1 = localizedString(message, messageParts, placeHolders, expressions, sourceSpan);
   const variableInitialization = variable.set(localizedString$1);
-  return [new ExpressionStatement(variableInitialization)];
+  return [new ExpressionStatement(variableInitialization, null, [tsIgnoreComment()])];
 }
 class LocalizeSerializerVisitor {
   placeholderToMessage;
@@ -18609,7 +18636,7 @@ function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
   }
   addSubMessageParams(messageOp, subMessagePlaceholders);
   messageOp.params = new Map([...messageOp.params.entries()].sort());
-  const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
+  const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX), DYNAMIC_TYPE);
   const closureVar = i18nGenerateClosureVar(job.pool, messageOp.message.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
   let transformFn = undefined;
   if (messageOp.needsPostprocessing || messageOp.postprocessingParams.size > 0) {
@@ -20052,7 +20079,7 @@ function reifyCreateOperations(unit, ops) {
         if (op.variable.name === null) {
           throw new Error(`AssertionError: unnamed variable ${op.xref}`);
         }
-        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
+        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, DYNAMIC_TYPE, StmtModifier.Final)));
         break;
       case OpKind.Namespace:
         switch (op.active) {
@@ -20270,7 +20297,7 @@ function reifyUpdateOperations(unit, ops) {
         if (op.variable.name === null) {
           throw new Error(`AssertionError: unnamed variable ${op.xref}`);
         }
-        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
+        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, DYNAMIC_TYPE, StmtModifier.Final)));
         break;
       case OpKind.Conditional:
         if (op.processed === null) {
@@ -21259,7 +21286,7 @@ function optimizeTrackFns(job) {
           return expr;
         }, VisitorContextFlag.None);
         const trackOpList = new OpList();
-        trackOpList.push(createStatementOp(new ReturnStatement(op.track, op.track.sourceSpan)));
+        trackOpList.push(createStatementOp(new ReturnStatement(op.track, op.track.sourceSpan, [tsIgnoreComment()])));
         op.trackByOps = trackOpList;
       }
     }
@@ -25167,14 +25194,6 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
   const definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
   addFeatures(definitionMap, meta);
-  const selector = meta.selector && CssSelector.parse(meta.selector);
-  const firstSelector = selector && selector[0];
-  if (firstSelector) {
-    const selectorAttributes = firstSelector.getAttrs();
-    if (selectorAttributes.length) {
-      definitionMap.set('attrs', constantPool.getConstLiteral(literalArr(selectorAttributes.map(value => value != null ? literal(value) : literal(undefined))), true));
-    }
-  }
   const templateTypeName = meta.name;
   let allDeferrableDepsFn = null;
   if (meta.defer.mode === 1 && meta.defer.dependenciesFn !== null) {
@@ -25497,7 +25516,7 @@ function compileDeferResolverFunction(meta) {
     for (const dep of meta.dependencies) {
       if (dep.isDeferrable) {
         const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(dep.isDefaultImport ? 'default' : dep.symbolName));
-        const importExpr = new DynamicImportExpr(dep.importPath).prop('then').callFn([innerFn]);
+        const importExpr = new DynamicImportExpr(dep.importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
         depExpressions.push(importExpr);
       } else {
         depExpressions.push(dep.typeReference);
@@ -25510,7 +25529,7 @@ function compileDeferResolverFunction(meta) {
       isDefaultImport
     } of meta.dependencies) {
       const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
-      const importExpr = new DynamicImportExpr(importPath).prop('then').callFn([innerFn]);
+      const importExpr = new DynamicImportExpr(importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
       depExpressions.push(importExpr);
     }
   }
@@ -28528,7 +28547,7 @@ function compileComponentMetadataAsyncResolver(dependencies) {
     isDefaultImport
   }) => {
     const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
-    return new DynamicImportExpr(importPath).prop('then').callFn([innerFn]);
+    return new DynamicImportExpr(importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
   });
   return arrowFn([], literalArr(dynamicImports));
 }
@@ -28538,7 +28557,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28556,7 +28575,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28629,7 +28648,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28971,7 +28990,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -28997,7 +29016,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29038,7 +29057,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29065,7 +29084,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29103,7 +29122,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-ada150c'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-dc04465'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29177,7 +29196,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.3+sha-ada150c');
+const VERSION = new Version('22.0.0-next.3+sha-dc04465');
 
 publishFacade(_global);
 

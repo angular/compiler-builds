@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.3+sha-ada150c
+ * @license Angular v22.0.0-next.3+sha-dc04465
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -927,9 +927,10 @@ declare function areAllEquivalent<T extends {
     isEquivalent(other: T): boolean;
 }>(base: T[], other: T[]): boolean;
 declare abstract class Expression {
+    leadingComments?: LeadingComment[] | undefined;
     type: Type$1 | null;
     sourceSpan: ParseSourceSpan$1 | null;
-    constructor(type: Type$1 | null | undefined, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(type: Type$1 | null | undefined, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[] | undefined);
     abstract visitExpression(visitor: ExpressionVisitor, context: any): any;
     /**
      * Calculates whether this expression produces the same value as the given expression.
@@ -943,9 +944,9 @@ declare abstract class Expression {
     abstract clone(): Expression;
     prop(name: string, sourceSpan?: ParseSourceSpan$1 | null): ReadPropExpr;
     key(index: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null): ReadKeyExpr;
-    callFn(params: Expression[], sourceSpan?: ParseSourceSpan$1 | null, pure?: boolean): InvokeFunctionExpr;
-    instantiate(params: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null): InstantiateExpr;
-    conditional(trueCase: Expression, falseCase?: Expression | null, sourceSpan?: ParseSourceSpan$1 | null): ConditionalExpr;
+    callFn(params: Expression[], sourceSpan?: ParseSourceSpan$1 | null, pure?: boolean, leadingComments?: LeadingComment[]): InvokeFunctionExpr;
+    instantiate(params: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]): InstantiateExpr;
+    conditional(trueCase: Expression, falseCase?: Expression | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]): ConditionalExpr;
     equals(rhs: Expression, sourceSpan?: ParseSourceSpan$1 | null): BinaryOperatorExpr;
     notEquals(rhs: Expression, sourceSpan?: ParseSourceSpan$1 | null): BinaryOperatorExpr;
     identical(rhs: Expression, sourceSpan?: ParseSourceSpan$1 | null): BinaryOperatorExpr;
@@ -970,7 +971,7 @@ declare abstract class Expression {
 }
 declare class ReadVarExpr extends Expression {
     name: string;
-    constructor(name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -979,7 +980,7 @@ declare class ReadVarExpr extends Expression {
 }
 declare class TypeofExpr extends Expression {
     expr: Expression;
-    constructor(expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -987,7 +988,7 @@ declare class TypeofExpr extends Expression {
 }
 declare class VoidExpr extends Expression {
     expr: Expression;
-    constructor(expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -995,7 +996,7 @@ declare class VoidExpr extends Expression {
 }
 declare class WrappedNodeExpr<T> extends Expression {
     node: T;
-    constructor(node: T, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(node: T, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1005,7 +1006,7 @@ declare class InvokeFunctionExpr extends Expression {
     fn: Expression;
     args: Expression[];
     pure: boolean;
-    constructor(fn: Expression, args: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, pure?: boolean);
+    constructor(fn: Expression, args: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, pure?: boolean, leadingComments?: LeadingComment[]);
     get receiver(): Expression;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -1015,7 +1016,7 @@ declare class InvokeFunctionExpr extends Expression {
 declare class TaggedTemplateLiteralExpr extends Expression {
     tag: Expression;
     template: TemplateLiteralExpr;
-    constructor(tag: Expression, template: TemplateLiteralExpr, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(tag: Expression, template: TemplateLiteralExpr, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1024,7 +1025,7 @@ declare class TaggedTemplateLiteralExpr extends Expression {
 declare class InstantiateExpr extends Expression {
     classExpr: Expression;
     args: Expression[];
-    constructor(classExpr: Expression, args: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(classExpr: Expression, args: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1033,7 +1034,7 @@ declare class InstantiateExpr extends Expression {
 declare class RegularExpressionLiteralExpr extends Expression {
     body: string;
     flags: string | null;
-    constructor(body: string, flags: string | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(body: string, flags: string | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1041,7 +1042,7 @@ declare class RegularExpressionLiteralExpr extends Expression {
 }
 declare class LiteralExpr extends Expression {
     value: number | string | boolean | null | undefined;
-    constructor(value: number | string | boolean | null | undefined, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(value: number | string | boolean | null | undefined, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1050,7 +1051,7 @@ declare class LiteralExpr extends Expression {
 declare class TemplateLiteralExpr extends Expression {
     elements: TemplateLiteralElementExpr[];
     expressions: Expression[];
-    constructor(elements: TemplateLiteralElementExpr[], expressions: Expression[], sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(elements: TemplateLiteralElementExpr[], expressions: Expression[], sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1059,7 +1060,7 @@ declare class TemplateLiteralExpr extends Expression {
 declare class TemplateLiteralElementExpr extends Expression {
     readonly text: string;
     readonly rawText: string;
-    constructor(text: string, sourceSpan?: ParseSourceSpan$1 | null, rawText?: string);
+    constructor(text: string, sourceSpan?: ParseSourceSpan$1 | null, rawText?: string, leadingComments?: LeadingComment[]);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -1091,7 +1092,7 @@ declare class LocalizedString extends Expression {
     readonly messageParts: LiteralPiece[];
     readonly placeHolderNames: PlaceholderPiece[];
     readonly expressions: Expression[];
-    constructor(metaBlock: I18nMeta, messageParts: LiteralPiece[], placeHolderNames: PlaceholderPiece[], expressions: Expression[], sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(metaBlock: I18nMeta, messageParts: LiteralPiece[], placeHolderNames: PlaceholderPiece[], expressions: Expression[], sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1132,7 +1133,7 @@ interface CookedRawString {
 declare class ExternalExpr extends Expression {
     value: ExternalReference;
     typeParams: Type$1[] | null;
-    constructor(value: ExternalReference, type?: Type$1 | null, typeParams?: Type$1[] | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(value: ExternalReference, type?: Type$1 | null, typeParams?: Type$1[] | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1147,7 +1148,7 @@ declare class ConditionalExpr extends Expression {
     condition: Expression;
     falseCase: Expression | null;
     trueCase: Expression;
-    constructor(condition: Expression, trueCase: Expression, falseCase?: Expression | null, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(condition: Expression, trueCase: Expression, falseCase?: Expression | null, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1156,7 +1157,7 @@ declare class ConditionalExpr extends Expression {
 declare class DynamicImportExpr extends Expression {
     url: string | Expression;
     urlComment?: string | undefined;
-    constructor(url: string | Expression, sourceSpan?: ParseSourceSpan$1 | null, urlComment?: string | undefined);
+    constructor(url: string | Expression, sourceSpan?: ParseSourceSpan$1 | null, urlComment?: string | undefined, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1164,7 +1165,7 @@ declare class DynamicImportExpr extends Expression {
 }
 declare class NotExpr extends Expression {
     condition: Expression;
-    constructor(condition: Expression, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(condition: Expression, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1181,7 +1182,7 @@ declare class FunctionExpr extends Expression {
     params: FnParam[];
     statements: Statement[];
     name?: string | null | undefined;
-    constructor(params: FnParam[], statements: Statement[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, name?: string | null | undefined);
+    constructor(params: FnParam[], statements: Statement[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, name?: string | null | undefined, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression | Statement): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1191,7 +1192,7 @@ declare class FunctionExpr extends Expression {
 declare class ArrowFunctionExpr extends Expression {
     params: FnParam[];
     body: Expression | Statement[];
-    constructor(params: FnParam[], body: Expression | Statement[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(params: FnParam[], body: Expression | Statement[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1202,7 +1203,7 @@ declare class UnaryOperatorExpr extends Expression {
     operator: UnaryOperator;
     expr: Expression;
     parens: boolean;
-    constructor(operator: UnaryOperator, expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, parens?: boolean);
+    constructor(operator: UnaryOperator, expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, parens?: boolean, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1210,7 +1211,7 @@ declare class UnaryOperatorExpr extends Expression {
 }
 declare class ParenthesizedExpr extends Expression {
     expr: Expression;
-    constructor(expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(expr: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     visitExpression(visitor: ExpressionVisitor, context: any): any;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -1220,7 +1221,7 @@ declare class BinaryOperatorExpr extends Expression {
     operator: BinaryOperator;
     rhs: Expression;
     lhs: Expression;
-    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(operator: BinaryOperator, lhs: Expression, rhs: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1230,7 +1231,7 @@ declare class BinaryOperatorExpr extends Expression {
 declare class ReadPropExpr extends Expression {
     receiver: Expression;
     name: string;
-    constructor(receiver: Expression, name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(receiver: Expression, name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     get index(): string;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -1241,7 +1242,7 @@ declare class ReadPropExpr extends Expression {
 declare class ReadKeyExpr extends Expression {
     receiver: Expression;
     index: Expression;
-    constructor(receiver: Expression, index: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(receiver: Expression, index: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1250,7 +1251,7 @@ declare class ReadKeyExpr extends Expression {
 }
 declare class LiteralArrayExpr extends Expression {
     entries: Expression[];
-    constructor(entries: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(entries: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isConstant(): boolean;
     isEquivalent(e: Expression): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1276,7 +1277,7 @@ type LiteralMapEntry = LiteralMapPropertyAssignment | LiteralMapSpreadAssignment
 declare class LiteralMapExpr extends Expression {
     entries: LiteralMapEntry[];
     valueType: Type$1 | null;
-    constructor(entries: LiteralMapEntry[], type?: MapType | null, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(entries: LiteralMapEntry[], type?: MapType | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1284,7 +1285,7 @@ declare class LiteralMapExpr extends Expression {
 }
 declare class CommaExpr extends Expression {
     parts: Expression[];
-    constructor(parts: Expression[], sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(parts: Expression[], sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1292,7 +1293,7 @@ declare class CommaExpr extends Expression {
 }
 declare class SpreadElementExpr extends Expression {
     expression: Expression;
-    constructor(expression: Expression, sourceSpan?: ParseSourceSpan$1 | null);
+    constructor(expression: Expression, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -1451,7 +1452,7 @@ declare class RecursiveAstVisitor$1 implements StatementVisitor, ExpressionVisit
 }
 declare function leadingComment(text: string, multiline?: boolean, trailingNewline?: boolean): LeadingComment;
 declare function jsDocComment(tags?: JSDocTag[]): JSDocComment;
-declare function variable(name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null): ReadVarExpr;
+declare function variable(name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]): ReadVarExpr;
 declare function importExpr(id: ExternalReference, typeParams?: Type$1[] | null, sourceSpan?: ParseSourceSpan$1 | null): ExternalExpr;
 declare function importType(id: ExternalReference, typeParams?: Type$1[] | null, typeModifiers?: TypeModifier): ExpressionType | null;
 declare function expressionType(expr: Expression, typeModifiers?: TypeModifier, typeParams?: Type$1[] | null): ExpressionType;
