@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.3+sha-890c973
+ * @license Angular v22.0.0-next.3+sha-f02be58
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -901,8 +901,8 @@ class Expression {
   nullishCoalesce(rhs, sourceSpan) {
     return new BinaryOperatorExpr(BinaryOperator.NullishCoalesce, this, rhs, null, sourceSpan);
   }
-  toStmt() {
-    return new ExpressionStatement(this, null);
+  toStmt(leadingComments) {
+    return new ExpressionStatement(this, null, leadingComments);
   }
 }
 class ReadVarExpr extends Expression {
@@ -3341,10 +3341,10 @@ function toBase64Digit(value) {
   return B64_DIGITS[value];
 }
 
-const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
-const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
-const _INDENT_WITH = '  ';
-class _EmittedLine {
+const SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+const LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+const INDENT_WITH = '  ';
+class EmittedLine {
   indent;
   partsLength = 0;
   parts = [];
@@ -3362,7 +3362,7 @@ class EmitterVisitorContext {
   _lines;
   constructor(_indent) {
     this._indent = _indent;
-    this._lines = [new _EmittedLine(_indent)];
+    this._lines = [new EmittedLine(_indent)];
   }
   get _currentLine() {
     return this._lines[this._lines.length - 1];
@@ -3374,7 +3374,7 @@ class EmitterVisitorContext {
     return this._currentLine.parts.length === 0;
   }
   lineLength() {
-    return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
+    return this._currentLine.indent * INDENT_WITH.length + this._currentLine.partsLength;
   }
   print(from, part, newLine = false) {
     if (part.length > 0) {
@@ -3383,7 +3383,7 @@ class EmitterVisitorContext {
       this._currentLine.srcSpans.push(from && from.sourceSpan || null);
     }
     if (newLine) {
-      this._lines.push(new _EmittedLine(this._indent));
+      this._lines.push(new EmittedLine(this._indent));
     }
   }
   removeEmptyLastLine() {
@@ -3404,7 +3404,7 @@ class EmitterVisitorContext {
     }
   }
   toSource() {
-    return this.sourceLines.map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '').join('\n');
+    return this.sourceLines.map(l => l.parts.length > 0 ? INDENT_WITH.repeat(l.indent) + l.parts.join('') : '').join('\n');
   }
   toSourceMapGenerator(genFilePath, startsAtLine = 0) {
     const map = new SourceMapGenerator(genFilePath);
@@ -3423,7 +3423,7 @@ class EmitterVisitorContext {
       map.addLine();
       const spans = line.srcSpans;
       const parts = line.parts;
-      let col0 = line.indent * _INDENT_WITH.length;
+      let col0 = line.indent * INDENT_WITH.length;
       let spanIdx = 0;
       while (spanIdx < spans.length && !spans[spanIdx]) {
         col0 += parts[spanIdx].length;
@@ -3453,7 +3453,7 @@ class EmitterVisitorContext {
   spanOf(line, column) {
     const emittedLine = this._lines[line];
     if (emittedLine) {
-      let columnsLeft = column - _createIndent(emittedLine.indent).length;
+      let columnsLeft = column - INDENT_WITH.repeat(emittedLine.indent).length;
       for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
         const part = emittedLine.parts[partIndex];
         if (part.length > columnsLeft) {
@@ -3472,41 +3472,23 @@ class EmitterVisitorContext {
   }
 }
 class AbstractEmitterVisitor {
-  _escapeDollarInStrings;
+  printComments;
+  printTypes;
   lastIfCondition = null;
-  constructor(_escapeDollarInStrings) {
-    this._escapeDollarInStrings = _escapeDollarInStrings;
-  }
-  printLeadingComments(node, ctx) {
-    if (node.leadingComments === undefined) {
-      return;
-    }
-    for (const comment of node.leadingComments) {
-      if (comment instanceof JSDocComment) {
-        ctx.print(node, `/*${comment.toString()}*/`, comment.trailingNewline);
-      } else {
-        if (comment.multiline) {
-          ctx.print(node, `/* ${comment.text} */`, comment.trailingNewline);
-        } else {
-          comment.text.split('\n').forEach(line => {
-            ctx.println(node, `// ${line}`);
-          });
-        }
-      }
-    }
+  constructor(printComments, printTypes) {
+    this.printComments = printComments;
+    this.printTypes = printTypes;
   }
   visitExpressionStmt(stmt, ctx) {
     this.printLeadingComments(stmt, ctx);
     stmt.expr.visitExpression(this, ctx);
     ctx.println(stmt, ';');
-    return null;
   }
   visitReturnStmt(stmt, ctx) {
     this.printLeadingComments(stmt, ctx);
     ctx.print(stmt, `return `);
     stmt.value.visitExpression(this, ctx);
     ctx.println(stmt, ';');
-    return null;
   }
   visitIfStmt(stmt, ctx) {
     this.printLeadingComments(stmt, ctx);
@@ -3534,11 +3516,21 @@ class AbstractEmitterVisitor {
       }
     }
     ctx.println(stmt, `}`);
-    return null;
+  }
+  visitDeclareVarStmt(stmt, ctx) {
+    const varKind = stmt.hasModifier(StmtModifier.Final) ? 'const' : 'let';
+    this.printLeadingComments(stmt, ctx);
+    ctx.print(stmt, `${varKind} ${stmt.name}`);
+    stmt.type?.visitType(this, ctx);
+    if (stmt.value) {
+      ctx.print(stmt, ' = ');
+      stmt.value.visitExpression(this, ctx);
+    }
+    ctx.println(stmt, `;`);
   }
   visitInvokeFunctionExpr(expr, ctx) {
     this.printLeadingComments(expr, ctx);
-    const shouldParenthesize = expr.fn instanceof ArrowFunctionExpr$1;
+    const shouldParenthesize = this.shouldParenthesize(expr.fn, expr);
     if (shouldParenthesize) {
       ctx.print(expr.fn, '(');
     }
@@ -3549,13 +3541,11 @@ class AbstractEmitterVisitor {
     ctx.print(expr, `(`);
     this.visitAllExpressions(expr.args, ctx, ',');
     ctx.print(expr, `)`);
-    return null;
   }
   visitTaggedTemplateLiteralExpr(expr, ctx) {
     this.printLeadingComments(expr, ctx);
     expr.tag.visitExpression(this, ctx);
     expr.template.visitExpression(this, ctx);
-    return null;
   }
   visitTemplateLiteralExpr(expr, ctx) {
     this.printLeadingComments(expr, ctx);
@@ -3575,9 +3565,6 @@ class AbstractEmitterVisitor {
     this.printLeadingComments(expr, ctx);
     ctx.print(expr, expr.rawText);
   }
-  visitWrappedNodeExpr(ast, ctx) {
-    throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
-  }
   visitTypeofExpr(expr, ctx) {
     this.printLeadingComments(expr, ctx);
     ctx.print(expr, 'typeof ');
@@ -3591,7 +3578,6 @@ class AbstractEmitterVisitor {
   visitReadVarExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, ast.name);
-    return null;
   }
   visitInstantiateExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3600,22 +3586,19 @@ class AbstractEmitterVisitor {
     ctx.print(ast, `(`);
     this.visitAllExpressions(ast.args, ctx, ',');
     ctx.print(ast, `)`);
-    return null;
   }
   visitLiteralExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     const value = ast.value;
     if (typeof value === 'string') {
-      ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
+      ctx.print(ast, escapeIdentifier(value));
     } else {
       ctx.print(ast, `${value}`);
     }
-    return null;
   }
   visitRegularExpressionLiteral(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, `/${ast.body}/${ast.flags || ''}`);
-    return null;
   }
   visitLocalizedString(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3627,18 +3610,16 @@ class AbstractEmitterVisitor {
       ctx.print(ast, `}${ast.serializeI18nTemplatePart(i).raw}`);
     }
     ctx.print(ast, '`');
-    return null;
   }
   visitConditionalExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, `(`);
     ast.condition.visitExpression(this, ctx);
-    ctx.print(ast, '? ');
+    ctx.print(ast, ' ? ');
     ast.trueCase.visitExpression(this, ctx);
-    ctx.print(ast, ': ');
-    ast.falseCase.visitExpression(this, ctx);
+    ctx.print(ast, ' : ');
+    ast.falseCase?.visitExpression(this, ctx);
     ctx.print(ast, `)`);
-    return null;
   }
   visitDynamicImportExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3648,7 +3629,54 @@ class AbstractEmitterVisitor {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, '!');
     ast.condition.visitExpression(this, ctx);
-    return null;
+  }
+  visitFunctionExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
+    ctx.print(ast, `function${ast.name ? ' ' + ast.name : ''}(`);
+    this.visitParams(ast.params, ctx);
+    ctx.println(ast, `)`);
+    ast.type?.visitType(this, ctx);
+    ctx.println(ast, ` {`);
+    ctx.incIndent();
+    this.visitAllStatements(ast.statements, ctx);
+    ctx.decIndent();
+    ctx.print(ast, `}`);
+  }
+  visitArrowFunctionExpr(ast, ctx) {
+    this.printLeadingComments(ast, ctx);
+    ctx.print(ast, '(');
+    this.visitParams(ast.params, ctx);
+    ctx.print(ast, ')');
+    ast.type?.visitType(this, ctx);
+    ctx.print(ast, ' =>');
+    if (Array.isArray(ast.body)) {
+      ctx.println(ast, `{`);
+      ctx.incIndent();
+      this.visitAllStatements(ast.body, ctx);
+      ctx.decIndent();
+      ctx.print(ast, `}`);
+    } else {
+      const shouldParenthesize = this.shouldParenthesize(ast.body, ast);
+      if (shouldParenthesize) {
+        ctx.print(ast, '(');
+      }
+      ast.body.visitExpression(this, ctx);
+      if (shouldParenthesize) {
+        ctx.print(ast, ')');
+      }
+    }
+  }
+  visitDeclareFunctionStmt(stmt, ctx) {
+    this.printLeadingComments(stmt, ctx);
+    ctx.print(stmt, `function ${stmt.name}(`);
+    this.visitParams(stmt.params, ctx);
+    ctx.println(stmt, `)`);
+    stmt.type?.visitType(this, ctx);
+    ctx.println(stmt, ` {`);
+    ctx.incIndent();
+    this.visitAllStatements(stmt.statements, ctx);
+    ctx.decIndent();
+    ctx.println(stmt, `}`);
   }
   visitUnaryOperatorExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3668,7 +3696,6 @@ class AbstractEmitterVisitor {
     ctx.print(ast, opStr);
     ast.expr.visitExpression(this, ctx);
     if (parens) ctx.print(ast, `)`);
-    return null;
   }
   visitBinaryOperatorExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3682,14 +3709,12 @@ class AbstractEmitterVisitor {
     ctx.print(ast, ` ${operator} `);
     ast.rhs.visitExpression(this, ctx);
     if (parens) ctx.print(ast, `)`);
-    return null;
   }
   visitReadPropExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ast.receiver.visitExpression(this, ctx);
     ctx.print(ast, `.`);
     ctx.print(ast, ast.name);
-    return null;
   }
   visitReadKeyExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3697,14 +3722,12 @@ class AbstractEmitterVisitor {
     ctx.print(ast, `[`);
     ast.index.visitExpression(this, ctx);
     ctx.print(ast, `]`);
-    return null;
   }
   visitLiteralArrayExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, `[`);
-    this.visitAllExpressions(ast.entries, ctx, ',');
+    this.visitAllExpressions(ast.entries, ctx, ', ');
     ctx.print(ast, `]`);
-    return null;
   }
   visitLiteralMapExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3714,19 +3737,17 @@ class AbstractEmitterVisitor {
         ctx.print(ast, '...');
         entry.expression.visitExpression(this, ctx);
       } else {
-        ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
+        ctx.print(ast, `${escapeIdentifier(entry.key, entry.quoted)}: `);
         entry.value.visitExpression(this, ctx);
       }
-    }, ast.entries, ctx, ',');
+    }, ast.entries, ctx, ', ');
     ctx.print(ast, `}`);
-    return null;
   }
   visitCommaExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, '(');
-    this.visitAllExpressions(ast.parts, ctx, ',');
+    this.visitAllExpressions(ast.parts, ctx, ', ');
     ctx.print(ast, ')');
-    return null;
   }
   visitParenthesizedExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
@@ -3736,6 +3757,72 @@ class AbstractEmitterVisitor {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, '...');
     ast.expression.visitExpression(this, ctx);
+  }
+  visitBuiltinType(type, ctx) {
+    if (!this.printTypes) {
+      return;
+    }
+    switch (type.name) {
+      case BuiltinTypeName.Bool:
+        ctx.print(null, ': boolean');
+        break;
+      case BuiltinTypeName.Dynamic:
+        ctx.print(null, ': any');
+        break;
+      case BuiltinTypeName.Int:
+      case BuiltinTypeName.Number:
+        ctx.print(null, ': number');
+        break;
+      case BuiltinTypeName.String:
+        ctx.print(null, ': string');
+        break;
+      case BuiltinTypeName.None:
+        ctx.print(null, ': void');
+        break;
+      case BuiltinTypeName.Inferred:
+        break;
+      case BuiltinTypeName.Function:
+        ctx.print(null, ': Function');
+        break;
+      default:
+        ctx.print(null, ': any');
+        break;
+    }
+  }
+  visitExpressionType(type, ctx) {
+    if (!this.printTypes) {
+      return;
+    }
+    ctx.print(null, ': ');
+    type.value.visitExpression(this, ctx);
+    if (type.typeParams && type.typeParams.length > 0) {
+      ctx.print(null, '<');
+      this.visitAllObjects(param => param.visitType(this, ctx), type.typeParams, ctx, ',');
+      ctx.print(null, '>');
+    }
+  }
+  visitArrayType(type, ctx) {
+    if (!this.printTypes) {
+      return;
+    }
+    ctx.print(null, ': ');
+    type.of.visitType(this, ctx);
+    ctx.print(null, '[]');
+  }
+  visitMapType(type, ctx) {
+    if (!this.printTypes) {
+      return;
+    }
+    ctx.print(null, ': { [key: string]: ');
+    if (type.valueType) {
+      type.valueType.visitType(this, ctx);
+    } else {
+      ctx.print(null, 'any');
+    }
+    ctx.print(null, '}');
+  }
+  visitTransplantedType(type, ctx) {
+    throw new Error('TransplantedType nodes are not supported');
   }
   visitAllExpressions(expressions, ctx, separator) {
     this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
@@ -3765,15 +3852,39 @@ class AbstractEmitterVisitor {
   visitAllStatements(statements, ctx) {
     statements.forEach(stmt => stmt.visitStatement(this, ctx));
   }
+  visitParams(params, ctx) {
+    this.visitAllObjects(param => {
+      ctx.print(null, param.name);
+      param.type?.visitType(this, ctx);
+    }, params, ctx, ', ');
+  }
+  shouldParenthesize(expression, containingExpression) {
+    return ((expression instanceof ArrowFunctionExpr$1 || expression instanceof FunctionExpr) && containingExpression instanceof InvokeFunctionExpr || expression instanceof LiteralMapExpr && containingExpression instanceof ArrowFunctionExpr$1
+    );
+  }
+  printLeadingComments(node, ctx) {
+    if (!this.printComments || node.leadingComments === undefined) {
+      return;
+    }
+    for (const comment of node.leadingComments) {
+      if (comment instanceof JSDocComment) {
+        ctx.print(node, `/*${comment.toString()}*/`, comment.trailingNewline);
+      } else {
+        if (comment.multiline) {
+          ctx.print(node, `/* ${comment.text} */`, comment.trailingNewline);
+        } else {
+          comment.text.split('\n').forEach(line => ctx.println(node, `// ${line}`));
+        }
+      }
+    }
+  }
 }
-function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
+function escapeIdentifier(input, alwaysQuote = true) {
   if (input == null) {
     return null;
   }
-  const body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
-    if (match[0] == '$') {
-      return escapeDollar ? '\\$' : '$';
-    } else if (match[0] == '\n') {
+  const body = input.replace(SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
+    if (match[0] == '\n') {
       return '\\n';
     } else if (match[0] == '\r') {
       return '\\r';
@@ -3781,15 +3892,8 @@ function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
       return `\\${match[0]}`;
     }
   });
-  const requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
+  const requiresQuotes = alwaysQuote || !LEGAL_IDENTIFIER_RE.test(body);
   return requiresQuotes ? `'${body}'` : body;
-}
-function _createIndent(count) {
-  let res = '';
-  for (let i = 0; i < count; i++) {
-    res += _INDENT_WITH;
-  }
-  return res;
 }
 
 function typeWithParameters(type, numParams) {
@@ -3803,7 +3907,7 @@ function typeWithParameters(type, numParams) {
   return expressionType(type, undefined, params);
 }
 function getSafePropertyAccessString(accessor, name) {
-  const escapedName = escapeIdentifier(name, false, false);
+  const escapedName = escapeIdentifier(name, false);
   return escapedName !== name ? `${accessor}[${escapedName}]` : `${accessor}.${name}`;
 }
 function jitOnlyGuardedExpression(expr) {
@@ -3867,6 +3971,7 @@ function compileFactoryFunction(meta) {
   let baseFactoryVar = null;
   const typeForCtor = !isDelegatedFactoryMetadata(meta) ? new BinaryOperatorExpr(BinaryOperator.Or, t, meta.type.value) : t;
   let ctorExpr = null;
+  const factoryComments = meta.deps !== null && meta.deps !== 'invalid' && meta.deps.length > 0 ? [tsIgnoreComment()] : undefined;
   if (meta.deps !== null) {
     if (meta.deps !== 'invalid') {
       ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.target));
@@ -3880,8 +3985,8 @@ function compileFactoryFunction(meta) {
   function makeConditionalFactory(nonCtorExpr) {
     const r = variable('__ngConditionalFactory__');
     body.push(new DeclareVarStmt(r.name, NULL_EXPR, DYNAMIC_TYPE));
-    const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt() : importExpr(Identifiers.invalidFactory).callFn([]).toStmt();
-    body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
+    const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt(factoryComments) : importExpr(Identifiers.invalidFactory).callFn([]).toStmt();
+    body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt([tsIgnoreComment()])]));
     return r;
   }
   if (isDelegatedFactoryMetadata(meta)) {
@@ -3900,7 +4005,7 @@ function compileFactoryFunction(meta) {
     const baseFactory = new BinaryOperatorExpr(BinaryOperator.Or, baseFactoryVar, baseFactoryVar.set(getInheritedFactoryCall));
     body.push(new ReturnStatement(baseFactory.callFn([typeForCtor])));
   } else {
-    body.push(new ReturnStatement(retExpr));
+    body.push(new ReturnStatement(retExpr, null, factoryComments));
   }
   let factoryFn = fn([new FnParam(t.name, DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
   if (baseFactoryVar !== null) {
@@ -6440,7 +6545,7 @@ function sanitizeIdentifier(name) {
 const makeTemplateObjectPolyfill = '(this&&this.__makeTemplateObject||function(e,t){return Object.defineProperty?Object.defineProperty(e,"raw",{value:t}):e.raw=t,e})';
 class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
   constructor() {
-    super(false);
+    super(false, false);
   }
   visitWrappedNodeExpr(ast, ctx) {
     throw new Error('Cannot emit a WrappedNodeExpr in Javascript.');
@@ -6452,20 +6557,18 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
       stmt.value.visitExpression(this, ctx);
     }
     ctx.println(stmt, `;`);
-    return null;
   }
   visitTaggedTemplateLiteralExpr(ast, ctx) {
     const elements = ast.template.elements;
     ast.tag.visitExpression(this, ctx);
     ctx.print(ast, `(${makeTemplateObjectPolyfill}(`);
-    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.text, false)).join(', ')}], `);
-    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.rawText, false)).join(', ')}])`);
+    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.text)).join(', ')}], `);
+    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.rawText)).join(', ')}])`);
     ast.template.expressions.forEach(expression => {
       ctx.print(ast, ', ');
       expression.visitExpression(this, ctx);
     });
     ctx.print(ast, ')');
-    return null;
   }
   visitTemplateLiteralExpr(expr, ctx) {
     ctx.print(expr, '`');
@@ -6482,49 +6585,6 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
   }
   visitTemplateLiteralElementExpr(expr, ctx) {
     ctx.print(expr, expr.rawText);
-    return null;
-  }
-  visitFunctionExpr(ast, ctx) {
-    ctx.print(ast, `function${ast.name ? ' ' + ast.name : ''}(`);
-    this._visitParams(ast.params, ctx);
-    ctx.println(ast, `) {`);
-    ctx.incIndent();
-    this.visitAllStatements(ast.statements, ctx);
-    ctx.decIndent();
-    ctx.print(ast, `}`);
-    return null;
-  }
-  visitArrowFunctionExpr(ast, ctx) {
-    ctx.print(ast, '(');
-    this._visitParams(ast.params, ctx);
-    ctx.print(ast, ') =>');
-    if (Array.isArray(ast.body)) {
-      ctx.println(ast, `{`);
-      ctx.incIndent();
-      this.visitAllStatements(ast.body, ctx);
-      ctx.decIndent();
-      ctx.print(ast, `}`);
-    } else {
-      const isObjectLiteral = ast.body instanceof LiteralMapExpr;
-      if (isObjectLiteral) {
-        ctx.print(ast, '(');
-      }
-      ast.body.visitExpression(this, ctx);
-      if (isObjectLiteral) {
-        ctx.print(ast, ')');
-      }
-    }
-    return null;
-  }
-  visitDeclareFunctionStmt(stmt, ctx) {
-    ctx.print(stmt, `function ${stmt.name}(`);
-    this._visitParams(stmt.params, ctx);
-    ctx.println(stmt, `) {`);
-    ctx.incIndent();
-    this.visitAllStatements(stmt.statements, ctx);
-    ctx.decIndent();
-    ctx.println(stmt, `}`);
-    return null;
   }
   visitLocalizedString(ast, ctx) {
     ctx.print(ast, `$localize(${makeTemplateObjectPolyfill}(`);
@@ -6532,17 +6592,13 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
     for (let i = 1; i < ast.messageParts.length; i++) {
       parts.push(ast.serializeI18nTemplatePart(i));
     }
-    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.cooked, false)).join(', ')}], `);
-    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.raw, false)).join(', ')}])`);
+    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.cooked)).join(', ')}], `);
+    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.raw)).join(', ')}])`);
     ast.expressions.forEach(expression => {
       ctx.print(ast, ', ');
       expression.visitExpression(this, ctx);
     });
     ctx.print(ast, ')');
-    return null;
-  }
-  _visitParams(params, ctx) {
-    this.visitAllObjects(param => ctx.print(null, param.name), params, ctx, ',');
   }
 }
 
@@ -28558,7 +28614,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28576,7 +28632,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28649,7 +28705,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -28991,7 +29047,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29017,7 +29073,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29058,7 +29114,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29085,7 +29141,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29123,7 +29179,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.3+sha-890c973'));
+  definitionMap.set('version', literal('22.0.0-next.3+sha-f02be58'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29197,9 +29253,9 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.3+sha-890c973');
+const VERSION = new Version('22.0.0-next.3+sha-f02be58');
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
