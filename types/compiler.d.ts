@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.4+sha-0eeb1b5
+ * @license Angular v22.0.0-next.4+sha-ee8d209
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3795,7 +3795,8 @@ declare class SwitchBlockCaseGroup extends BlockNode implements Node {
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class SwitchExhaustiveCheck extends BlockNode implements Node {
-    constructor(sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
+    expression: AST | null;
+    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class ForLoopBlock extends BlockNode implements Node {
