@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.7+sha-d715c36-with-local-changes
+ * @license Angular v21.2.7+sha-e40d378-with-local-changes
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5415,15 +5415,9 @@ declare function compileDirectiveFromMetadata(meta: R3DirectiveMetadata, constan
  */
 declare function compileComponentFromMetadata(meta: R3ComponentMetadata<R3TemplateDependency>, constantPool: ConstantPool, bindingParser: BindingParser): R3CompiledExpression;
 interface ParsedHostBindings {
-    attributes: {
-        [key: string]: Expression;
-    };
-    listeners: {
-        [key: string]: string;
-    };
-    properties: {
-        [key: string]: string;
-    };
+    attributes: Record<string, Expression>;
+    listeners: Record<string, string>;
+    properties: Record<string, string>;
     specialAttributes: {
         styleAttr?: string;
         classAttr?: string;
