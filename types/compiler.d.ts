@@ -1,5 +1,5 @@
 /**
- * @license Angular v21.2.7+sha-e40d378-with-local-changes
+ * @license Angular v21.2.7+sha-c9f8f3a-with-local-changes
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3034,6 +3034,118 @@ declare class HtmlTagDefinition implements TagDefinition {
 }
 declare function getHtmlTagDefinition(tagName: string): HtmlTagDefinition;
 
+/**
+ * The name of a class property that backs an input or output declared by a directive or component.
+ *
+ * This type exists for documentation only.
+ */
+type ClassPropertyName = string;
+/**
+ * The name by which an input or output of a directive or component is bound in an Angular template.
+ *
+ * This type exists for documentation only.
+ */
+type BindingPropertyName = string;
+/**
+ * An input or output of a directive that has both a named JavaScript class property on a component
+ * or directive class, as well as an Angular template property name used for binding.
+ */
+interface InputOrOutput {
+    /**
+     * The name of the JavaScript property on the component or directive instance for this input or
+     * output.
+     */
+    readonly classPropertyName: ClassPropertyName;
+    /**
+     * The property name used to bind this input or output in an Angular template.
+     */
+    readonly bindingPropertyName: BindingPropertyName;
+    /** Whether the input or output is signal based. */
+    readonly isSignal: boolean;
+}
+/**
+ * A mapping of component property and template binding property names, for example containing the
+ * inputs of a particular directive or component.
+ *
+ * A single component property has exactly one input/output annotation (and therefore one binding
+ * property name) associated with it, but the same binding property name may be shared across many
+ * component property names.
+ *
+ * Allows bidirectional querying of the mapping - looking up all inputs/outputs with a given
+ * property name, or mapping from a specific class property to its binding property name.
+ */
+declare class ClassPropertyMapping<T extends InputOrOutput = InputOrOutput> {
+    /**
+     * Mapping from class property names to the single `InputOrOutput` for that class property.
+     */
+    private forwardMap;
+    /**
+     * Mapping from property names to one or more `InputOrOutput`s which share that name.
+     */
+    private reverseMap;
+    private constructor();
+    /**
+     * Construct a `ClassPropertyMapping` with no entries.
+     */
+    static empty<T extends InputOrOutput>(): ClassPropertyMapping<T>;
+    /**
+     * Construct a `ClassPropertyMapping` from a primitive JS object which maps class property names
+     * to either binding property names or an array that contains both names, which is used in on-disk
+     * metadata formats (e.g. in .d.ts files).
+     */
+    static fromMappedObject<T extends InputOrOutput>(obj: {
+        [classPropertyName: string]: BindingPropertyName | T;
+    }): ClassPropertyMapping<T>;
+    /**
+     * Merge two mappings into one, with class properties from `b` taking precedence over class
+     * properties from `a`.
+     */
+    static merge<T extends InputOrOutput>(a: ClassPropertyMapping<T>, b: ClassPropertyMapping<T>): ClassPropertyMapping<T>;
+    /**
+     * All class property names mapped in this mapping.
+     */
+    get classPropertyNames(): ClassPropertyName[];
+    /**
+     * All binding property names mapped in this mapping.
+     */
+    get propertyNames(): BindingPropertyName[];
+    /**
+     * Check whether a mapping for the given property name exists.
+     */
+    hasBindingPropertyName(propertyName: BindingPropertyName): boolean;
+    /**
+     * Lookup all `InputOrOutput`s that use this `propertyName`.
+     */
+    getByBindingPropertyName(propertyName: string): ReadonlyArray<T> | null;
+    /**
+     * Lookup the `InputOrOutput` associated with a `classPropertyName`.
+     */
+    getByClassPropertyName(classPropertyName: string): T | null;
+    /**
+     * Convert this mapping to a primitive JS object which maps each class property directly to the
+     * binding property name associated with it.
+     */
+    toDirectMappedObject(): {
+        [classPropertyName: string]: BindingPropertyName;
+    };
+    /**
+     * Convert this mapping to a primitive JS object which maps each class property either to itself
+     * (for cases where the binding property name is the same) or to an array which contains both
+     * names if they differ.
+     *
+     * This object format is used when mappings are serialized (for example into .d.ts files).
+     * @param transform Function used to transform the values of the generated map.
+     */
+    toJointMappedObject<O = T>(transform: (value: T) => O): {
+        [classPropertyName: string]: O;
+    };
+    /**
+     * Implement the iterator protocol and return entry objects which contain the class and binding
+     * property names (and are useful for destructuring).
+     */
+    [Symbol.iterator](): IterableIterator<T>;
+}
+
 declare class XmlParser extends Parser$1 {
     constructor();
     parse(source: string, url: string, options?: TokenizeOptions): ParseTreeResult;
@@ -5472,15 +5584,6 @@ interface Target<DirectiveT> {
     };
 }
 /**
- * A data structure which can indicate whether a given property name is present or not.
- *
- * This is used to represent the set of inputs or outputs present on a directive, and allows the
- * binder to query for the presence of a mapping for property names.
- */
-interface InputOutputPropertySet {
-    hasBindingPropertyName(propertyName: string): boolean;
-}
-/**
  * A data structure which captures the animation trigger names that are statically resolvable
  * and whether some names could not be statically evaluated.
  */
@@ -5497,6 +5600,11 @@ interface DirectiveMeta {
      * Name of the directive class (used for debugging).
      */
     name: string;
+    /** Reference to the directive declaration site. */
+    ref: {
+        /** Key that uniquely identifies the reference. */
+        key: string;
+    };
     /** The selector for the directive or `null` if there isn't one. */
     selector: string | null;
     /**
@@ -5508,13 +5616,13 @@ interface DirectiveMeta {
      *
      * Goes from property names to field names.
      */
-    inputs: InputOutputPropertySet;
+    inputs: ClassPropertyMapping;
     /**
      * Set of outputs which this directive claims.
      *
      * Goes from property names to field names.
      */
-    outputs: InputOutputPropertySet;
+    outputs: ClassPropertyMapping;
     /**
      * Name under which the directive is exported, if any (exportAs in Angular).
      *
@@ -5538,6 +5646,17 @@ interface DirectiveMeta {
      * Only includes the legacy animation names.
      */
     animationTriggerNames: LegacyAnimationTriggerNames | null;
+    /** Tracks how the directive was matched. */
+    matchSource: MatchSource;
+}
+/**
+ * Possible ways that a directive can be matched.
+ */
+declare enum MatchSource {
+    /** The directive was matched by its selector. */
+    Selector = 0,
+    /** The directive was applied as a host directive. */
+    HostDirective = 1
 }
 /**
  * Interface to the binding API, which processes a template and returns an object similar to the
@@ -5847,5 +5966,5 @@ declare const enum QueryFlags {
  */
 declare function setEnableTemplateSourceLocations(value: boolean): void;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
-export type { ArrowFunctionParameter, AssignmentOperation, AstVisitor, BoundTarget, CompileClassMetadataFn, CompileIdentifierMetadata, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, ExpressionVisitor, InputOutputPropertySet, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LexerRange, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MaybeForwardRefExpression, Node$1 as Node, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, StatementVisitor, TagDefinition, Target, TargetBinder, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeVisitor, Visitor$1 as Visitor };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
+export type { ArrowFunctionParameter, AssignmentOperation, AstVisitor, BindingPropertyName, BoundTarget, ClassPropertyName, CompileClassMetadataFn, CompileIdentifierMetadata, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, ExpressionVisitor, InputOrOutput, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LexerRange, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MaybeForwardRefExpression, Node$1 as Node, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, StatementVisitor, TagDefinition, Target, TargetBinder, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeVisitor, Visitor$1 as Visitor };
