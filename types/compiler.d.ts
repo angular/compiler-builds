@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.7+sha-8b4581d
+ * @license Angular v22.0.0-next.7+sha-281a2db
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6035,5 +6035,606 @@ declare const enum QueryFlags {
  */
 declare function setEnableTemplateSourceLocations(value: boolean): void;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
-export type { ArrowFunctionParameter, AssignmentOperation, AstVisitor, BindingPropertyName, BoundTarget, ClassPropertyName, CompileClassMetadataFn, CompileIdentifierMetadata, ConflictingHostDirectiveBinding, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, ExpressionVisitor, InputOrOutput, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LexerRange, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MaybeForwardRefExpression, Node$1 as Node, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, StatementVisitor, TagDefinition, Target, TargetBinder, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeVisitor, Visitor$1 as Visitor };
+/** Used to identify what type the comment is. */
+declare enum CommentTriviaType {
+    DIAGNOSTIC = "D",
+    EXPRESSION_TYPE_IDENTIFIER = "T"
+}
+/** Identifies what the TCB expression is for (for example, a directive declaration). */
+declare enum ExpressionIdentifier {
+    DIRECTIVE = "DIR",
+    HOST_DIRECTIVE = "HOSTDIR",
+    COMPONENT_COMPLETION = "COMPCOMP",
+    EVENT_PARAMETER = "EP",
+    VARIABLE_AS_EXPRESSION = "VAE"
+}
+
+/** Represents an expression generated within a type check block. */
+declare class TcbExpr {
+    private source;
+    /** Text for the content containing the expression's location information. */
+    private spanComment;
+    /** Text for the content containing the expression's identifier. */
+    private identifierComment;
+    /**
+     * Text of the comment instructing the type checker to
+     * ignore diagnostics coming from this expression.
+     */
+    private ignoreComment;
+    constructor(source: string);
+    /** Wraps a string value in quotes and escapes relevant characters. */
+    static quoteAndEscape(value: string): string;
+    /**
+     * Converts the node's current state to a string.
+     * @param ignoreComments Whether the comments associated with the expression should be skipped.
+     */
+    print(ignoreComments?: boolean): string;
+    /**
+     * Adds a synthetic comment to the expression that represents the parse span of the provided node.
+     * This comment can later be retrieved as trivia of a node to recover original source locations.
+     * @param span Span from the parser containing the location information.
+     */
+    addParseSpanInfo(span: AbsoluteSourceSpan | ParseSourceSpan$1): this;
+    /** Marks the expression to be ignored for diagnostics. */
+    markIgnoreDiagnostics(): this;
+    /**
+     * Wraps the expression in parenthesis such that inserted
+     * span comments become attached to the proper node.
+     */
+    wrapForTypeChecker(): this;
+    /**
+     * Tags the expression with an identifier.
+     * @param identifier Identifier to apply to the expression.
+     */
+    addExpressionIdentifier(identifier: ExpressionIdentifier, id?: number): this;
+    /**
+     * `toString` implementation meant to catch errors like accidentally
+     * writing `foo ${expr} bar` instead of `foo ${expr.print()} bar`.
+     */
+    toString(): never;
+    /** Format a comment string as a TypeScript comment. */
+    private formatComment;
+}
+
+interface TypeCtorMetadata {
+    /**
+     * The name of the requested type constructor function.
+     */
+    fnName: string;
+    /**
+     * Whether to generate a body for the function or not.
+     */
+    body: boolean;
+    /**
+     * Input, output, and query field names in the type which should be included as constructor input.
+     */
+    fields: {
+        inputs: ClassPropertyMapping<TcbInputMapping>;
+    };
+    /**
+     * `Set` of field names which have type coercion enabled.
+     */
+    coercedInputFields: Set<string>;
+}
+interface TcbReferenceMetadata {
+    /** The name of the class */
+    readonly name: string;
+    /** The module path where the symbol is located, or null if local/ambient */
+    readonly moduleName: string | null;
+    /** True if the symbol successfully emitted locally (no external import required) */
+    readonly isLocal: boolean;
+    /** If the reference could not be externally emitted, this string holds the diagnostic reason why */
+    readonly unexportedDiagnostic: string | null;
+    /** Key used to uniquely identify the target of this reference. */
+    readonly key: TcbReferenceKey;
+    /**
+     * Defines the `AbsoluteSourceSpan` of the target's node name, if available.
+     */
+    readonly nodeNameSpan?: AbsoluteSourceSpan;
+    /**
+     * The absolute path to the file containing the reference node, if available.
+     */
+    readonly nodeFilePath?: string;
+}
+type TcbReferenceKey = string & {
+    __brand: 'TcbReferenceKey';
+};
+interface TcbTypeParameter {
+    name: string;
+    representation: string;
+    representationWithDefault: string;
+}
+type TcbInputMapping = InputOrOutput & {
+    required: boolean;
+    /**
+     * AST-free string representation of the transform type of the input, if available.
+     */
+    transformType?: string;
+};
+interface TcbPipeMetadata {
+    name: string;
+    ref: TcbReferenceMetadata;
+    isExplicitlyDeferred: boolean;
+}
+/**
+ * Metadata that describes a template guard for one of the directive's inputs.
+ */
+interface TemplateGuardMeta {
+    /**
+     * The input name that this guard should be applied to.
+     */
+    inputName: string;
+    /**
+     * Represents the type of the template guard.
+     *
+     * - 'invocation' means that a call to the template guard function is emitted so that its return
+     *   type can result in narrowing of the input type.
+     * - 'binding' means that the input binding expression itself is used as template guard.
+     */
+    type: 'invocation' | 'binding';
+}
+interface TcbDirectiveMetadata {
+    ref: TcbReferenceMetadata;
+    name: string;
+    selector: string | null;
+    isComponent: boolean;
+    isGeneric: boolean;
+    isStructural: boolean;
+    isStandalone: boolean;
+    isExplicitlyDeferred: boolean;
+    preserveWhitespaces: boolean;
+    exportAs: string[] | null;
+    matchSource: MatchSource;
+    /** Type parameters of the directive, if available. */
+    typeParameters: TcbTypeParameter[] | null;
+    inputs: ClassPropertyMapping<TcbInputMapping>;
+    outputs: ClassPropertyMapping;
+    requiresInlineTypeCtor: boolean;
+    ngTemplateGuards: TemplateGuardMeta[];
+    hasNgTemplateContextGuard: boolean;
+    hasNgFieldDirective: boolean;
+    coercedInputFields: Set<ClassPropertyName>;
+    restrictedInputFields: Set<ClassPropertyName>;
+    stringLiteralInputFields: Set<ClassPropertyName>;
+    undeclaredInputFields: Set<ClassPropertyName>;
+    publicMethods: Set<string>;
+    ngContentSelectors: string[] | null;
+    animationTriggerNames: LegacyAnimationTriggerNames | null;
+}
+interface TcbComponentMetadata {
+    ref: TcbReferenceMetadata;
+    typeParameters: TcbTypeParameter[] | null;
+    typeArguments: string[] | null;
+}
+interface TcbTypeCheckBlockMetadata {
+    id: TypeCheckId;
+    boundTarget: BoundTarget<TcbDirectiveMetadata>;
+    pipes: Map<string, TcbPipeMetadata> | null;
+    schemas: SchemaMetadata[];
+    isStandalone: boolean;
+    preserveWhitespaces: boolean;
+}
+type TypeCheckId = string & {
+    __brand: 'TypeCheckId';
+};
+/**
+ * Interface representing the environment needed for TCB generation.
+ * This allows us to avoid depending on the full `Environment` class from `compiler-cli`
+ * which depends on TypeScript APIs.
+ */
+interface TcbEnvironment {
+    config: TypeCheckingConfig;
+    referenceTcbValue(ref: TcbReferenceMetadata): TcbExpr;
+    referenceExternalSymbol(moduleName: string, name: string): TcbExpr;
+    pipeInst(pipeMeta: TcbPipeMetadata): TcbExpr;
+    typeCtorFor(dir: TcbDirectiveMetadata): TcbExpr;
+    getPreludeStatements(): TcbExpr[];
+}
+interface TypeCheckingConfig {
+    /**
+     * Whether to check the left-hand side type of binding operations.
+     */
+    checkTypeOfInputBindings: boolean;
+    /**
+     * Whether to honor the access modifiers on input bindings for the component/directive.
+     */
+    honorAccessModifiersForInputBindings: boolean;
+    /**
+     * Whether to use strict null types for input bindings for directives.
+     */
+    strictNullInputBindings: boolean;
+    /**
+     * Whether to check text attributes that happen to be consumed by a directive or component.
+     */
+    checkTypeOfAttributes: boolean;
+    /**
+     * Whether to check the left-hand side type of binding operations to DOM properties.
+     */
+    checkTypeOfDomBindings: boolean;
+    /**
+     * Whether to infer the type of the `$event` variable in event bindings for directive outputs or
+     * animation events.
+     */
+    checkTypeOfOutputEvents: boolean;
+    /**
+     * Whether to infer the type of the `$event` variable in event bindings for animations.
+     */
+    checkTypeOfAnimationEvents: boolean;
+    /**
+     * Whether to infer the type of the `$event` variable in event bindings to DOM events.
+     */
+    checkTypeOfDomEvents: boolean;
+    /**
+     * Whether to infer the type of local references to DOM elements.
+     */
+    checkTypeOfDomReferences: boolean;
+    /**
+     * Whether to infer the type of local references.
+     */
+    checkTypeOfNonDomReferences: boolean;
+    /**
+     * Whether to adjust the output of the TCB to ensure compatibility with the `TemplateTypeChecker`.
+     */
+    enableTemplateTypeChecker: boolean;
+    /**
+     * Whether to include type information from pipes in the type-checking operation.
+     */
+    checkTypeOfPipes: boolean;
+    /**
+     * Whether to narrow the types of template contexts.
+     */
+    applyTemplateContextGuards: boolean;
+    /**
+     * Whether to use a strict type for null-safe navigation operations.
+     */
+    strictSafeNavigationTypes: boolean;
+    /**
+     * Whether to descend into template bodies and check any bindings there.
+     */
+    checkTemplateBodies: boolean;
+    /**
+     * Whether to always apply DOM schema checks in template bodies, independently of the
+     * `checkTemplateBodies` setting.
+     */
+    alwaysCheckSchemaInTemplateBodies: boolean;
+    /**
+     * Whether to check resolvable queries.
+     */
+    checkQueries: false;
+    /**
+     * Whether to check if control flow syntax will prevent a node from being projected.
+     */
+    controlFlowPreventingContentProjection: 'error' | 'warning' | 'suppress';
+    /**
+     * Whether to check if `@Component.imports` contains unused symbols.
+     */
+    unusedStandaloneImports: 'error' | 'warning' | 'suppress';
+    /**
+     * Whether to use any generic types of the context component.
+     */
+    useContextGenericType: boolean;
+    /**
+     * Whether or not to infer types for object and array literals in the template.
+     */
+    strictLiteralTypes: boolean;
+    /**
+     * Whether to use inline type constructors.
+     */
+    useInlineTypeConstructors: boolean;
+    /**
+     * Whether the type of two-way bindings should be widened to allow `WritableSignal`.
+     */
+    allowSignalsInTwoWayBindings: boolean;
+    /**
+     * Whether the type of DOM events should be asserted with '@angular/core' 'ɵassertType'.
+     */
+    allowDomEventAssertion: boolean;
+    /**
+     * Whether to descend into the bodies of control flow blocks (`@if`, `@switch` and `@for`).
+     */
+    checkControlFlowBodies: boolean;
+    /**
+     * Whether the event side of a two-way binding should be type checked.
+     */
+    checkTwoWayBoundEvents: boolean;
+}
+
+/**
+ * Comment attached to an AST node that serves as a guard to distinguish nodes
+ * used for type checking host bindings from ones used for templates.
+ */
+declare const HOST_BINDING_GUARD_COMMENT_TEXT = "hostBindingsBlockGuard";
+/** Represents information extracted from the source AST. */
+type SourceNode = StaticSourceNode | {
+    kind: 'unspecified';
+    sourceSpan: ParseSourceSpan$1;
+};
+/** A `SourceNode` which represents a static expression. */
+interface StaticSourceNode {
+    kind: 'string' | 'identifier';
+    /** Raw source code of the node (e.g. strings include the quotes). */
+    source: string;
+    /** Actual text of the node (e.g. value inside the quotes in strings). */
+    text: string;
+    /** Location information about the node. */
+    sourceSpan: ParseSourceSpan$1;
+}
+/** A single binding inside the `host` object of a directive. */
+interface HostObjectLiteralBinding {
+    /** Node representing the key of the binding. */
+    key: SourceNode;
+    /** Node representing the value of the binding. */
+    value: SourceNode;
+    /** Location information about the entire binding. */
+    sourceSpan: ParseSourceSpan$1;
+}
+/** A single binding declared by a `@HostListener` decorator on a class member. */
+interface HostListenerDecorator {
+    /** Node declaring the name of the event (e.g. first argument of `@HostListener`). */
+    eventName: SourceNode | null;
+    /** Node representing the name of the member that was decorated. */
+    memberName: StaticSourceNode;
+    /** Location information about the member that the decorator is set on. */
+    memberSpan: ParseSourceSpan$1;
+    /** Arguments passed to the event. */
+    arguments: SourceNode[];
+    /** Location information about the decorator. */
+    decoratorSpan: ParseSourceSpan$1;
+}
+/** A single binding declared by the `@HostBinding` decorator on a class member. */
+interface HostBindingDecorator {
+    /** Node representing the name of the member that was decorated. */
+    memberName: StaticSourceNode;
+    /** Location information about the member that the decorator is set on. */
+    memberSpan: ParseSourceSpan$1;
+    /** Arguments passed into the decorator */
+    arguments: SourceNode[];
+    /** Location information about the decorator. */
+    decoratorSpan: ParseSourceSpan$1;
+}
+/**
+ * Creates an AST node that represents the host element of a directive.
+ * Can return null if there are no valid bindings to be checked.
+ * @param meta Metadata used to construct the host element.
+ */
+declare function createHostElement(type: 'component' | 'directive', selector: string | null, nameSpan: ParseSourceSpan$1, hostObjectLiteralBindings: HostObjectLiteralBinding[], hostBindingDecorators: HostBindingDecorator[], hostListenerDecorators: HostListenerDecorator[]): HostElement | null;
+/**
+ * Creates an AST node that can be used as a guard in `if` statements to distinguish TypeScript
+ * nodes used for checking host bindings from ones used for checking templates.
+ */
+declare function createHostBindingsBlockGuard(): string;
+
+/** Categories of diagnostics that can be reported by a `OutOfBandDiagnosticRecorder`. */
+declare enum OutOfBandDiagnosticCategory {
+    Error = 0,
+    Warning = 1
+}
+/**
+ * Collects diagnostics on problems which occur in the template which aren't directly sourced
+ * from type check blocks.
+ *
+ * During the creation of a type check block, the template is traversed and the
+ * `OutOfBandDiagnosticRecorder` is called to record cases when a correct interpretation for the
+ * template cannot be found. These operations create diagnostics which are stored by the
+ * recorder for later display.
+ */
+interface OutOfBandDiagnosticRecorder<T> {
+    readonly diagnostics: ReadonlyArray<T>;
+    /**
+     * Reports a `#ref="target"` expression in the template for which a target directive could not be
+     * found.
+     *
+     * @param id the type-checking ID of the template which contains the broken reference.
+     * @param ref the `Reference` which could not be matched to a directive.
+     */
+    missingReferenceTarget(id: TypeCheckId, ref: Reference): void;
+    /**
+     * Reports usage of a `| pipe` expression in the template for which the named pipe could not be
+     * found.
+     *
+     * @param id the type-checking ID of the template which contains the unknown pipe.
+     * @param ast the `BindingPipe` invocation of the pipe which could not be found.
+     * @param isStandalone whether the host component is standalone.
+     */
+    missingPipe(id: TypeCheckId, ast: BindingPipe, isStandalone: boolean): void;
+    /**
+     * Reports usage of a pipe imported via `@Component.deferredImports` outside
+     * of a `@defer` block in a template.
+     *
+     * @param id the type-checking ID of the template which contains the unknown pipe.
+     * @param ast the `BindingPipe` invocation of the pipe which could not be found.
+     */
+    deferredPipeUsedEagerly(id: TypeCheckId, ast: BindingPipe): void;
+    /**
+     * Reports usage of a component/directive imported via `@Component.deferredImports` outside
+     * of a `@defer` block in a template.
+     *
+     * @param id the type-checking ID of the template which contains the unknown pipe.
+     * @param element the element which hosts a component that was defer-loaded.
+     */
+    deferredComponentUsedEagerly(id: TypeCheckId, element: Element): void;
+    /**
+     * Reports a duplicate declaration of a template variable.
+     *
+     * @param id the type-checking ID of the template which contains the duplicate
+     * declaration.
+     * @param variable the `Variable` which duplicates a previously declared variable.
+     * @param firstDecl the first variable declaration which uses the same name as `variable`.
+     */
+    duplicateTemplateVar(id: TypeCheckId, variable: Variable, firstDecl: Variable): void;
+    /**
+     * Report a warning when structural directives support context guards, but the current
+     * type-checking configuration prohibits their usage.
+     */
+    suboptimalTypeInference(id: TypeCheckId, variables: Variable[]): void;
+    /**
+     * Reports a split two way binding error message.
+     */
+    splitTwoWayBinding(id: TypeCheckId, input: BoundAttribute, output: BoundEvent, inputConsumer: Pick<TcbDirectiveMetadata, 'name' | 'isComponent' | 'ref'>, outputConsumer: Pick<TcbDirectiveMetadata, 'name' | 'isComponent' | 'ref'> | Element): void;
+    /** Reports required inputs that haven't been bound. */
+    missingRequiredInputs(id: TypeCheckId, element: Element | Template | Component | Directive, directiveName: string, isComponent: boolean, inputAliases: string[]): void;
+    /**
+     * Reports accesses of properties that aren't available in a `for` block's tracking expression.
+     */
+    illegalForLoopTrackAccess(id: TypeCheckId, block: ForLoopBlock, access: PropertyRead): void;
+    /**
+     * Reports deferred triggers that cannot access the element they're referring to.
+     */
+    inaccessibleDeferredTriggerElement(id: TypeCheckId, trigger: HoverDeferredTrigger | InteractionDeferredTrigger | ViewportDeferredTrigger): void;
+    /**
+     * Reports cases where control flow nodes prevent content projection.
+     */
+    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty, preservesWhitespaces: boolean): void;
+    /** Reports cases where users are writing to `@let` declarations. */
+    illegalWriteToLetDeclaration(id: TypeCheckId, node: AST, target: LetDeclaration): void;
+    /** Reports cases where users are accessing an `@let` before it is defined.. */
+    letUsedBeforeDefinition(id: TypeCheckId, node: PropertyRead, target: LetDeclaration): void;
+    /**
+     * Reports a `@let` declaration that conflicts with another symbol in the same scope.
+     *
+     * @param id the type-checking ID of the template which contains the declaration.
+     * @param current the `LetDeclaration` which is invalid.
+     */
+    conflictingDeclaration(id: TypeCheckId, current: LetDeclaration): void;
+    /**
+     * Reports that a named template dependency (e.g. `<Missing/>`) is not available.
+     * @param id Type checking ID of the template in which the dependency is declared.
+     * @param node Node that declares the dependency.
+     */
+    missingNamedTemplateDependency(id: TypeCheckId, node: Component | Directive): void;
+    /**
+     * Reports that a templace dependency of the wrong kind has been referenced at a specific position
+     * (e.g. `<SomeDirective/>`).
+     * @param id Type checking ID of the template in which the dependency is declared.
+     * @param node Node that declares the dependency.
+     */
+    incorrectTemplateDependencyType(id: TypeCheckId, node: Component | Directive): void;
+    /**
+     * Reports a binding inside directive syntax that does not match any of the inputs/outputs of
+     * the directive.
+     * @param id Type checking ID of the template in which the directive was defined.
+     * @param directive Directive that contains the binding.
+     * @param node Node declaring the binding.
+     */
+    unclaimedDirectiveBinding(id: TypeCheckId, directive: Directive, node: BoundAttribute | TextAttribute | BoundEvent): void;
+    /**
+     * Reports that an implicit deferred trigger is set on a block that does not have a placeholder.
+     */
+    deferImplicitTriggerMissingPlaceholder(id: TypeCheckId, trigger: HoverDeferredTrigger | InteractionDeferredTrigger | ViewportDeferredTrigger): void;
+    /**
+     * Reports that an implicit deferred trigger is set on a block whose placeholder is not set up
+     * correctly (e.g. more than one root node).
+     */
+    deferImplicitTriggerInvalidPlaceholder(id: TypeCheckId, trigger: HoverDeferredTrigger | InteractionDeferredTrigger | ViewportDeferredTrigger): void;
+    /**
+     * Reports an unsupported binding on a form `FormField` node.
+     */
+    formFieldUnsupportedBinding(id: TypeCheckId, node: BoundAttribute | TextAttribute): void;
+    /**
+     * Reports that multiple components in the compilation scope match a given element.
+     */
+    multipleMatchingComponents(id: TypeCheckId, element: Element, componentNames: string[]): void;
+    /**
+     * Reports that a host directive input/output has been exposed under multiple names.
+     * @param id Type checking ID of the template in which the host directive was used.
+     * @param node Node on which the host directive was used.
+     * @param directiveName Name of the host directive.
+     * @param kind Type of the conflicting binding.
+     * @param classPropertyName Name of the class member that declares the input/output.
+     * @param aliases Aliases under which the binding is exposed.
+     */
+    conflictingHostDirectiveBinding(id: TypeCheckId, node: Element | Template | Component | Directive, directiveName: string, kind: 'input' | 'output', classPropertyName: string, aliases: string[]): void;
+}
+
+/**
+ * Checks every non-Angular element/property processed in a template and potentially produces
+ * diagnostics related to improper usage.
+ *
+ * A `DomSchemaChecker`'s job is to check DOM nodes and their attributes written used in templates
+ * and produce diagnostics if the nodes don't conform to the DOM specification. It acts as a
+ * collector for these diagnostics, and can be queried later to retrieve the list of any that have
+ * been generated.
+ */
+interface DomSchemaChecker<T> {
+    /**
+     * Get the diagnostics that have been generated via `checkElement` and `checkProperty` calls
+     * thus far.
+     */
+    readonly diagnostics: ReadonlyArray<T>;
+    /**
+     * Check a non-Angular element and record any diagnostics about it.
+     *
+     * @param id Template ID, suitable for resolution with a `TcbSourceResolver`.
+     * @param tagName Tag name of the element in question
+     * @param sourceSpanForDiagnostics Span that should be used when reporting diagnostics.
+     * @param schemas any active schemas for the template, which might affect the validity of the
+     * element.
+     * @param hostIsStandalone Indicates whether the element's host is a standalone component.
+     */
+    checkElement(id: TypeCheckId, tagName: string, sourceSpanForDiagnostics: ParseSourceSpan$1, schemas: SchemaMetadata[], hostIsStandalone: boolean): void;
+    /**
+     * Check a property binding on an element and record any diagnostics about it.
+     *
+     * @param id the type check ID, suitable for resolution with a `TcbSourceResolver`.
+     * @param tagName tag name of the element.
+     * @param name the name of the property being checked.
+     * @param span the source span of the binding. This is redundant with `element.attributes` but is
+     * passed separately to avoid having to look up the particular property name.
+     * @param schemas any active schemas for the template, which might affect the validity of the
+     * property.
+     */
+    checkTemplateElementProperty(id: string, tagName: string, name: string, span: ParseSourceSpan$1, schemas: SchemaMetadata[], hostIsStandalone: boolean): void;
+    /**
+     * Check a property binding on a host element and record any diagnostics about it.
+     * @param id the type check ID, suitable for resolution with a `TcbSourceResolver`.
+     * @param element the element node in question.
+     * @param name the name of the property being checked.
+     * @param span the source span of the binding.
+     * @param schemas any active schemas for the template, which might affect the validity of the
+     * property.
+     */
+    checkHostElementProperty(id: string, element: HostElement, name: string, span: ParseSourceSpan$1, schemas: SchemaMetadata[]): void;
+}
+
+/**
+ * Given a component and metadata, compose a "type check block" function.
+ *
+ * @param env an `TcbEnvironment` into which type-checking code will be generated.
+ * @param component metadata about the component class.
+ * @param name Name of the generated function.
+ * @param meta metadata about the component's template and the function being generated.
+ * @param domSchemaChecker used to check and record errors regarding improper usage of DOM elements
+ * and bindings.
+ * @param oobRecorder used to record errors regarding template elements which could not be correctly
+ * translated into types during TCB generation.
+ */
+declare function generateTypeCheckBlock(env: TcbEnvironment, component: TcbComponentMetadata, name: string, meta: TcbTypeCheckBlockMetadata, domSchemaChecker: DomSchemaChecker<unknown>, oobRecorder: OutOfBandDiagnosticRecorder<unknown>): string;
+
+/**
+ * Controls how generics for the component context class will be handled during TCB generation.
+ */
+declare enum TcbGenericContextBehavior {
+    /**
+     * References to generic parameter bounds will be emitted via the `TypeParameterEmitter`.
+     *
+     * The caller must verify that all parameter bounds are emittable in order to use this mode.
+     */
+    UseEmitter = 0,
+    /**
+     * Generic parameter declarations will be copied directly from the `ts.ClassDeclaration` of the
+     * component class.
+     *
+     * The caller must only use the generated TCB code in a context where such copies will still be
+     * valid, such as an inline type check block.
+     */
+    CopyClassNodes = 1,
+    /**
+     * Any generic parameters for the component context class will be set to `any`.
+     *
+     * Produces a less useful type, but is always safe to use.
+     */
+    FallbackToAny = 2
+}
+
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core_d as core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
+export type { ArrowFunctionParameter, AssignmentOperation, AstVisitor, BindingPropertyName, BoundTarget, ClassPropertyName, CompileClassMetadataFn, CompileIdentifierMetadata, ConflictingHostDirectiveBinding, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, DomSchemaChecker, ExpressionVisitor, HostBindingDecorator, HostListenerDecorator, HostObjectLiteralBinding, InputOrOutput, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LexerRange, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MaybeForwardRefExpression, Node$1 as Node, OutOfBandDiagnosticRecorder, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, SourceNode, StatementVisitor, StaticSourceNode, TagDefinition, Target, TargetBinder, TcbComponentMetadata, TcbDirectiveMetadata, TcbEnvironment, TcbInputMapping, TcbPipeMetadata, TcbReferenceKey, TcbReferenceMetadata, TcbTypeCheckBlockMetadata, TcbTypeParameter, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, TemplateGuardMeta, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeCheckId, TypeCheckingConfig, TypeCtorMetadata, TypeVisitor, Visitor$1 as Visitor };
