@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.8+sha-c326548
+ * @license Angular v21.3.0-next.0+sha-4835277
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -818,11 +818,9 @@ function areAllEquivalent(base, other) {
   return areAllEquivalentPredicate(base, other, (baseElement, otherElement) => baseElement.isEquivalent(otherElement));
 }
 class Expression {
-  leadingComments;
   type;
   sourceSpan;
-  constructor(type, sourceSpan, leadingComments) {
-    this.leadingComments = leadingComments;
+  constructor(type, sourceSpan) {
     this.type = type || null;
     this.sourceSpan = sourceSpan || null;
   }
@@ -832,13 +830,13 @@ class Expression {
   key(index, type, sourceSpan) {
     return new ReadKeyExpr(this, index, type, sourceSpan);
   }
-  callFn(params, sourceSpan, pure, leadingComments) {
-    return new InvokeFunctionExpr(this, params, null, sourceSpan, pure, leadingComments);
+  callFn(params, sourceSpan, pure) {
+    return new InvokeFunctionExpr(this, params, null, sourceSpan, pure);
   }
-  instantiate(params, type, sourceSpan, leadingComments) {
+  instantiate(params, type, sourceSpan) {
     return new InstantiateExpr(this, params, type, sourceSpan);
   }
-  conditional(trueCase, falseCase = null, sourceSpan, leadingComments) {
+  conditional(trueCase, falseCase = null, sourceSpan) {
     return new ConditionalExpr(this, trueCase, falseCase, null, sourceSpan);
   }
   equals(rhs, sourceSpan) {
@@ -901,14 +899,14 @@ class Expression {
   nullishCoalesce(rhs, sourceSpan) {
     return new BinaryOperatorExpr(BinaryOperator.NullishCoalesce, this, rhs, null, sourceSpan);
   }
-  toStmt(leadingComments) {
-    return new ExpressionStatement(this, null, leadingComments);
+  toStmt() {
+    return new ExpressionStatement(this, null);
   }
 }
 class ReadVarExpr extends Expression {
   name;
-  constructor(name, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(name, type, sourceSpan) {
+    super(type, sourceSpan);
     this.name = name;
   }
   isEquivalent(e) {
@@ -929,8 +927,8 @@ class ReadVarExpr extends Expression {
 }
 class TypeofExpr extends Expression {
   expr;
-  constructor(expr, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(expr, type, sourceSpan) {
+    super(type, sourceSpan);
     this.expr = expr;
   }
   visitExpression(visitor, context) {
@@ -948,8 +946,8 @@ class TypeofExpr extends Expression {
 }
 class VoidExpr extends Expression {
   expr;
-  constructor(expr, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(expr, type, sourceSpan) {
+    super(type, sourceSpan);
     this.expr = expr;
   }
   visitExpression(visitor, context) {
@@ -967,8 +965,8 @@ class VoidExpr extends Expression {
 }
 class WrappedNodeExpr extends Expression {
   node;
-  constructor(node, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(node, type, sourceSpan) {
+    super(type, sourceSpan);
     this.node = node;
   }
   isEquivalent(e) {
@@ -988,8 +986,8 @@ class InvokeFunctionExpr extends Expression {
   fn;
   args;
   pure;
-  constructor(fn, args, type, sourceSpan, pure = false, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(fn, args, type, sourceSpan, pure = false) {
+    super(type, sourceSpan);
     this.fn = fn;
     this.args = args;
     this.pure = pure;
@@ -1013,8 +1011,8 @@ class InvokeFunctionExpr extends Expression {
 class TaggedTemplateLiteralExpr extends Expression {
   tag;
   template;
-  constructor(tag, template, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(tag, template, type, sourceSpan) {
+    super(type, sourceSpan);
     this.tag = tag;
     this.template = template;
   }
@@ -1034,8 +1032,8 @@ class TaggedTemplateLiteralExpr extends Expression {
 class InstantiateExpr extends Expression {
   classExpr;
   args;
-  constructor(classExpr, args, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(classExpr, args, type, sourceSpan) {
+    super(type, sourceSpan);
     this.classExpr = classExpr;
     this.args = args;
   }
@@ -1055,8 +1053,8 @@ class InstantiateExpr extends Expression {
 class RegularExpressionLiteralExpr extends Expression {
   body;
   flags;
-  constructor(body, flags, sourceSpan, leadingComments) {
-    super(null, sourceSpan, leadingComments);
+  constructor(body, flags, sourceSpan) {
+    super(null, sourceSpan);
     this.body = body;
     this.flags = flags;
   }
@@ -1075,8 +1073,8 @@ class RegularExpressionLiteralExpr extends Expression {
 }
 class LiteralExpr extends Expression {
   value;
-  constructor(value, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(value, type, sourceSpan) {
+    super(type, sourceSpan);
     this.value = value;
   }
   isEquivalent(e) {
@@ -1095,8 +1093,8 @@ class LiteralExpr extends Expression {
 class TemplateLiteralExpr extends Expression {
   elements;
   expressions;
-  constructor(elements, expressions, sourceSpan, leadingComments) {
-    super(null, sourceSpan, leadingComments);
+  constructor(elements, expressions, sourceSpan) {
+    super(null, sourceSpan);
     this.elements = elements;
     this.expressions = expressions;
   }
@@ -1116,8 +1114,8 @@ class TemplateLiteralExpr extends Expression {
 class TemplateLiteralElementExpr extends Expression {
   text;
   rawText;
-  constructor(text, sourceSpan, rawText, leadingComments) {
-    super(STRING_TYPE, sourceSpan, leadingComments);
+  constructor(text, sourceSpan, rawText) {
+    super(STRING_TYPE, sourceSpan);
     this.text = text;
     this.rawText = rawText ?? escapeForTemplateLiteral(escapeSlashes(text));
   }
@@ -1160,8 +1158,8 @@ class LocalizedString extends Expression {
   messageParts;
   placeHolderNames;
   expressions;
-  constructor(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan, leadingComments) {
-    super(STRING_TYPE, sourceSpan, leadingComments);
+  constructor(metaBlock, messageParts, placeHolderNames, expressions, sourceSpan) {
+    super(STRING_TYPE, sourceSpan);
     this.metaBlock = metaBlock;
     this.messageParts = messageParts;
     this.placeHolderNames = placeHolderNames;
@@ -1232,8 +1230,8 @@ function createCookedRawString(metaBlock, messagePart, range) {
 class ExternalExpr extends Expression {
   value;
   typeParams;
-  constructor(value, type, typeParams = null, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(value, type, typeParams = null, sourceSpan) {
+    super(type, sourceSpan);
     this.value = value;
     this.typeParams = typeParams;
   }
@@ -1262,8 +1260,8 @@ class ConditionalExpr extends Expression {
   condition;
   falseCase;
   trueCase;
-  constructor(condition, trueCase, falseCase = null, type, sourceSpan, leadingComments) {
-    super(type || trueCase.type, sourceSpan, leadingComments);
+  constructor(condition, trueCase, falseCase = null, type, sourceSpan) {
+    super(type || trueCase.type, sourceSpan);
     this.condition = condition;
     this.falseCase = falseCase;
     this.trueCase = trueCase;
@@ -1284,8 +1282,8 @@ class ConditionalExpr extends Expression {
 class DynamicImportExpr extends Expression {
   url;
   urlComment;
-  constructor(url, sourceSpan, urlComment, leadingComments) {
-    super(null, sourceSpan, leadingComments);
+  constructor(url, sourceSpan, urlComment) {
+    super(null, sourceSpan);
     this.url = url;
     this.urlComment = urlComment;
   }
@@ -1304,8 +1302,8 @@ class DynamicImportExpr extends Expression {
 }
 class NotExpr extends Expression {
   condition;
-  constructor(condition, sourceSpan, leadingComments) {
-    super(BOOL_TYPE, sourceSpan, leadingComments);
+  constructor(condition, sourceSpan) {
+    super(BOOL_TYPE, sourceSpan);
     this.condition = condition;
   }
   isEquivalent(e) {
@@ -1339,8 +1337,8 @@ class FunctionExpr extends Expression {
   params;
   statements;
   name;
-  constructor(params, statements, type, sourceSpan, name, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(params, statements, type, sourceSpan, name) {
+    super(type, sourceSpan);
     this.params = params;
     this.statements = statements;
     this.name = name;
@@ -1364,8 +1362,8 @@ class FunctionExpr extends Expression {
 let ArrowFunctionExpr$1 = class ArrowFunctionExpr extends Expression {
   params;
   body;
-  constructor(params, body, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(params, body, type, sourceSpan) {
+    super(type, sourceSpan);
     this.params = params;
     this.body = body;
   }
@@ -1398,8 +1396,8 @@ class UnaryOperatorExpr extends Expression {
   operator;
   expr;
   parens;
-  constructor(operator, expr, type, sourceSpan, parens = true, leadingComments) {
-    super(type || NUMBER_TYPE, sourceSpan, leadingComments);
+  constructor(operator, expr, type, sourceSpan, parens = true) {
+    super(type || NUMBER_TYPE, sourceSpan);
     this.operator = operator;
     this.expr = expr;
     this.parens = parens;
@@ -1419,8 +1417,8 @@ class UnaryOperatorExpr extends Expression {
 }
 class ParenthesizedExpr extends Expression {
   expr;
-  constructor(expr, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(expr, type, sourceSpan) {
+    super(type, sourceSpan);
     this.expr = expr;
   }
   visitExpression(visitor, context) {
@@ -1440,8 +1438,8 @@ class BinaryOperatorExpr extends Expression {
   operator;
   rhs;
   lhs;
-  constructor(operator, lhs, rhs, type, sourceSpan, leadingComments) {
-    super(type || lhs.type, sourceSpan, leadingComments);
+  constructor(operator, lhs, rhs, type, sourceSpan) {
+    super(type || lhs.type, sourceSpan);
     this.operator = operator;
     this.rhs = rhs;
     this.lhs = lhs;
@@ -1466,8 +1464,8 @@ class BinaryOperatorExpr extends Expression {
 class ReadPropExpr extends Expression {
   receiver;
   name;
-  constructor(receiver, name, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(receiver, name, type, sourceSpan) {
+    super(type, sourceSpan);
     this.receiver = receiver;
     this.name = name;
   }
@@ -1493,8 +1491,8 @@ class ReadPropExpr extends Expression {
 class ReadKeyExpr extends Expression {
   receiver;
   index;
-  constructor(receiver, index, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(receiver, index, type, sourceSpan) {
+    super(type, sourceSpan);
     this.receiver = receiver;
     this.index = index;
   }
@@ -1516,8 +1514,8 @@ class ReadKeyExpr extends Expression {
 }
 class LiteralArrayExpr extends Expression {
   entries;
-  constructor(entries, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(entries, type, sourceSpan) {
+    super(type, sourceSpan);
     this.entries = entries;
   }
   isConstant() {
@@ -1570,8 +1568,8 @@ class LiteralMapSpreadAssignment {
 class LiteralMapExpr extends Expression {
   entries;
   valueType = null;
-  constructor(entries, type, sourceSpan, leadingComments) {
-    super(type, sourceSpan, leadingComments);
+  constructor(entries, type, sourceSpan) {
+    super(type, sourceSpan);
     this.entries = entries;
     if (type) {
       this.valueType = type.valueType;
@@ -1593,8 +1591,8 @@ class LiteralMapExpr extends Expression {
 }
 class CommaExpr extends Expression {
   parts;
-  constructor(parts, sourceSpan, leadingComments) {
-    super(parts[parts.length - 1].type, sourceSpan, leadingComments);
+  constructor(parts, sourceSpan) {
+    super(parts[parts.length - 1].type, sourceSpan);
     this.parts = parts;
   }
   isEquivalent(e) {
@@ -1612,8 +1610,8 @@ class CommaExpr extends Expression {
 }
 class SpreadElementExpr extends Expression {
   expression;
-  constructor(expression, sourceSpan, leadingComments) {
-    super(null, sourceSpan, leadingComments);
+  constructor(expression, sourceSpan) {
+    super(null, sourceSpan);
     this.expression = expression;
   }
   isEquivalent(e) {
@@ -1951,8 +1949,8 @@ function leadingComment(text, multiline = false, trailingNewline = true) {
 function jsDocComment(tags = []) {
   return new JSDocComment(tags);
 }
-function variable(name, type, sourceSpan, leadingComments) {
-  return new ReadVarExpr(name, type, sourceSpan, leadingComments);
+function variable(name, type, sourceSpan) {
+  return new ReadVarExpr(name, type, sourceSpan);
 }
 function importExpr(id, typeParams = null, sourceSpan) {
   return new ExternalExpr(id, null, typeParams, sourceSpan);
@@ -3341,10 +3339,10 @@ function toBase64Digit(value) {
   return B64_DIGITS[value];
 }
 
-const SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r/g;
-const LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
-const INDENT_WITH = '  ';
-class EmittedLine {
+const _SINGLE_QUOTE_ESCAPE_STRING_RE = /'|\\|\n|\r|\$/g;
+const _LEGAL_IDENTIFIER_RE = /^[$A-Z_][0-9A-Z_$]*$/i;
+const _INDENT_WITH = '  ';
+class _EmittedLine {
   indent;
   partsLength = 0;
   parts = [];
@@ -3362,7 +3360,7 @@ class EmitterVisitorContext {
   _lines;
   constructor(_indent) {
     this._indent = _indent;
-    this._lines = [new EmittedLine(_indent)];
+    this._lines = [new _EmittedLine(_indent)];
   }
   get _currentLine() {
     return this._lines[this._lines.length - 1];
@@ -3374,7 +3372,7 @@ class EmitterVisitorContext {
     return this._currentLine.parts.length === 0;
   }
   lineLength() {
-    return this._currentLine.indent * INDENT_WITH.length + this._currentLine.partsLength;
+    return this._currentLine.indent * _INDENT_WITH.length + this._currentLine.partsLength;
   }
   print(from, part, newLine = false) {
     if (part.length > 0) {
@@ -3383,7 +3381,7 @@ class EmitterVisitorContext {
       this._currentLine.srcSpans.push(from && from.sourceSpan || null);
     }
     if (newLine) {
-      this._lines.push(new EmittedLine(this._indent));
+      this._lines.push(new _EmittedLine(this._indent));
     }
   }
   removeEmptyLastLine() {
@@ -3404,7 +3402,7 @@ class EmitterVisitorContext {
     }
   }
   toSource() {
-    return this.sourceLines.map(l => l.parts.length > 0 ? INDENT_WITH.repeat(l.indent) + l.parts.join('') : '').join('\n');
+    return this.sourceLines.map(l => l.parts.length > 0 ? _createIndent(l.indent) + l.parts.join('') : '').join('\n');
   }
   toSourceMapGenerator(genFilePath, startsAtLine = 0) {
     const map = new SourceMapGenerator(genFilePath);
@@ -3423,7 +3421,7 @@ class EmitterVisitorContext {
       map.addLine();
       const spans = line.srcSpans;
       const parts = line.parts;
-      let col0 = line.indent * INDENT_WITH.length;
+      let col0 = line.indent * _INDENT_WITH.length;
       let spanIdx = 0;
       while (spanIdx < spans.length && !spans[spanIdx]) {
         col0 += parts[spanIdx].length;
@@ -3453,7 +3451,7 @@ class EmitterVisitorContext {
   spanOf(line, column) {
     const emittedLine = this._lines[line];
     if (emittedLine) {
-      let columnsLeft = column - INDENT_WITH.repeat(emittedLine.indent).length;
+      let columnsLeft = column - _createIndent(emittedLine.indent).length;
       for (let partIndex = 0; partIndex < emittedLine.parts.length; partIndex++) {
         const part = emittedLine.parts[partIndex];
         if (part.length > columnsLeft) {
@@ -3472,23 +3470,41 @@ class EmitterVisitorContext {
   }
 }
 class AbstractEmitterVisitor {
-  printComments;
-  printTypes;
+  _escapeDollarInStrings;
   lastIfCondition = null;
-  constructor(printComments, printTypes) {
-    this.printComments = printComments;
-    this.printTypes = printTypes;
+  constructor(_escapeDollarInStrings) {
+    this._escapeDollarInStrings = _escapeDollarInStrings;
+  }
+  printLeadingComments(stmt, ctx) {
+    if (stmt.leadingComments === undefined) {
+      return;
+    }
+    for (const comment of stmt.leadingComments) {
+      if (comment instanceof JSDocComment) {
+        ctx.print(stmt, `/*${comment.toString()}*/`, comment.trailingNewline);
+      } else {
+        if (comment.multiline) {
+          ctx.print(stmt, `/* ${comment.text} */`, comment.trailingNewline);
+        } else {
+          comment.text.split('\n').forEach(line => {
+            ctx.println(stmt, `// ${line}`);
+          });
+        }
+      }
+    }
   }
   visitExpressionStmt(stmt, ctx) {
     this.printLeadingComments(stmt, ctx);
     stmt.expr.visitExpression(this, ctx);
     ctx.println(stmt, ';');
+    return null;
   }
   visitReturnStmt(stmt, ctx) {
     this.printLeadingComments(stmt, ctx);
     ctx.print(stmt, `return `);
     stmt.value.visitExpression(this, ctx);
     ctx.println(stmt, ';');
+    return null;
   }
   visitIfStmt(stmt, ctx) {
     this.printLeadingComments(stmt, ctx);
@@ -3516,21 +3532,10 @@ class AbstractEmitterVisitor {
       }
     }
     ctx.println(stmt, `}`);
-  }
-  visitDeclareVarStmt(stmt, ctx) {
-    const varKind = stmt.hasModifier(StmtModifier.Final) ? 'const' : 'let';
-    this.printLeadingComments(stmt, ctx);
-    ctx.print(stmt, `${varKind} ${stmt.name}`);
-    stmt.type?.visitType(this, ctx);
-    if (stmt.value) {
-      ctx.print(stmt, ' = ');
-      stmt.value.visitExpression(this, ctx);
-    }
-    ctx.println(stmt, `;`);
+    return null;
   }
   visitInvokeFunctionExpr(expr, ctx) {
-    this.printLeadingComments(expr, ctx);
-    const shouldParenthesize = this.shouldParenthesize(expr.fn, expr);
+    const shouldParenthesize = expr.fn instanceof ArrowFunctionExpr$1;
     if (shouldParenthesize) {
       ctx.print(expr.fn, '(');
     }
@@ -3541,14 +3546,14 @@ class AbstractEmitterVisitor {
     ctx.print(expr, `(`);
     this.visitAllExpressions(expr.args, ctx, ',');
     ctx.print(expr, `)`);
+    return null;
   }
   visitTaggedTemplateLiteralExpr(expr, ctx) {
-    this.printLeadingComments(expr, ctx);
     expr.tag.visitExpression(this, ctx);
     expr.template.visitExpression(this, ctx);
+    return null;
   }
   visitTemplateLiteralExpr(expr, ctx) {
-    this.printLeadingComments(expr, ctx);
     ctx.print(expr, '`');
     for (let i = 0; i < expr.elements.length; i++) {
       expr.elements[i].visitExpression(this, ctx);
@@ -3562,46 +3567,45 @@ class AbstractEmitterVisitor {
     ctx.print(expr, '`');
   }
   visitTemplateLiteralElementExpr(expr, ctx) {
-    this.printLeadingComments(expr, ctx);
     ctx.print(expr, expr.rawText);
   }
+  visitWrappedNodeExpr(ast, ctx) {
+    throw new Error('Abstract emitter cannot visit WrappedNodeExpr.');
+  }
   visitTypeofExpr(expr, ctx) {
-    this.printLeadingComments(expr, ctx);
     ctx.print(expr, 'typeof ');
     expr.expr.visitExpression(this, ctx);
   }
   visitVoidExpr(expr, ctx) {
-    this.printLeadingComments(expr, ctx);
     ctx.print(expr, 'void ');
     expr.expr.visitExpression(this, ctx);
   }
   visitReadVarExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, ast.name);
+    return null;
   }
   visitInstantiateExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `new `);
     ast.classExpr.visitExpression(this, ctx);
     ctx.print(ast, `(`);
     this.visitAllExpressions(ast.args, ctx, ',');
     ctx.print(ast, `)`);
+    return null;
   }
   visitLiteralExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     const value = ast.value;
     if (typeof value === 'string') {
-      ctx.print(ast, escapeIdentifier(value));
+      ctx.print(ast, escapeIdentifier(value, this._escapeDollarInStrings));
     } else {
       ctx.print(ast, `${value}`);
     }
+    return null;
   }
   visitRegularExpressionLiteral(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `/${ast.body}/${ast.flags || ''}`);
+    return null;
   }
   visitLocalizedString(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     const head = ast.serializeI18nHead();
     ctx.print(ast, '$localize `' + head.raw);
     for (let i = 1; i < ast.messageParts.length; i++) {
@@ -3610,85 +3614,27 @@ class AbstractEmitterVisitor {
       ctx.print(ast, `}${ast.serializeI18nTemplatePart(i).raw}`);
     }
     ctx.print(ast, '`');
+    return null;
   }
   visitConditionalExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `(`);
     ast.condition.visitExpression(this, ctx);
-    ctx.print(ast, ' ? ');
+    ctx.print(ast, '? ');
     ast.trueCase.visitExpression(this, ctx);
-    ctx.print(ast, ' : ');
-    ast.falseCase?.visitExpression(this, ctx);
+    ctx.print(ast, ': ');
+    ast.falseCase.visitExpression(this, ctx);
     ctx.print(ast, `)`);
+    return null;
   }
   visitDynamicImportExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
-    ctx.print(ast, `import(`);
-    if (typeof ast.url === 'string') {
-      ctx.print(ast, escapeIdentifier(ast.url, true));
-    } else {
-      ast.url.visitExpression(this, ctx);
-    }
-    ctx.print(ast, `)`);
+    ctx.print(ast, `import(${ast.url})`);
   }
   visitNotExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, '!');
     ast.condition.visitExpression(this, ctx);
-  }
-  visitFunctionExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
-    ctx.print(ast, `function${ast.name ? ' ' + ast.name : ''}(`);
-    this.visitParams(ast.params, ctx);
-    ctx.print(ast, `)`);
-    ast.type?.visitType(this, ctx);
-    ctx.print(ast, ` {`);
-    ctx.println(ast);
-    ctx.incIndent();
-    this.visitAllStatements(ast.statements, ctx);
-    ctx.decIndent();
-    ctx.println(ast, `}`);
-  }
-  visitArrowFunctionExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
-    ctx.print(ast, '(');
-    this.visitParams(ast.params, ctx);
-    ctx.print(ast, ')');
-    ast.type?.visitType(this, ctx);
-    ctx.print(ast, ' => ');
-    if (Array.isArray(ast.body)) {
-      ctx.print(ast, `{`);
-      ctx.println(ast);
-      ctx.incIndent();
-      this.visitAllStatements(ast.body, ctx);
-      ctx.decIndent();
-      ctx.println(ast, `}`);
-    } else {
-      const shouldParenthesize = this.shouldParenthesize(ast.body, ast);
-      if (shouldParenthesize) {
-        ctx.print(ast, '(');
-      }
-      ast.body.visitExpression(this, ctx);
-      if (shouldParenthesize) {
-        ctx.print(ast, ')');
-      }
-    }
-  }
-  visitDeclareFunctionStmt(stmt, ctx) {
-    this.printLeadingComments(stmt, ctx);
-    ctx.print(stmt, `function ${stmt.name}(`);
-    this.visitParams(stmt.params, ctx);
-    ctx.print(stmt, `)`);
-    stmt.type?.visitType(this, ctx);
-    ctx.print(stmt, ` {`);
-    ctx.println(stmt);
-    ctx.incIndent();
-    this.visitAllStatements(stmt.statements, ctx);
-    ctx.decIndent();
-    ctx.println(stmt, `}`);
+    return null;
   }
   visitUnaryOperatorExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     let opStr;
     switch (ast.operator) {
       case UnaryOperator.Plus:
@@ -3705,9 +3651,9 @@ class AbstractEmitterVisitor {
     ctx.print(ast, opStr);
     ast.expr.visitExpression(this, ctx);
     if (parens) ctx.print(ast, `)`);
+    return null;
   }
   visitBinaryOperatorExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     const operator = BINARY_OPERATORS$1.get(ast.operator);
     if (!operator) {
       throw new Error(`Unknown operator ${ast.operator}`);
@@ -3718,120 +3664,53 @@ class AbstractEmitterVisitor {
     ctx.print(ast, ` ${operator} `);
     ast.rhs.visitExpression(this, ctx);
     if (parens) ctx.print(ast, `)`);
+    return null;
   }
   visitReadPropExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ast.receiver.visitExpression(this, ctx);
     ctx.print(ast, `.`);
     ctx.print(ast, ast.name);
+    return null;
   }
   visitReadKeyExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ast.receiver.visitExpression(this, ctx);
     ctx.print(ast, `[`);
     ast.index.visitExpression(this, ctx);
     ctx.print(ast, `]`);
+    return null;
   }
   visitLiteralArrayExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `[`);
-    this.visitAllExpressions(ast.entries, ctx, ', ');
+    this.visitAllExpressions(ast.entries, ctx, ',');
     ctx.print(ast, `]`);
+    return null;
   }
   visitLiteralMapExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, `{`);
     this.visitAllObjects(entry => {
       if (entry instanceof LiteralMapSpreadAssignment) {
         ctx.print(ast, '...');
         entry.expression.visitExpression(this, ctx);
       } else {
-        ctx.print(ast, `${escapeIdentifier(entry.key, entry.quoted)}: `);
+        ctx.print(ast, `${escapeIdentifier(entry.key, this._escapeDollarInStrings, entry.quoted)}:`);
         entry.value.visitExpression(this, ctx);
       }
-    }, ast.entries, ctx, ', ');
+    }, ast.entries, ctx, ',');
     ctx.print(ast, `}`);
+    return null;
   }
   visitCommaExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, '(');
-    this.visitAllExpressions(ast.parts, ctx, ', ');
+    this.visitAllExpressions(ast.parts, ctx, ',');
     ctx.print(ast, ')');
+    return null;
   }
   visitParenthesizedExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ast.expr.visitExpression(this, ctx);
   }
   visitSpreadElementExpr(ast, ctx) {
-    this.printLeadingComments(ast, ctx);
     ctx.print(ast, '...');
     ast.expression.visitExpression(this, ctx);
-  }
-  visitBuiltinType(type, ctx) {
-    if (!this.printTypes) {
-      return;
-    }
-    switch (type.name) {
-      case BuiltinTypeName.Bool:
-        ctx.print(null, ': boolean');
-        break;
-      case BuiltinTypeName.Dynamic:
-        ctx.print(null, ': any');
-        break;
-      case BuiltinTypeName.Int:
-      case BuiltinTypeName.Number:
-        ctx.print(null, ': number');
-        break;
-      case BuiltinTypeName.String:
-        ctx.print(null, ': string');
-        break;
-      case BuiltinTypeName.None:
-        ctx.print(null, ': void');
-        break;
-      case BuiltinTypeName.Inferred:
-        break;
-      case BuiltinTypeName.Function:
-        ctx.print(null, ': Function');
-        break;
-      default:
-        ctx.print(null, ': any');
-        break;
-    }
-  }
-  visitExpressionType(type, ctx) {
-    if (!this.printTypes) {
-      return;
-    }
-    ctx.print(null, ': ');
-    type.value.visitExpression(this, ctx);
-    if (type.typeParams && type.typeParams.length > 0) {
-      ctx.print(null, '<');
-      this.visitAllObjects(param => param.visitType(this, ctx), type.typeParams, ctx, ',');
-      ctx.print(null, '>');
-    }
-  }
-  visitArrayType(type, ctx) {
-    if (!this.printTypes) {
-      return;
-    }
-    ctx.print(null, ': ');
-    type.of.visitType(this, ctx);
-    ctx.print(null, '[]');
-  }
-  visitMapType(type, ctx) {
-    if (!this.printTypes) {
-      return;
-    }
-    ctx.print(null, ': { [key: string]: ');
-    if (type.valueType) {
-      type.valueType.visitType(this, ctx);
-    } else {
-      ctx.print(null, 'any');
-    }
-    ctx.print(null, '}');
-  }
-  visitTransplantedType(type, ctx) {
-    throw new Error('TransplantedType nodes are not supported');
   }
   visitAllExpressions(expressions, ctx, separator) {
     this.visitAllObjects(expr => expr.visitExpression(this, ctx), expressions, ctx, separator);
@@ -3861,39 +3740,15 @@ class AbstractEmitterVisitor {
   visitAllStatements(statements, ctx) {
     statements.forEach(stmt => stmt.visitStatement(this, ctx));
   }
-  visitParams(params, ctx) {
-    this.visitAllObjects(param => {
-      ctx.print(null, param.name);
-      param.type?.visitType(this, ctx);
-    }, params, ctx, ', ');
-  }
-  shouldParenthesize(expression, containingExpression) {
-    return ((expression instanceof ArrowFunctionExpr$1 || expression instanceof FunctionExpr) && containingExpression instanceof InvokeFunctionExpr || expression instanceof LiteralMapExpr && containingExpression instanceof ArrowFunctionExpr$1
-    );
-  }
-  printLeadingComments(node, ctx) {
-    if (!this.printComments || node.leadingComments === undefined) {
-      return;
-    }
-    for (const comment of node.leadingComments) {
-      if (comment instanceof JSDocComment) {
-        ctx.print(node, `/*${comment.toString()}*/`, comment.trailingNewline);
-      } else {
-        if (comment.multiline) {
-          ctx.print(node, `/* ${comment.text} */`, comment.trailingNewline);
-        } else {
-          comment.text.split('\n').forEach(line => ctx.println(node, `// ${line}`));
-        }
-      }
-    }
-  }
 }
-function escapeIdentifier(input, alwaysQuote = true) {
+function escapeIdentifier(input, escapeDollar, alwaysQuote = true) {
   if (input == null) {
     return null;
   }
-  const body = input.replace(SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
-    if (match[0] == '\n') {
+  const body = input.replace(_SINGLE_QUOTE_ESCAPE_STRING_RE, (...match) => {
+    if (match[0] == '$') {
+      return escapeDollar ? '\\$' : '$';
+    } else if (match[0] == '\n') {
       return '\\n';
     } else if (match[0] == '\r') {
       return '\\r';
@@ -3901,8 +3756,15 @@ function escapeIdentifier(input, alwaysQuote = true) {
       return `\\${match[0]}`;
     }
   });
-  const requiresQuotes = alwaysQuote || !LEGAL_IDENTIFIER_RE.test(body);
+  const requiresQuotes = alwaysQuote || !_LEGAL_IDENTIFIER_RE.test(body);
   return requiresQuotes ? `'${body}'` : body;
+}
+function _createIndent(count) {
+  let res = '';
+  for (let i = 0; i < count; i++) {
+    res += _INDENT_WITH;
+  }
+  return res;
 }
 
 function typeWithParameters(type, numParams) {
@@ -3916,7 +3778,7 @@ function typeWithParameters(type, numParams) {
   return expressionType(type, undefined, params);
 }
 function getSafePropertyAccessString(accessor, name) {
-  const escapedName = escapeIdentifier(name, false);
+  const escapedName = escapeIdentifier(name, false, false);
   return escapedName !== name ? `${accessor}[${escapedName}]` : `${accessor}.${name}`;
 }
 function jitOnlyGuardedExpression(expr) {
@@ -3944,9 +3806,6 @@ function wrapReference(value) {
 function refsToArray(refs, shouldForwardDeclare) {
   const values = literalArr(refs.map(ref => ref.value));
   return shouldForwardDeclare ? arrowFn([], values) : values;
-}
-function tsIgnoreComment() {
-  return leadingComment('@ts-ignore', true, true);
 }
 function createMayBeForwardRefExpression(expression, forwardRef) {
   return {
@@ -3980,7 +3839,6 @@ function compileFactoryFunction(meta) {
   let baseFactoryVar = null;
   const typeForCtor = !isDelegatedFactoryMetadata(meta) ? new BinaryOperatorExpr(BinaryOperator.Or, t, meta.type.value) : t;
   let ctorExpr = null;
-  const factoryComments = meta.deps !== null && meta.deps !== 'invalid' && meta.deps.length > 0 ? [tsIgnoreComment()] : undefined;
   if (meta.deps !== null) {
     if (meta.deps !== 'invalid') {
       ctorExpr = new InstantiateExpr(typeForCtor, injectDependencies(meta.deps, meta.target));
@@ -3993,9 +3851,9 @@ function compileFactoryFunction(meta) {
   let retExpr = null;
   function makeConditionalFactory(nonCtorExpr) {
     const r = variable('__ngConditionalFactory__');
-    body.push(new DeclareVarStmt(r.name, NULL_EXPR, DYNAMIC_TYPE));
-    const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt(factoryComments) : importExpr(Identifiers.invalidFactory).callFn([]).toStmt();
-    body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt([tsIgnoreComment()])]));
+    body.push(new DeclareVarStmt(r.name, NULL_EXPR, INFERRED_TYPE));
+    const ctorStmt = ctorExpr !== null ? r.set(ctorExpr).toStmt() : importExpr(Identifiers.invalidFactory).callFn([]).toStmt();
+    body.push(ifStmt(t, [ctorStmt], [r.set(nonCtorExpr).toStmt()]));
     return r;
   }
   if (isDelegatedFactoryMetadata(meta)) {
@@ -4014,11 +3872,11 @@ function compileFactoryFunction(meta) {
     const baseFactory = new BinaryOperatorExpr(BinaryOperator.Or, baseFactoryVar, baseFactoryVar.set(getInheritedFactoryCall));
     body.push(new ReturnStatement(baseFactory.callFn([typeForCtor])));
   } else {
-    body.push(new ReturnStatement(retExpr, null, factoryComments));
+    body.push(new ReturnStatement(retExpr));
   }
   let factoryFn = fn([new FnParam(t.name, DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
   if (baseFactoryVar !== null) {
-    factoryFn = arrowFn([], [new DeclareVarStmt(baseFactoryVar.name, undefined, DYNAMIC_TYPE), new ReturnStatement(factoryFn)]).callFn([], undefined, true);
+    factoryFn = arrowFn([], [new DeclareVarStmt(baseFactoryVar.name), new ReturnStatement(factoryFn)]).callFn([], undefined, true);
   }
   return {
     expression: factoryFn,
@@ -4962,13 +4820,7 @@ class BoundDeferredTrigger extends DeferredTrigger {
   }
 }
 class NeverDeferredTrigger extends DeferredTrigger {}
-class IdleDeferredTrigger extends DeferredTrigger {
-  timeout;
-  constructor(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, timeout) {
-    super(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
-    this.timeout = timeout;
-  }
-}
+class IdleDeferredTrigger extends DeferredTrigger {}
 class ImmediateDeferredTrigger extends DeferredTrigger {}
 class HoverDeferredTrigger extends DeferredTrigger {
   reference;
@@ -5138,10 +4990,8 @@ class SwitchBlockCaseGroup extends BlockNode {
   }
 }
 class SwitchExhaustiveCheck extends BlockNode {
-  expression;
-  constructor(expression, sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
+  constructor(sourceSpan, startSourceSpan, endSourceSpan, nameSpan) {
     super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
-    this.expression = expression;
   }
   visit(visitor) {
     return visitor.visitSwitchExhaustiveCheck(this);
@@ -6556,7 +6406,7 @@ function sanitizeIdentifier(name) {
 const makeTemplateObjectPolyfill = '(this&&this.__makeTemplateObject||function(e,t){return Object.defineProperty?Object.defineProperty(e,"raw",{value:t}):e.raw=t,e})';
 class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
   constructor() {
-    super(false, false);
+    super(false);
   }
   visitWrappedNodeExpr(ast, ctx) {
     throw new Error('Cannot emit a WrappedNodeExpr in Javascript.');
@@ -6568,18 +6418,20 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
       stmt.value.visitExpression(this, ctx);
     }
     ctx.println(stmt, `;`);
+    return null;
   }
   visitTaggedTemplateLiteralExpr(ast, ctx) {
     const elements = ast.template.elements;
     ast.tag.visitExpression(this, ctx);
     ctx.print(ast, `(${makeTemplateObjectPolyfill}(`);
-    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.text)).join(', ')}], `);
-    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.rawText)).join(', ')}])`);
+    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.text, false)).join(', ')}], `);
+    ctx.print(ast, `[${elements.map(part => escapeIdentifier(part.rawText, false)).join(', ')}])`);
     ast.template.expressions.forEach(expression => {
       ctx.print(ast, ', ');
       expression.visitExpression(this, ctx);
     });
     ctx.print(ast, ')');
+    return null;
   }
   visitTemplateLiteralExpr(expr, ctx) {
     ctx.print(expr, '`');
@@ -6596,6 +6448,49 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
   }
   visitTemplateLiteralElementExpr(expr, ctx) {
     ctx.print(expr, expr.rawText);
+    return null;
+  }
+  visitFunctionExpr(ast, ctx) {
+    ctx.print(ast, `function${ast.name ? ' ' + ast.name : ''}(`);
+    this._visitParams(ast.params, ctx);
+    ctx.println(ast, `) {`);
+    ctx.incIndent();
+    this.visitAllStatements(ast.statements, ctx);
+    ctx.decIndent();
+    ctx.print(ast, `}`);
+    return null;
+  }
+  visitArrowFunctionExpr(ast, ctx) {
+    ctx.print(ast, '(');
+    this._visitParams(ast.params, ctx);
+    ctx.print(ast, ') =>');
+    if (Array.isArray(ast.body)) {
+      ctx.println(ast, `{`);
+      ctx.incIndent();
+      this.visitAllStatements(ast.body, ctx);
+      ctx.decIndent();
+      ctx.print(ast, `}`);
+    } else {
+      const isObjectLiteral = ast.body instanceof LiteralMapExpr;
+      if (isObjectLiteral) {
+        ctx.print(ast, '(');
+      }
+      ast.body.visitExpression(this, ctx);
+      if (isObjectLiteral) {
+        ctx.print(ast, ')');
+      }
+    }
+    return null;
+  }
+  visitDeclareFunctionStmt(stmt, ctx) {
+    ctx.print(stmt, `function ${stmt.name}(`);
+    this._visitParams(stmt.params, ctx);
+    ctx.println(stmt, `) {`);
+    ctx.incIndent();
+    this.visitAllStatements(stmt.statements, ctx);
+    ctx.decIndent();
+    ctx.println(stmt, `}`);
+    return null;
   }
   visitLocalizedString(ast, ctx) {
     ctx.print(ast, `$localize(${makeTemplateObjectPolyfill}(`);
@@ -6603,13 +6498,17 @@ class AbstractJsEmitterVisitor extends AbstractEmitterVisitor {
     for (let i = 1; i < ast.messageParts.length; i++) {
       parts.push(ast.serializeI18nTemplatePart(i));
     }
-    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.cooked)).join(', ')}], `);
-    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.raw)).join(', ')}])`);
+    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.cooked, false)).join(', ')}], `);
+    ctx.print(ast, `[${parts.map(part => escapeIdentifier(part.raw, false)).join(', ')}])`);
     ast.expressions.forEach(expression => {
       ctx.print(ast, ', ');
       expression.visitExpression(this, ctx);
     });
     ctx.print(ast, ')');
+    return null;
+  }
+  _visitParams(params, ctx) {
+    this.visitAllObjects(param => ctx.print(null, param.name), params, ctx, ',');
   }
 }
 
@@ -10521,7 +10420,7 @@ function resolveDeferTargetNames(job) {
     if (scopes.has(view.xref)) {
       return scopes.get(view.xref);
     }
-    const scope = new Scope$2();
+    const scope = new Scope$1();
     for (const op of view.create) {
       if (!isElementOrContainerOp(op) || op.localRefs === null) {
         continue;
@@ -10609,7 +10508,7 @@ function resolveDeferTargetNames(job) {
     }
   }
 }
-let Scope$2 = class Scope {
+let Scope$1 = class Scope {
   targets = new Map();
 };
 
@@ -13758,6 +13657,13 @@ class _Tokenizer {
     this._requireCharCode($AT);
     this._beginToken(24, start);
     const startToken = this._endToken([this._getBlockName()]);
+    if (startToken.parts[0] === 'default never' && this._attemptCharCode($SEMICOLON)) {
+      this._beginToken(25);
+      this._endToken([]);
+      this._beginToken(26);
+      this._endToken([]);
+      return;
+    }
     if (this._cursor.peek() === $LPAREN) {
       this._cursor.advance();
       this._consumeBlockParameters();
@@ -13768,13 +13674,6 @@ class _Tokenizer {
         startToken.type = 28;
         return;
       }
-    }
-    if (startToken.parts[0] === 'default never' && this._attemptCharCode($SEMICOLON)) {
-      this._beginToken(25);
-      this._endToken([]);
-      this._beginToken(26);
-      this._endToken([]);
-      return;
     }
     if (this._attemptCharCode($LBRACE)) {
       this._beginToken(25);
@@ -14139,26 +14038,6 @@ class _Tokenizer {
     const name = this._cursor.getChars(nameStart);
     return [prefix, name];
   }
-  _consumeSingleLineComment() {
-    this._attemptCharCodeUntilFn(code => isNewLine(code) || code === $EOF);
-    this._attemptCharCodeUntilFn(isNotWhitespace);
-  }
-  _consumeMultiLineComment() {
-    this._attemptCharCodeUntilFn(code => {
-      if (code === $EOF) {
-        return true;
-      }
-      if (code === $STAR) {
-        const next = this._cursor.clone();
-        next.advance();
-        return next.peek() === $SLASH;
-      }
-      return false;
-    });
-    if (this._attemptStr('*/')) {
-      this._attemptCharCodeUntilFn(isNotWhitespace);
-    }
-  }
   _consumeTagOpen(start) {
     let tagName;
     let prefix;
@@ -14184,18 +14063,7 @@ class _Tokenizer {
         tagName = closingTagName = openToken.parts[1];
         this._attemptCharCodeUntilFn(isNotWhitespace);
       }
-      while (true) {
-        if (this._attemptStr('//')) {
-          this._consumeSingleLineComment();
-          continue;
-        }
-        if (this._attemptStr('/*')) {
-          this._consumeMultiLineComment();
-          continue;
-        }
-        if (isAttributeTerminator(this._cursor.peek())) {
-          break;
-        }
+      while (!isAttributeTerminator(this._cursor.peek())) {
         if (this._selectorlessEnabled && this._cursor.peek() === $AT) {
           const start = this._cursor.clone();
           const nameStart = start.clone();
@@ -16824,6 +16692,9 @@ class _ParseAST {
     } else if (this.next.isKeywordFalse()) {
       this.advance();
       return new LiteralPrimitive(this.span(start), this.sourceSpan(start), false);
+    } else if (this.next.isKeywordIn()) {
+      this.advance();
+      return new LiteralPrimitive(this.span(start), this.sourceSpan(start), 'in');
     } else if (this.next.isKeywordThis()) {
       this.advance();
       return new ThisReceiver(this.span(start), this.sourceSpan(start));
@@ -18473,6 +18344,7 @@ function i18nMetaToJSDoc(meta) {
   return jsDocComment(tags);
 }
 
+const GOOG_GET_MSG = 'goog.getMsg';
 function createGoogleGetMsgStatements(variable$1, message, closureVar, placeholderValues) {
   const messageString = serializeI18nMessageForGetMsg(message);
   const args = [literal(messageString)];
@@ -18486,7 +18358,7 @@ function createGoogleGetMsgStatements(variable$1, message, closureVar, placehold
       })))
     }));
   }
-  const googGetMsgStmt = new DeclareVarStmt(closureVar.name, variable('goog').prop('getMsg').callFn(args, null, undefined, [tsIgnoreComment()]), INFERRED_TYPE, StmtModifier.Final);
+  const googGetMsgStmt = new DeclareVarStmt(closureVar.name, variable(GOOG_GET_MSG).callFn(args), INFERRED_TYPE, StmtModifier.Final);
   googGetMsgStmt.addLeadingComment(i18nMetaToJSDoc(message));
   const i18nAssignmentStmt = new ExpressionStatement(variable$1.set(closureVar));
   return [googGetMsgStmt, i18nAssignmentStmt];
@@ -18531,7 +18403,7 @@ function createLocalizeStatements(variable, message, params) {
   const expressions = placeHolders.map(ph => params[ph.text]);
   const localizedString$1 = localizedString(message, messageParts, placeHolders, expressions, sourceSpan);
   const variableInitialization = variable.set(localizedString$1);
-  return [new ExpressionStatement(variableInitialization, null, [tsIgnoreComment()])];
+  return [new ExpressionStatement(variableInitialization)];
 }
 class LocalizeSerializerVisitor {
   placeholderToMessage;
@@ -18734,7 +18606,7 @@ function collectMessage(job, fileBasedI18nSuffix, messages, messageOp) {
   }
   addSubMessageParams(messageOp, subMessagePlaceholders);
   messageOp.params = new Map([...messageOp.params.entries()].sort());
-  const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX), DYNAMIC_TYPE);
+  const mainVar = variable(job.pool.uniqueName(TRANSLATION_VAR_PREFIX));
   const closureVar = i18nGenerateClosureVar(job.pool, messageOp.message.id, fileBasedI18nSuffix, job.i18nUseExternalIds);
   let transformFn = undefined;
   if (messageOp.needsPostprocessing || messageOp.postprocessingParams.size > 0) {
@@ -20177,7 +20049,7 @@ function reifyCreateOperations(unit, ops) {
         if (op.variable.name === null) {
           throw new Error(`AssertionError: unnamed variable ${op.xref}`);
         }
-        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, DYNAMIC_TYPE, StmtModifier.Final)));
+        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
         break;
       case OpKind.Namespace:
         switch (op.active) {
@@ -20200,12 +20072,8 @@ function reifyCreateOperations(unit, ops) {
         let args = [];
         switch (op.trigger.kind) {
           case DeferTriggerKind.Never:
-          case DeferTriggerKind.Immediate:
-            break;
           case DeferTriggerKind.Idle:
-            if (op.trigger.timeout != null) {
-              args = [literal(op.trigger.timeout)];
-            }
+          case DeferTriggerKind.Immediate:
             break;
           case DeferTriggerKind.Timer:
             args = [literal(op.trigger.delay)];
@@ -20395,7 +20263,7 @@ function reifyUpdateOperations(unit, ops) {
         if (op.variable.name === null) {
           throw new Error(`AssertionError: unnamed variable ${op.xref}`);
         }
-        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, DYNAMIC_TYPE, StmtModifier.Final)));
+        OpList.replace(op, createStatementOp(new DeclareVarStmt(op.variable.name, op.initializer, undefined, StmtModifier.Final)));
         break;
       case OpKind.Conditional:
         if (op.processed === null) {
@@ -21384,7 +21252,7 @@ function optimizeTrackFns(job) {
           return expr;
         }, VisitorContextFlag.None);
         const trackOpList = new OpList();
-        trackOpList.push(createStatementOp(new ReturnStatement(op.track, op.track.sourceSpan, [tsIgnoreComment()])));
+        trackOpList.push(createStatementOp(new ReturnStatement(op.track, op.track.sourceSpan)));
         op.trackByOps = trackOpList;
       }
     }
@@ -21910,7 +21778,7 @@ function addArrowFunctions(unit, op) {
   }, VisitorContextFlag.None);
 }
 
-const ELIGIBLE_CONTROL_PROPERTIES = new Map([['formField', new Set([OpKind.Property])], ['formControl', new Set([OpKind.Property])], ['formControlName', new Set([OpKind.Property, OpKind.Attribute])], ['ngModel', new Set([OpKind.Attribute, OpKind.Property, OpKind.TwoWayProperty])]]);
+const ELIGIBLE_CONTROL_PROPERTIES = new Set(['formField']);
 function specializeControlProperties(job) {
   for (const unit of job.units) {
     processView(unit);
@@ -21918,11 +21786,10 @@ function specializeControlProperties(job) {
 }
 function processView(view) {
   for (const op of view.update) {
-    if (op.kind !== OpKind.Property && op.kind !== OpKind.TwoWayProperty && op.kind !== OpKind.Attribute) {
+    if (op.kind !== OpKind.Property) {
       continue;
     }
-    const eligibleOps = ELIGIBLE_CONTROL_PROPERTIES.get(op.name);
-    if (eligibleOps !== undefined && eligibleOps.has(op.kind)) {
+    if (ELIGIBLE_CONTROL_PROPERTIES.has(op.name)) {
       addControlInstruction(view, op);
     }
   }
@@ -21944,7 +21811,7 @@ function findCreateInstruction(view, target) {
 function addControlInstruction(view, propertyOp) {
   const targetCreateOp = findCreateInstruction(view, propertyOp.target);
   if (targetCreateOp === null) {
-    return;
+    throw new Error(`No create instruction found for control target ${propertyOp.target}`);
   }
   const controlCreateOp = createControlCreateOp(propertyOp.sourceSpan);
   OpList.insertAfter(controlCreateOp, targetCreateOp);
@@ -22531,8 +22398,7 @@ function ingestDeferBlock(unit, deferBlock) {
   const hasConcreteTrigger = deferOnOps.some(op => op.modifier === "none") || deferWhenOps.some(op => op.modifier === "none");
   if (!hasConcreteTrigger) {
     deferOnOps.push(createDeferOnOp(deferXref, {
-      kind: DeferTriggerKind.Idle,
-      timeout: null
+      kind: DeferTriggerKind.Idle
     }, "none", null));
   }
   unit.create.push(deferOnOps);
@@ -22547,8 +22413,7 @@ function calcDeferBlockFlags(deferBlockDetails) {
 function ingestDeferTriggers(modifier, triggers, onOps, whenOps, unit, deferXref) {
   if (triggers.idle !== undefined) {
     const deferOnOp = createDeferOnOp(deferXref, {
-      kind: DeferTriggerKind.Idle,
-      timeout: triggers.idle.timeout ?? null
+      kind: DeferTriggerKind.Idle
     }, modifier, triggers.idle.sourceSpan);
     onOps.push(deferOnOp);
   }
@@ -23728,16 +23593,13 @@ function createSwitchBlock(ast, visitor, bindingParser) {
     if (isCase) {
       expression = parseBlockParameterToBinding(node.parameters[0], bindingParser);
     } else if (node.name === 'default never') {
-      if (node.parameters.length > 0) {
-        expression = parseBlockParameterToBinding(node.parameters[0], bindingParser);
-      }
       if (node.children.length > 0 || node.endSourceSpan !== null && node.endSourceSpan.start.offset !== node.endSourceSpan.end.offset) {
         errors.push(new ParseError(node.sourceSpan, '@default block with "never" parameter cannot have a body'));
       }
       if (collectedCases.length > 0) {
         errors.push(new ParseError(node.sourceSpan, 'A @case block with no body cannot be followed by a @default block with "never" parameter'));
       }
-      exhaustiveCheck = new SwitchExhaustiveCheck(expression, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan);
+      exhaustiveCheck = new SwitchExhaustiveCheck(node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan);
       continue;
     }
     const switchCase = new SwitchBlockCase(expression, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.nameSpan);
@@ -24245,17 +24107,10 @@ function trackTrigger(name, allTriggers, errors, trigger) {
   }
 }
 function createIdleTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
-  if (parameters.length > 1) {
-    throw new Error(`"${OnTriggerType.IDLE}" trigger can only have zero or one parameters`);
+  if (parameters.length > 0) {
+    throw new Error(`"${OnTriggerType.IDLE}" trigger cannot have parameters`);
   }
-  let timeout = null;
-  if (parameters[0]) {
-    timeout = parseDeferredTime(parameters[0].expression);
-    if (timeout === null) {
-      throw new Error(`Could not parse time value of trigger "${OnTriggerType.IDLE}"`);
-    }
-  }
-  return new IdleDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan, timeout);
+  return new IdleDeferredTrigger(nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan);
 }
 function createTimerTrigger(parameters, nameSpan, sourceSpan, prefetchSpan, onSourceSpan, hydrateSpan) {
   if (parameters.length !== 1) {
@@ -24846,18 +24701,19 @@ class HtmlAstToIvyAst {
     let elementHasInlineTemplate = false;
     for (const attribute of attrs) {
       let hasBinding = false;
+      const normalizedName = normalizeAttributeName(attribute.name);
       let isTemplateBinding = false;
       if (attribute.i18n) {
         i18nAttrsMeta[attribute.name] = attribute.i18n;
       }
-      if (attribute.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
+      if (normalizedName.startsWith(TEMPLATE_ATTR_PREFIX)) {
         if (elementHasInlineTemplate) {
           this.reportError(`Can't have multiple template bindings on one element. Use only one attribute prefixed with *`, attribute.sourceSpan);
         }
         isTemplateBinding = true;
         elementHasInlineTemplate = true;
         const templateValue = attribute.value;
-        const templateKey = attribute.name.substring(TEMPLATE_ATTR_PREFIX.length);
+        const templateKey = normalizedName.substring(TEMPLATE_ATTR_PREFIX.length);
         const parsedVariables = [];
         const absoluteValueOffset = attribute.valueSpan ? attribute.valueSpan.fullStart.offset : attribute.sourceSpan.fullStart.offset + attribute.name.length;
         this.bindingParser.parseInlineTemplateBinding(templateKey, templateValue, attribute.sourceSpan, absoluteValueOffset, [], templateParsedProperties, parsedVariables, true);
@@ -24882,12 +24738,13 @@ class HtmlAstToIvyAst {
     };
   }
   parseAttribute(isTemplateElement, attribute, matchableAttributes, parsedProperties, boundEvents, variables, references) {
-    const name = attribute.name;
+    const name = normalizeAttributeName(attribute.name);
     const value = attribute.value;
     const srcSpan = attribute.sourceSpan;
     const absoluteOffset = attribute.valueSpan ? attribute.valueSpan.fullStart.offset : srcSpan.fullStart.offset;
     function createKeySpan(srcSpan, prefix, identifier) {
-      const keySpanStart = srcSpan.start.moveBy(prefix.length);
+      const normalizationAdjustment = attribute.name.length - name.length;
+      const keySpanStart = srcSpan.start.moveBy(prefix.length + normalizationAdjustment);
       const keySpanEnd = keySpanStart.moveBy(identifier.length);
       return new ParseSourceSpan(keySpanStart, keySpanEnd, keySpanStart, identifier);
     }
@@ -25125,6 +24982,9 @@ class NonBindableVisitor {
   }
 }
 const NON_BINDABLE_VISITOR = new NonBindableVisitor();
+function normalizeAttributeName(attrName) {
+  return /^data-/i.test(attrName) ? attrName.substring(5) : attrName;
+}
 function addEvents(events, boundEvents) {
   boundEvents.push(...events.map(e => BoundEvent.fromParsedEvent(e)));
 }
@@ -25296,6 +25156,14 @@ function compileDirectiveFromMetadata(meta, constantPool, bindingParser) {
 function compileComponentFromMetadata(meta, constantPool, bindingParser) {
   const definitionMap = baseDirectiveFields(meta, constantPool, bindingParser);
   addFeatures(definitionMap, meta);
+  const selector = meta.selector && CssSelector.parse(meta.selector);
+  const firstSelector = selector && selector[0];
+  if (firstSelector) {
+    const selectorAttributes = firstSelector.getAttrs();
+    if (selectorAttributes.length) {
+      definitionMap.set('attrs', constantPool.getConstLiteral(literalArr(selectorAttributes.map(value => value != null ? literal(value) : literal(undefined))), true));
+    }
+  }
   const templateTypeName = meta.name;
   let allDeferrableDepsFn = null;
   if (meta.defer.mode === 1 && meta.defer.dependenciesFn !== null) {
@@ -25360,7 +25228,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     }]));
   }
   if (meta.changeDetection !== null) {
-    if (typeof meta.changeDetection === 'number' && meta.changeDetection !== ChangeDetectionStrategy.OnPush) {
+    if (typeof meta.changeDetection === 'number' && meta.changeDetection !== ChangeDetectionStrategy.Default) {
       definitionMap.set('changeDetection', literal(meta.changeDetection));
     } else if (typeof meta.changeDetection === 'object') {
       definitionMap.set('changeDetection', meta.changeDetection);
@@ -25616,7 +25484,7 @@ function compileDeferResolverFunction(meta) {
     for (const dep of meta.dependencies) {
       if (dep.isDeferrable) {
         const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(dep.isDefaultImport ? 'default' : dep.symbolName));
-        const importExpr = new DynamicImportExpr(dep.importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
+        const importExpr = new DynamicImportExpr(dep.importPath).prop('then').callFn([innerFn]);
         depExpressions.push(importExpr);
       } else {
         depExpressions.push(dep.typeReference);
@@ -25629,7 +25497,7 @@ function compileDeferResolverFunction(meta) {
       isDefaultImport
     } of meta.dependencies) {
       const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
-      const importExpr = new DynamicImportExpr(importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
+      const importExpr = new DynamicImportExpr(importPath).prop('then').callFn([innerFn]);
       depExpressions.push(importExpr);
     }
   }
@@ -25756,93 +25624,6 @@ class CombinedRecursiveAstVisitor extends RecursiveAstVisitor {
   }
 }
 
-var MatchSource;
-(function (MatchSource) {
-  MatchSource[MatchSource["Selector"] = 0] = "Selector";
-  MatchSource[MatchSource["HostDirective"] = 1] = "HostDirective";
-})(MatchSource || (MatchSource = {}));
-
-class ClassPropertyMapping {
-  forwardMap;
-  reverseMap;
-  constructor(forwardMap) {
-    this.forwardMap = forwardMap;
-    this.reverseMap = reverseMapFromForwardMap(forwardMap);
-  }
-  static empty() {
-    return new ClassPropertyMapping(new Map());
-  }
-  static fromMappedObject(obj) {
-    const forwardMap = new Map();
-    for (const classPropertyName of Object.keys(obj)) {
-      const value = obj[classPropertyName];
-      let inputOrOutput;
-      if (typeof value === 'string') {
-        inputOrOutput = {
-          classPropertyName,
-          bindingPropertyName: value,
-          isSignal: false
-        };
-      } else {
-        inputOrOutput = value;
-      }
-      forwardMap.set(classPropertyName, inputOrOutput);
-    }
-    return new ClassPropertyMapping(forwardMap);
-  }
-  static merge(a, b) {
-    const forwardMap = new Map(a.forwardMap.entries());
-    for (const [classPropertyName, inputOrOutput] of b.forwardMap) {
-      forwardMap.set(classPropertyName, inputOrOutput);
-    }
-    return new ClassPropertyMapping(forwardMap);
-  }
-  get classPropertyNames() {
-    return Array.from(this.forwardMap.keys());
-  }
-  get propertyNames() {
-    return Array.from(this.reverseMap.keys());
-  }
-  hasBindingPropertyName(propertyName) {
-    return this.reverseMap.has(propertyName);
-  }
-  getByBindingPropertyName(propertyName) {
-    return this.reverseMap.has(propertyName) ? this.reverseMap.get(propertyName) : null;
-  }
-  getByClassPropertyName(classPropertyName) {
-    return this.forwardMap.has(classPropertyName) ? this.forwardMap.get(classPropertyName) : null;
-  }
-  toDirectMappedObject() {
-    const obj = {};
-    for (const [classPropertyName, inputOrOutput] of this.forwardMap) {
-      obj[classPropertyName] = inputOrOutput.bindingPropertyName;
-    }
-    return obj;
-  }
-  toJointMappedObject(transform) {
-    const obj = {};
-    for (const [classPropertyName, inputOrOutput] of this.forwardMap) {
-      obj[classPropertyName] = transform(inputOrOutput);
-    }
-    return obj;
-  }
-  *[Symbol.iterator]() {
-    for (const inputOrOutput of this.forwardMap.values()) {
-      yield inputOrOutput;
-    }
-  }
-}
-function reverseMapFromForwardMap(forwardMap) {
-  const reverseMap = new Map();
-  for (const [_, inputOrOutput] of forwardMap) {
-    if (!reverseMap.has(inputOrOutput.bindingPropertyName)) {
-      reverseMap.set(inputOrOutput.bindingPropertyName, []);
-    }
-    reverseMap.get(inputOrOutput.bindingPropertyName).push(inputOrOutput);
-  }
-  return reverseMap;
-}
-
 function diff(fullList, itemsToExclude) {
   const exclude = new Set(itemsToExclude);
   return fullList.filter(item => !exclude.has(item));
@@ -25862,8 +25643,7 @@ function findMatchingDirectivesAndPipes(template, directiveSelectors) {
         hasBindingPropertyName() {
           return false;
         }
-      },
-      matchSource: MatchSource.Selector
+      }
     };
     matcher.addSelectables(CssSelector.parse(selector), [fakeDirective]);
   }
@@ -25907,21 +25687,20 @@ class R3TargetBinder {
     const usedPipes = new Set();
     const eagerPipes = new Set();
     const deferBlocks = [];
-    const conflictingHostDirectiveBindings = new Map();
     if (target.template) {
-      const scope = Scope$1.apply(target.template);
+      const scope = Scope.apply(target.template);
       extractScopedNodeEntities(scope, scopedNodeEntities);
-      DirectiveBinder.apply(target.template, this.directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
+      DirectiveBinder.apply(target.template, this.directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references);
       TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
     }
     if (target.host) {
       directives.set(target.host.node, target.host.directives);
-      TemplateBinder.applyWithScope(target.host.node, Scope$1.apply(target.host.node), expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
+      TemplateBinder.applyWithScope(target.host.node, Scope.apply(target.host.node), expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
     }
-    return new R3BoundTarget(target, directives, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, conflictingHostDirectiveBindings);
+    return new R3BoundTarget(target, directives, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks);
   }
 }
-let Scope$1 = class Scope {
+class Scope {
   parentScope;
   rootNode;
   namedEntities = new Map();
@@ -26062,7 +25841,7 @@ let Scope$1 = class Scope {
     scope.ingest(node);
     this.childScopes.set(node, scope);
   }
-};
+}
 class DirectiveBinder {
   directiveMatcher;
   directives;
@@ -26070,19 +25849,17 @@ class DirectiveBinder {
   missingDirectives;
   bindings;
   references;
-  conflictingHostDirectiveBindings;
   isInDeferBlock = false;
-  constructor(directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
+  constructor(directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references) {
     this.directiveMatcher = directiveMatcher;
     this.directives = directives;
     this.eagerDirectives = eagerDirectives;
     this.missingDirectives = missingDirectives;
     this.bindings = bindings;
     this.references = references;
-    this.conflictingHostDirectiveBindings = conflictingHostDirectiveBindings;
   }
-  static apply(template, directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
-    const matcher = new DirectiveBinder(directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
+  static apply(template, directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references) {
+    const matcher = new DirectiveBinder(directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references);
     matcher.ingest(template);
   }
   ingest(template) {
@@ -26177,87 +25954,12 @@ class DirectiveBinder {
     node.directives.forEach(directive => directive.visit(this));
     node.children.forEach(child => child.visit(this));
   }
-  trackMatchedDirectives(node, matchedDirectives) {
-    if (matchedDirectives.length > 0) {
-      const directives = this.dedupeAndMergeDirectives(node, matchedDirectives);
+  trackMatchedDirectives(node, directives) {
+    if (directives.length > 0) {
       this.directives.set(node, directives);
       if (!this.isInDeferBlock) {
         this.eagerDirectives.push(...directives);
       }
-    }
-  }
-  dedupeAndMergeDirectives(node, matches) {
-    if (matches.length === 0 || matches.every(dir => dir.matchSource === MatchSource.Selector)) {
-      return matches;
-    }
-    const selectorMatches = new Set();
-    const hostDirectives = new Map();
-    const mergedHostDirectives = new Map();
-    for (const dir of matches) {
-      if (dir.matchSource === MatchSource.Selector) {
-        selectorMatches.add(dir.ref.key);
-      } else {
-        if (!hostDirectives.has(dir.ref.key)) {
-          hostDirectives.set(dir.ref.key, []);
-        }
-        hostDirectives.get(dir.ref.key).push(dir);
-      }
-    }
-    for (const [key, directives] of hostDirectives.entries()) {
-      if (selectorMatches.has(key)) {
-        continue;
-      }
-      if (directives.length === 1) {
-        mergedHostDirectives.set(key, directives[0]);
-        continue;
-      }
-      const inputs = {};
-      const outputs = {};
-      for (const dir of directives) {
-        this.mergeMapping(node, dir, 'input', inputs, dir.inputs);
-        this.mergeMapping(node, dir, 'output', outputs, dir.outputs);
-      }
-      mergedHostDirectives.set(key, {
-        ...directives[0],
-        inputs: ClassPropertyMapping.fromMappedObject(inputs),
-        outputs: ClassPropertyMapping.fromMappedObject(outputs)
-      });
-    }
-    return matches.reduce((result, dir) => {
-      if (dir.matchSource === MatchSource.Selector) {
-        result.push(dir);
-      } else if (mergedHostDirectives.has(dir.ref.key)) {
-        result.push(mergedHostDirectives.get(dir.ref.key));
-        mergedHostDirectives.delete(dir.ref.key);
-      }
-      return result;
-    }, []);
-  }
-  mergeMapping(node, directive, kind, accumulator, bindings) {
-    for (const binding of bindings) {
-      const existing = accumulator[binding.classPropertyName];
-      if (!existing) {
-        accumulator[binding.classPropertyName] = binding;
-        continue;
-      }
-      if (existing.bindingPropertyName === binding.bindingPropertyName && existing.classPropertyName === binding.classPropertyName && existing.isSignal === binding.isSignal) {
-        continue;
-      }
-      if (!this.conflictingHostDirectiveBindings.has(node)) {
-        this.conflictingHostDirectiveBindings.set(node, []);
-      }
-      const conflictsForNode = this.conflictingHostDirectiveBindings.get(node);
-      let conflict = conflictsForNode.find(current => current.directive.ref.key === directive.ref.key && current.kind === kind && current.classPropertyName === binding.classPropertyName);
-      if (!conflict) {
-        conflict = {
-          directive,
-          kind,
-          classPropertyName: existing.classPropertyName,
-          conflictingAliases: new Set([existing.bindingPropertyName])
-        };
-        conflictsForNode.push(conflict);
-      }
-      conflict.conflictingAliases.add(binding.bindingPropertyName);
     }
   }
   trackSelectorlessMatchesAndDirectives(node, directives) {
@@ -26431,9 +26133,7 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
     block.cases.forEach(caseNode => caseNode.visit(this));
     this.ingestScopedNode(block);
   }
-  visitSwitchExhaustiveCheck(block) {
-    block.expression?.visit(this);
-  }
+  visitSwitchExhaustiveCheck(block) {}
   visitForLoopBlock(block) {
     block.expression.visit(this);
     this.ingestScopedNode(block);
@@ -26498,10 +26198,9 @@ class R3BoundTarget {
   scopedNodeEntities;
   usedPipes;
   eagerPipes;
-  conflictingHostDirectiveBindings;
   deferredBlocks;
   deferredScopes;
-  constructor(target, directives, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, conflictingHostDirectiveBindings) {
+  constructor(target, directives, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred) {
     this.target = target;
     this.directives = directives;
     this.eagerDirectives = eagerDirectives;
@@ -26514,7 +26213,6 @@ class R3BoundTarget {
     this.scopedNodeEntities = scopedNodeEntities;
     this.usedPipes = usedPipes;
     this.eagerPipes = eagerPipes;
-    this.conflictingHostDirectiveBindings = conflictingHostDirectiveBindings;
     this.deferredBlocks = rawDeferred.map(current => current[0]);
     this.deferredScopes = new Map(rawDeferred);
   }
@@ -26613,9 +26311,6 @@ class R3BoundTarget {
   }
   referencedDirectiveExists(name) {
     return !this.missingDirectives.has(name);
-  }
-  getConflictingHostDirectiveBindings(node) {
-    return this.conflictingHostDirectiveBindings.get(node) || null;
   }
   findEntityInScope(rootNode, name) {
     const entities = this.getEntitiesInScope(rootNode);
@@ -27017,7 +26712,7 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
     viewProviders: decl.viewProviders !== undefined ? new WrappedNodeExpr(decl.viewProviders) : null,
     animations: decl.animations !== undefined ? new WrappedNodeExpr(decl.animations) : null,
     defer,
-    changeDetection: decl.changeDetection ?? ChangeDetectionStrategy.OnPush,
+    changeDetection: decl.changeDetection ?? ChangeDetectionStrategy.Default,
     encapsulation: decl.encapsulation ?? ViewEncapsulation$1.Emulated,
     declarationListEmitMode: 2,
     relativeContextFilePath: '',
@@ -28791,6 +28486,87 @@ class MapPlaceholderNames extends CloneVisitor {
   }
 }
 
+class ClassPropertyMapping {
+  forwardMap;
+  reverseMap;
+  constructor(forwardMap) {
+    this.forwardMap = forwardMap;
+    this.reverseMap = reverseMapFromForwardMap(forwardMap);
+  }
+  static empty() {
+    return new ClassPropertyMapping(new Map());
+  }
+  static fromMappedObject(obj) {
+    const forwardMap = new Map();
+    for (const classPropertyName of Object.keys(obj)) {
+      const value = obj[classPropertyName];
+      let inputOrOutput;
+      if (typeof value === 'string') {
+        inputOrOutput = {
+          classPropertyName,
+          bindingPropertyName: value,
+          isSignal: false
+        };
+      } else {
+        inputOrOutput = value;
+      }
+      forwardMap.set(classPropertyName, inputOrOutput);
+    }
+    return new ClassPropertyMapping(forwardMap);
+  }
+  static merge(a, b) {
+    const forwardMap = new Map(a.forwardMap.entries());
+    for (const [classPropertyName, inputOrOutput] of b.forwardMap) {
+      forwardMap.set(classPropertyName, inputOrOutput);
+    }
+    return new ClassPropertyMapping(forwardMap);
+  }
+  get classPropertyNames() {
+    return Array.from(this.forwardMap.keys());
+  }
+  get propertyNames() {
+    return Array.from(this.reverseMap.keys());
+  }
+  hasBindingPropertyName(propertyName) {
+    return this.reverseMap.has(propertyName);
+  }
+  getByBindingPropertyName(propertyName) {
+    return this.reverseMap.has(propertyName) ? this.reverseMap.get(propertyName) : null;
+  }
+  getByClassPropertyName(classPropertyName) {
+    return this.forwardMap.has(classPropertyName) ? this.forwardMap.get(classPropertyName) : null;
+  }
+  toDirectMappedObject() {
+    const obj = {};
+    for (const [classPropertyName, inputOrOutput] of this.forwardMap) {
+      obj[classPropertyName] = inputOrOutput.bindingPropertyName;
+    }
+    return obj;
+  }
+  toJointMappedObject(transform) {
+    const obj = {};
+    for (const [classPropertyName, inputOrOutput] of this.forwardMap) {
+      obj[classPropertyName] = transform(inputOrOutput);
+    }
+    return obj;
+  }
+  *[Symbol.iterator]() {
+    for (const inputOrOutput of this.forwardMap.values()) {
+      yield inputOrOutput;
+    }
+  }
+}
+function reverseMapFromForwardMap(forwardMap) {
+  const reverseMap = new Map();
+  for (const [_, inputOrOutput] of forwardMap) {
+    if (!reverseMap.has(inputOrOutput.bindingPropertyName)) {
+      reverseMap.set(inputOrOutput.bindingPropertyName, []);
+    }
+    reverseMap.get(inputOrOutput.bindingPropertyName).push(inputOrOutput);
+  }
+  return reverseMap;
+}
+
 function compileClassMetadata(metadata) {
   const fnCall = internalCompileClassMetadata(metadata);
   return arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]).callFn([]);
@@ -28820,7 +28596,7 @@ function compileComponentMetadataAsyncResolver(dependencies) {
     isDefaultImport
   }) => {
     const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
-    return new DynamicImportExpr(importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
+    return new DynamicImportExpr(importPath).prop('then').callFn([innerFn]);
   });
   return arrowFn([], literalArr(dynamicImports));
 }
@@ -28830,7 +28606,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28848,7 +28624,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28921,7 +28697,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29263,7 +29039,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29289,7 +29065,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29330,7 +29106,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29357,7 +29133,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29395,7 +29171,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-c326548'));
+  definitionMap.set('version', literal('21.3.0-next.0+sha-4835277'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29469,2893 +29245,15 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.8+sha-c326548');
+var MatchSource;
+(function (MatchSource) {
+  MatchSource[MatchSource["Selector"] = 0] = "Selector";
+  MatchSource[MatchSource["HostDirective"] = 1] = "HostDirective";
+})(MatchSource || (MatchSource = {}));
 
-const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
-function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
-  const bindings = [];
-  const listeners = [];
-  let parser = null;
-  for (const binding of hostObjectLiteralBindings) {
-    parser ??= makeBindingParser();
-    createNodeFromHostLiteralProperty(binding, parser, bindings, listeners);
-  }
-  for (const decorator of hostBindingDecorators) {
-    createNodeFromBindingDecorator(decorator, bindings);
-  }
-  for (const decorator of hostListenerDecorators) {
-    parser ??= makeBindingParser();
-    createNodeFromListenerDecorator(decorator, parser, listeners);
-  }
-  if (bindings.length === 0 && listeners.length === 0) {
-    return null;
-  }
-  const tagNames = [];
-  if (selector !== null) {
-    const parts = CssSelector.parse(selector);
-    for (const part of parts) {
-      if (part.element !== null) {
-        tagNames.push(part.element);
-      }
-    }
-  }
-  if (tagNames.length === 0) {
-    tagNames.push(`ng-${type}`);
-  }
-  return new HostElement(tagNames, bindings, listeners, nameSpan);
-}
-function createHostBindingsBlockGuard() {
-  return `(true /*${HOST_BINDING_GUARD_COMMENT_TEXT}*/)`;
-}
-function createNodeFromHostLiteralProperty(binding, parser, bindings, listeners) {
-  const {
-    key,
-    value,
-    sourceSpan
-  } = binding;
-  if (key.kind !== 'string' || value.kind !== 'string') {
-    return;
-  }
-  if (key.text.startsWith('[') && key.text.endsWith(']')) {
-    const {
-      attrName,
-      type
-    } = inferBoundAttribute(key.text.slice(1, -1));
-    const ast = parser.parseBinding(value.text, true, value.sourceSpan, value.sourceSpan.start.offset);
-    if (ast.errors.length > 0) {
-      return;
-    }
-    fixupSpans(ast, value);
-    bindings.push(new BoundAttribute(attrName, type, 0, ast, null, sourceSpan, key.sourceSpan, value.sourceSpan, undefined));
-  } else if (key.text.startsWith('(') && key.text.endsWith(')')) {
-    const events = [];
-    parser.parseEvent(key.text.slice(1, -1), value.text, false, sourceSpan, value.sourceSpan, [], events, key.sourceSpan);
-    if (events.length === 0 || events[0].handler.errors.length > 0) {
-      return;
-    }
-    fixupSpans(events[0].handler, value);
-    listeners.push(BoundEvent.fromParsedEvent(events[0]));
-  }
-}
-function createNodeFromBindingDecorator(decorator, bindings) {
-  const args = decorator.arguments;
-  let nameNode;
-  if (args.length === 0) {
-    nameNode = decorator.memberName;
-  } else if (args[0].kind === 'string') {
-    nameNode = args[0];
-  } else {
-    return;
-  }
-  if (nameNode.kind !== 'string' && nameNode.kind !== 'identifier') {
-    return;
-  }
-  const span = new ParseSpan(-1, -1);
-  const propertyStart = decorator.memberSpan.start.offset;
-  const receiver = new ThisReceiver(span, new AbsoluteSourceSpan(propertyStart, propertyStart));
-  const nameSpan = new AbsoluteSourceSpan(nameNode.sourceSpan.start.offset, nameNode.sourceSpan.end.offset);
-  const read = decorator.memberName.kind === 'string' ? new KeyedRead(span, nameSpan, receiver, new LiteralPrimitive(span, nameSpan, decorator.memberName.text)) : new PropertyRead(span, nameSpan, nameSpan, receiver, decorator.memberName.text);
-  const {
-    attrName,
-    type
-  } = inferBoundAttribute(nameNode.text);
-  bindings.push(new BoundAttribute(attrName, type, 0, read, null, decorator.decoratorSpan, nameNode.sourceSpan, decorator.decoratorSpan, undefined));
-}
-function createNodeFromListenerDecorator(decorator, parser, listeners) {
-  if (decorator.eventName === null || decorator.eventName.kind !== 'string') {
-    return;
-  }
-  const dummySpan = new ParseSpan(-1, -1);
-  const argNodes = [];
-  const methodStart = decorator.memberSpan.start.offset;
-  const methodReceiver = new ThisReceiver(dummySpan, new AbsoluteSourceSpan(methodStart, methodStart));
-  const nameSpan = new AbsoluteSourceSpan(decorator.memberName.sourceSpan.start.offset, decorator.memberName.sourceSpan.end.offset);
-  const receiver = decorator.memberName.kind === 'string' ? new KeyedRead(dummySpan, nameSpan, methodReceiver, new LiteralPrimitive(dummySpan, nameSpan, decorator.memberName.text)) : new PropertyRead(dummySpan, nameSpan, nameSpan, methodReceiver, decorator.memberName.text);
-  for (const arg of decorator.arguments) {
-    if (arg.kind === 'string') {
-      const span = arg.sourceSpan;
-      const ast = parser.parseBinding(arg.text, true, span, span.start.offset);
-      fixupSpans(ast, arg);
-      argNodes.push(ast);
-    } else {
-      const expressionSpan = new AbsoluteSourceSpan(arg.sourceSpan.start.offset, arg.sourceSpan.end.offset);
-      const anyRead = new PropertyRead(dummySpan, expressionSpan, expressionSpan, new ImplicitReceiver(dummySpan, expressionSpan), '$any');
-      const anyCall = new Call(dummySpan, expressionSpan, anyRead, [new LiteralPrimitive(dummySpan, expressionSpan, 0)], expressionSpan);
-      argNodes.push(anyCall);
-    }
-  }
-  const callNode = new Call(dummySpan, nameSpan, receiver, argNodes, dummySpan);
-  const eventNameNode = decorator.eventName;
-  let type;
-  let eventName;
-  let phase;
-  let target;
-  if (eventNameNode.text.startsWith('@')) {
-    const parsedName = parser.parseLegacyAnimationEventName(eventNameNode.text);
-    type = ParsedEventType.LegacyAnimation;
-    eventName = parsedName.eventName;
-    phase = parsedName.phase;
-    target = null;
-  } else {
-    const parsedName = parser.parseEventListenerName(eventNameNode.text);
-    type = parsedName.eventName.startsWith('animate.') ? ParsedEventType.Animation : ParsedEventType.Regular;
-    eventName = parsedName.eventName;
-    target = parsedName.target;
-    phase = null;
-  }
-  listeners.push(new BoundEvent(eventName, type, callNode, target, phase, decorator.decoratorSpan, decorator.decoratorSpan, eventNameNode.sourceSpan));
-}
-function inferBoundAttribute(name) {
-  const attrPrefix = 'attr.';
-  const classPrefix = 'class.';
-  const stylePrefix = 'style.';
-  const animationPrefix = 'animate.';
-  const legacyAnimationPrefix = '@';
-  let attrName;
-  let type;
-  if (name.startsWith(attrPrefix)) {
-    attrName = name.slice(attrPrefix.length);
-    type = BindingType.Attribute;
-  } else if (name.startsWith(classPrefix)) {
-    attrName = name.slice(classPrefix.length);
-    type = BindingType.Class;
-  } else if (name.startsWith(stylePrefix)) {
-    attrName = name.slice(stylePrefix.length);
-    type = BindingType.Style;
-  } else if (name.startsWith(animationPrefix)) {
-    attrName = name;
-    type = BindingType.Animation;
-  } else if (name.startsWith(legacyAnimationPrefix)) {
-    attrName = name.slice(legacyAnimationPrefix.length);
-    type = BindingType.LegacyAnimation;
-  } else {
-    attrName = name;
-    type = BindingType.Property;
-  }
-  return {
-    attrName,
-    type
-  };
-}
-function fixupSpans(ast, node) {
-  const escapeIndex = node.source.indexOf('\\', 1);
-  if (escapeIndex > -1) {
-    const start = node.sourceSpan.start.offset;
-    const end = node.sourceSpan.end.offset;
-    const newSpan = new ParseSpan(0, end - start);
-    const newSourceSpan = new AbsoluteSourceSpan(start, end);
-    ast.visit(new ReplaceSpanVisitor(escapeIndex, newSpan, newSourceSpan));
-  }
-}
-class ReplaceSpanVisitor extends RecursiveAstVisitor {
-  afterIndex;
-  overrideSpan;
-  overrideSourceSpan;
-  constructor(afterIndex, overrideSpan, overrideSourceSpan) {
-    super();
-    this.afterIndex = afterIndex;
-    this.overrideSpan = overrideSpan;
-    this.overrideSourceSpan = overrideSourceSpan;
-  }
-  visit(ast) {
-    if (ast.span.start >= this.afterIndex || ast.span.end >= this.afterIndex) {
-      ast.span = this.overrideSpan;
-      ast.sourceSpan = this.overrideSourceSpan;
-      if (ast instanceof ASTWithName) {
-        ast.nameSpan = this.overrideSourceSpan;
-      }
-      if (ast instanceof Call || ast instanceof SafeCall) {
-        ast.argumentSpan = this.overrideSourceSpan;
-      }
-    }
-    super.visit(ast);
-  }
-}
-
-var CommentTriviaType;
-(function (CommentTriviaType) {
-  CommentTriviaType["DIAGNOSTIC"] = "D";
-  CommentTriviaType["EXPRESSION_TYPE_IDENTIFIER"] = "T";
-})(CommentTriviaType || (CommentTriviaType = {}));
-var ExpressionIdentifier;
-(function (ExpressionIdentifier) {
-  ExpressionIdentifier["DIRECTIVE"] = "DIR";
-  ExpressionIdentifier["HOST_DIRECTIVE"] = "HOSTDIR";
-  ExpressionIdentifier["COMPONENT_COMPLETION"] = "COMPCOMP";
-  ExpressionIdentifier["EVENT_PARAMETER"] = "EP";
-  ExpressionIdentifier["VARIABLE_AS_EXPRESSION"] = "VAE";
-})(ExpressionIdentifier || (ExpressionIdentifier = {}));
-
-var OutOfBandDiagnosticCategory;
-(function (OutOfBandDiagnosticCategory) {
-  OutOfBandDiagnosticCategory[OutOfBandDiagnosticCategory["Error"] = 0] = "Error";
-  OutOfBandDiagnosticCategory[OutOfBandDiagnosticCategory["Warning"] = 1] = "Warning";
-})(OutOfBandDiagnosticCategory || (OutOfBandDiagnosticCategory = {}));
-
-var TcbGenericContextBehavior;
-(function (TcbGenericContextBehavior) {
-  TcbGenericContextBehavior[TcbGenericContextBehavior["UseEmitter"] = 0] = "UseEmitter";
-  TcbGenericContextBehavior[TcbGenericContextBehavior["CopyClassNodes"] = 1] = "CopyClassNodes";
-  TcbGenericContextBehavior[TcbGenericContextBehavior["FallbackToAny"] = 2] = "FallbackToAny";
-})(TcbGenericContextBehavior || (TcbGenericContextBehavior = {}));
-class Context {
-  env;
-  domSchemaChecker;
-  oobRecorder;
-  id;
-  boundTarget;
-  pipes;
-  schemas;
-  hostIsStandalone;
-  hostPreserveWhitespaces;
-  nextId = 1;
-  constructor(env, domSchemaChecker, oobRecorder, id, boundTarget, pipes, schemas, hostIsStandalone, hostPreserveWhitespaces) {
-    this.env = env;
-    this.domSchemaChecker = domSchemaChecker;
-    this.oobRecorder = oobRecorder;
-    this.id = id;
-    this.boundTarget = boundTarget;
-    this.pipes = pipes;
-    this.schemas = schemas;
-    this.hostIsStandalone = hostIsStandalone;
-    this.hostPreserveWhitespaces = hostPreserveWhitespaces;
-  }
-  allocateId() {
-    return `_t${this.nextId++}`;
-  }
-  getPipeByName(name) {
-    if (this.pipes === null || !this.pipes.has(name)) {
-      return null;
-    }
-    return this.pipes.get(name);
-  }
-}
-
-class TcbExpr {
-  source;
-  spanComment = null;
-  identifierComment = null;
-  ignoreComment = null;
-  constructor(source) {
-    this.source = source;
-  }
-  static quoteAndEscape(value) {
-    return JSON.stringify(value);
-  }
-  print(ignoreComments = false) {
-    if (ignoreComments) {
-      return this.source;
-    }
-    return this.source + this.formatComment(this.identifierComment) + this.formatComment(this.ignoreComment) + this.formatComment(this.spanComment);
-  }
-  addParseSpanInfo(span) {
-    let start;
-    let end;
-    if (span instanceof AbsoluteSourceSpan) {
-      start = span.start;
-      end = span.end;
-    } else {
-      start = span.start.offset;
-      end = span.end.offset;
-    }
-    this.spanComment = `${start},${end}`;
-    return this;
-  }
-  markIgnoreDiagnostics() {
-    this.ignoreComment = `${CommentTriviaType.DIAGNOSTIC}:ignore`;
-    return this;
-  }
-  wrapForTypeChecker() {
-    this.source = `(${this.print()})`;
-    this.spanComment = this.identifierComment = this.ignoreComment = null;
-    return this;
-  }
-  addExpressionIdentifier(identifier, id) {
-    this.identifierComment = `${CommentTriviaType.EXPRESSION_TYPE_IDENTIFIER}:${identifier}${id !== undefined ? `:${id}` : ''}`;
-    return this;
-  }
-  toString() {
-    throw new Error('Assertion error: TcbExpr should not be converted to a string through concatenation. ' + 'Use the `print` method instead.');
-  }
-  formatComment(content) {
-    return content === null || content.length === 0 ? '' : ` /*${content}*/`;
-  }
-}
-function declareVariable(identifier, type) {
-  type.addExpressionIdentifier(ExpressionIdentifier.VARIABLE_AS_EXPRESSION);
-  return new TcbExpr(`var ${identifier.print()} = null! as ${type.print()}`);
-}
-function getStatementsBlock(expressions, singleLine = false) {
-  let result = '';
-  for (const expr of expressions) {
-    result += `${expr.print()};${singleLine ? ' ' : '\n'}`;
-  }
-  return result;
-}
-
-class TcbOp {
-  circularFallback() {
-    return new TcbExpr('null!');
-  }
-}
-
-function astToTcbExpr(ast, maybeResolve, config) {
-  const translator = new TcbExprTranslator(maybeResolve, config);
-  return translator.translate(ast);
-}
-class TcbExprTranslator {
-  maybeResolve;
-  config;
-  constructor(maybeResolve, config) {
-    this.maybeResolve = maybeResolve;
-    this.config = config;
-  }
-  translate(ast) {
-    if (ast instanceof ASTWithSource) {
-      ast = ast.ast;
-    }
-    const resolved = this.maybeResolve(ast);
-    if (resolved !== null) {
-      return resolved;
-    }
-    return ast.visit(this);
-  }
-  visitUnary(ast) {
-    const expr = this.translate(ast.expr);
-    const node = new TcbExpr(`${ast.operator}${expr.print()}`);
-    return node.wrapForTypeChecker().addParseSpanInfo(ast.sourceSpan);
-  }
-  visitBinary(ast) {
-    const lhs = this.translate(ast.left);
-    const rhs = this.translate(ast.right);
-    lhs.wrapForTypeChecker();
-    rhs.wrapForTypeChecker();
-    const expression = `${lhs.print()} ${ast.operation} ${rhs.print()}`;
-    const node = new TcbExpr(ast.operation === '??' || ast.operation === '**' ? `(${expression})` : expression);
-    node.addParseSpanInfo(ast.sourceSpan);
-    return node;
-  }
-  visitChain(ast) {
-    const elements = ast.expressions.map(expr => this.translate(expr).print());
-    const node = new TcbExpr(elements.join(', '));
-    node.wrapForTypeChecker();
-    node.addParseSpanInfo(ast.sourceSpan);
-    return node;
-  }
-  visitConditional(ast) {
-    const condExpr = this.translate(ast.condition);
-    const trueExpr = this.translate(ast.trueExp);
-    const falseExpr = this.translate(ast.falseExp).wrapForTypeChecker();
-    const node = new TcbExpr(`(${condExpr.print()} ? ${trueExpr.print()} : ${falseExpr.print()})`).addParseSpanInfo(ast.sourceSpan);
-    return node;
-  }
-  visitImplicitReceiver(ast) {
-    throw new Error('Method not implemented.');
-  }
-  visitThisReceiver(ast) {
-    throw new Error('Method not implemented.');
-  }
-  visitRegularExpressionLiteral(ast, context) {
-    const node = new TcbExpr(`/${ast.body}/${ast.flags ?? ''}`);
-    node.wrapForTypeChecker();
-    return node;
-  }
-  visitInterpolation(ast) {
-    const exprs = ast.expressions.map(e => {
-      const node = this.translate(e);
-      node.wrapForTypeChecker();
-      return node.print();
-    });
-    return new TcbExpr(`"" + ${exprs.join(' + ')}`);
-  }
-  visitKeyedRead(ast) {
-    const receiver = this.translate(ast.receiver).wrapForTypeChecker();
-    const key = this.translate(ast.key);
-    return new TcbExpr(`${receiver.print()}[${key.print()}]`).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitLiteralArray(ast) {
-    const elements = ast.expressions.map(expr => this.translate(expr));
-    let literal = `[${elements.map(el => el.print()).join(', ')}]`;
-    if (!this.config.strictLiteralTypes) {
-      literal = `(${literal} as any)`;
-    }
-    return new TcbExpr(literal).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitLiteralMap(ast) {
-    const properties = ast.keys.map((key, idx) => {
-      const value = this.translate(ast.values[idx]);
-      if (key.kind === 'property') {
-        const keyNode = new TcbExpr(TcbExpr.quoteAndEscape(key.key));
-        keyNode.addParseSpanInfo(key.sourceSpan);
-        return `${keyNode.print()}: ${value.print()}`;
-      } else {
-        return `...${value.print()}`;
-      }
-    });
-    let literal = `{ ${properties.join(', ')} }`;
-    if (!this.config.strictLiteralTypes) {
-      literal = `${literal} as any`;
-    }
-    const expression = new TcbExpr(literal).addParseSpanInfo(ast.sourceSpan);
-    expression.wrapForTypeChecker();
-    return expression;
-  }
-  visitLiteralPrimitive(ast) {
-    let node;
-    if (ast.value === undefined) {
-      node = new TcbExpr('undefined');
-    } else if (ast.value === null) {
-      node = new TcbExpr('null');
-    } else if (typeof ast.value === 'string') {
-      node = new TcbExpr(TcbExpr.quoteAndEscape(ast.value));
-    } else if (typeof ast.value === 'number') {
-      if (Number.isNaN(ast.value)) {
-        node = new TcbExpr('NaN');
-      } else if (!Number.isFinite(ast.value)) {
-        node = new TcbExpr(ast.value > 0 ? 'Infinity' : '-Infinity');
-      } else {
-        node = new TcbExpr(ast.value.toString());
-      }
-    } else if (typeof ast.value === 'boolean') {
-      node = new TcbExpr(ast.value + '');
-    } else {
-      throw Error(`Unsupported AST value of type ${typeof ast.value}`);
-    }
-    node.addParseSpanInfo(ast.sourceSpan);
-    return node;
-  }
-  visitNonNullAssert(ast) {
-    const expr = this.translate(ast.expression).wrapForTypeChecker();
-    return new TcbExpr(`${expr.print()}!`).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitPipe(ast) {
-    throw new Error('Method not implemented.');
-  }
-  visitPrefixNot(ast) {
-    const expression = this.translate(ast.expression).wrapForTypeChecker();
-    return new TcbExpr(`!${expression.print()}`).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitTypeofExpression(ast) {
-    const expression = this.translate(ast.expression).wrapForTypeChecker();
-    return new TcbExpr(`typeof ${expression.print()}`).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitVoidExpression(ast) {
-    const expression = this.translate(ast.expression).wrapForTypeChecker();
-    return new TcbExpr(`void ${expression.print()}`).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitPropertyRead(ast) {
-    const receiver = this.translate(ast.receiver).wrapForTypeChecker();
-    return new TcbExpr(`${receiver.print()}.${ast.name}`).addParseSpanInfo(ast.nameSpan).wrapForTypeChecker().addParseSpanInfo(ast.sourceSpan);
-  }
-  visitSafePropertyRead(ast) {
-    let node;
-    const receiver = this.translate(ast.receiver).wrapForTypeChecker();
-    const name = new TcbExpr(ast.name).addParseSpanInfo(ast.nameSpan);
-    if (this.config.strictSafeNavigationTypes) {
-      node = new TcbExpr(`${receiver.print()}?.${name.print()}`);
-    } else if (VeSafeLhsInferenceBugDetector.veWillInferAnyFor(ast)) {
-      node = new TcbExpr(`(${receiver.print()} as any).${name.print()}`);
-    } else {
-      node = new TcbExpr(`(${receiver.print()}!.${name.print()} as any)`);
-    }
-    return node.addParseSpanInfo(ast.sourceSpan);
-  }
-  visitSafeKeyedRead(ast) {
-    const receiver = this.translate(ast.receiver).wrapForTypeChecker();
-    const key = this.translate(ast.key);
-    let node;
-    if (this.config.strictSafeNavigationTypes) {
-      node = new TcbExpr(`${receiver.print()}?.[${key.print()}]`);
-    } else if (VeSafeLhsInferenceBugDetector.veWillInferAnyFor(ast)) {
-      node = new TcbExpr(`(${receiver.print()} as any)[${key.print()}]`);
-    } else {
-      const elementAccess = new TcbExpr(`${receiver.print()}![${key.print()}]`).addParseSpanInfo(ast.sourceSpan);
-      node = new TcbExpr(`(${elementAccess.print()} as any)`);
-    }
-    return node.addParseSpanInfo(ast.sourceSpan);
-  }
-  visitCall(ast) {
-    const args = ast.args.map(expr => this.translate(expr));
-    const receiver = ast.receiver;
-    let expr;
-    if (receiver instanceof PropertyRead) {
-      const resolved = this.maybeResolve(receiver);
-      if (resolved !== null) {
-        expr = resolved;
-      } else {
-        const propertyReceiver = this.translate(receiver.receiver).wrapForTypeChecker();
-        expr = new TcbExpr(`${propertyReceiver.print()}.${receiver.name}`).addParseSpanInfo(receiver.nameSpan);
-      }
-    } else {
-      expr = this.translate(receiver);
-    }
-    let node;
-    if (ast.receiver instanceof SafePropertyRead || ast.receiver instanceof SafeKeyedRead) {
-      node = this.convertToSafeCall(ast, expr, args);
-    } else {
-      node = new TcbExpr(`${expr.print()}(${args.map(arg => arg.print()).join(', ')})`);
-    }
-    return node.addParseSpanInfo(ast.sourceSpan);
-  }
-  visitSafeCall(ast) {
-    const args = ast.args.map(expr => this.translate(expr));
-    const expr = this.translate(ast.receiver).wrapForTypeChecker();
-    return this.convertToSafeCall(ast, expr, args).addParseSpanInfo(ast.sourceSpan);
-  }
-  visitTemplateLiteral(ast) {
-    const length = ast.elements.length;
-    const head = ast.elements[0];
-    let result;
-    if (length === 1) {
-      result = `\`${this.escapeTemplateLiteral(head.text)}\``;
-    } else {
-      let parts = [`\`${this.escapeTemplateLiteral(head.text)}`];
-      const tailIndex = length - 1;
-      for (let i = 1; i < tailIndex; i++) {
-        const expr = this.translate(ast.expressions[i - 1]);
-        parts.push(`\${${expr.print()}}${this.escapeTemplateLiteral(ast.elements[i].text)}`);
-      }
-      const resolvedExpression = this.translate(ast.expressions[tailIndex - 1]);
-      parts.push(`\${${resolvedExpression.print()}}${this.escapeTemplateLiteral(ast.elements[tailIndex].text)}\``);
-      result = parts.join('');
-    }
-    return new TcbExpr(result);
-  }
-  visitTemplateLiteralElement() {
-    throw new Error('Method not implemented');
-  }
-  visitTaggedTemplateLiteral(ast) {
-    const tag = this.translate(ast.tag);
-    const template = this.visitTemplateLiteral(ast.template);
-    return new TcbExpr(`${tag.print()}${template.print()}`);
-  }
-  visitParenthesizedExpression(ast) {
-    const expr = this.translate(ast.expression);
-    return new TcbExpr(`(${expr.print()})`);
-  }
-  visitSpreadElement(ast) {
-    const expression = this.translate(ast.expression);
-    expression.wrapForTypeChecker();
-    const node = new TcbExpr(`...${expression.print()}`);
-    node.addParseSpanInfo(ast.sourceSpan);
-    return node;
-  }
-  visitEmptyExpr(ast) {
-    const node = new TcbExpr('undefined');
-    node.addParseSpanInfo(ast.sourceSpan);
-    return node;
-  }
-  visitArrowFunction(ast) {
-    const params = ast.parameters.map(param => new TcbExpr(param.name).markIgnoreDiagnostics().print()).join(', ');
-    const body = astToTcbExpr(ast.body, innerAst => {
-      if (!(innerAst instanceof PropertyRead) || innerAst.receiver instanceof ThisReceiver || !(innerAst.receiver instanceof ImplicitReceiver)) {
-        return this.maybeResolve(innerAst);
-      }
-      const correspondingParam = ast.parameters.find(arg => arg.name === innerAst.name);
-      if (correspondingParam) {
-        const node = new TcbExpr(innerAst.name);
-        node.addParseSpanInfo(innerAst.sourceSpan);
-        return node;
-      }
-      return this.maybeResolve(innerAst);
-    }, this.config);
-    return new TcbExpr(`${ast.parameters.length === 1 ? params : `(${params})`} => ${body.print()}`);
-  }
-  convertToSafeCall(ast, exprNode, argNodes) {
-    const expr = exprNode.print();
-    const args = argNodes.map(node => node.print()).join(', ');
-    if (this.config.strictSafeNavigationTypes) {
-      return new TcbExpr(`(0 as any ? ${expr}!(${args}) : undefined)`);
-    }
-    if (VeSafeLhsInferenceBugDetector.veWillInferAnyFor(ast)) {
-      return new TcbExpr(`(${expr} as any)(${args})`);
-    }
-    return new TcbExpr(`(${expr}!(${args}) as any)`);
-  }
-  escapeTemplateLiteral(value) {
-    return value.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\${/g, '$\\{');
-  }
-}
-class VeSafeLhsInferenceBugDetector {
-  static SINGLETON = new VeSafeLhsInferenceBugDetector();
-  static veWillInferAnyFor(ast) {
-    const visitor = VeSafeLhsInferenceBugDetector.SINGLETON;
-    return ast instanceof Call ? ast.visit(visitor) : ast.receiver.visit(visitor);
-  }
-  visitUnary(ast) {
-    return ast.expr.visit(this);
-  }
-  visitBinary(ast) {
-    return ast.left.visit(this) || ast.right.visit(this);
-  }
-  visitChain() {
-    return false;
-  }
-  visitConditional(ast) {
-    return ast.condition.visit(this) || ast.trueExp.visit(this) || ast.falseExp.visit(this);
-  }
-  visitCall() {
-    return true;
-  }
-  visitSafeCall() {
-    return false;
-  }
-  visitImplicitReceiver() {
-    return false;
-  }
-  visitThisReceiver() {
-    return false;
-  }
-  visitInterpolation(ast) {
-    return ast.expressions.some(exp => exp.visit(this));
-  }
-  visitKeyedRead() {
-    return false;
-  }
-  visitLiteralArray() {
-    return true;
-  }
-  visitLiteralMap() {
-    return true;
-  }
-  visitLiteralPrimitive() {
-    return false;
-  }
-  visitPipe() {
-    return true;
-  }
-  visitPrefixNot(ast) {
-    return ast.expression.visit(this);
-  }
-  visitTypeofExpression(ast) {
-    return ast.expression.visit(this);
-  }
-  visitVoidExpression(ast) {
-    return ast.expression.visit(this);
-  }
-  visitNonNullAssert(ast) {
-    return ast.expression.visit(this);
-  }
-  visitPropertyRead() {
-    return false;
-  }
-  visitSafePropertyRead() {
-    return false;
-  }
-  visitSafeKeyedRead() {
-    return false;
-  }
-  visitTemplateLiteral() {
-    return false;
-  }
-  visitTemplateLiteralElement() {
-    return false;
-  }
-  visitTaggedTemplateLiteral() {
-    return false;
-  }
-  visitParenthesizedExpression(ast) {
-    return ast.expression.visit(this);
-  }
-  visitRegularExpressionLiteral() {
-    return false;
-  }
-  visitSpreadElement(ast) {
-    return ast.expression.visit(this);
-  }
-  visitArrowFunction(ast, context) {
-    return false;
-  }
-}
-
-function tcbExpression(ast, tcb, scope) {
-  const translator = new TcbExpressionTranslator(tcb, scope);
-  return translator.translate(ast);
-}
-function unwrapWritableSignal(expression, tcb) {
-  const unwrapRef = tcb.env.referenceExternalSymbol(Identifiers.unwrapWritableSignal.moduleName, Identifiers.unwrapWritableSignal.name);
-  return new TcbExpr(`${unwrapRef.print()}(${expression.print()})`);
-}
-class TcbExpressionOp extends TcbOp {
-  tcb;
-  scope;
-  expression;
-  constructor(tcb, scope, expression) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.expression = expression;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const expr = tcbExpression(this.expression, this.tcb, this.scope);
-    this.scope.addStatement(expr);
-    return null;
-  }
-}
-class TcbConditionOp extends TcbOp {
-  tcb;
-  scope;
-  expression;
-  constructor(tcb, scope, expression) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.expression = expression;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const expr = tcbExpression(this.expression, this.tcb, this.scope);
-    this.scope.addStatement(new TcbExpr(`if (${expr.print()}) {}`));
-    return null;
-  }
-}
-class TcbExpressionTranslator {
-  tcb;
-  scope;
-  constructor(tcb, scope) {
-    this.tcb = tcb;
-    this.scope = scope;
-  }
-  translate(ast) {
-    return astToTcbExpr(ast, ast => this.resolve(ast), this.tcb.env.config);
-  }
-  resolve(ast) {
-    if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver) {
-      const target = this.tcb.boundTarget.getExpressionTarget(ast);
-      const targetExpression = target === null ? null : this.getTargetNodeExpression(target, ast);
-      if (target instanceof LetDeclaration$1 && !this.isValidLetDeclarationAccess(target, ast)) {
-        this.tcb.oobRecorder.letUsedBeforeDefinition(this.tcb.id, ast, target);
-        if (targetExpression !== null) {
-          return new TcbExpr(`${targetExpression.print()} as any`);
-        }
-      }
-      return targetExpression;
-    } else if (ast instanceof Binary && Binary.isAssignmentOperation(ast.operation) && ast.left instanceof PropertyRead && (ast.left.receiver instanceof ImplicitReceiver || ast.left.receiver instanceof ThisReceiver)) {
-      const read = ast.left;
-      const target = this.tcb.boundTarget.getExpressionTarget(read);
-      if (target === null) {
-        return null;
-      }
-      const targetExpression = this.getTargetNodeExpression(target, read);
-      const expr = this.translate(ast.right);
-      const result = new TcbExpr(`(${targetExpression.print()} = ${expr.print()})`);
-      result.addParseSpanInfo(read.sourceSpan);
-      if (target instanceof LetDeclaration$1) {
-        result.markIgnoreDiagnostics();
-        this.tcb.oobRecorder.illegalWriteToLetDeclaration(this.tcb.id, read, target);
-      }
-      return result;
-    } else if (ast instanceof ImplicitReceiver || ast instanceof ThisReceiver) {
-      return new TcbExpr('this');
-    } else if (ast instanceof BindingPipe) {
-      const expr = this.translate(ast.exp);
-      const pipeMeta = this.tcb.getPipeByName(ast.name);
-      let pipe;
-      if (pipeMeta === null) {
-        this.tcb.oobRecorder.missingPipe(this.tcb.id, ast, this.tcb.hostIsStandalone);
-        pipe = new TcbExpr('(0 as any)');
-      } else if (pipeMeta.isExplicitlyDeferred && this.tcb.boundTarget.getEagerlyUsedPipes().includes(ast.name)) {
-        this.tcb.oobRecorder.deferredPipeUsedEagerly(this.tcb.id, ast);
-        pipe = new TcbExpr('(0 as any)');
-      } else {
-        pipe = this.tcb.env.pipeInst(pipeMeta);
-      }
-      const args = ast.args.map(arg => this.translate(arg).print());
-      let methodAccess = new TcbExpr(`${pipe.print()}.transform`).addParseSpanInfo(ast.nameSpan);
-      if (!this.tcb.env.config.checkTypeOfPipes) {
-        methodAccess = new TcbExpr(`(${methodAccess.print()} as any)`);
-      }
-      const result = new TcbExpr(`${methodAccess.print()}(${[expr.print(), ...args].join(', ')})`);
-      return result.addParseSpanInfo(ast.sourceSpan);
-    } else if ((ast instanceof Call || ast instanceof SafeCall) && (ast.receiver instanceof PropertyRead || ast.receiver instanceof SafePropertyRead)) {
-      if (ast.receiver.receiver instanceof ImplicitReceiver && ast.receiver.name === '$any' && ast.args.length === 1) {
-        const expr = this.translate(ast.args[0]);
-        const result = new TcbExpr(`(${expr.print()} as any)`);
-        result.addParseSpanInfo(ast.sourceSpan);
-        return result;
-      }
-      const target = this.tcb.boundTarget.getExpressionTarget(ast);
-      if (target === null) {
-        return null;
-      }
-      const method = this.getTargetNodeExpression(target, ast);
-      method.addParseSpanInfo(ast.receiver.nameSpan).wrapForTypeChecker();
-      const args = ast.args.map(arg => this.translate(arg).print());
-      const node = new TcbExpr(`${method.print()}(${args.join(', ')})`);
-      node.addParseSpanInfo(ast.sourceSpan);
-      return node;
-    } else {
-      return null;
-    }
-  }
-  getTargetNodeExpression(targetNode, expressionNode) {
-    const expr = this.scope.resolve(targetNode);
-    expr.addParseSpanInfo(expressionNode.sourceSpan);
-    return expr;
-  }
-  isValidLetDeclarationAccess(target, ast) {
-    const targetStart = target.sourceSpan.start.offset;
-    const targetEnd = target.sourceSpan.end.offset;
-    const astStart = ast.sourceSpan.start;
-    return targetStart < astStart && astStart > targetEnd || !this.scope.isLocal(target);
-  }
-}
-
-class TcbTemplateContextOp extends TcbOp {
-  tcb;
-  scope;
-  constructor(tcb, scope) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-  }
-  optional = true;
-  execute() {
-    const ctx = new TcbExpr(this.tcb.allocateId());
-    this.scope.addStatement(declareVariable(ctx, new TcbExpr('any')));
-    return ctx;
-  }
-}
-class TcbTemplateBodyOp extends TcbOp {
-  tcb;
-  scope;
-  template;
-  constructor(tcb, scope, template) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.template = template;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    let guard = null;
-    const directiveGuards = [];
-    this.addDirectiveGuards(directiveGuards, this.template, this.tcb.boundTarget.getDirectivesOfNode(this.template));
-    for (const directive of this.template.directives) {
-      this.addDirectiveGuards(directiveGuards, directive, this.tcb.boundTarget.getDirectivesOfNode(directive));
-    }
-    if (directiveGuards.length > 0) {
-      guard = directiveGuards.reduce((expr, dirGuard) => new TcbExpr(`${expr.print()} && ${dirGuard.print()}`), directiveGuards.pop());
-    }
-    const tmplScope = this.scope.createChildScope(this.scope, this.template, this.template.children, guard);
-    const statements = tmplScope.render();
-    if (statements.length === 0) {
-      return null;
-    }
-    let tmplBlock = `{\n${getStatementsBlock(statements)}}`;
-    if (guard !== null) {
-      tmplBlock = `if (${guard.print()}) ${tmplBlock}`;
-    }
-    this.scope.addStatement(new TcbExpr(tmplBlock));
-    return null;
-  }
-  addDirectiveGuards(guards, hostNode, directives) {
-    if (directives === null || directives.length === 0) {
-      return;
-    }
-    const isTemplate = hostNode instanceof Template;
-    for (const dir of directives) {
-      const dirInstId = this.scope.resolve(hostNode, dir);
-      const dirId = this.tcb.env.referenceTcbValue(dir.ref);
-      dir.ngTemplateGuards.forEach(guard => {
-        const boundInput = hostNode.inputs.find(i => i.name === guard.inputName) || (isTemplate ? hostNode.templateAttrs.find(input => {
-          return input instanceof BoundAttribute && input.name === guard.inputName;
-        }) : undefined);
-        if (boundInput !== undefined) {
-          const expr = tcbExpression(boundInput.value, this.tcb, this.scope);
-          expr.markIgnoreDiagnostics();
-          if (guard.type === 'binding') {
-            guards.push(expr);
-          } else {
-            const guardInvoke = new TcbExpr(`${dirId.print()}.ngTemplateGuard_${guard.inputName}(${dirInstId.print()}, ${expr.print()})`);
-            guardInvoke.addParseSpanInfo(boundInput.value.sourceSpan);
-            guards.push(guardInvoke);
-          }
-        }
-      });
-      if (dir.hasNgTemplateContextGuard) {
-        if (this.tcb.env.config.applyTemplateContextGuards) {
-          const ctx = this.scope.resolve(hostNode);
-          const guardInvoke = new TcbExpr(`${dirId.print()}.ngTemplateContextGuard(${dirInstId.print()}, ${ctx.print()})`);
-          guardInvoke.markIgnoreDiagnostics();
-          guardInvoke.addParseSpanInfo(hostNode.sourceSpan);
-          guards.push(guardInvoke);
-        }
-      }
-    }
-  }
-}
-
-class TcbElementOp extends TcbOp {
-  tcb;
-  scope;
-  element;
-  constructor(tcb, scope, element) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.element = element;
-  }
-  get optional() {
-    return true;
-  }
-  execute() {
-    const id = this.tcb.allocateId();
-    const idNode = new TcbExpr(id);
-    idNode.addParseSpanInfo(this.element.startSourceSpan || this.element.sourceSpan);
-    const initializer = new TcbExpr(`document.createElement("${this.element.name}")`);
-    initializer.addParseSpanInfo(this.element.startSourceSpan || this.element.sourceSpan);
-    const stmt = new TcbExpr(`var ${idNode.print()} = ${initializer.print()}`);
-    stmt.addParseSpanInfo(this.element.startSourceSpan || this.element.sourceSpan);
-    this.scope.addStatement(stmt);
-    return idNode;
-  }
-}
-
-class TcbBlockImplicitVariableOp extends TcbOp {
-  tcb;
-  scope;
-  type;
-  variable;
-  constructor(tcb, scope, type, variable) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.type = type;
-    this.variable = variable;
-  }
-  optional = true;
-  execute() {
-    const id = new TcbExpr(this.tcb.allocateId());
-    id.addParseSpanInfo(this.variable.keySpan);
-    const variable = declareVariable(id, this.type);
-    variable.addParseSpanInfo(this.variable.sourceSpan);
-    this.scope.addStatement(variable);
-    return id;
-  }
-}
-class TcbTemplateVariableOp extends TcbOp {
-  tcb;
-  scope;
-  template;
-  variable;
-  constructor(tcb, scope, template, variable) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.template = template;
-    this.variable = variable;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const ctx = this.scope.resolve(this.template);
-    const id = new TcbExpr(this.tcb.allocateId());
-    const initializer = new TcbExpr(`${ctx.print()}.${this.variable.value || '$implicit'}`);
-    id.addParseSpanInfo(this.variable.keySpan);
-    if (this.variable.valueSpan !== undefined) {
-      initializer.addParseSpanInfo(this.variable.valueSpan).wrapForTypeChecker();
-    }
-    const variable = new TcbExpr(`var ${id.print()} = ${initializer.print()}`);
-    variable.addParseSpanInfo(this.variable.sourceSpan);
-    this.scope.addStatement(variable);
-    return id;
-  }
-}
-class TcbBlockVariableOp extends TcbOp {
-  tcb;
-  scope;
-  initializer;
-  variable;
-  constructor(tcb, scope, initializer, variable) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.initializer = initializer;
-    this.variable = variable;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const id = new TcbExpr(this.tcb.allocateId());
-    id.addParseSpanInfo(this.variable.keySpan);
-    this.initializer.wrapForTypeChecker();
-    const variable = new TcbExpr(`var ${id.print()} = ${this.initializer.print()}`);
-    variable.addParseSpanInfo(this.variable.sourceSpan);
-    this.scope.addStatement(variable);
-    return id;
-  }
-}
-
-class TcbComponentContextCompletionOp extends TcbOp {
-  scope;
-  constructor(scope) {
-    super();
-    this.scope = scope;
-  }
-  optional = false;
-  execute() {
-    const ctx = new TcbExpr('this.');
-    ctx.markIgnoreDiagnostics();
-    ctx.addExpressionIdentifier(ExpressionIdentifier.COMPONENT_COMPLETION);
-    this.scope.addStatement(ctx);
-    return null;
-  }
-}
-
-class TcbReferenceOp extends TcbOp {
-  tcb;
-  scope;
-  node;
-  host;
-  target;
-  constructor(tcb, scope, node, host, target) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-    this.host = host;
-    this.target = target;
-  }
-  optional = true;
-  execute() {
-    const id = new TcbExpr(this.tcb.allocateId());
-    let initializer = this.target instanceof Template || this.target instanceof Element$1 ? this.scope.resolve(this.target) : this.scope.resolve(this.host, this.target);
-    if (this.target instanceof Element$1 && !this.tcb.env.config.checkTypeOfDomReferences || !this.tcb.env.config.checkTypeOfNonDomReferences) {
-      initializer = new TcbExpr(`${initializer.print()} as any`);
-    } else if (this.target instanceof Template) {
-      const templateRef = this.tcb.env.referenceExternalSymbol('@angular/core', 'TemplateRef');
-      initializer = new TcbExpr(`(${initializer.print()} as any as ${templateRef.print()}<any>)`);
-    }
-    initializer.addParseSpanInfo(this.node.sourceSpan);
-    id.addParseSpanInfo(this.node.keySpan);
-    this.scope.addStatement(new TcbExpr(`var ${id.print()} = ${initializer.print()}`));
-    return id;
-  }
-}
-class TcbInvalidReferenceOp extends TcbOp {
-  tcb;
-  scope;
-  constructor(tcb, scope) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-  }
-  optional = true;
-  execute() {
-    const id = new TcbExpr(this.tcb.allocateId());
-    this.scope.addStatement(new TcbExpr(`var ${id.print()} = any`));
-    return id;
-  }
-}
-
-class TcbIfBlockOp extends TcbOp {
-  tcb;
-  scope;
-  block;
-  expressionScopes = new Map();
-  constructor(tcb, scope, block) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.block = block;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const root = this.generateBranch(0);
-    root && this.scope.addStatement(root);
-    return null;
-  }
-  generateBranch(index) {
-    const branch = this.block.branches[index];
-    if (!branch) {
-      return undefined;
-    }
-    if (branch.expression === null) {
-      const branchScope = this.getBranchScope(this.scope, branch, index);
-      return new TcbExpr(`{\n${getStatementsBlock(branchScope.render())}}`);
-    }
-    const outerScope = this.scope.createChildScope(this.scope, branch, [], null);
-    outerScope.render().forEach(stmt => this.scope.addStatement(stmt));
-    this.expressionScopes.set(branch, outerScope);
-    let expression = tcbExpression(branch.expression, this.tcb, this.scope);
-    if (branch.expressionAlias !== null) {
-      expression = new TcbExpr(`(${expression.print()}) && ${outerScope.resolve(branch.expressionAlias).print()}`);
-    }
-    const bodyScope = this.getBranchScope(outerScope, branch, index);
-    const ifStatement = `if (${expression.print()}) {\n${getStatementsBlock(bodyScope.render())}}`;
-    const elseBranch = this.generateBranch(index + 1);
-    return new TcbExpr(ifStatement + (elseBranch ? ' else ' + elseBranch.print() : ''));
-  }
-  getBranchScope(parentScope, branch, index) {
-    const checkBody = this.tcb.env.config.checkControlFlowBodies;
-    return this.scope.createChildScope(parentScope, null, checkBody ? branch.children : [], checkBody ? this.generateBranchGuard(index) : null);
-  }
-  generateBranchGuard(index) {
-    let guard = null;
-    for (let i = 0; i <= index; i++) {
-      const branch = this.block.branches[i];
-      if (branch.expression === null) {
-        continue;
-      }
-      if (!this.expressionScopes.has(branch)) {
-        throw new Error(`Could not determine expression scope of branch at index ${i}`);
-      }
-      const expressionScope = this.expressionScopes.get(branch);
-      let expression;
-      expression = tcbExpression(branch.expression, this.tcb, expressionScope);
-      if (branch.expressionAlias !== null) {
-        expression = new TcbExpr(`(${expression.print()}) && ${expressionScope.resolve(branch.expressionAlias).print()}`);
-      }
-      expression.markIgnoreDiagnostics();
-      const comparisonExpression = i === index ? expression : new TcbExpr(`!(${expression.print()})`);
-      guard = guard === null ? comparisonExpression : new TcbExpr(`(${guard.print()}) && (${comparisonExpression.print()})`);
-    }
-    return guard;
-  }
-}
-
-class TcbSwitchOp extends TcbOp {
-  tcb;
-  scope;
-  block;
-  constructor(tcb, scope, block) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.block = block;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const switchExpression = tcbExpression(this.block.expression, this.tcb, this.scope);
-    const clauses = this.block.groups.flatMap(current => {
-      const checkBody = this.tcb.env.config.checkControlFlowBodies;
-      const clauseScope = this.scope.createChildScope(this.scope, null, checkBody ? current.children : [], checkBody ? this.generateGuard(current, switchExpression) : null);
-      const statements = [...clauseScope.render(), new TcbExpr('break')];
-      return current.cases.map((switchCase, index) => {
-        const statementsStr = getStatementsBlock(index === current.cases.length - 1 ? statements : [], true);
-        const source = switchCase.expression === null ? `default: ${statementsStr}` : `case ${tcbExpression(switchCase.expression, this.tcb, this.scope).print()}: ${statementsStr}`;
-        return new TcbExpr(source);
-      });
-    });
-    if (this.block.exhaustiveCheck) {
-      let translateExpression = this.block.expression;
-      if (this.block.exhaustiveCheck.expression) {
-        translateExpression = this.block.exhaustiveCheck.expression;
-      }
-      const switchValue = tcbExpression(translateExpression, this.tcb, this.scope);
-      const exhaustiveId = this.tcb.allocateId();
-      clauses.push(new TcbExpr(`default: const tcbExhaustive${exhaustiveId}: never = ${switchValue.print()};`));
-    }
-    this.scope.addStatement(new TcbExpr(`switch (${switchExpression.print()}) { ${clauses.map(c => c.print()).join('\n')} }`));
-    return null;
-  }
-  generateGuard(group, switchValue) {
-    const hasDefault = group.cases.some(c => c.expression === null);
-    if (!hasDefault) {
-      let guard = null;
-      for (const switchCase of group.cases) {
-        if (switchCase.expression !== null) {
-          const expression = tcbExpression(switchCase.expression, this.tcb, this.scope);
-          expression.markIgnoreDiagnostics();
-          const comparison = new TcbExpr(`${switchValue.print()} === ${expression.print()}`);
-          if (guard === null) {
-            guard = comparison;
-          } else {
-            guard = new TcbExpr(`(${guard.print()}) || (${comparison.print()})`);
-          }
-        }
-      }
-      return guard;
-    }
-    let guard = null;
-    for (const currentGroup of this.block.groups) {
-      if (currentGroup === group) {
-        continue;
-      }
-      for (const switchCase of currentGroup.cases) {
-        if (switchCase.expression === null) {
-          continue;
-        }
-        const expression = tcbExpression(switchCase.expression, this.tcb, this.scope);
-        expression.markIgnoreDiagnostics();
-        const comparison = new TcbExpr(`${switchValue.print()} !== ${expression.print()}`);
-        if (guard === null) {
-          guard = comparison;
-        } else {
-          guard = new TcbExpr(`(${guard.print()}) && (${comparison.print()})`);
-        }
-      }
-    }
-    return guard;
-  }
-}
-
-class TcbForOfOp extends TcbOp {
-  tcb;
-  scope;
-  block;
-  constructor(tcb, scope, block) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.block = block;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const loopScope = this.scope.createChildScope(this.scope, this.block, this.tcb.env.config.checkControlFlowBodies ? this.block.children : [], null);
-    const initializerId = loopScope.resolve(this.block.item);
-    const initializer = new TcbExpr(`const ${initializerId.print()}`);
-    initializer.addParseSpanInfo(this.block.item.keySpan);
-    const expression = new TcbExpr(`${tcbExpression(this.block.expression, this.tcb, this.scope).print()}!`);
-    const trackTranslator = new TcbForLoopTrackTranslator(this.tcb, loopScope, this.block);
-    const trackExpression = trackTranslator.translate(this.block.trackBy);
-    const block = getStatementsBlock([...loopScope.render(), trackExpression]);
-    this.scope.addStatement(new TcbExpr(`for (${initializer.print()} of ${expression.print()}) {\n${block} }`));
-    return null;
-  }
-}
-class TcbForLoopTrackTranslator extends TcbExpressionTranslator {
-  block;
-  allowedVariables;
-  constructor(tcb, scope, block) {
-    super(tcb, scope);
-    this.block = block;
-    this.allowedVariables = new Set([block.item]);
-    for (const variable of block.contextVariables) {
-      if (variable.value === '$index') {
-        this.allowedVariables.add(variable);
-      }
-    }
-  }
-  resolve(ast) {
-    if (ast instanceof PropertyRead && (ast.receiver instanceof ImplicitReceiver || ast.receiver instanceof ThisReceiver)) {
-      const target = this.tcb.boundTarget.getExpressionTarget(ast);
-      if (target !== null && (!(target instanceof Variable) || !this.allowedVariables.has(target))) {
-        this.tcb.oobRecorder.illegalForLoopTrackAccess(this.tcb.id, this.block, ast);
-      }
-    }
-    return super.resolve(ast);
-  }
-}
-
-class TcbLetDeclarationOp extends TcbOp {
-  tcb;
-  scope;
-  node;
-  constructor(tcb, scope, node) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-  }
-  optional = false;
-  execute() {
-    const id = new TcbExpr(this.tcb.allocateId()).addParseSpanInfo(this.node.nameSpan);
-    const value = tcbExpression(this.node.value, this.tcb, this.scope).wrapForTypeChecker();
-    const varStatement = new TcbExpr(`const ${id.print()} = ${value.print()}`);
-    varStatement.addParseSpanInfo(this.node.sourceSpan);
-    this.scope.addStatement(varStatement);
-    return id;
-  }
-}
-
-const formControlInputFields = ['errors', 'dirty', 'disabled', 'disabledReasons', 'hidden', 'invalid', 'name', 'pending', 'readonly', 'touched', 'max', 'maxLength', 'min', 'minLength', 'pattern', 'required'];
-const customFormControlBannedInputFields = new Set([...formControlInputFields, 'value', 'checked']);
-const formControlOptionalFields = new Set(['max', 'maxLength', 'min', 'minLength']);
-class TcbNativeFieldOp extends TcbOp {
-  tcb;
-  scope;
-  node;
-  inputType;
-  unsupportedBindingFields = new Set([...formControlInputFields, 'value', 'checked', 'maxlength', 'minlength']);
-  get optional() {
-    return false;
-  }
-  constructor(tcb, scope, node, inputType) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-    this.inputType = inputType;
-  }
-  execute() {
-    const inputs = this.node instanceof HostElement ? this.node.bindings : this.node.inputs;
-    const fieldBinding = inputs.find(input => input.type === BindingType.Property && input.name === 'formField') ?? null;
-    if (fieldBinding === null) {
-      return null;
-    }
-    checkUnsupportedFieldBindings(this.node, this.unsupportedBindingFields, this.tcb);
-    const rawExpectedType = this.getExpectedTypeFromDomNode(this.node);
-    if (rawExpectedType === null) {
-      const signal = extractFieldValueSignal(fieldBinding.value, this.tcb, this.scope);
-      const id = new TcbExpr(this.tcb.allocateId());
-      const unionType = new TcbExpr('{ (): string; set: (v: string) => void; } | { (): number | null; set: (v: number | null) => void; }');
-      const assignment = new TcbExpr(`${id.print()} = ${signal.print()}`);
-      assignment.addParseSpanInfo(fieldBinding.valueSpan ?? fieldBinding.sourceSpan);
-      this.scope.addStatement(declareVariable(id, unionType));
-      this.scope.addStatement(assignment);
-    } else {
-      const expectedType = new TcbExpr(rawExpectedType);
-      const value = extractFieldValue(fieldBinding.value, this.tcb, this.scope);
-      const id = new TcbExpr(this.tcb.allocateId());
-      const assignment = new TcbExpr(`${id.print()} = ${value.print()}`);
-      assignment.addParseSpanInfo(fieldBinding.valueSpan ?? fieldBinding.sourceSpan);
-      this.scope.addStatement(declareVariable(id, expectedType));
-      this.scope.addStatement(assignment);
-    }
-    return null;
-  }
-  getExpectedTypeFromDomNode(node) {
-    if (node.name === 'textarea' || node.name === 'select') {
-      return 'string';
-    }
-    if (node.name !== 'input') {
-      return this.getUnsupportedType();
-    }
-    switch (this.inputType) {
-      case 'checkbox':
-        return 'boolean';
-      case 'radio':
-        return 'string';
-      case 'number':
-      case 'range':
-      case 'datetime-local':
-        return 'string | number | null';
-      case 'date':
-      case 'month':
-      case 'time':
-      case 'week':
-        return 'string | number | Date | null';
-    }
-    const hasDynamicType = this.inputType === null && this.node.inputs.some(input => (input.type === BindingType.Property || input.type === BindingType.Attribute) && input.name === 'type');
-    if (hasDynamicType) {
-      return 'string | number | boolean | Date | null';
-    }
-    if (this.inputType === 'text' || this.inputType === null) {
-      return null;
-    }
-    return 'string';
-  }
-  getUnsupportedType() {
-    return 'never';
-  }
-}
-class TcbNativeRadioButtonFieldOp extends TcbNativeFieldOp {
-  constructor(tcb, scope, node) {
-    super(tcb, scope, node, 'radio');
-    this.unsupportedBindingFields.delete('value');
-  }
-  execute() {
-    super.execute();
-    const valueBinding = this.node.inputs.find(attr => {
-      return attr.type === BindingType.Property && attr.name === 'value';
-    });
-    if (valueBinding !== undefined) {
-      const id = new TcbExpr(this.tcb.allocateId());
-      const value = tcbExpression(valueBinding.value, this.tcb, this.scope);
-      const assignment = new TcbExpr(`${id.print()} = ${value.print()}`);
-      assignment.addParseSpanInfo(valueBinding.sourceSpan);
-      this.scope.addStatement(declareVariable(id, new TcbExpr('string')));
-      this.scope.addStatement(assignment);
-    }
-    return null;
-  }
-}
-function expandBoundAttributesForField(directive, node, customFormControlType) {
-  const fieldBinding = node.inputs.find(input => input.type === BindingType.Property && input.name === 'formField');
-  if (!fieldBinding) {
-    return null;
-  }
-  let boundInputs = null;
-  let primaryInput;
-  if (customFormControlType === 'value') {
-    primaryInput = getSyntheticFieldBoundInput(directive, 'value', 'value', fieldBinding, customFormControlType);
-  } else if (customFormControlType === 'checkbox') {
-    primaryInput = getSyntheticFieldBoundInput(directive, 'checked', 'value', fieldBinding, customFormControlType);
-  } else {
-    primaryInput = null;
-  }
-  if (primaryInput !== null) {
-    boundInputs ??= [];
-    boundInputs.push(primaryInput);
-  }
-  for (const name of formControlInputFields) {
-    const input = getSyntheticFieldBoundInput(directive, name, name, fieldBinding, customFormControlType);
-    if (input !== null) {
-      boundInputs ??= [];
-      boundInputs.push(input);
-    }
-  }
-  return boundInputs;
-}
-function isFieldDirective(meta) {
-  if (meta.name !== 'FormField') {
-    return false;
-  }
-  if (meta.ref.moduleName === '@angular/forms/signals') {
-    return true;
-  }
-  return meta.hasNgFieldDirective;
-}
-function getSyntheticFieldBoundInput(dir, inputName, fieldPropertyName, fieldBinding, customFieldType) {
-  const inputs = dir.inputs.getByBindingPropertyName(inputName);
-  if (inputs === null || inputs.length === 0) {
-    return null;
-  }
-  const {
-    span,
-    sourceSpan
-  } = fieldBinding.value;
-  const outerCall = new Call(span, sourceSpan, fieldBinding.value, [], sourceSpan);
-  const read = new PropertyRead(span, sourceSpan, sourceSpan, outerCall, fieldPropertyName);
-  const isTwoWayBinding = customFieldType === 'value' && inputName === 'value' || customFieldType === 'checkbox' && inputName === 'checked';
-  let value;
-  if (isTwoWayBinding) {
-    value = read;
-  } else if (formControlOptionalFields.has(fieldPropertyName)) {
-    value = new SafeCall(span, sourceSpan, read, [], sourceSpan);
-  } else {
-    value = new Call(span, sourceSpan, read, [], sourceSpan);
-  }
-  return {
-    value,
-    sourceSpan: fieldBinding.sourceSpan,
-    keySpan: fieldBinding.keySpan ?? null,
-    inputs: inputs.map(input => ({
-      fieldName: input.classPropertyName,
-      required: input.required,
-      transformType: input.transformType,
-      isSignal: input.isSignal,
-      isTwoWayBinding
-    }))
-  };
-}
-function getCustomFieldDirectiveType(meta) {
-  if (hasModelInput('value', meta)) {
-    return 'value';
-  } else if (hasModelInput('checked', meta)) {
-    return 'checkbox';
-  }
-  return null;
-}
-function isNativeField(dir, node, allDirectiveMatches) {
-  if (!isFieldDirective(dir)) {
-    return false;
-  }
-  if (!(node instanceof Element$1) || node.name !== 'input' && node.name !== 'select' && node.name !== 'textarea') {
-    return false;
-  }
-  return allDirectiveMatches.every(meta => {
-    return getCustomFieldDirectiveType(meta) === null && !isControlValueAccessorLike(meta);
-  });
-}
-function isControlValueAccessorLike(meta) {
-  return meta.publicMethods.has('writeValue') && meta.publicMethods.has('registerOnChange') && meta.publicMethods.has('registerOnTouched');
-}
-function checkUnsupportedFieldBindings(node, unsupportedBindingFields, tcb) {
-  const inputs = node instanceof HostElement ? node.bindings : node.inputs;
-  for (const input of inputs) {
-    if (input.type === BindingType.Property && unsupportedBindingFields.has(input.name)) {
-      tcb.oobRecorder.formFieldUnsupportedBinding(tcb.id, input);
-    } else if (input.type === BindingType.Attribute && unsupportedBindingFields.has(input.name.toLowerCase())) {
-      tcb.oobRecorder.formFieldUnsupportedBinding(tcb.id, input);
-    }
-  }
-  if (!(node instanceof HostElement)) {
-    for (const attr of node.attributes) {
-      if (unsupportedBindingFields.has(attr.name.toLowerCase())) {
-        tcb.oobRecorder.formFieldUnsupportedBinding(tcb.id, attr);
-      }
-    }
-  }
-}
-function extractFieldValue(expression, tcb, scope) {
-  const innerCall = new TcbExpr(tcbExpression(expression, tcb, scope).print() + '()');
-  innerCall.markIgnoreDiagnostics();
-  return new TcbExpr(`${innerCall.print()}.value()`);
-}
-function extractFieldValueSignal(expression, tcb, scope) {
-  const innerCall = new TcbExpr(tcbExpression(expression, tcb, scope).print() + '()');
-  innerCall.markIgnoreDiagnostics();
-  return new TcbExpr(`${innerCall.print()}.value`);
-}
-function hasModelInput(name, meta) {
-  return meta.inputs.hasBindingPropertyName(name) && meta.outputs.hasBindingPropertyName(name + 'Change');
-}
-function isFormControl(allDirectiveMatches) {
-  let result = false;
-  for (const match of allDirectiveMatches) {
-    if (match.inputs.hasBindingPropertyName('formField')) {
-      if (!isFieldDirective(match)) {
-        return false;
-      }
-      result = true;
-    }
-  }
-  return result;
-}
-
-function getBoundAttributes(directive, node) {
-  const boundInputs = [];
-  const processAttribute = attr => {
-    if (attr instanceof BoundAttribute && attr.type !== BindingType.Property && attr.type !== BindingType.TwoWay) {
-      return;
-    }
-    const inputs = directive.inputs.getByBindingPropertyName(attr.name);
-    if (inputs !== null) {
-      boundInputs.push({
-        value: attr.value,
-        sourceSpan: attr.sourceSpan,
-        keySpan: attr.keySpan ?? null,
-        inputs: inputs.map(input => {
-          return {
-            fieldName: input.classPropertyName,
-            required: input.required,
-            transformType: input.transformType,
-            isSignal: input.isSignal,
-            isTwoWayBinding: attr instanceof BoundAttribute && attr.type === BindingType.TwoWay
-          };
-        })
-      });
-    }
-  };
-  if (node instanceof Template) {
-    if (node.tagName === 'ng-template') {
-      node.inputs.forEach(processAttribute);
-      node.attributes.forEach(processAttribute);
-    }
-    node.templateAttrs.forEach(processAttribute);
-  } else {
-    node.inputs.forEach(processAttribute);
-    node.attributes.forEach(processAttribute);
-  }
-  return boundInputs;
-}
-function checkSplitTwoWayBinding(inputName, output, inputs, tcb) {
-  const input = inputs.find(input => input.name === inputName);
-  if (input === undefined || input.sourceSpan !== output.sourceSpan) {
-    return false;
-  }
-  const inputConsumer = tcb.boundTarget.getConsumerOfBinding(input);
-  const outputConsumer = tcb.boundTarget.getConsumerOfBinding(output);
-  if (outputConsumer === null || inputConsumer.ref === undefined || outputConsumer instanceof Template) {
-    return false;
-  }
-  if (outputConsumer instanceof Element$1) {
-    tcb.oobRecorder.splitTwoWayBinding(tcb.id, input, output, inputConsumer, outputConsumer);
-    return true;
-  } else if (outputConsumer.ref !== inputConsumer.ref) {
-    tcb.oobRecorder.splitTwoWayBinding(tcb.id, input, output, inputConsumer, outputConsumer);
-    return true;
-  }
-  return false;
-}
-function widenBinding(expr, tcb, originalValue) {
-  if (!tcb.env.config.checkTypeOfInputBindings) {
-    return new TcbExpr(`((${expr.print()}) as any)`);
-  } else if (!tcb.env.config.strictNullInputBindings) {
-    if (originalValue instanceof LiteralMap || originalValue instanceof LiteralArray) {
-      return expr;
-    } else {
-      return new TcbExpr(`(${expr.print()})!`);
-    }
-  } else {
-    return expr;
-  }
-}
-
-const REGISTRY$1 = new DomElementSchemaRegistry();
-function translateInput(value, tcb, scope) {
-  if (typeof value === 'string') {
-    return new TcbExpr(TcbExpr.quoteAndEscape(value));
-  } else {
-    return tcbExpression(value, tcb, scope);
-  }
-}
-class TcbDirectiveInputsOp extends TcbOp {
-  tcb;
-  scope;
-  node;
-  dir;
-  isFormControl;
-  customFormControlType;
-  constructor(tcb, scope, node, dir, isFormControl = false, customFormControlType) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-    this.dir = dir;
-    this.isFormControl = isFormControl;
-    this.customFormControlType = customFormControlType;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    let dirId = null;
-    const seenRequiredInputs = new Set();
-    const boundAttrs = getBoundAttributes(this.dir, this.node);
-    if (this.customFormControlType !== null) {
-      checkUnsupportedFieldBindings(this.node, customFormControlBannedInputFields, this.tcb);
-    }
-    if (this.customFormControlType !== null || this.isFormControl) {
-      const additionalBindings = expandBoundAttributesForField(this.dir, this.node, this.customFormControlType);
-      if (additionalBindings !== null) {
-        boundAttrs.push(...additionalBindings);
-      }
-    }
-    for (const attr of boundAttrs) {
-      let assignment = widenBinding(translateInput(attr.value, this.tcb, this.scope), this.tcb, attr.value);
-      assignment.wrapForTypeChecker();
-      for (const {
-        fieldName,
-        required,
-        transformType,
-        isSignal,
-        isTwoWayBinding
-      } of attr.inputs) {
-        let target;
-        if (required) {
-          seenRequiredInputs.add(fieldName);
-        }
-        if (this.dir.coercedInputFields.has(fieldName)) {
-          let type;
-          if (transformType !== undefined) {
-            type = new TcbExpr(transformType);
-          } else {
-            const dirTypeRef = this.tcb.env.referenceTcbValue(this.dir.ref);
-            type = new TcbExpr(`typeof ${dirTypeRef.print()}.ngAcceptInputType_${fieldName}`);
-          }
-          const id = new TcbExpr(this.tcb.allocateId());
-          this.scope.addStatement(declareVariable(id, type));
-          target = id;
-        } else if (this.dir.undeclaredInputFields.has(fieldName)) {
-          continue;
-        } else if (!this.tcb.env.config.honorAccessModifiersForInputBindings && this.dir.restrictedInputFields.has(fieldName)) {
-          if (dirId === null) {
-            dirId = this.scope.resolve(this.node, this.dir);
-          }
-          const id = new TcbExpr(this.tcb.allocateId());
-          const type = new TcbExpr(`(typeof ${dirId.print()})[${TcbExpr.quoteAndEscape(fieldName)}]`);
-          const temp = declareVariable(id, type);
-          this.scope.addStatement(temp);
-          target = id;
-        } else {
-          if (dirId === null) {
-            dirId = this.scope.resolve(this.node, this.dir);
-          }
-          target = this.dir.stringLiteralInputFields.has(fieldName) ? new TcbExpr(`${dirId.print()}[${TcbExpr.quoteAndEscape(fieldName)}]`) : new TcbExpr(`${dirId.print()}.${fieldName}`);
-        }
-        if (isSignal) {
-          const inputSignalBrandWriteSymbol = this.tcb.env.referenceExternalSymbol(Identifiers.InputSignalBrandWriteType.moduleName, Identifiers.InputSignalBrandWriteType.name);
-          target = new TcbExpr(`${target.print()}[${inputSignalBrandWriteSymbol.print()}]`);
-        }
-        if (attr.keySpan !== null) {
-          target.addParseSpanInfo(attr.keySpan);
-        }
-        if (isTwoWayBinding && this.tcb.env.config.allowSignalsInTwoWayBindings) {
-          assignment = unwrapWritableSignal(assignment, this.tcb);
-        }
-        assignment = new TcbExpr(`${target.print()} = ${assignment.print()}`);
-      }
-      assignment.addParseSpanInfo(attr.sourceSpan);
-      if (!this.tcb.env.config.checkTypeOfAttributes && typeof attr.value === 'string') {
-        assignment.markIgnoreDiagnostics();
-      }
-      this.scope.addStatement(assignment);
-    }
-    this.checkRequiredInputs(seenRequiredInputs);
-    return null;
-  }
-  checkRequiredInputs(seenRequiredInputs) {
-    const missing = [];
-    for (const input of this.dir.inputs) {
-      if (input.required && !seenRequiredInputs.has(input.classPropertyName)) {
-        missing.push(input.bindingPropertyName);
-      }
-    }
-    if (missing.length > 0) {
-      this.tcb.oobRecorder.missingRequiredInputs(this.tcb.id, this.node, this.dir.name, this.dir.isComponent, missing);
-    }
-  }
-}
-class TcbUnclaimedInputsOp extends TcbOp {
-  tcb;
-  scope;
-  inputs;
-  target;
-  claimedInputs;
-  constructor(tcb, scope, inputs, target, claimedInputs) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.inputs = inputs;
-    this.target = target;
-    this.claimedInputs = claimedInputs;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    let elId = null;
-    for (const binding of this.inputs) {
-      const isPropertyBinding = binding.type === BindingType.Property || binding.type === BindingType.TwoWay;
-      if (isPropertyBinding && this.claimedInputs?.has(binding.name)) {
-        continue;
-      }
-      const expr = widenBinding(tcbExpression(binding.value, this.tcb, this.scope), this.tcb, binding.value);
-      if (this.tcb.env.config.checkTypeOfDomBindings && isPropertyBinding) {
-        if (binding.name !== 'style' && binding.name !== 'class') {
-          if (elId === null) {
-            elId = this.scope.resolve(this.target);
-          }
-          const propertyName = REGISTRY$1.getMappedPropName(binding.name);
-          const stmt = new TcbExpr(`${elId.print()}[${TcbExpr.quoteAndEscape(propertyName)}] = ${expr.wrapForTypeChecker().print()}`).addParseSpanInfo(binding.sourceSpan);
-          this.scope.addStatement(stmt);
-        } else {
-          this.scope.addStatement(expr);
-        }
-      } else {
-        this.scope.addStatement(expr);
-      }
-    }
-    return null;
-  }
-}
-
-function getComponentTagName(node) {
-  return node.tagName || 'ng-component';
-}
-class TcbComponentNodeOp extends TcbOp {
-  tcb;
-  scope;
-  component;
-  optional = true;
-  constructor(tcb, scope, component) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.component = component;
-  }
-  execute() {
-    const id = this.tcb.allocateId();
-    const initializer = new TcbExpr(`document.createElement("${getComponentTagName(this.component)}")`);
-    initializer.addParseSpanInfo(this.component.startSourceSpan || this.component.sourceSpan);
-    this.scope.addStatement(new TcbExpr(`var ${id} = ${initializer.print()}`));
-    return new TcbExpr(id);
-  }
-}
-
-const REGISTRY = new DomElementSchemaRegistry();
-class TcbDomSchemaCheckerOp extends TcbOp {
-  tcb;
-  element;
-  checkElement;
-  claimedInputs;
-  constructor(tcb, element, checkElement, claimedInputs) {
-    super();
-    this.tcb = tcb;
-    this.element = element;
-    this.checkElement = checkElement;
-    this.claimedInputs = claimedInputs;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const element = this.element;
-    const isTemplateElement = element instanceof Element$1 || element instanceof Component$1;
-    const bindings = isTemplateElement ? element.inputs : element.bindings;
-    if (this.checkElement && isTemplateElement) {
-      this.tcb.domSchemaChecker.checkElement(this.tcb.id, this.getTagName(element), element.startSourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
-    }
-    for (const binding of bindings) {
-      const isPropertyBinding = binding.type === BindingType.Property || binding.type === BindingType.TwoWay;
-      if (isPropertyBinding && this.claimedInputs?.has(binding.name)) {
-        continue;
-      }
-      if (isPropertyBinding && binding.name !== 'style' && binding.name !== 'class') {
-        const propertyName = REGISTRY.getMappedPropName(binding.name);
-        if (isTemplateElement) {
-          this.tcb.domSchemaChecker.checkTemplateElementProperty(this.tcb.id, this.getTagName(element), propertyName, binding.sourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
-        } else {
-          this.tcb.domSchemaChecker.checkHostElementProperty(this.tcb.id, element, propertyName, binding.keySpan, this.tcb.schemas);
-        }
-      }
-    }
-    return null;
-  }
-  getTagName(node) {
-    return node instanceof Element$1 ? node.name : getComponentTagName(node);
-  }
-}
-
-const EVENT_PARAMETER = '$event';
-function tcbEventHandlerExpression(ast, tcb, scope) {
-  const translator = new TcbEventHandlerTranslator(tcb, scope);
-  return translator.translate(ast);
-}
-class TcbDirectiveOutputsOp extends TcbOp {
-  tcb;
-  scope;
-  node;
-  inputs;
-  outputs;
-  dir;
-  constructor(tcb, scope, node, inputs, outputs, dir) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.dir = dir;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    let dirId = null;
-    const outputs = this.dir.outputs;
-    for (const output of this.outputs) {
-      if (output.type === ParsedEventType.LegacyAnimation || !outputs.hasBindingPropertyName(output.name)) {
-        continue;
-      }
-      if (this.tcb.env.config.checkTypeOfOutputEvents && this.inputs !== null && output.name.endsWith('Change')) {
-        const inputName = output.name.slice(0, -6);
-        checkSplitTwoWayBinding(inputName, output, this.inputs, this.tcb);
-      }
-      const field = outputs.getByBindingPropertyName(output.name)[0].classPropertyName;
-      if (dirId === null) {
-        dirId = this.scope.resolve(this.node, this.dir);
-      }
-      const outputField = new TcbExpr(`${dirId.print()}[${TcbExpr.quoteAndEscape(field)}]`);
-      outputField.addParseSpanInfo(output.keySpan);
-      if (this.tcb.env.config.checkTypeOfOutputEvents) {
-        const handler = tcbCreateEventHandler(output, this.tcb, this.scope, 0);
-        const call = new TcbExpr(`${outputField.print()}.subscribe(${handler.print()})`);
-        call.addParseSpanInfo(output.sourceSpan);
-        this.scope.addStatement(call);
-      } else {
-        this.scope.addStatement(outputField);
-        const handler = tcbCreateEventHandler(output, this.tcb, this.scope, 1);
-        this.scope.addStatement(handler);
-      }
-    }
-    return null;
-  }
-}
-class TcbUnclaimedOutputsOp extends TcbOp {
-  tcb;
-  scope;
-  target;
-  outputs;
-  inputs;
-  claimedOutputs;
-  constructor(tcb, scope, target, outputs, inputs, claimedOutputs) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.target = target;
-    this.outputs = outputs;
-    this.inputs = inputs;
-    this.claimedOutputs = claimedOutputs;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    let elId = null;
-    for (const output of this.outputs) {
-      if (this.claimedOutputs?.has(output.name)) {
-        continue;
-      }
-      if (this.tcb.env.config.checkTypeOfOutputEvents && this.inputs !== null && output.name.endsWith('Change')) {
-        const inputName = output.name.slice(0, -6);
-        if (checkSplitTwoWayBinding(inputName, output, this.inputs, this.tcb)) {
-          continue;
-        }
-      }
-      if (output.type === ParsedEventType.LegacyAnimation) {
-        const eventType = this.tcb.env.config.checkTypeOfAnimationEvents ? this.tcb.env.referenceExternalSymbol('@angular/animations', 'AnimationEvent').print() : 1;
-        const handler = tcbCreateEventHandler(output, this.tcb, this.scope, eventType);
-        this.scope.addStatement(handler);
-      } else if (output.type === ParsedEventType.Animation) {
-        const eventType = this.tcb.env.referenceExternalSymbol('@angular/core', 'AnimationCallbackEvent');
-        const handler = tcbCreateEventHandler(output, this.tcb, this.scope, eventType.print());
-        this.scope.addStatement(handler);
-      } else if (this.tcb.env.config.checkTypeOfDomEvents) {
-        let target;
-        let domEventAssertion;
-        if (output.target === 'window' || output.target === 'document') {
-          target = new TcbExpr(output.target);
-        } else if (elId === null) {
-          target = elId = this.scope.resolve(this.target);
-        } else {
-          target = elId;
-        }
-        if (this.target instanceof Element$1 && this.target.isVoid && this.tcb.env.config.allowDomEventAssertion) {
-          const assertUtil = this.tcb.env.referenceExternalSymbol('@angular/core', 'ɵassertType');
-          domEventAssertion = new TcbExpr(`${assertUtil.print()}<typeof ${target.print()}>(${EVENT_PARAMETER}.target)`);
-        }
-        const propertyAccess = new TcbExpr(`${target.print()}.addEventListener`).addParseSpanInfo(output.keySpan);
-        const handler = tcbCreateEventHandler(output, this.tcb, this.scope, 0, domEventAssertion);
-        const call = new TcbExpr(`${propertyAccess.print()}(${TcbExpr.quoteAndEscape(output.name)}, ${handler.print()})`);
-        call.addParseSpanInfo(output.sourceSpan);
-        this.scope.addStatement(call);
-      } else {
-        const handler = tcbCreateEventHandler(output, this.tcb, this.scope, 1);
-        this.scope.addStatement(handler);
-      }
-    }
-    return null;
-  }
-}
-class TcbEventHandlerTranslator extends TcbExpressionTranslator {
-  resolve(ast) {
-    if (ast instanceof PropertyRead && ast.receiver instanceof ImplicitReceiver && ast.name === EVENT_PARAMETER) {
-      return new TcbExpr(EVENT_PARAMETER).addParseSpanInfo(ast.nameSpan);
-    }
-    return super.resolve(ast);
-  }
-  isValidLetDeclarationAccess() {
-    return true;
-  }
-}
-function tcbCreateEventHandler(event, tcb, scope, eventType, assertionExpression) {
-  const handler = tcbEventHandlerExpression(event.handler, tcb, scope);
-  const statements = [];
-  if (assertionExpression !== undefined) {
-    statements.push(assertionExpression);
-  }
-  if (event.type === ParsedEventType.TwoWay && tcb.env.config.checkTwoWayBoundEvents) {
-    const target = tcb.allocateId();
-    const initializer = tcb.env.config.allowSignalsInTwoWayBindings ? unwrapWritableSignal(handler, tcb) : handler;
-    statements.push(new TcbExpr(`var ${target} = ${initializer.print()}`), new TcbExpr(`${target} = ${EVENT_PARAMETER}`));
-  } else {
-    statements.push(handler);
-  }
-  let eventParamType;
-  if (eventType === 0) {
-    eventParamType = undefined;
-  } else if (eventType === 1) {
-    eventParamType = 'any';
-  } else {
-    eventParamType = eventType;
-  }
-  const guards = scope.guards();
-  let body = `{\n${getStatementsBlock(statements)} }`;
-  if (guards !== null) {
-    body = `{ if (${guards.print()}) ${body} }`;
-  }
-  const eventParam = new TcbExpr(`${EVENT_PARAMETER}${eventParamType === undefined ? '' : ': ' + eventParamType}`);
-  eventParam.addExpressionIdentifier(ExpressionIdentifier.EVENT_PARAMETER);
-  return new TcbExpr(`(${eventParam.print()}): any => ${body}`);
-}
-
-class TcbDirectiveTypeOpBase extends TcbOp {
-  tcb;
-  scope;
-  node;
-  dir;
-  directiveIndex;
-  constructor(tcb, scope, node, dir, directiveIndex) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-    this.dir = dir;
-    this.directiveIndex = directiveIndex;
-  }
-  get optional() {
-    return true;
-  }
-  execute() {
-    const rawType = this.tcb.env.referenceTcbValue(this.dir.ref);
-    let type;
-    let span;
-    if (this.dir.isGeneric === false || this.dir.typeParameters === null || this.dir.typeParameters.length === 0) {
-      type = rawType;
-    } else {
-      const typeArguments = Array(this.dir.typeParameters?.length ?? 0).fill('any').join(', ');
-      type = new TcbExpr(`${rawType.print()}<${typeArguments}>`);
-    }
-    if (this.node instanceof HostElement) {
-      span = this.node.sourceSpan;
-    } else {
-      span = this.node.startSourceSpan || this.node.sourceSpan;
-    }
-    const identifier = this.dir.matchSource === MatchSource.HostDirective ? ExpressionIdentifier.HOST_DIRECTIVE : ExpressionIdentifier.DIRECTIVE;
-    const id = new TcbExpr(this.tcb.allocateId()).addExpressionIdentifier(identifier, this.directiveIndex).addParseSpanInfo(span);
-    this.scope.addStatement(declareVariable(id, type));
-    return id;
-  }
-}
-class TcbNonGenericDirectiveTypeOp extends TcbDirectiveTypeOpBase {
-  execute() {
-    if (this.dir.isGeneric) {
-      throw new Error(`Assertion Error: expected ${this.dir.ref.name} not to be generic.`);
-    }
-    return super.execute();
-  }
-}
-class TcbGenericDirectiveTypeWithAnyParamsOp extends TcbDirectiveTypeOpBase {
-  execute() {
-    if (this.dir.typeParameters === null || this.dir.typeParameters.length === 0) {
-      throw new Error(`Assertion Error: expected typeParameters when creating a declaration for ${this.dir.ref.name}`);
-    }
-    return super.execute();
-  }
-}
-
-class TcbDirectiveCtorOp extends TcbOp {
-  tcb;
-  scope;
-  node;
-  dir;
-  customFormControlType;
-  directiveIndex;
-  constructor(tcb, scope, node, dir, customFormControlType, directiveIndex) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.node = node;
-    this.dir = dir;
-    this.customFormControlType = customFormControlType;
-    this.directiveIndex = directiveIndex;
-  }
-  get optional() {
-    return true;
-  }
-  execute() {
-    const genericInputs = new Map();
-    const id = new TcbExpr(this.tcb.allocateId());
-    let boundAttrs;
-    let span;
-    if (this.node instanceof HostElement) {
-      boundAttrs = [];
-      span = this.node.sourceSpan;
-    } else {
-      span = this.node.startSourceSpan || this.node.sourceSpan;
-      boundAttrs = getBoundAttributes(this.dir, this.node);
-      if (this.customFormControlType !== null) {
-        const additionalBindings = expandBoundAttributesForField(this.dir, this.node, this.customFormControlType);
-        if (additionalBindings !== null) {
-          boundAttrs.push(...additionalBindings);
-        }
-      }
-    }
-    const identifier = this.dir.matchSource === MatchSource.HostDirective ? ExpressionIdentifier.HOST_DIRECTIVE : ExpressionIdentifier.DIRECTIVE;
-    id.addExpressionIdentifier(identifier, this.directiveIndex).addParseSpanInfo(span);
-    for (const attr of boundAttrs) {
-      if (!this.tcb.env.config.checkTypeOfAttributes && typeof attr.value === 'string') {
-        continue;
-      }
-      for (const {
-        fieldName,
-        isTwoWayBinding
-      } of attr.inputs) {
-        if (genericInputs.has(fieldName)) {
-          continue;
-        }
-        const expression = translateInput(attr.value, this.tcb, this.scope);
-        genericInputs.set(fieldName, {
-          type: 'binding',
-          field: fieldName,
-          expression,
-          originalExpression: attr.value,
-          sourceSpan: attr.sourceSpan,
-          isTwoWayBinding
-        });
-      }
-    }
-    for (const {
-      classPropertyName
-    } of this.dir.inputs) {
-      if (!genericInputs.has(classPropertyName)) {
-        genericInputs.set(classPropertyName, {
-          type: 'unset',
-          field: classPropertyName
-        });
-      }
-    }
-    const typeCtor = tcbCallTypeCtor(this.dir, this.tcb, Array.from(genericInputs.values()));
-    typeCtor.markIgnoreDiagnostics();
-    this.scope.addStatement(new TcbExpr(`var ${id.print()} = ${typeCtor.print()}`));
-    return id;
-  }
-  circularFallback() {
-    return new TcbDirectiveCtorCircularFallbackOp(this.tcb, this.scope, this.dir);
-  }
-}
-class TcbDirectiveCtorCircularFallbackOp extends TcbOp {
-  tcb;
-  scope;
-  dir;
-  constructor(tcb, scope, dir) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.dir = dir;
-  }
-  get optional() {
-    return false;
-  }
-  execute() {
-    const id = this.tcb.allocateId();
-    const typeCtor = this.tcb.env.typeCtorFor(this.dir);
-    this.scope.addStatement(new TcbExpr(`var ${id} = ${typeCtor.print()}(null!)`));
-    return new TcbExpr(id);
-  }
-}
-function tcbCallTypeCtor(dir, tcb, inputs) {
-  const typeCtor = tcb.env.typeCtorFor(dir);
-  let literal = '{ ';
-  for (let i = 0; i < inputs.length; i++) {
-    const input = inputs[i];
-    const propertyName = TcbExpr.quoteAndEscape(input.field);
-    const isLast = i === inputs.length - 1;
-    if (input.type === 'binding') {
-      let expr = widenBinding(input.expression, tcb, input.originalExpression);
-      if (input.isTwoWayBinding && tcb.env.config.allowSignalsInTwoWayBindings) {
-        expr = unwrapWritableSignal(expr, tcb);
-      }
-      const assignment = new TcbExpr(`${propertyName}: ${expr.wrapForTypeChecker().print()}`);
-      assignment.addParseSpanInfo(input.sourceSpan);
-      literal += assignment.print();
-    } else {
-      literal += `${propertyName}: 0 as any`;
-    }
-    literal += `${isLast ? '' : ','} `;
-  }
-  literal += '}';
-  return new TcbExpr(`${typeCtor.print()}(${literal})`);
-}
-
-class TcbControlFlowContentProjectionOp extends TcbOp {
-  tcb;
-  element;
-  ngContentSelectors;
-  componentName;
-  category;
-  constructor(tcb, element, ngContentSelectors, componentName) {
-    super();
-    this.tcb = tcb;
-    this.element = element;
-    this.ngContentSelectors = ngContentSelectors;
-    this.componentName = componentName;
-    this.category = tcb.env.config.controlFlowPreventingContentProjection === 'error' ? OutOfBandDiagnosticCategory.Error : OutOfBandDiagnosticCategory.Warning;
-  }
-  optional = false;
-  execute() {
-    const controlFlowToCheck = this.findPotentialControlFlowNodes();
-    if (controlFlowToCheck.length > 0) {
-      const matcher = new SelectorMatcher();
-      for (const selector of this.ngContentSelectors) {
-        if (selector !== '*') {
-          matcher.addSelectables(CssSelector.parse(selector), selector);
-        }
-      }
-      for (const root of controlFlowToCheck) {
-        for (const child of root.children) {
-          if (child instanceof Element$1 || child instanceof Template) {
-            matcher.match(createCssSelectorFromNode(child), (_, originalSelector) => {
-              this.tcb.oobRecorder.controlFlowPreventingContentProjection(this.tcb.id, this.category, child, this.componentName, originalSelector, root, this.tcb.hostPreserveWhitespaces);
-            });
-          }
-        }
-      }
-    }
-    return null;
-  }
-  findPotentialControlFlowNodes() {
-    const result = [];
-    for (const child of this.element.children) {
-      if (child instanceof ForLoopBlock) {
-        if (this.shouldCheck(child)) {
-          result.push(child);
-        }
-        if (child.empty !== null && this.shouldCheck(child.empty)) {
-          result.push(child.empty);
-        }
-      } else if (child instanceof IfBlock) {
-        for (const branch of child.branches) {
-          if (this.shouldCheck(branch)) {
-            result.push(branch);
-          }
-        }
-      } else if (child instanceof SwitchBlock) {
-        for (const current of child.groups) {
-          if (this.shouldCheck(current)) {
-            result.push(current);
-          }
-        }
-      }
-    }
-    return result;
-  }
-  shouldCheck(node) {
-    if (node.children.length < 2) {
-      return false;
-    }
-    let hasSeenRootNode = false;
-    for (const child of node.children) {
-      if (!(child instanceof Text$3) || this.tcb.hostPreserveWhitespaces || child.value.trim().length > 0) {
-        if (hasSeenRootNode) {
-          return true;
-        }
-        hasSeenRootNode = true;
-      }
-    }
-    return false;
-  }
-}
-
-class TcbIntersectionObserverOp extends TcbOp {
-  tcb;
-  scope;
-  options;
-  constructor(tcb, scope, options) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.options = options;
-  }
-  optional = false;
-  execute() {
-    const options = tcbExpression(this.options, this.tcb, this.scope);
-    this.scope.addStatement(new TcbExpr(`new IntersectionObserver(null!, ${options.print()})`));
-    return null;
-  }
-}
-
-class TcbHostElementOp extends TcbOp {
-  tcb;
-  scope;
-  element;
-  optional = true;
-  constructor(tcb, scope, element) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.element = element;
-  }
-  execute() {
-    const id = this.tcb.allocateId();
-    let tagNames;
-    if (this.element.tagNames.length === 1) {
-      tagNames = `"${this.element.tagNames[0]}"`;
-    } else {
-      tagNames = `null! as ${this.element.tagNames.map(t => `"${t}"`).join(' | ')}`;
-    }
-    const initializer = new TcbExpr(`document.createElement(${tagNames})`);
-    initializer.addParseSpanInfo(this.element.sourceSpan);
-    this.scope.addStatement(new TcbExpr(`var ${id} = ${initializer.print()}`));
-    return new TcbExpr(id);
-  }
-}
-
-class Scope {
-  tcb;
-  parent;
-  guard;
-  opQueue = [];
-  elementOpMap = new Map();
-  hostElementOpMap = new Map();
-  componentNodeOpMap = new Map();
-  directiveOpMap = new Map();
-  referenceOpMap = new Map();
-  templateCtxOpMap = new Map();
-  varMap = new Map();
-  letDeclOpMap = new Map();
-  statements = [];
-  static getForLoopContextVariableTypes() {
-    return new Map([['$first', 'boolean'], ['$last', 'boolean'], ['$even', 'boolean'], ['$odd', 'boolean'], ['$index', 'number'], ['$count', 'number']]);
-  }
-  constructor(tcb, parent = null, guard = null) {
-    this.tcb = tcb;
-    this.parent = parent;
-    this.guard = guard;
-  }
-  static forNodes(tcb, parentScope, scopedNode, children, guard) {
-    const scope = new Scope(tcb, parentScope, guard);
-    if (parentScope === null && tcb.env.config.enableTemplateTypeChecker) {
-      scope.opQueue.push(new TcbComponentContextCompletionOp(scope));
-    }
-    if (scopedNode instanceof Template) {
-      const varMap = new Map();
-      for (const v of scopedNode.variables) {
-        if (!varMap.has(v.name)) {
-          varMap.set(v.name, v);
-        } else {
-          const firstDecl = varMap.get(v.name);
-          tcb.oobRecorder.duplicateTemplateVar(tcb.id, v, firstDecl);
-        }
-        Scope.registerVariable(scope, v, new TcbTemplateVariableOp(tcb, scope, scopedNode, v));
-      }
-    } else if (scopedNode instanceof IfBlockBranch) {
-      const {
-        expression,
-        expressionAlias
-      } = scopedNode;
-      if (expression !== null && expressionAlias !== null) {
-        Scope.registerVariable(scope, expressionAlias, new TcbBlockVariableOp(tcb, scope, tcbExpression(expression, tcb, scope), expressionAlias));
-      }
-    } else if (scopedNode instanceof ForLoopBlock) {
-      const loopInitializer = new TcbExpr(tcb.allocateId());
-      loopInitializer.addParseSpanInfo(scopedNode.item.sourceSpan);
-      scope.varMap.set(scopedNode.item, loopInitializer);
-      const forLoopContextVariableTypes = Scope.getForLoopContextVariableTypes();
-      for (const variable of scopedNode.contextVariables) {
-        if (!forLoopContextVariableTypes.has(variable.value)) {
-          throw new Error(`Unrecognized for loop context variable ${variable.name}`);
-        }
-        const type = new TcbExpr(forLoopContextVariableTypes.get(variable.value));
-        Scope.registerVariable(scope, variable, new TcbBlockImplicitVariableOp(tcb, scope, type, variable));
-      }
-    } else if (scopedNode instanceof HostElement) {
-      scope.appendNode(scopedNode);
-    }
-    if (children !== null) {
-      for (const node of children) {
-        scope.appendNode(node);
-      }
-    }
-    for (const variable of scope.varMap.keys()) {
-      Scope.checkConflictingLet(scope, variable);
-    }
-    for (const ref of scope.referenceOpMap.keys()) {
-      Scope.checkConflictingLet(scope, ref);
-    }
-    return scope;
-  }
-  static registerVariable(scope, variable, op) {
-    const opIndex = scope.opQueue.push(op) - 1;
-    scope.varMap.set(variable, opIndex);
-  }
-  resolve(node, directive) {
-    const res = this.resolveLocal(node, directive);
-    if (res !== null) {
-      return res;
-    } else if (this.parent !== null) {
-      return this.parent.resolve(node, directive);
-    } else {
-      throw new Error(`Could not resolve ${node} / ${directive}`);
-    }
-  }
-  addStatement(stmt) {
-    this.statements.push(stmt);
-  }
-  render() {
-    for (let i = 0; i < this.opQueue.length; i++) {
-      const skipOptional = !this.tcb.env.config.enableTemplateTypeChecker;
-      this.executeOp(i, skipOptional);
-    }
-    return this.statements;
-  }
-  guards() {
-    let parentGuards = null;
-    if (this.parent !== null) {
-      parentGuards = this.parent.guards();
-    }
-    if (this.guard === null) {
-      return parentGuards;
-    } else if (parentGuards === null) {
-      return typeof this.guard === 'string' ? new TcbExpr(this.guard) : this.guard;
-    } else {
-      const guard = typeof this.guard === 'string' ? this.guard : this.guard.print();
-      return new TcbExpr(`(${parentGuards.print()}) && (${guard})`);
-    }
-  }
-  isLocal(node) {
-    if (node instanceof Variable) {
-      return this.varMap.has(node);
-    }
-    if (node instanceof LetDeclaration$1) {
-      return this.letDeclOpMap.has(node.name);
-    }
-    return this.referenceOpMap.has(node);
-  }
-  createChildScope(parentScope, scopedNode, children, guard) {
-    return Scope.forNodes(this.tcb, parentScope, scopedNode, children, guard);
-  }
-  resolveLocal(ref, directive) {
-    if (ref instanceof Reference && this.referenceOpMap.has(ref)) {
-      return this.resolveOp(this.referenceOpMap.get(ref));
-    } else if (ref instanceof LetDeclaration$1 && this.letDeclOpMap.has(ref.name)) {
-      return this.resolveOp(this.letDeclOpMap.get(ref.name).opIndex);
-    } else if (ref instanceof Variable && this.varMap.has(ref)) {
-      const opIndexOrNode = this.varMap.get(ref);
-      return typeof opIndexOrNode === 'number' ? this.resolveOp(opIndexOrNode) : new TcbExpr(opIndexOrNode.print(true));
-    } else if (ref instanceof Template && directive === undefined && this.templateCtxOpMap.has(ref)) {
-      return this.resolveOp(this.templateCtxOpMap.get(ref));
-    } else if ((ref instanceof Element$1 || ref instanceof Template || ref instanceof Component$1 || ref instanceof Directive$1 || ref instanceof HostElement) && directive !== undefined && this.directiveOpMap.has(ref)) {
-      const dirMap = this.directiveOpMap.get(ref);
-      return dirMap.has(directive) ? this.resolveOp(dirMap.get(directive)) : null;
-    } else if (ref instanceof Element$1 && this.elementOpMap.has(ref)) {
-      return this.resolveOp(this.elementOpMap.get(ref));
-    } else if (ref instanceof Component$1 && this.componentNodeOpMap.has(ref)) {
-      return this.resolveOp(this.componentNodeOpMap.get(ref));
-    } else if (ref instanceof HostElement && this.hostElementOpMap.has(ref)) {
-      return this.resolveOp(this.hostElementOpMap.get(ref));
-    } else {
-      return null;
-    }
-  }
-  resolveOp(opIndex) {
-    const res = this.executeOp(opIndex, false);
-    if (res === null) {
-      throw new Error(`Error resolving operation, got null`);
-    }
-    return res;
-  }
-  executeOp(opIndex, skipOptional) {
-    const op = this.opQueue[opIndex];
-    if (!(op instanceof TcbOp)) {
-      return op === null ? null : new TcbExpr(op.print(true));
-    }
-    if (skipOptional && op.optional) {
-      return null;
-    }
-    this.opQueue[opIndex] = op.circularFallback();
-    let res = op.execute();
-    if (res !== null) {
-      res = new TcbExpr(res.print(true));
-    }
-    this.opQueue[opIndex] = res;
-    return res;
-  }
-  appendNode(node) {
-    if (node instanceof Element$1) {
-      const opIndex = this.opQueue.push(new TcbElementOp(this.tcb, this, node)) - 1;
-      this.elementOpMap.set(node, opIndex);
-      if (this.tcb.env.config.controlFlowPreventingContentProjection !== 'suppress') {
-        this.appendContentProjectionCheckOp(node);
-      }
-      this.appendDirectivesAndInputsOfElementLikeNode(node);
-      this.appendOutputsOfElementLikeNode(node, node.inputs, node.outputs);
-      this.appendSelectorlessDirectives(node);
-      this.appendChildren(node);
-      this.checkAndAppendReferencesOfNode(node);
-    } else if (node instanceof Template) {
-      this.appendDirectivesAndInputsOfElementLikeNode(node);
-      this.appendOutputsOfElementLikeNode(node, node.inputs, node.outputs);
-      this.appendSelectorlessDirectives(node);
-      const ctxIndex = this.opQueue.push(new TcbTemplateContextOp(this.tcb, this)) - 1;
-      this.templateCtxOpMap.set(node, ctxIndex);
-      if (this.tcb.env.config.checkTemplateBodies) {
-        this.opQueue.push(new TcbTemplateBodyOp(this.tcb, this, node));
-      } else if (this.tcb.env.config.alwaysCheckSchemaInTemplateBodies) {
-        this.appendDeepSchemaChecks(node.children);
-      }
-      this.checkAndAppendReferencesOfNode(node);
-    } else if (node instanceof Component$1) {
-      this.appendComponentNode(node);
-    } else if (node instanceof DeferredBlock) {
-      this.appendDeferredBlock(node);
-    } else if (node instanceof IfBlock) {
-      this.opQueue.push(new TcbIfBlockOp(this.tcb, this, node));
-    } else if (node instanceof SwitchBlock) {
-      this.opQueue.push(new TcbSwitchOp(this.tcb, this, node));
-    } else if (node instanceof ForLoopBlock) {
-      this.opQueue.push(new TcbForOfOp(this.tcb, this, node));
-      node.empty && this.tcb.env.config.checkControlFlowBodies && this.appendChildren(node.empty);
-    } else if (node instanceof BoundText) {
-      this.opQueue.push(new TcbExpressionOp(this.tcb, this, node.value));
-    } else if (node instanceof Icu$1) {
-      this.appendIcuExpressions(node);
-    } else if (node instanceof Content) {
-      this.appendChildren(node);
-    } else if (node instanceof LetDeclaration$1) {
-      const opIndex = this.opQueue.push(new TcbLetDeclarationOp(this.tcb, this, node)) - 1;
-      if (this.isLocal(node)) {
-        this.tcb.oobRecorder.conflictingDeclaration(this.tcb.id, node);
-      } else {
-        this.letDeclOpMap.set(node.name, {
-          opIndex,
-          node
-        });
-      }
-    } else if (node instanceof HostElement) {
-      this.appendHostElement(node);
-    }
-  }
-  appendChildren(node) {
-    for (const child of node.children) {
-      this.appendNode(child);
-    }
-  }
-  checkAndAppendReferencesOfNode(node) {
-    for (const ref of node.references) {
-      const target = this.tcb.boundTarget.getReferenceTarget(ref);
-      let ctxIndex;
-      if (target === null) {
-        this.tcb.oobRecorder.missingReferenceTarget(this.tcb.id, ref);
-        ctxIndex = this.opQueue.push(new TcbInvalidReferenceOp(this.tcb, this)) - 1;
-      } else if (target instanceof Template || target instanceof Element$1) {
-        ctxIndex = this.opQueue.push(new TcbReferenceOp(this.tcb, this, ref, node, target)) - 1;
-      } else {
-        ctxIndex = this.opQueue.push(new TcbReferenceOp(this.tcb, this, ref, node, target.directive)) - 1;
-      }
-      this.referenceOpMap.set(ref, ctxIndex);
-    }
-  }
-  appendDirectivesAndInputsOfElementLikeNode(node) {
-    const claimedInputs = new Set();
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    if (directives === null || directives.length === 0) {
-      if (node instanceof Element$1) {
-        this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs), new TcbDomSchemaCheckerOp(this.tcb, node, true, claimedInputs));
-      }
-      return;
-    }
-    this.reportConflictingBindings(node);
-    if (node instanceof Element$1) {
-      const isDeferred = this.tcb.boundTarget.isDeferred(node);
-      if (!isDeferred && directives.some(dirMeta => dirMeta.isExplicitlyDeferred)) {
-        this.tcb.oobRecorder.deferredComponentUsedEagerly(this.tcb.id, node);
-      }
-    }
-    if (node instanceof Element$1) {
-      const matchedComponents = directives.filter(dir => dir.isComponent);
-      if (matchedComponents.length > 1) {
-        this.tcb.oobRecorder.multipleMatchingComponents(this.tcb.id, node, matchedComponents.map(dir => dir.name));
-      }
-    }
-    const dirMap = new Map();
-    for (let i = 0; i < directives.length; i++) {
-      const dir = directives[i];
-      this.appendDirectiveInputs(dir, node, dirMap, directives, i);
-    }
-    this.directiveOpMap.set(node, dirMap);
-    if (node instanceof Element$1) {
-      for (const dir of directives) {
-        for (const propertyName of dir.inputs.propertyNames) {
-          claimedInputs.add(propertyName);
-        }
-      }
-      this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs));
-      const checkElement = directives.length === 0;
-      this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
-    }
-  }
-  appendOutputsOfElementLikeNode(node, bindings, events) {
-    const claimedOutputs = new Set();
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    if (directives === null || directives.length === 0) {
-      if (node instanceof Element$1) {
-        this.opQueue.push(new TcbUnclaimedOutputsOp(this.tcb, this, node, events, bindings, claimedOutputs));
-      }
-      return;
-    }
-    for (const dir of directives) {
-      this.opQueue.push(new TcbDirectiveOutputsOp(this.tcb, this, node, bindings, events, dir));
-    }
-    if (node instanceof Element$1 || node instanceof HostElement) {
-      for (const dir of directives) {
-        for (const outputProperty of dir.outputs.propertyNames) {
-          claimedOutputs.add(outputProperty);
-        }
-      }
-      this.opQueue.push(new TcbUnclaimedOutputsOp(this.tcb, this, node, events, bindings, claimedOutputs));
-    }
-  }
-  appendInputsOfSelectorlessNode(node) {
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    const claimedInputs = new Set();
-    if (directives !== null && directives.length > 0) {
-      const dirMap = new Map();
-      for (let i = 0; i < directives.length; i++) {
-        const dir = directives[i];
-        this.appendDirectiveInputs(dir, node, dirMap, directives, i);
-        for (const propertyName of dir.inputs.propertyNames) {
-          claimedInputs.add(propertyName);
-        }
-      }
-      this.directiveOpMap.set(node, dirMap);
-    }
-    this.reportConflictingBindings(node);
-    if (node instanceof Directive$1) {
-      for (const input of node.inputs) {
-        if (!claimedInputs.has(input.name)) {
-          this.tcb.oobRecorder.unclaimedDirectiveBinding(this.tcb.id, node, input);
-        }
-      }
-      for (const attr of node.attributes) {
-        if (!claimedInputs.has(attr.name)) {
-          this.tcb.oobRecorder.unclaimedDirectiveBinding(this.tcb.id, node, attr);
-        }
-      }
-    } else {
-      const checkElement = node.tagName !== null;
-      this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs), new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
-    }
-  }
-  appendOutputsOfSelectorlessNode(node) {
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    const claimedOutputs = new Set();
-    if (directives !== null && directives.length > 0) {
-      for (const dir of directives) {
-        this.opQueue.push(new TcbDirectiveOutputsOp(this.tcb, this, node, node.inputs, node.outputs, dir));
-        for (const outputProperty of dir.outputs.propertyNames) {
-          claimedOutputs.add(outputProperty);
-        }
-      }
-    }
-    if (node instanceof Directive$1) {
-      for (const output of node.outputs) {
-        if (!claimedOutputs.has(output.name)) {
-          this.tcb.oobRecorder.unclaimedDirectiveBinding(this.tcb.id, node, output);
-        }
-      }
-    } else {
-      this.opQueue.push(new TcbUnclaimedOutputsOp(this.tcb, this, node, node.outputs, node.inputs, claimedOutputs));
-    }
-  }
-  appendDirectiveInputs(dir, node, dirMap, allDirectiveMatches, directiveIndex) {
-    const nodeIsFormControl = isFormControl(allDirectiveMatches);
-    const customFormControlType = nodeIsFormControl ? getCustomFieldDirectiveType(dir) : null;
-    const directiveOp = this.getDirectiveOp(dir, node, customFormControlType, directiveIndex);
-    const dirIndex = this.opQueue.push(directiveOp) - 1;
-    dirMap.set(dir, dirIndex);
-    if (isNativeField(dir, node, allDirectiveMatches)) {
-      const inputType = node.name === 'input' && node.attributes.find(attr => attr.name === 'type')?.value || null;
-      this.opQueue.push(inputType === 'radio' ? new TcbNativeRadioButtonFieldOp(this.tcb, this, node) : new TcbNativeFieldOp(this.tcb, this, node, inputType));
-    }
-    this.opQueue.push(new TcbDirectiveInputsOp(this.tcb, this, node, dir, nodeIsFormControl, customFormControlType));
-  }
-  getDirectiveOp(dir, node, customFieldType, directiveIndex) {
-    if (!dir.isGeneric) {
-      return new TcbNonGenericDirectiveTypeOp(this.tcb, this, node, dir, directiveIndex);
-    } else if (!dir.requiresInlineTypeCtor || this.tcb.env.config.useInlineTypeConstructors) {
-      return new TcbDirectiveCtorOp(this.tcb, this, node, dir, customFieldType, directiveIndex);
-    }
-    return new TcbGenericDirectiveTypeWithAnyParamsOp(this.tcb, this, node, dir, directiveIndex);
-  }
-  appendSelectorlessDirectives(node) {
-    for (const directive of node.directives) {
-      if (!this.tcb.boundTarget.referencedDirectiveExists(directive.name)) {
-        this.tcb.oobRecorder.missingNamedTemplateDependency(this.tcb.id, directive);
-        continue;
-      }
-      const directives = this.tcb.boundTarget.getDirectivesOfNode(directive);
-      if (directives === null || directives.length === 0 || directives.some(dir => dir.isComponent || !dir.isStandalone)) {
-        this.tcb.oobRecorder.incorrectTemplateDependencyType(this.tcb.id, directive);
-        continue;
-      }
-      this.appendInputsOfSelectorlessNode(directive);
-      this.appendOutputsOfSelectorlessNode(directive);
-      this.checkAndAppendReferencesOfNode(directive);
-    }
-  }
-  appendDeepSchemaChecks(nodes) {
-    for (const node of nodes) {
-      if (!(node instanceof Element$1 || node instanceof Template)) {
-        continue;
-      }
-      if (node instanceof Element$1) {
-        const claimedInputs = new Set();
-        let directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-        for (const dirNode of node.directives) {
-          const directiveResults = this.tcb.boundTarget.getDirectivesOfNode(dirNode);
-          if (directiveResults !== null && directiveResults.length > 0) {
-            directives ??= [];
-            directives.push(...directiveResults);
-          }
-        }
-        let hasDirectives;
-        if (directives === null || directives.length === 0) {
-          hasDirectives = false;
-        } else {
-          hasDirectives = true;
-          for (const dir of directives) {
-            for (const propertyName of dir.inputs.propertyNames) {
-              claimedInputs.add(propertyName);
-            }
-          }
-        }
-        this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, !hasDirectives, claimedInputs));
-      }
-      this.appendDeepSchemaChecks(node.children);
-    }
-  }
-  appendIcuExpressions(node) {
-    for (const variable of Object.values(node.vars)) {
-      this.opQueue.push(new TcbExpressionOp(this.tcb, this, variable.value));
-    }
-    for (const placeholder of Object.values(node.placeholders)) {
-      if (placeholder instanceof BoundText) {
-        this.opQueue.push(new TcbExpressionOp(this.tcb, this, placeholder.value));
-      }
-    }
-  }
-  appendContentProjectionCheckOp(root) {
-    const meta = this.tcb.boundTarget.getDirectivesOfNode(root)?.find(meta => meta.isComponent) || null;
-    if (meta !== null && meta.ngContentSelectors !== null && meta.ngContentSelectors.length > 0) {
-      const selectors = meta.ngContentSelectors;
-      if (selectors.length > 1 || selectors.length === 1 && selectors[0] !== '*') {
-        this.opQueue.push(new TcbControlFlowContentProjectionOp(this.tcb, root, selectors, meta.name));
-      }
-    }
-  }
-  appendComponentNode(node) {
-    if (!this.tcb.boundTarget.referencedDirectiveExists(node.componentName)) {
-      this.tcb.oobRecorder.missingNamedTemplateDependency(this.tcb.id, node);
-      return;
-    }
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    if (directives === null || directives.length === 0 || directives.every(dir => !dir.isComponent || !dir.isStandalone)) {
-      this.tcb.oobRecorder.incorrectTemplateDependencyType(this.tcb.id, node);
-      return;
-    }
-    const opIndex = this.opQueue.push(new TcbComponentNodeOp(this.tcb, this, node)) - 1;
-    this.componentNodeOpMap.set(node, opIndex);
-    if (this.tcb.env.config.controlFlowPreventingContentProjection !== 'suppress') {
-      this.appendContentProjectionCheckOp(node);
-    }
-    this.appendInputsOfSelectorlessNode(node);
-    this.appendOutputsOfSelectorlessNode(node);
-    this.appendSelectorlessDirectives(node);
-    this.appendChildren(node);
-    this.checkAndAppendReferencesOfNode(node);
-  }
-  appendDeferredBlock(block) {
-    this.appendDeferredTriggers(block, block.triggers);
-    this.appendDeferredTriggers(block, block.prefetchTriggers);
-    if (block.hydrateTriggers.when) {
-      this.opQueue.push(new TcbConditionOp(this.tcb, this, block.hydrateTriggers.when.value));
-    }
-    this.appendChildren(block);
-    if (block.placeholder !== null) {
-      this.appendChildren(block.placeholder);
-    }
-    if (block.loading !== null) {
-      this.appendChildren(block.loading);
-    }
-    if (block.error !== null) {
-      this.appendChildren(block.error);
-    }
-  }
-  appendDeferredTriggers(block, triggers) {
-    if (triggers.when !== undefined) {
-      this.opQueue.push(new TcbConditionOp(this.tcb, this, triggers.when.value));
-    }
-    if (triggers.viewport !== undefined && triggers.viewport.options !== null) {
-      this.opQueue.push(new TcbIntersectionObserverOp(this.tcb, this, triggers.viewport.options));
-    }
-    if (triggers.hover !== undefined) {
-      this.validateReferenceBasedDeferredTrigger(block, triggers.hover);
-    }
-    if (triggers.interaction !== undefined) {
-      this.validateReferenceBasedDeferredTrigger(block, triggers.interaction);
-    }
-    if (triggers.viewport !== undefined) {
-      this.validateReferenceBasedDeferredTrigger(block, triggers.viewport);
-    }
-  }
-  appendHostElement(node) {
-    const opIndex = this.opQueue.push(new TcbHostElementOp(this.tcb, this, node)) - 1;
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    if (directives !== null && directives.length > 0) {
-      const directiveOpMap = new Map();
-      for (const directive of directives) {
-        const directiveOp = this.getDirectiveOp(directive, node, null);
-        directiveOpMap.set(directive, this.opQueue.push(directiveOp) - 1);
-      }
-      this.directiveOpMap.set(node, directiveOpMap);
-    }
-    this.hostElementOpMap.set(node, opIndex);
-    this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.bindings, node, null), new TcbDomSchemaCheckerOp(this.tcb, node, false, null));
-    this.appendOutputsOfElementLikeNode(node, null, node.listeners);
-  }
-  validateReferenceBasedDeferredTrigger(block, trigger) {
-    if (trigger.reference === null) {
-      if (block.placeholder === null) {
-        this.tcb.oobRecorder.deferImplicitTriggerMissingPlaceholder(this.tcb.id, trigger);
-        return;
-      }
-      let rootNode = null;
-      for (const child of block.placeholder.children) {
-        if (!this.tcb.hostPreserveWhitespaces && child instanceof Text$3 && child.value.trim().length === 0) {
-          continue;
-        }
-        if (rootNode === null) {
-          rootNode = child;
-        } else {
-          rootNode = null;
-          break;
-        }
-      }
-      if (rootNode === null || !(rootNode instanceof Element$1)) {
-        this.tcb.oobRecorder.deferImplicitTriggerInvalidPlaceholder(this.tcb.id, trigger);
-      }
-      return;
-    }
-    if (this.tcb.boundTarget.getDeferredTriggerTarget(block, trigger) === null) {
-      this.tcb.oobRecorder.inaccessibleDeferredTriggerElement(this.tcb.id, trigger);
-    }
-  }
-  static checkConflictingLet(scope, node) {
-    if (scope.letDeclOpMap.has(node.name)) {
-      scope.tcb.oobRecorder.conflictingDeclaration(scope.tcb.id, scope.letDeclOpMap.get(node.name).node);
-    }
-  }
-  reportConflictingBindings(node) {
-    const conflictingBindings = this.tcb.boundTarget.getConflictingHostDirectiveBindings(node);
-    if (conflictingBindings !== null) {
-      for (const binding of conflictingBindings) {
-        this.tcb.oobRecorder.conflictingHostDirectiveBinding(this.tcb.id, node, binding.directive.name, binding.kind, binding.classPropertyName, Array.from(binding.conflictingAliases));
-      }
-    }
-  }
-}
-
-function generateTypeCheckBlock(env, component, name, meta, domSchemaChecker, oobRecorder) {
-  const tcb = new Context(env, domSchemaChecker, oobRecorder, meta.id, meta.boundTarget, meta.pipes, meta.schemas, meta.isStandalone, meta.preserveWhitespaces);
-  const ctxRawType = env.referenceTcbValue(component.ref);
-  const {
-    typeParameters,
-    typeArguments
-  } = component;
-  const typeParamsStr = !env.config.useContextGenericType || typeParameters === null || typeParameters.length === 0 ? '' : `<${typeParameters.map(p => p.representation).join(', ')}>`;
-  const typeArgsStr = typeArguments === null || typeArguments.length === 0 ? '' : `<${typeArguments.join(', ')}>`;
-  const thisParamStr = `this: ${ctxRawType.print()}${typeArgsStr}`;
-  const statements = [];
-  if (tcb.boundTarget.target.template !== undefined) {
-    const templateScope = Scope.forNodes(tcb, null, null, tcb.boundTarget.target.template, null);
-    statements.push(renderBlockStatements(env, templateScope, 'true'));
-  }
-  if (tcb.boundTarget.target.host !== undefined) {
-    const hostScope = Scope.forNodes(tcb, null, tcb.boundTarget.target.host.node, null, null);
-    statements.push(renderBlockStatements(env, hostScope, createHostBindingsBlockGuard()));
-  }
-  const bodyStr = `{\n${statements.join('\n')}\n}`;
-  const funcDeclStr = `function ${name}${typeParamsStr}(${thisParamStr}) ${bodyStr}`;
-  return `/*${meta.id}*/\n${funcDeclStr}`;
-}
-function renderBlockStatements(env, scope, wrapperExpression) {
-  const scopeStatements = scope.render();
-  const statements = getStatementsBlock([...env.getPreludeStatements(), ...scopeStatements]);
-  return `if (${wrapperExpression}) {\n${statements}\n}`;
-}
+const VERSION = new Version('21.3.0-next.0+sha-4835277');
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
