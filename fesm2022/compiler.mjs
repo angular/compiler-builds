@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.8+sha-b395173
+ * @license Angular v22.0.0-next.8+sha-2c141c0
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -406,6 +406,7 @@ var FactoryTarget;
   FactoryTarget[FactoryTarget["Injectable"] = 2] = "Injectable";
   FactoryTarget[FactoryTarget["Pipe"] = 3] = "Pipe";
   FactoryTarget[FactoryTarget["NgModule"] = 4] = "NgModule";
+  FactoryTarget[FactoryTarget["Service"] = 5] = "Service";
 })(FactoryTarget || (FactoryTarget = {}));
 var R3TemplateDependencyKind$1;
 (function (R3TemplateDependencyKind) {
@@ -2806,6 +2807,14 @@ class Identifiers {
   };
   static InjectableDeclaration = {
     name: 'ɵɵInjectableDeclaration',
+    moduleName: CORE
+  };
+  static defineService = {
+    name: 'ɵɵdefineService',
+    moduleName: CORE
+  };
+  static declareService = {
+    name: 'ɵɵngDeclareService',
     moduleName: CORE
   };
   static resolveWindow = {
@@ -6287,12 +6296,12 @@ function compileInjectable(meta, resolveForwardRefs) {
   const expression = importExpr(Identifiers.ɵɵdefineInjectable).callFn([injectableProps.toLiteralMap()], undefined, true);
   return {
     expression,
-    type: createInjectableType(meta),
+    type: createInjectableType(meta.type.type, meta.typeArgumentCount),
     statements: result.statements
   };
 }
-function createInjectableType(meta) {
-  return new ExpressionType(importExpr(Identifiers.InjectableDeclaration, [typeWithParameters(meta.type.type, meta.typeArgumentCount)]));
+function createInjectableType(type, typeArgumentCount) {
+  return new ExpressionType(importExpr(Identifiers.InjectableDeclaration, [typeWithParameters(type, typeArgumentCount)]));
 }
 function delegateToFactory(type, useType, unwrapForwardRefs) {
   if (type.node === useType.node) {
@@ -26667,6 +26676,21 @@ function extractScopedNodeEntities(rootScope, templateEntities) {
 
 class ResourceLoader {}
 
+function compileService(meta, resolveForwardRefs) {
+  const def = new DefinitionMap();
+  def.set('token', meta.type.value);
+  def.set('factory', meta.factory === undefined ? delegateToFactory(meta.type.value, meta.type.value, resolveForwardRefs) : arrowFn([], meta.factory.callFn([])));
+  if (meta.autoProvided === false) {
+    def.set('autoProvided', literal(false));
+  }
+  const expression = importExpr(Identifiers.defineService).callFn([def.toLiteralMap()], undefined, true);
+  return {
+    expression,
+    type: createInjectableType(meta.type.type, meta.typeArgumentCount),
+    statements: []
+  };
+}
+
 class CompilerFacadeImpl {
   jitEvaluator;
   FactoryTarget = FactoryTarget;
@@ -26770,6 +26794,30 @@ class CompilerFacadeImpl {
     const typeSourceSpan = this.createParseSourceSpan('Directive', declaration.type.name, sourceMapUrl);
     const meta = convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan);
     return this.compileDirectiveFromMeta(angularCoreEnv, sourceMapUrl, meta);
+  }
+  compileService(angularCoreEnv, sourceMapUrl, facade) {
+    const {
+      expression,
+      statements
+    } = compileService({
+      type: wrapReference(facade.type),
+      typeArgumentCount: facade.typeArgumentCount,
+      autoProvided: facade.autoProvided,
+      factory: facade.factory ? wrapExpression(facade, 'factory') : undefined
+    }, true);
+    return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
+  }
+  compileServiceDeclaration(angularCoreEnv, sourceMapUrl, facade) {
+    const {
+      expression,
+      statements
+    } = compileService({
+      type: wrapReference(facade.type),
+      typeArgumentCount: 0,
+      autoProvided: facade.autoProvided,
+      factory: facade.factory ? wrapExpression(facade, 'factory') : undefined
+    }, true);
+    return this.jitExpression(expression, angularCoreEnv, sourceMapUrl, statements);
   }
   compileDirectiveFromMeta(angularCoreEnv, sourceMapUrl, meta) {
     const constantPool = new ConstantPool();
@@ -28825,12 +28873,12 @@ function compileComponentMetadataAsyncResolver(dependencies) {
   return arrowFn([], literalArr(dynamicImports));
 }
 
-const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
 const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
-  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28848,7 +28896,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -28921,7 +28969,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29259,11 +29307,11 @@ class BlockPresenceVisitor extends RecursiveVisitor$1 {
   }
 }
 
-const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
-  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29275,11 +29323,11 @@ function compileDeclareFactoryFunction(meta) {
   };
 }
 
-const MINIMUM_PARTIAL_LINKER_VERSION$3 = '12.0.0';
+const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareInjectableFromMetadata(meta) {
   const definitionMap = createInjectableDefinitionMap(meta);
   const expression = importExpr(Identifiers.declareInjectable).callFn([definitionMap.toLiteralMap()]);
-  const type = createInjectableType(meta);
+  const type = createInjectableType(meta.type.type, meta.typeArgumentCount);
   return {
     expression,
     type,
@@ -29288,8 +29336,8 @@ function compileDeclareInjectableFromMetadata(meta) {
 }
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
-  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29316,6 +29364,32 @@ function createInjectableDefinitionMap(meta) {
   return definitionMap;
 }
 
+const MINIMUM_PARTIAL_LINKER_VERSION$3 = '22.0.0';
+function compileDeclareServiceFromMetadata(meta) {
+  const definitionMap = createServiceDefinitionMap(meta);
+  const expression = importExpr(Identifiers.declareService).callFn([definitionMap.toLiteralMap()]);
+  const type = createInjectableType(meta.type.type, meta.typeArgumentCount);
+  return {
+    expression,
+    type,
+    statements: []
+  };
+}
+function createServiceDefinitionMap(meta) {
+  const definitionMap = new DefinitionMap();
+  definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
+  definitionMap.set('ngImport', importExpr(Identifiers.core));
+  definitionMap.set('type', meta.type.value);
+  if (meta.autoProvided === false) {
+    definitionMap.set('autoProvided', literal(false));
+  }
+  if (meta.factory !== undefined) {
+    definitionMap.set('factory', meta.factory);
+  }
+  return definitionMap;
+}
+
 const MINIMUM_PARTIAL_LINKER_VERSION$2 = '12.0.0';
 function compileDeclareInjectorFromMetadata(meta) {
   const definitionMap = createInjectorDefinitionMap(meta);
@@ -29330,7 +29404,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29357,7 +29431,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29395,7 +29469,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.8+sha-b395173'));
+  definitionMap.set('version', literal('22.0.0-next.8+sha-2c141c0'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29469,7 +29543,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.8+sha-b395173');
+const VERSION = new Version('22.0.0-next.8+sha-2c141c0');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -32357,5 +32431,5 @@ function renderBlockStatements(env, scope, wrapperExpression) {
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
