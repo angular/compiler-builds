@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.9+sha-ef38017
+ * @license Angular v22.0.0-next.9+sha-2896c93
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1006,7 +1006,8 @@ declare class InvokeFunctionExpr extends Expression {
     fn: Expression;
     args: Expression[];
     pure: boolean;
-    constructor(fn: Expression, args: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, pure?: boolean, leadingComments?: LeadingComment[]);
+    isOptional: boolean;
+    constructor(fn: Expression, args: Expression[], type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, pure?: boolean, leadingComments?: LeadingComment[], isOptional?: boolean);
     get receiver(): Expression;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -1231,7 +1232,15 @@ declare class BinaryOperatorExpr extends Expression {
 declare class ReadPropExpr extends Expression {
     receiver: Expression;
     name: string;
-    constructor(receiver: Expression, name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
+    /**
+     * Whether the property access uses the optional-chaining operator (`?.`).
+     */
+    isOptional: boolean;
+    constructor(receiver: Expression, name: string, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[], 
+    /**
+     * Whether the property access uses the optional-chaining operator (`?.`).
+     */
+    isOptional?: boolean);
     get index(): string;
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
@@ -1242,7 +1251,15 @@ declare class ReadPropExpr extends Expression {
 declare class ReadKeyExpr extends Expression {
     receiver: Expression;
     index: Expression;
-    constructor(receiver: Expression, index: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[]);
+    /**
+     * Whether the property access uses the optional-chaining operator (`?.[`).
+     */
+    isOptional: boolean;
+    constructor(receiver: Expression, index: Expression, type?: Type$1 | null, sourceSpan?: ParseSourceSpan$1 | null, leadingComments?: LeadingComment[], 
+    /**
+     * Whether the property access uses the optional-chaining operator (`?.[`).
+     */
+    isOptional?: boolean);
     isEquivalent(e: Expression): boolean;
     isConstant(): boolean;
     visitExpression(visitor: ExpressionVisitor, context: any): any;
@@ -2558,6 +2575,7 @@ interface R3DirectiveMetadataFacade {
     isStandalone: boolean;
     hostDirectives: R3HostDirectiveMetadataFacade[] | null;
     isSignal: boolean;
+    legacyOptionalChaining: boolean;
 }
 interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
     template: string;
@@ -2612,6 +2630,7 @@ interface R3DeclareDirectiveFacade {
     isStandalone?: boolean;
     isSignal?: boolean;
     hostDirectives?: R3HostDirectiveMetadataFacade[] | null;
+    legacyOptionalChaining?: boolean;
 }
 interface R3DeclareComponentFacade extends R3DeclareDirectiveFacade {
     template: string;
@@ -2629,6 +2648,7 @@ interface R3DeclareComponentFacade extends R3DeclareDirectiveFacade {
     changeDetection?: ChangeDetectionStrategy;
     encapsulation?: ViewEncapsulation;
     preserveWhitespaces?: boolean;
+    legacyOptionalChaining?: boolean;
 }
 type R3DeclareTemplateDependencyFacade = {
     kind: string;
@@ -4491,6 +4511,10 @@ interface R3DirectiveMetadata {
      * Additional directives applied to the directive host.
      */
     hostDirectives: R3HostDirectiveMetadata[] | null;
+    /**
+     * Whether null should be used instead of undefined for optional chaining.
+     */
+    legacyOptionalChaining: boolean;
 }
 /**
  * Defines how dynamic imports for deferred dependencies should be emitted in the
