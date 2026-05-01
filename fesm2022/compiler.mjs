@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.10+sha-a4145de
+ * @license Angular v22.0.0-next.10+sha-c84642a
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -2529,6 +2529,10 @@ class Identifiers {
   };
   static deferEnableTimerScheduling = {
     name: 'ɵɵdeferEnableTimerScheduling',
+    moduleName: CORE
+  };
+  static enableIncrementalHydrationRuntime = {
+    name: 'ɵɵenableIncrementalHydrationRuntime',
     moduleName: CORE
   };
   static conditionalCreate = {
@@ -7574,30 +7578,31 @@ var OpKind;
   OpKind[OpKind["DomProperty"] = 32] = "DomProperty";
   OpKind[OpKind["Namespace"] = 33] = "Namespace";
   OpKind[OpKind["ProjectionDef"] = 34] = "ProjectionDef";
-  OpKind[OpKind["Projection"] = 35] = "Projection";
-  OpKind[OpKind["RepeaterCreate"] = 36] = "RepeaterCreate";
-  OpKind[OpKind["Repeater"] = 37] = "Repeater";
-  OpKind[OpKind["TwoWayProperty"] = 38] = "TwoWayProperty";
-  OpKind[OpKind["TwoWayListener"] = 39] = "TwoWayListener";
-  OpKind[OpKind["DeclareLet"] = 40] = "DeclareLet";
-  OpKind[OpKind["StoreLet"] = 41] = "StoreLet";
-  OpKind[OpKind["I18nStart"] = 42] = "I18nStart";
-  OpKind[OpKind["I18n"] = 43] = "I18n";
-  OpKind[OpKind["I18nEnd"] = 44] = "I18nEnd";
-  OpKind[OpKind["I18nExpression"] = 45] = "I18nExpression";
-  OpKind[OpKind["I18nApply"] = 46] = "I18nApply";
-  OpKind[OpKind["IcuStart"] = 47] = "IcuStart";
-  OpKind[OpKind["IcuEnd"] = 48] = "IcuEnd";
-  OpKind[OpKind["IcuPlaceholder"] = 49] = "IcuPlaceholder";
-  OpKind[OpKind["I18nContext"] = 50] = "I18nContext";
-  OpKind[OpKind["I18nAttributes"] = 51] = "I18nAttributes";
-  OpKind[OpKind["SourceLocation"] = 52] = "SourceLocation";
-  OpKind[OpKind["Animation"] = 53] = "Animation";
-  OpKind[OpKind["AnimationString"] = 54] = "AnimationString";
-  OpKind[OpKind["AnimationBinding"] = 55] = "AnimationBinding";
-  OpKind[OpKind["AnimationListener"] = 56] = "AnimationListener";
-  OpKind[OpKind["Control"] = 57] = "Control";
-  OpKind[OpKind["ControlCreate"] = 58] = "ControlCreate";
+  OpKind[OpKind["EnableIncrementalHydrationRuntime"] = 35] = "EnableIncrementalHydrationRuntime";
+  OpKind[OpKind["Projection"] = 36] = "Projection";
+  OpKind[OpKind["RepeaterCreate"] = 37] = "RepeaterCreate";
+  OpKind[OpKind["Repeater"] = 38] = "Repeater";
+  OpKind[OpKind["TwoWayProperty"] = 39] = "TwoWayProperty";
+  OpKind[OpKind["TwoWayListener"] = 40] = "TwoWayListener";
+  OpKind[OpKind["DeclareLet"] = 41] = "DeclareLet";
+  OpKind[OpKind["StoreLet"] = 42] = "StoreLet";
+  OpKind[OpKind["I18nStart"] = 43] = "I18nStart";
+  OpKind[OpKind["I18n"] = 44] = "I18n";
+  OpKind[OpKind["I18nEnd"] = 45] = "I18nEnd";
+  OpKind[OpKind["I18nExpression"] = 46] = "I18nExpression";
+  OpKind[OpKind["I18nApply"] = 47] = "I18nApply";
+  OpKind[OpKind["IcuStart"] = 48] = "IcuStart";
+  OpKind[OpKind["IcuEnd"] = 49] = "IcuEnd";
+  OpKind[OpKind["IcuPlaceholder"] = 50] = "IcuPlaceholder";
+  OpKind[OpKind["I18nContext"] = 51] = "I18nContext";
+  OpKind[OpKind["I18nAttributes"] = 52] = "I18nAttributes";
+  OpKind[OpKind["SourceLocation"] = 53] = "SourceLocation";
+  OpKind[OpKind["Animation"] = 54] = "Animation";
+  OpKind[OpKind["AnimationString"] = 55] = "AnimationString";
+  OpKind[OpKind["AnimationBinding"] = 56] = "AnimationBinding";
+  OpKind[OpKind["AnimationListener"] = 57] = "AnimationListener";
+  OpKind[OpKind["Control"] = 58] = "Control";
+  OpKind[OpKind["ControlCreate"] = 59] = "ControlCreate";
 })(OpKind || (OpKind = {}));
 var ExpressionKind;
 (function (ExpressionKind) {
@@ -9046,6 +9051,7 @@ function transformExpressionsInOp(op, transform, flags) {
     case OpKind.Pipe:
     case OpKind.Projection:
     case OpKind.ProjectionDef:
+    case OpKind.EnableIncrementalHydrationRuntime:
     case OpKind.Template:
     case OpKind.Text:
     case OpKind.I18nAttributes:
@@ -9415,6 +9421,13 @@ function createProjectionDefOp(def) {
   return {
     kind: OpKind.ProjectionDef,
     def,
+    ...NEW_OP
+  };
+}
+function createEnableIncrementalHydrationRuntimeOp(sourceSpan) {
+  return {
+    kind: OpKind.EnableIncrementalHydrationRuntime,
+    sourceSpan,
     ...NEW_OP
   };
 }
@@ -10563,6 +10576,17 @@ function configureDeferInstructions(job) {
       }
       if (op.loadingMinimumTime !== null || op.loadingAfterTime !== null) {
         op.loadingConfig = new ConstCollectedExpr(literalOrArrayLiteral([op.loadingMinimumTime, op.loadingAfterTime]));
+      }
+    }
+  }
+}
+
+function insertIncrementalHydrationRuntime(job) {
+  for (const unit of job.units) {
+    for (const op of unit.create) {
+      if (op.kind === OpKind.Defer && op.flags !== null && (op.flags & 1) !== 0) {
+        OpList.insertBefore(createEnableIncrementalHydrationRuntimeOp(op.sourceSpan), op);
+        break;
       }
     }
   }
@@ -19824,6 +19848,9 @@ function defer(selfSlot, primarySlot, dependencyResolverFn, loadingSlot, placeho
   }
   return call(Identifiers.defer, args, sourceSpan);
 }
+function enableIncrementalHydrationRuntime(sourceSpan) {
+  return call(Identifiers.enableIncrementalHydrationRuntime, [], sourceSpan);
+}
 const deferTriggerToR3TriggerInstructionsMap = new Map([[DeferTriggerKind.Idle, {
   ["none"]: Identifiers.deferOnIdle,
   ["prefetch"]: Identifiers.deferPrefetchOnIdle,
@@ -20337,6 +20364,9 @@ function reifyCreateOperations(unit, ops) {
         break;
       case OpKind.ProjectionDef:
         OpList.replace(op, projectionDef(op.def));
+        break;
+      case OpKind.EnableIncrementalHydrationRuntime:
+        OpList.replace(op, enableIncrementalHydrationRuntime(op.sourceSpan));
         break;
       case OpKind.Projection:
         if (op.handle.slot === null) {
@@ -22063,6 +22093,9 @@ const phases = [{
 }, {
   kind: CompilationJobKind.Tmpl,
   fn: configureDeferInstructions
+}, {
+  kind: CompilationJobKind.Tmpl,
+  fn: insertIncrementalHydrationRuntime
 }, {
   kind: CompilationJobKind.Tmpl,
   fn: createVariadicPipes
@@ -28919,7 +28952,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28937,7 +28970,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29010,7 +29043,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29352,7 +29385,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29378,7 +29411,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29419,7 +29452,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29445,7 +29478,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29472,7 +29505,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29510,7 +29543,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.10+sha-a4145de'));
+  definitionMap.set('version', literal('22.0.0-next.10+sha-c84642a'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29584,7 +29617,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.10+sha-a4145de');
+const VERSION = new Version('22.0.0-next.10+sha-c84642a');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
