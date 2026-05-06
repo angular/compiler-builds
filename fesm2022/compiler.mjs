@@ -1,5 +1,5 @@
 /**
- * @license Angular v20.3.19+sha-b9ec542
+ * @license Angular v20.3.19+sha-25e4e07
  * (c) 2010-2025 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -29778,8 +29778,9 @@ class HtmlAstToIvyAst {
                 // Note that validation is skipped and property mapping is disabled
                 // due to the fact that we need to make sure a given prop is not an
                 // input of a directive and directive matching happens at runtime.
+                const isAttrOn = prop.name.toLowerCase().startsWith('attr.on');
                 const bep = this.bindingParser.createBoundElementProperty(elementName, prop, 
-                /* skipValidation */ true, 
+                /* skipValidation */ !isAttrOn, 
                 /* mapPropertyName */ false);
                 bound.push(BoundAttribute.fromBoundElementProperty(bep, i18n));
             }
@@ -30675,7 +30676,29 @@ function verifyHostBindings(bindings, sourceSpan) {
     const bindingParser = makeBindingParser();
     bindingParser.createDirectiveHostEventAsts(bindings.listeners, sourceSpan);
     bindingParser.createBoundHostProperties(bindings.properties, sourceSpan);
+    validateNoEventBindings(bindings, bindingParser, sourceSpan);
     return bindingParser.errors;
+}
+/**
+ * Validates that there are no event attribute bindings in the host bindings.
+ * @param bindings - Map of host bindings for the component.
+ * @param bindingParser - Binding parser used to create the binding expression.
+ * @param sourceSpan - Source span where the host bindings were defined.
+ */
+function validateNoEventBindings(bindings, bindingParser, sourceSpan) {
+    for (const prop in bindings.properties) {
+        const isAttr = prop.startsWith('attr.');
+        const boundName = isAttr ? prop.slice(5) : prop;
+        if (boundName.toLowerCase().startsWith('on')) {
+            const errorType = isAttr ? 'attribute' : 'property';
+            const suggestion = `(${boundName.slice(2)})=...`;
+            let msg = `Binding to event ${errorType} '${boundName}' is disallowed for security reasons, please use ${suggestion}`;
+            if (!isAttr) {
+                msg += `\nIf '${prop}' is a directive input, make sure the directive is imported by the current module.`;
+            }
+            bindingParser.errors.push(new ParseError(sourceSpan, msg));
+        }
+    }
 }
 function compileStyles(styles, selector, hostSelector) {
     const shadowCss = new ShadowCss();
@@ -32400,11 +32423,6 @@ function createR3ComponentDeferMetadata(boundTarget, deferBlockDependencies) {
 function extractHostBindings(propMetadata, sourceSpan, host) {
     // First parse the declarations from the metadata.
     const bindings = parseHostBindings(host || {});
-    // After that check host bindings for errors
-    const errors = verifyHostBindings(bindings, sourceSpan);
-    if (errors.length) {
-        throw new Error(errors.map((error) => error.msg).join('\n'));
-    }
     // Next, loop over the properties of the object, looking for @HostBinding and @HostListener.
     for (const field in propMetadata) {
         if (propMetadata.hasOwnProperty(field)) {
@@ -32420,6 +32438,11 @@ function extractHostBindings(propMetadata, sourceSpan, host) {
                 }
             });
         }
+    }
+    // After that check host bindings for errors
+    const errors = verifyHostBindings(bindings, sourceSpan);
+    if (errors.length) {
+        throw new Error(errors.map((error) => error.msg).join('\n'));
     }
     return bindings;
 }
@@ -34316,7 +34339,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('decorators', metadata.decorators);
@@ -34334,7 +34357,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
     callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
     callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', metadata.type);
     definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -34429,7 +34452,7 @@ function createDirectiveDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     const minVersion = getMinimumVersionForPartialOutput(meta);
     definitionMap.set('minVersion', literal(minVersion));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     // e.g. `type: MyDirective`
     definitionMap.set('type', meta.type.value);
     if (meta.isStandalone !== undefined) {
@@ -34845,7 +34868,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$4 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('deps', compileDependencies(meta.deps));
@@ -34880,7 +34903,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // Only generate providedIn property if it has a non-null value
@@ -34931,7 +34954,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     definitionMap.set('providers', meta.providers);
@@ -34964,7 +34987,7 @@ function createNgModuleDefinitionMap(meta) {
         throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
     }
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     definitionMap.set('type', meta.type.value);
     // We only generate the keys in the metadata if the arrays contain values.
@@ -35015,7 +35038,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
     const definitionMap = new DefinitionMap();
     definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-    definitionMap.set('version', literal('20.3.19+sha-b9ec542'));
+    definitionMap.set('version', literal('20.3.19+sha-25e4e07'));
     definitionMap.set('ngImport', importExpr(Identifiers.core));
     // e.g. `type: MyPipe`
     definitionMap.set('type', meta.type.value);
@@ -35171,7 +35194,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
  * @description
  * Entry point for all public APIs of the compiler package.
  */
-const VERSION = new Version('20.3.19+sha-b9ec542');
+const VERSION = new Version('20.3.19+sha-25e4e07');
 
 //////////////////////////////////////
 // THIS FILE HAS GLOBAL SIDE EFFECT //
