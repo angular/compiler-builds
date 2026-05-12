@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.12+sha-a4ec2b4
+ * @license Angular v22.0.0-next.12+sha-7dc1017
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6989,14 +6989,9 @@ class ShadowCss {
       }
       return COMMENT_PLACEHOLDER;
     });
-    cssText = this._insertDirectives(cssText);
     const scopedCssText = this._scopeCssText(cssText, selector, hostSelector);
     let commentIdx = 0;
     return scopedCssText.replace(_commentWithHashPlaceHolderRe, () => comments[commentIdx++]);
-  }
-  _insertDirectives(cssText) {
-    cssText = this._insertPolyfillDirectivesInCssText(cssText);
-    return this._insertPolyfillRulesInCssText(cssText);
   }
   _scopeKeyframesRelatedCss(cssText, scopeSelector) {
     const unscopedKeyframesSet = new Set();
@@ -7020,7 +7015,7 @@ class ShadowCss {
   }
   _animationDeclarationKeyframesRe = /(^|\s+|,)(?:(?:(['"])((?:\\\\|\\\2|(?!\2).)+)\2)|(-?[A-Za-z][\w\-]*))(?=[,\s]|$)/g;
   _scopeAnimationRule(rule, scopeSelector, unscopedKeyframesSet) {
-    let content = rule.content.replace(/((?:^|\s+|;)(?:-webkit-)?animation\s*:\s*),*([^;]+)/g, (_, start, animationDeclarations) => start + animationDeclarations.replace(this._animationDeclarationKeyframesRe, (original, leadingSpaces, quote = '', quotedName, nonQuotedName) => {
+    let content = rule.content.replace(/((?:^|\s+|;)(?:-webkit-)?animation\s*:\s*)([^;]+)/g, (_, start, animationDeclarations) => start + animationDeclarations.replace(this._animationDeclarationKeyframesRe, (original, leadingSpaces, quote = '', quotedName, nonQuotedName) => {
       if (quotedName) {
         return `${leadingSpaces}${this._scopeAnimationKeyframe(`${quote}${quotedName}${quote}`, scopeSelector, unscopedKeyframesSet)}`;
       } else {
@@ -7033,54 +7028,29 @@ class ShadowCss {
       content
     };
   }
-  _insertPolyfillDirectivesInCssText(cssText) {
-    return cssText.replace(_cssContentNextSelectorRe, function (...m) {
-      return m[2] + '{';
-    });
-  }
-  _insertPolyfillRulesInCssText(cssText) {
-    return cssText.replace(_cssContentRuleRe, (...m) => {
-      const rule = m[0].replace(m[1], '').replace(m[2], '');
-      return m[4] + rule;
-    });
-  }
   _scopeCssText(cssText, scopeSelector, hostSelector) {
-    const unscopedRules = this._extractUnscopedRulesFromCssText(cssText);
     cssText = this._insertPolyfillHostInCssText(cssText);
     cssText = this._convertColonHost(cssText);
     cssText = this._convertColonHostContext(cssText);
-    cssText = this._convertShadowDOMSelectors(cssText);
     if (scopeSelector) {
       cssText = this._scopeKeyframesRelatedCss(cssText, scopeSelector);
       cssText = this._scopeSelectors(cssText, scopeSelector, hostSelector);
     }
-    cssText = cssText + '\n' + unscopedRules;
     return cssText.trim();
-  }
-  _extractUnscopedRulesFromCssText(cssText) {
-    let r = '';
-    let m;
-    _cssContentUnscopedRuleRe.lastIndex = 0;
-    while ((m = _cssContentUnscopedRuleRe.exec(cssText)) !== null) {
-      const rule = m[0].replace(m[2], '').replace(m[1], m[4]);
-      r += rule + '\n\n';
-    }
-    return r;
   }
   _convertColonHost(cssText) {
     return cssText.replace(_cssColonHostRe, (_, hostSelectors, otherSelectors) => {
       if (hostSelectors) {
-        const convertedSelectors = [];
-        for (const hostSelector of this._splitOnTopLevelCommas(hostSelectors, true)) {
-          const trimmedHostSelector = hostSelector.trim();
-          if (!trimmedHostSelector) break;
-          const convertedSelector = _polyfillHostNoCombinator + trimmedHostSelector.replace(_polyfillHost, '') + otherSelectors;
-          convertedSelectors.push(convertedSelector);
+        const parts = [...this._splitOnTopLevelCommas(hostSelectors, true)];
+        if (parts.length > 1) {
+          return ':host(' + hostSelectors + ')' + otherSelectors;
         }
-        return convertedSelectors.join(',');
-      } else {
-        return _polyfillHostNoCombinator + otherSelectors;
+        const trimmedHostSelector = parts[0].trim();
+        if (trimmedHostSelector) {
+          return _polyfillHostNoCombinator + trimmedHostSelector.replace(_polyfillHost, '') + otherSelectors;
+        }
       }
+      return _polyfillHostNoCombinator + otherSelectors;
     });
   }
   *_splitOnTopLevelCommas(text, returnOnClosingParen) {
@@ -7143,9 +7113,6 @@ class ShadowCss {
       }
       return contextSelectorGroups.map(contextSelectors => _combineHostContextSelectors(contextSelectors, selectorText, pseudoPrefix)).join(', ');
     });
-  }
-  _convertShadowDOMSelectors(cssText) {
-    return _shadowDOMSelectorsRe.reduce((result, pattern) => result.replace(pattern, ' '), cssText);
   }
   _scopeSelectors(cssText, scopeSelector, hostSelector) {
     return processRules(cssText, rule => {
@@ -7366,9 +7333,6 @@ class SafeSelector {
 }
 const _cssScopedPseudoFunctionPrefix = '(:(where|is)\\()?';
 const _cssPrefixWithPseudoSelectorFunction = /:(where|is)\(/gi;
-const _cssContentNextSelectorRe = /polyfill-next-selector[^}]*content:[\s]*?(['"])(.*?)\1[;\s]*}([^{]*?){/gim;
-const _cssContentRuleRe = /(polyfill-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
-const _cssContentUnscopedRuleRe = /(polyfill-unscoped-rule)[^}]*(content:[\s]*(['"])(.*?)\3)[;\s]*[^}]*}/gim;
 const _polyfillHost = '-shadowcsshost';
 const _polyfillHostContext = '-shadowcsscontext';
 const _noParens = '[^)(]*';
@@ -7377,17 +7341,16 @@ const _level2Parens = String.raw`(?:\(${_level1Parens}\)|${_noParens})+?`;
 const _parenSuffix = String.raw`(?:\((${_level2Parens})\))`;
 const nthRegex = new RegExp(String.raw`(:nth-[-\w]+)` + _parenSuffix, 'g');
 const _cssColonHostRe = new RegExp(_polyfillHost + _parenSuffix + '?([^,{]*)', 'gim');
-const _hostContextPattern = _polyfillHostContext + _parenSuffix + '?([^{]*)';
+const _hostContextPattern = _polyfillHostContext + _parenSuffix + '([^{]*)';
 const _cssColonHostContextReGlobal = new RegExp(`${_cssScopedPseudoFunctionPrefix}(${_hostContextPattern})`, 'gim');
 const _polyfillHostNoCombinator = _polyfillHost + '-no-combinator';
 const _polyfillHostNoCombinatorOutsidePseudoFunction = new RegExp(`${_polyfillHostNoCombinator}(?![^(]*\\))`, 'g');
 const _polyfillHostNoCombinatorRe = /-shadowcsshost-no-combinator([^\s,]*)/;
-const _shadowDOMSelectorsRe = [/::shadow/g, /::content/g, /\/shadow-deep\//g, /\/shadow\//g];
 const _shadowDeepSelectors = /(?:>>>)|(?:\/deep\/)|(?:::ng-deep)/g;
 const _selectorReSuffix = '([>\\s~+[.,{:][\\s\\S]*)?$';
 const _polyfillHostRe = /-shadowcsshost/gim;
-const _colonHostRe = /:host/gim;
-const _colonHostContextRe = /:host-context/gim;
+const _colonHostRe = /:host(?!\-context)/gim;
+const _colonHostContextRe = /:host-context(?=\(\s*[^)\s])/gim;
 const _newLinesRe = /\r?\n/g;
 const _commentRe = /\/\*[\s\S]*?\*\//g;
 const _commentWithHashRe = /\/\*\s*#\s*source(Mapping)?URL=/g;
@@ -28972,7 +28935,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28990,7 +28953,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29063,7 +29026,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29405,7 +29368,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29431,7 +29394,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29472,7 +29435,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29498,7 +29461,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29525,7 +29488,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29563,7 +29526,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-next.12+sha-a4ec2b4'));
+  definitionMap.set('version', literal('22.0.0-next.12+sha-7dc1017'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29637,7 +29600,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-next.12+sha-a4ec2b4');
+const VERSION = new Version('22.0.0-next.12+sha-7dc1017');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
