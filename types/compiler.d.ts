@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-next.12+sha-7017557
+ * @license Angular v22.0.0-next.12+sha-ccb7d42
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3463,14 +3463,14 @@ declare class SwitchExhaustiveCheck extends BlockNode implements Node {
 declare class ForLoopBlock extends BlockNode implements Node {
     item: Variable;
     expression: ASTWithSource;
-    trackBy: ASTWithSource;
-    trackKeywordSpan: ParseSourceSpan$1;
+    trackBy: ASTWithSource | null;
+    trackKeywordSpan: ParseSourceSpan$1 | null;
     contextVariables: Variable[];
     children: Node[];
     empty: ForLoopBlockEmpty | null;
     mainBlockSpan: ParseSourceSpan$1;
     i18n?: I18nMeta$1 | undefined;
-    constructor(item: Variable, expression: ASTWithSource, trackBy: ASTWithSource, trackKeywordSpan: ParseSourceSpan$1, contextVariables: Variable[], children: Node[], empty: ForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    constructor(item: Variable, expression: ASTWithSource, trackBy: ASTWithSource | null, trackKeywordSpan: ParseSourceSpan$1 | null, contextVariables: Variable[], children: Node[], empty: ForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class ForLoopBlockEmpty extends BlockNode implements Node {
