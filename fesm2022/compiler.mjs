@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-9a7dedc
+ * @license Angular v22.1.0-next.0+sha-16fe27b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6973,6 +6973,7 @@ var R3TemplateDependencyKind;
   R3TemplateDependencyKind[R3TemplateDependencyKind["Directive"] = 0] = "Directive";
   R3TemplateDependencyKind[R3TemplateDependencyKind["Pipe"] = 1] = "Pipe";
   R3TemplateDependencyKind[R3TemplateDependencyKind["NgModule"] = 2] = "NgModule";
+  R3TemplateDependencyKind[R3TemplateDependencyKind["ForeignComponent"] = 3] = "ForeignComponent";
 })(R3TemplateDependencyKind || (R3TemplateDependencyKind = {}));
 
 const animationKeywords = new Set(['inherit', 'initial', 'revert', 'unset', 'alternate', 'alternate-reverse', 'normal', 'reverse', 'backwards', 'both', 'forwards', 'none', 'paused', 'running', 'ease', 'ease-in', 'ease-in-out', 'ease-out', 'linear', 'step-start', 'step-end', 'end', 'jump-both', 'jump-end', 'jump-none', 'jump-start', 'start']);
@@ -17535,19 +17536,30 @@ function interleave(left, right) {
 }
 
 let _SECURITY_SCHEMA;
+const SVG_NAMESPACE$1 = 'svg';
+const MATH_ML_NAMESPACE$1 = 'math';
 function SECURITY_SCHEMA() {
   if (!_SECURITY_SCHEMA) {
     _SECURITY_SCHEMA = {};
-    registerContext(SecurityContext.HTML, ['iframe|srcdoc', '*|innerHTML', '*|outerHTML']);
-    registerContext(SecurityContext.STYLE, ['*|style']);
-    registerContext(SecurityContext.URL, ['*|formAction', 'area|href', 'a|href', 'a|xlink:href', 'form|action', 'annotation|href', 'annotation|xlink:href', 'annotation-xml|href', 'annotation-xml|xlink:href', 'maction|href', 'maction|xlink:href', 'malignmark|href', 'malignmark|xlink:href', 'math|href', 'math|xlink:href', 'mroot|href', 'mroot|xlink:href', 'msqrt|href', 'msqrt|xlink:href', 'merror|href', 'merror|xlink:href', 'mfrac|href', 'mfrac|xlink:href', 'mglyph|href', 'mglyph|xlink:href', 'msub|href', 'msub|xlink:href', 'msup|href', 'msup|xlink:href', 'msubsup|href', 'msubsup|xlink:href', 'mmultiscripts|href', 'mmultiscripts|xlink:href', 'mprescripts|href', 'mprescripts|xlink:href', 'mi|href', 'mi|xlink:href', 'mn|href', 'mn|xlink:href', 'mo|href', 'mo|xlink:href', 'mpadded|href', 'mpadded|xlink:href', 'mphantom|href', 'mphantom|xlink:href', 'mrow|href', 'mrow|xlink:href', 'ms|href', 'ms|xlink:href', 'mspace|href', 'mspace|xlink:href', 'mstyle|href', 'mstyle|xlink:href', 'mtable|href', 'mtable|xlink:href', 'mtd|href', 'mtd|xlink:href', 'mtr|href', 'mtr|xlink:href', 'mtext|href', 'mtext|xlink:href', 'mover|href', 'mover|xlink:href', 'munder|href', 'munder|xlink:href', 'munderover|href', 'munderover|xlink:href', 'semantics|href', 'semantics|xlink:href', 'none|href', 'none|xlink:href', 'img|src', 'video|src']);
-    registerContext(SecurityContext.RESOURCE_URL, ['base|href', 'embed|src', 'frame|src', 'iframe|src', 'link|href', 'object|codebase', 'object|data', 'script|src', 'script|href', 'script|xlink:href']);
-    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, ['animate|attributeName', 'animate|values', 'animate|to', 'animate|from', 'set|to', 'set|attributeName', 'animateMotion|attributeName', 'animateTransform|attributeName', 'unknown|attributeName', 'unknown|values', 'unknown|to', 'unknown|from', 'iframe|sandbox', 'iframe|allow', 'iframe|allowFullscreen', 'iframe|referrerPolicy', 'iframe|csp', 'iframe|fetchPriority', 'unknown|sandbox', 'unknown|allow', 'unknown|allowFullscreen', 'unknown|referrerPolicy', 'unknown|csp', 'unknown|fetchPriority']);
+    registerContext(SecurityContext.HTML, undefined, [['iframe', ['srcdoc']], ['*', ['innerHTML', 'outerHTML']]]);
+    registerContext(SecurityContext.STYLE, undefined, [['*', ['style']]]);
+    registerContext(SecurityContext.URL, undefined, [['*', ['formAction']], ['area', ['href']], ['a', ['href', 'xlink:href']], ['form', ['action']], ['img', ['src']], ['video', ['src']]]);
+    registerContext(SecurityContext.URL, MATH_ML_NAMESPACE$1, [['annotation', ['href', 'xlink:href']], ['annotation-xml', ['href', 'xlink:href']], ['maction', ['href', 'xlink:href']], ['malignmark', ['href', 'xlink:href']], ['math', ['href', 'xlink:href']], ['mroot', ['href', 'xlink:href']], ['msqrt', ['href', 'xlink:href']], ['merror', ['href', 'xlink:href']], ['mfrac', ['href', 'xlink:href']], ['mglyph', ['href', 'xlink:href']], ['msub', ['href', 'xlink:href']], ['msup', ['href', 'xlink:href']], ['msubsup', ['href', 'xlink:href']], ['mmultiscripts', ['href', 'xlink:href']], ['mprescripts', ['href', 'xlink:href']], ['mi', ['href', 'xlink:href']], ['mn', ['href', 'xlink:href']], ['mo', ['href', 'xlink:href']], ['mpadded', ['href', 'xlink:href']], ['mphantom', ['href', 'xlink:href']], ['mrow', ['href', 'xlink:href']], ['ms', ['href', 'xlink:href']], ['mspace', ['href', 'xlink:href']], ['mstyle', ['href', 'xlink:href']], ['mtable', ['href', 'xlink:href']], ['mtd', ['href', 'xlink:href']], ['mtr', ['href', 'xlink:href']], ['mtext', ['href', 'xlink:href']], ['mover', ['href', 'xlink:href']], ['munder', ['href', 'xlink:href']], ['munderover', ['href', 'xlink:href']], ['semantics', ['href', 'xlink:href']], ['none', ['href', 'xlink:href']]]);
+    registerContext(SecurityContext.RESOURCE_URL, undefined, [['base', ['href']], ['embed', ['src']], ['frame', ['src']], ['iframe', ['src']], ['link', ['href']], ['object', ['codebase', 'data']]]);
+    registerContext(SecurityContext.RESOURCE_URL, SVG_NAMESPACE$1, [['script', ['src', 'href', 'xlink:href']]]);
+    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, SVG_NAMESPACE$1, [['animate', ['attributeName', 'values', 'to', 'from']], ['set', ['to', 'attributeName']], ['animateMotion', ['attributeName']], ['animateTransform', ['attributeName']]]);
+    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, undefined, [['unknown', ['attributeName', 'values', 'to', 'from', 'sandbox', 'allow', 'allowFullscreen', 'referrerPolicy', 'csp', 'fetchPriority']], ['iframe', ['sandbox', 'allow', 'allowFullscreen', 'referrerPolicy', 'csp', 'fetchPriority']]]);
   }
   return _SECURITY_SCHEMA;
 }
-function registerContext(ctx, specs) {
-  for (const spec of specs) _SECURITY_SCHEMA[spec.toLowerCase()] = ctx;
+function registerContext(ctx, namespace, specs) {
+  for (const [element, attributeNames] of specs) {
+    let tagName = namespace && element !== '*' && element !== 'unknown' ? `:${namespace}:${element}` : element;
+    tagName = tagName.toLowerCase();
+    for (const attr of attributeNames) {
+      _SECURITY_SCHEMA[`${tagName}|${attr.toLowerCase()}`] = ctx;
+    }
+  }
 }
 
 class ElementSchemaRegistry {}
@@ -17698,12 +17710,9 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     }
     tagName = tagName.toLowerCase();
     propName = propName.toLowerCase();
-    let ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
-    if (ctx) {
-      return ctx;
-    }
-    ctx = SECURITY_SCHEMA()['*|' + propName];
-    return ctx ? ctx : SecurityContext.NONE;
+    const securitySchema = SECURITY_SCHEMA();
+    const ctx = securitySchema[tagName + '|' + propName] ?? securitySchema['*|' + propName] ?? SecurityContext.NONE;
+    return ctx;
   }
   getMappedPropName(propName) {
     return _ATTR_TO_PROP.get(propName) ?? propName;
@@ -22286,6 +22295,9 @@ function emitHostBindingFunction(job) {
   return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
 }
 
+const SVG_NAMESPACE = 'svg';
+const MATH_ML_NAMESPACE = 'math';
+
 const domSchema = new DomElementSchemaRegistry();
 const NG_TEMPLATE_TAG_NAME = 'ng-template';
 const ANIMATE_PREFIX$1 = 'animate.';
@@ -22872,7 +22884,19 @@ function ingestElementBindings(unit, op, element) {
   let bindings = new Array();
   let i18nAttributeBindingNames = new Set();
   for (const attr of element.attributes) {
-    const securityContext = domSchema.securityContext(element.name, attr.name, true);
+    const [ns, elementName] = splitNsName(element.name);
+    let namespace = ns;
+    if (!ns) {
+      switch (op.namespace) {
+        case Namespace.SVG:
+          namespace = SVG_NAMESPACE;
+          break;
+        case Namespace.Math:
+          namespace = MATH_ML_NAMESPACE;
+          break;
+      }
+    }
+    const securityContext = domSchema.securityContext(namespace ? `:${namespace}:${elementName}` : elementName, attr.name, true);
     bindings.push(createBindingOp(op.xref, BindingKind.Attribute, attr.name, convertAstWithInterpolation(unit.job, attr.value, attr.i18n), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
     if (attr.i18n) {
       i18nAttributeBindingNames.add(attr.name);
@@ -23575,15 +23599,34 @@ function isLegacyAnimationLabel(name) {
 }
 function calcPossibleSecurityContexts(registry, selector, propName, isAttribute) {
   let ctxs;
-  const nameToContext = elName => registry.securityContext(elName, propName, isAttribute);
-  if (selector === null) {
-    ctxs = registry.allKnownElementNames().map(nameToContext);
+  const [namespaceKey, baseSelector] = selector ? splitNsName(selector, false) : [null, selector];
+  const nameToContext = elName => {
+    const [nsStr, name] = splitNsName(elName, false);
+    const ns = nsStr ?? namespaceKey;
+    const fullName = ns ? `:${ns}:${name}` : name;
+    return registry.securityContext(fullName, propName, isAttribute);
+  };
+  const allKnownElements = registry.allKnownElementNames();
+  if (baseSelector === null) {
+    ctxs = allKnownElements.map(nameToContext);
   } else {
     ctxs = [];
-    CssSelector.parse(selector).forEach(selector => {
-      const elementNames = selector.element ? [selector.element] : registry.allKnownElementNames();
-      const notElementNames = new Set(selector.notSelectors.filter(selector => selector.isElementSelector()).map(selector => selector.element));
-      const possibleElementNames = elementNames.filter(elName => !notElementNames.has(elName));
+    CssSelector.parse(baseSelector).forEach(selector => {
+      let elementNames = selector.element ? [selector.element] : allKnownElements;
+      if (selector.element && !registry.hasElement(selector.element, [])) {
+        const svgElement = `:${SVG_NAMESPACE}:${selector.element}`;
+        const mathElement = `:${MATH_ML_NAMESPACE}:${selector.element}`;
+        if (registry.hasElement(svgElement, [])) {
+          elementNames = [svgElement];
+        } else if (registry.hasElement(mathElement, [])) {
+          elementNames = [mathElement];
+        }
+      }
+      const notElementNames = new Set(selector.notSelectors.filter(selector => selector.isElementSelector()).map(selector => selector.element?.toLowerCase()));
+      const possibleElementNames = elementNames.filter(elName => {
+        const elNameLowerCase = elName.toLowerCase();
+        return !notElementNames.has(elNameLowerCase) && !notElementNames.has(splitNsName(elNameLowerCase)[1]);
+      });
       ctxs.push(...possibleElementNames.map(nameToContext));
     });
   }
@@ -28944,7 +28987,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -28962,7 +29005,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29035,7 +29078,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29333,6 +29376,8 @@ function compileUsedDependenciesMetadata(meta) {
         ngModuleMeta.set('kind', literal('ngmodule'));
         ngModuleMeta.set('type', wrapType(decl.type));
         return ngModuleMeta.toLiteralMap();
+      case R3TemplateDependencyKind.ForeignComponent:
+        throw new Error('Foreign components are not supported in partial compilation');
     }
   });
 }
@@ -29377,7 +29422,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29403,7 +29448,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29444,7 +29489,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29470,7 +29515,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29497,7 +29542,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29535,7 +29580,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-9a7dedc'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-16fe27b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29609,7 +29654,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.0+sha-9a7dedc');
+const VERSION = new Version('22.1.0-next.0+sha-16fe27b');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
