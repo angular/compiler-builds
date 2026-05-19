@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.0-rc.0+sha-38aca8f
+ * @license Angular v22.0.0-rc.0+sha-0e1ec0c
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -318,6 +318,42 @@ class SelectorlessMatcher {
   }
 }
 
+var SecurityContext;
+(function (SecurityContext) {
+  SecurityContext[SecurityContext["NONE"] = 0] = "NONE";
+  SecurityContext[SecurityContext["HTML"] = 1] = "HTML";
+  SecurityContext[SecurityContext["STYLE"] = 2] = "STYLE";
+  SecurityContext[SecurityContext["SCRIPT"] = 3] = "SCRIPT";
+  SecurityContext[SecurityContext["URL"] = 4] = "URL";
+  SecurityContext[SecurityContext["RESOURCE_URL"] = 5] = "RESOURCE_URL";
+  SecurityContext[SecurityContext["ATTRIBUTE_NO_BINDING"] = 6] = "ATTRIBUTE_NO_BINDING";
+})(SecurityContext || (SecurityContext = {}));
+let _SECURITY_SCHEMA;
+const SVG_NAMESPACE$1 = 'svg';
+const MATH_ML_NAMESPACE$1 = 'math';
+function SECURITY_SCHEMA() {
+  if (!_SECURITY_SCHEMA) {
+    _SECURITY_SCHEMA = {};
+    registerContext(SecurityContext.HTML, undefined, [['iframe', ['srcdoc']], ['*', ['innerHTML', 'outerHTML']]]);
+    registerContext(SecurityContext.STYLE, undefined, [['*', ['style']]]);
+    registerContext(SecurityContext.URL, undefined, [['*', ['formAction']], ['area', ['href']], ['a', ['href', 'xlink:href']], ['form', ['action']], ['img', ['src']], ['video', ['src']]]);
+    registerContext(SecurityContext.URL, MATH_ML_NAMESPACE$1, [['annotation', ['href', 'xlink:href']], ['annotation-xml', ['href', 'xlink:href']], ['maction', ['href', 'xlink:href']], ['malignmark', ['href', 'xlink:href']], ['math', ['href', 'xlink:href']], ['mroot', ['href', 'xlink:href']], ['msqrt', ['href', 'xlink:href']], ['merror', ['href', 'xlink:href']], ['mfrac', ['href', 'xlink:href']], ['mglyph', ['href', 'xlink:href']], ['msub', ['href', 'xlink:href']], ['msup', ['href', 'xlink:href']], ['msubsup', ['href', 'xlink:href']], ['mmultiscripts', ['href', 'xlink:href']], ['mprescripts', ['href', 'xlink:href']], ['mi', ['href', 'xlink:href']], ['mn', ['href', 'xlink:href']], ['mo', ['href', 'xlink:href']], ['mpadded', ['href', 'xlink:href']], ['mphantom', ['href', 'xlink:href']], ['mrow', ['href', 'xlink:href']], ['ms', ['href', 'xlink:href']], ['mspace', ['href', 'xlink:href']], ['mstyle', ['href', 'xlink:href']], ['mtable', ['href', 'xlink:href']], ['mtd', ['href', 'xlink:href']], ['mtr', ['href', 'xlink:href']], ['mtext', ['href', 'xlink:href']], ['mover', ['href', 'xlink:href']], ['munder', ['href', 'xlink:href']], ['munderover', ['href', 'xlink:href']], ['semantics', ['href', 'xlink:href']], ['none', ['href', 'xlink:href']]]);
+    registerContext(SecurityContext.RESOURCE_URL, undefined, [['base', ['href']], ['embed', ['src']], ['frame', ['src']], ['iframe', ['src']], ['link', ['href']], ['object', ['codebase', 'data']]]);
+    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, SVG_NAMESPACE$1, [['animate', ['attributeName', 'values', 'to', 'from']], ['set', ['to', 'attributeName']], ['animateMotion', ['attributeName']], ['animateTransform', ['attributeName']]]);
+    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, undefined, [['unknown', ['attributeName', 'values', 'to', 'from', 'sandbox', 'allow', 'allowFullscreen', 'referrerPolicy', 'csp', 'fetchPriority']], ['iframe', ['sandbox', 'allow', 'allowFullscreen', 'referrerPolicy', 'csp', 'fetchPriority']]]);
+  }
+  return _SECURITY_SCHEMA;
+}
+function registerContext(ctx, namespace, specs) {
+  for (const [element, attributeNames] of specs) {
+    let tagName = namespace && element !== '*' && element !== 'unknown' ? `:${namespace}:${element}` : element;
+    tagName = tagName.toLowerCase();
+    for (const attr of attributeNames) {
+      _SECURITY_SCHEMA[`${tagName}|${attr.toLowerCase()}`] = ctx;
+    }
+  }
+}
+
 const emitDistinctChangesOnlyDefaultValue = true;
 var ViewEncapsulation$1;
 (function (ViewEncapsulation) {
@@ -345,16 +381,6 @@ const NO_ERRORS_SCHEMA = {
   name: 'no-errors-schema'
 };
 const Type$1 = Function;
-var SecurityContext;
-(function (SecurityContext) {
-  SecurityContext[SecurityContext["NONE"] = 0] = "NONE";
-  SecurityContext[SecurityContext["HTML"] = 1] = "HTML";
-  SecurityContext[SecurityContext["STYLE"] = 2] = "STYLE";
-  SecurityContext[SecurityContext["SCRIPT"] = 3] = "SCRIPT";
-  SecurityContext[SecurityContext["URL"] = 4] = "URL";
-  SecurityContext[SecurityContext["RESOURCE_URL"] = 5] = "RESOURCE_URL";
-  SecurityContext[SecurityContext["ATTRIBUTE_NO_BINDING"] = 6] = "ATTRIBUTE_NO_BINDING";
-})(SecurityContext || (SecurityContext = {}));
 var MissingTranslationStrategy;
 (function (MissingTranslationStrategy) {
   MissingTranslationStrategy[MissingTranslationStrategy["Error"] = 0] = "Error";
@@ -10256,10 +10282,7 @@ class ElementAttributes {
       if (value === null) {
         throw Error('Attribute, i18n attribute, & style element attributes must have a value');
       }
-      if (trustedValueFn !== null) {
-        if (!isStringLiteral(value)) {
-          throw Error('AssertionError: extracted attribute value should be string literal');
-        }
+      if (trustedValueFn !== null && isStringLiteral(value)) {
         array.push(taggedTemplate(trustedValueFn, new TemplateLiteralExpr([new TemplateLiteralElementExpr(value.value)], []), undefined, value.sourceSpan));
       } else {
         array.push(value);
@@ -17534,33 +17557,6 @@ function interleave(left, right) {
   return result;
 }
 
-let _SECURITY_SCHEMA;
-const SVG_NAMESPACE$1 = 'svg';
-const MATH_ML_NAMESPACE$1 = 'math';
-function SECURITY_SCHEMA() {
-  if (!_SECURITY_SCHEMA) {
-    _SECURITY_SCHEMA = {};
-    registerContext(SecurityContext.HTML, undefined, [['iframe', ['srcdoc']], ['*', ['innerHTML', 'outerHTML']]]);
-    registerContext(SecurityContext.STYLE, undefined, [['*', ['style']]]);
-    registerContext(SecurityContext.URL, undefined, [['*', ['formAction']], ['area', ['href']], ['a', ['href', 'xlink:href']], ['form', ['action']], ['img', ['src']], ['video', ['src']]]);
-    registerContext(SecurityContext.URL, MATH_ML_NAMESPACE$1, [['annotation', ['href', 'xlink:href']], ['annotation-xml', ['href', 'xlink:href']], ['maction', ['href', 'xlink:href']], ['malignmark', ['href', 'xlink:href']], ['math', ['href', 'xlink:href']], ['mroot', ['href', 'xlink:href']], ['msqrt', ['href', 'xlink:href']], ['merror', ['href', 'xlink:href']], ['mfrac', ['href', 'xlink:href']], ['mglyph', ['href', 'xlink:href']], ['msub', ['href', 'xlink:href']], ['msup', ['href', 'xlink:href']], ['msubsup', ['href', 'xlink:href']], ['mmultiscripts', ['href', 'xlink:href']], ['mprescripts', ['href', 'xlink:href']], ['mi', ['href', 'xlink:href']], ['mn', ['href', 'xlink:href']], ['mo', ['href', 'xlink:href']], ['mpadded', ['href', 'xlink:href']], ['mphantom', ['href', 'xlink:href']], ['mrow', ['href', 'xlink:href']], ['ms', ['href', 'xlink:href']], ['mspace', ['href', 'xlink:href']], ['mstyle', ['href', 'xlink:href']], ['mtable', ['href', 'xlink:href']], ['mtd', ['href', 'xlink:href']], ['mtr', ['href', 'xlink:href']], ['mtext', ['href', 'xlink:href']], ['mover', ['href', 'xlink:href']], ['munder', ['href', 'xlink:href']], ['munderover', ['href', 'xlink:href']], ['semantics', ['href', 'xlink:href']], ['none', ['href', 'xlink:href']]]);
-    registerContext(SecurityContext.RESOURCE_URL, undefined, [['base', ['href']], ['embed', ['src']], ['frame', ['src']], ['iframe', ['src']], ['link', ['href']], ['object', ['codebase', 'data']]]);
-    registerContext(SecurityContext.RESOURCE_URL, SVG_NAMESPACE$1, [['script', ['src', 'href', 'xlink:href']]]);
-    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, SVG_NAMESPACE$1, [['animate', ['attributeName', 'values', 'to', 'from']], ['set', ['to', 'attributeName']], ['animateMotion', ['attributeName']], ['animateTransform', ['attributeName']]]);
-    registerContext(SecurityContext.ATTRIBUTE_NO_BINDING, undefined, [['unknown', ['attributeName', 'values', 'to', 'from', 'sandbox', 'allow', 'allowFullscreen', 'referrerPolicy', 'csp', 'fetchPriority']], ['iframe', ['sandbox', 'allow', 'allowFullscreen', 'referrerPolicy', 'csp', 'fetchPriority']]]);
-  }
-  return _SECURITY_SCHEMA;
-}
-function registerContext(ctx, namespace, specs) {
-  for (const [element, attributeNames] of specs) {
-    let tagName = namespace && element !== '*' && element !== 'unknown' ? `:${namespace}:${element}` : element;
-    tagName = tagName.toLowerCase();
-    for (const attr of attributeNames) {
-      _SECURITY_SCHEMA[`${tagName}|${attr.toLowerCase()}`] = ctx;
-    }
-  }
-}
-
 class ElementSchemaRegistry {}
 
 const BOOLEAN = 'boolean';
@@ -21071,6 +21067,58 @@ function updatePlaceholder(op, value, i18nContexts, icuPlaceholders) {
   }
 }
 
+const SVG_NAMESPACE = 'svg';
+const MATH_ML_NAMESPACE = 'math';
+
+function resolveI18nAttrSanitizers(job) {
+  const tagNamesByElement = new Map();
+  for (const unit of job.units) {
+    for (const op of unit.ops()) {
+      if (op.kind === OpKind.ElementStart || op.kind === OpKind.Template) {
+        let tag = op.tag ?? '';
+        switch (op.namespace) {
+          case Namespace.SVG:
+            tag = `:${SVG_NAMESPACE}:${tag}`;
+            break;
+          case Namespace.Math:
+            tag = `:${MATH_ML_NAMESPACE}:${tag}`;
+            break;
+        }
+        tagNamesByElement.set(op.xref, tag);
+      }
+    }
+  }
+  for (const unit of job.units) {
+    for (const op of unit.create) {
+      if (op.kind === OpKind.ExtractedAttribute && op.i18nContext !== null && op.expression !== null) {
+        const tagName = tagNamesByElement.get(op.target) ?? '';
+        let expr = op.expression;
+        switch (op.securityContext) {
+          case SecurityContext.HTML:
+            expr = importExpr(Identifiers.sanitizeHtml).callFn([expr]);
+            break;
+          case SecurityContext.STYLE:
+            expr = importExpr(Identifiers.sanitizeStyle).callFn([expr]);
+            break;
+          case SecurityContext.SCRIPT:
+            expr = importExpr(Identifiers.sanitizeScript).callFn([expr]);
+            break;
+          case SecurityContext.URL:
+            expr = importExpr(Identifiers.sanitizeUrl).callFn([expr]);
+            break;
+          case SecurityContext.RESOURCE_URL:
+            expr = importExpr(Identifiers.sanitizeResourceUrl).callFn([expr]);
+            break;
+          case SecurityContext.ATTRIBUTE_NO_BINDING:
+            expr = importExpr(Identifiers.validateAttribute).callFn([expr, literal(tagName), literal(op.name)]);
+            break;
+        }
+        op.expression = expr;
+      }
+    }
+  }
+}
+
 function resolveNames(job) {
   for (const unit of job.units) {
     for (const expr of unit.functions) {
@@ -22174,6 +22222,9 @@ const phases = [{
   fn: collectI18nConsts
 }, {
   kind: CompilationJobKind.Tmpl,
+  fn: resolveI18nAttrSanitizers
+}, {
+  kind: CompilationJobKind.Tmpl,
   fn: collectConstExpressions
 }, {
   kind: CompilationJobKind.Both,
@@ -22293,9 +22344,6 @@ function emitHostBindingFunction(job) {
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
   return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
 }
-
-const SVG_NAMESPACE = 'svg';
-const MATH_ML_NAMESPACE = 'math';
 
 const domSchema = new DomElementSchemaRegistry();
 const NG_TEMPLATE_TAG_NAME = 'ng-template';
@@ -23649,8 +23697,8 @@ const LINK_ELEMENT = 'link';
 const LINK_STYLE_REL_ATTR = 'rel';
 const LINK_STYLE_HREF_ATTR = 'href';
 const LINK_STYLE_REL_VALUE = 'stylesheet';
-const STYLE_ELEMENT = 'style';
-const SCRIPT_ELEMENT = 'script';
+const STYLE_ELEMENTS = new Set([':svg:style', 'style']);
+const SCRIPT_ELEMENTS = new Set([':svg:script', 'script']);
 const NG_NON_BINDABLE_ATTR = 'ngNonBindable';
 const NG_PROJECT_AS = 'ngProjectAs';
 function preparseElement(ast) {
@@ -23659,7 +23707,7 @@ function preparseElement(ast) {
   let relAttr = null;
   let nonBindable = false;
   let projectAs = '';
-  ast.attrs.forEach(attr => {
+  for (const attr of ast.attrs) {
     const lcAttrName = attr.name.toLowerCase();
     if (lcAttrName == NG_CONTENT_SELECT_ATTR) {
       selectAttr = attr.value;
@@ -23674,15 +23722,15 @@ function preparseElement(ast) {
         projectAs = attr.value;
       }
     }
-  });
-  selectAttr = normalizeNgContentSelect(selectAttr);
+  }
+  selectAttr ||= '*';
   const nodeName = ast.name.toLowerCase();
   let type = PreparsedElementType.OTHER;
   if (isNgContent(nodeName)) {
     type = PreparsedElementType.NG_CONTENT;
-  } else if (nodeName == STYLE_ELEMENT) {
+  } else if (STYLE_ELEMENTS.has(nodeName)) {
     type = PreparsedElementType.STYLE;
-  } else if (nodeName == SCRIPT_ELEMENT) {
+  } else if (SCRIPT_ELEMENTS.has(nodeName)) {
     type = PreparsedElementType.SCRIPT;
   } else if (nodeName == LINK_ELEMENT && relAttr == LINK_STYLE_REL_VALUE) {
     type = PreparsedElementType.STYLESHEET;
@@ -23710,12 +23758,6 @@ class PreparsedElement {
     this.nonBindable = nonBindable;
     this.projectAs = projectAs;
   }
-}
-function normalizeNgContentSelect(selectAttr) {
-  if (selectAttr === null || selectAttr.length === 0) {
-    return '*';
-  }
-  return selectAttr;
 }
 
 const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+([\S\s]*)/;
@@ -28986,7 +29028,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29004,7 +29046,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29077,7 +29119,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29419,7 +29461,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29445,7 +29487,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29486,7 +29528,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29512,7 +29554,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29539,7 +29581,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29577,7 +29619,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.0-rc.0+sha-38aca8f'));
+  definitionMap.set('version', literal('22.0.0-rc.0+sha-0e1ec0c'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29651,7 +29693,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.0-rc.0+sha-38aca8f');
+const VERSION = new Version('22.0.0-rc.0+sha-0e1ec0c');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -32552,5 +32594,5 @@ function renderBlockStatements(env, scope, wrapperExpression) {
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, SECURITY_SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component$1 as TmplAstComponent, Content as TmplAstContent, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, setEnableTemplateSourceLocations, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
