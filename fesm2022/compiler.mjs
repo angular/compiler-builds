@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-b53fa3c
+ * @license Angular v22.1.0-next.0+sha-7c60a98
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6999,7 +6999,6 @@ var R3TemplateDependencyKind;
   R3TemplateDependencyKind[R3TemplateDependencyKind["Directive"] = 0] = "Directive";
   R3TemplateDependencyKind[R3TemplateDependencyKind["Pipe"] = 1] = "Pipe";
   R3TemplateDependencyKind[R3TemplateDependencyKind["NgModule"] = 2] = "NgModule";
-  R3TemplateDependencyKind[R3TemplateDependencyKind["ForeignComponent"] = 3] = "ForeignComponent";
 })(R3TemplateDependencyKind || (R3TemplateDependencyKind = {}));
 
 const animationKeywords = new Set(['inherit', 'initial', 'revert', 'unset', 'alternate', 'alternate-reverse', 'normal', 'reverse', 'backwards', 'both', 'forwards', 'none', 'paused', 'running', 'ease', 'ease-in', 'ease-in-out', 'ease-out', 'linear', 'step-start', 'step-end', 'end', 'jump-both', 'jump-end', 'jump-none', 'jump-start', 'start']);
@@ -26046,14 +26045,17 @@ function findMatchingDirectivesAndPipes(template, directiveSelectors) {
 }
 class R3TargetBinder {
   directiveMatcher;
-  constructor(directiveMatcher) {
+  foreignComponentMatcher;
+  constructor(directiveMatcher, foreignComponentMatcher = null) {
     this.directiveMatcher = directiveMatcher;
+    this.foreignComponentMatcher = foreignComponentMatcher;
   }
   bind(target) {
     if (!target.template && !target.host) {
       throw new Error('Empty bound targets are not supported');
     }
     const directives = new Map();
+    const foreignComponents = new Map();
     const eagerDirectives = [];
     const missingDirectives = new Set();
     const bindings = new Map();
@@ -26069,14 +26071,14 @@ class R3TargetBinder {
     if (target.template) {
       const scope = Scope$1.apply(target.template);
       extractScopedNodeEntities(scope, scopedNodeEntities);
-      DirectiveBinder.apply(target.template, this.directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
+      DirectiveBinder.apply(target.template, this.directiveMatcher, this.foreignComponentMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
       TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
     }
     if (target.host) {
       directives.set(target.host.node, target.host.directives);
       TemplateBinder.applyWithScope(target.host.node, Scope$1.apply(target.host.node), expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
     }
-    return new R3BoundTarget(target, directives, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, conflictingHostDirectiveBindings);
+    return new R3BoundTarget(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, conflictingHostDirectiveBindings);
   }
 }
 let Scope$1 = class Scope {
@@ -26223,24 +26225,28 @@ let Scope$1 = class Scope {
 };
 class DirectiveBinder {
   directiveMatcher;
+  foreignMatcher;
   directives;
+  foreignComponents;
   eagerDirectives;
   missingDirectives;
   bindings;
   references;
   conflictingHostDirectiveBindings;
   isInDeferBlock = false;
-  constructor(directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
+  constructor(directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
     this.directiveMatcher = directiveMatcher;
+    this.foreignMatcher = foreignMatcher;
     this.directives = directives;
+    this.foreignComponents = foreignComponents;
     this.eagerDirectives = eagerDirectives;
     this.missingDirectives = missingDirectives;
     this.bindings = bindings;
     this.references = references;
     this.conflictingHostDirectiveBindings = conflictingHostDirectiveBindings;
   }
-  static apply(template, directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
-    const matcher = new DirectiveBinder(directiveMatcher, directives, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
+  static apply(template, directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
+    const matcher = new DirectiveBinder(directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
     matcher.ingest(template);
   }
   ingest(template) {
@@ -26320,17 +26326,26 @@ class DirectiveBinder {
     }
   }
   visitElementOrTemplate(node) {
+    const matchedDirectives = [];
     if (this.directiveMatcher instanceof SelectorMatcher) {
-      const directives = [];
       const cssSelector = createCssSelectorFromNode(node);
-      this.directiveMatcher.match(cssSelector, (_, results) => directives.push(...results));
-      this.trackSelectorBasedBindingsAndDirectives(node, directives);
+      this.directiveMatcher.match(cssSelector, (_, results) => matchedDirectives.push(...results));
+      this.trackSelectorBasedBindingsAndDirectives(node, matchedDirectives);
     } else {
       node.references.forEach(ref => {
         if (ref.value.trim() === '') {
           this.references.set(ref, node);
         }
       });
+    }
+    if (this.foreignMatcher && node instanceof Element$1) {
+      const foreignMatches = this.foreignMatcher.match(node.name);
+      if (foreignMatches.length > 0) {
+        if (matchedDirectives.length > 0) {
+          throw new Error(`Conflict: Element '${node.name}' matches both an Angular directive and a foreign component.`);
+        }
+        this.foreignComponents.set(node, foreignMatches[0]);
+      }
     }
     node.directives.forEach(directive => directive.visit(this));
     node.children.forEach(child => child.visit(this));
@@ -26646,6 +26661,7 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
 class R3BoundTarget {
   target;
   directives;
+  foreignComponents;
   eagerDirectives;
   missingDirectives;
   bindings;
@@ -26659,9 +26675,10 @@ class R3BoundTarget {
   conflictingHostDirectiveBindings;
   deferredBlocks;
   deferredScopes;
-  constructor(target, directives, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, conflictingHostDirectiveBindings) {
+  constructor(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, conflictingHostDirectiveBindings) {
     this.target = target;
     this.directives = directives;
+    this.foreignComponents = foreignComponents;
     this.eagerDirectives = eagerDirectives;
     this.missingDirectives = missingDirectives;
     this.bindings = bindings;
@@ -26681,6 +26698,9 @@ class R3BoundTarget {
   }
   getDirectivesOfNode(node) {
     return this.directives.get(node) || null;
+  }
+  getForeignComponent(element) {
+    return this.foreignComponents.get(element) || null;
   }
   getReferenceTarget(ref) {
     return this.references.get(ref) || null;
@@ -29029,7 +29049,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29047,7 +29067,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29120,7 +29140,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29418,8 +29438,6 @@ function compileUsedDependenciesMetadata(meta) {
         ngModuleMeta.set('kind', literal('ngmodule'));
         ngModuleMeta.set('type', wrapType(decl.type));
         return ngModuleMeta.toLiteralMap();
-      case R3TemplateDependencyKind.ForeignComponent:
-        throw new Error('Foreign components are not supported in partial compilation');
     }
   });
 }
@@ -29464,7 +29482,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29490,7 +29508,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29531,7 +29549,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29557,7 +29575,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29584,7 +29602,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29622,7 +29640,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-b53fa3c'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-7c60a98'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29696,7 +29714,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.0+sha-b53fa3c');
+const VERSION = new Version('22.1.0-next.0+sha-7c60a98');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -32261,7 +32279,11 @@ class Scope {
     const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
     if (directives === null || directives.length === 0) {
       if (node instanceof Element$1) {
-        this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs), new TcbDomSchemaCheckerOp(this.tcb, node, true, claimedInputs));
+        this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs));
+        const isForeign = this.tcb.boundTarget.getForeignComponent(node) !== null;
+        if (!isForeign) {
+          this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, true, claimedInputs));
+        }
       }
       return;
     }
@@ -32430,7 +32452,10 @@ class Scope {
             }
           }
         }
-        this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, !hasDirectives, claimedInputs));
+        const isForeign = this.tcb.boundTarget.getForeignComponent(node) !== null;
+        if (!isForeign) {
+          this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, !hasDirectives, claimedInputs));
+        }
       }
       this.appendDeepSchemaChecks(node.children);
     }
