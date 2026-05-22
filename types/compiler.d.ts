@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-df68a96
+ * @license Angular v22.1.0-next.0+sha-06b004e
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5445,7 +5445,8 @@ declare enum R3SelectorScopeMode {
  */
 declare enum R3NgModuleMetadataKind {
     Global = 0,
-    Local = 1
+    Local = 1,
+    Isolated = 2
 }
 interface R3NgModuleMetadataCommon {
     kind: R3NgModuleMetadataKind;
@@ -5530,7 +5531,26 @@ interface R3NgModuleMetadataLocal extends R3NgModuleMetadataCommon {
 /**
  * Metadata required by the module compiler to generate a module def (`ɵmod`) for a type.
  */
-type R3NgModuleMetadata = R3NgModuleMetadataGlobal | R3NgModuleMetadataLocal;
+/**
+ * Metadata required by the module compiler in isolated mode to generate a module def (`ɵmod`) for a
+ * type.
+ */
+interface R3NgModuleMetadataIsolated extends R3NgModuleMetadataCommon {
+    kind: R3NgModuleMetadataKind.Isolated;
+    /**
+     * Isolated declarations mode always omits scope in the generated JS definition.
+     */
+    selectorScopeMode: R3SelectorScopeMode.Omit;
+    /**
+     * The output expression representing the imports of the module.
+     */
+    importsExpression: Expression | null;
+    /**
+     * The output expression representing the exports of the module.
+     */
+    exportsExpression: Expression | null;
+}
+type R3NgModuleMetadata = R3NgModuleMetadataGlobal | R3NgModuleMetadataLocal | R3NgModuleMetadataIsolated;
 /**
  * Construct an `R3NgModuleDef` for the given `R3NgModuleMetadata`.
  */

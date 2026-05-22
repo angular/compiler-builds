@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-df68a96
+ * @license Angular v22.1.0-next.0+sha-06b004e
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6832,6 +6832,7 @@ var R3NgModuleMetadataKind;
 (function (R3NgModuleMetadataKind) {
   R3NgModuleMetadataKind[R3NgModuleMetadataKind["Global"] = 0] = "Global";
   R3NgModuleMetadataKind[R3NgModuleMetadataKind["Local"] = 1] = "Local";
+  R3NgModuleMetadataKind[R3NgModuleMetadataKind["Isolated"] = 2] = "Isolated";
 })(R3NgModuleMetadataKind || (R3NgModuleMetadataKind = {}));
 function compileNgModule(meta) {
   const statements = [];
@@ -6898,6 +6899,9 @@ function createNgModuleType(meta) {
   if (meta.kind === R3NgModuleMetadataKind.Local) {
     return new ExpressionType(meta.type.value);
   }
+  if (meta.kind === R3NgModuleMetadataKind.Isolated) {
+    return new ExpressionType(importExpr(Identifiers.NgModuleDeclaration, [new ExpressionType(meta.type.type), NONE_TYPE, meta.importsExpression ? expressionType(meta.importsExpression) : NONE_TYPE, meta.exportsExpression ? expressionType(meta.exportsExpression) : NONE_TYPE]));
+  }
   const {
     type: moduleType,
     declarations,
@@ -6914,7 +6918,7 @@ function generateSetNgModuleScopeCall(meta) {
     if (meta.declarations.length > 0) {
       scopeMap.set('declarations', refsToArray(meta.declarations, meta.containsForwardDecls));
     }
-  } else {
+  } else if (meta.kind === R3NgModuleMetadataKind.Local) {
     if (meta.declarationsExpression) {
       scopeMap.set('declarations', meta.declarationsExpression);
     }
@@ -6923,7 +6927,7 @@ function generateSetNgModuleScopeCall(meta) {
     if (meta.imports.length > 0) {
       scopeMap.set('imports', refsToArray(meta.imports, meta.containsForwardDecls));
     }
-  } else {
+  } else if (meta.kind === R3NgModuleMetadataKind.Local) {
     if (meta.importsExpression) {
       scopeMap.set('imports', meta.importsExpression);
     }
@@ -6932,7 +6936,7 @@ function generateSetNgModuleScopeCall(meta) {
     if (meta.exports.length > 0) {
       scopeMap.set('exports', refsToArray(meta.exports, meta.containsForwardDecls));
     }
-  } else {
+  } else if (meta.kind === R3NgModuleMetadataKind.Local) {
     if (meta.exportsExpression) {
       scopeMap.set('exports', meta.exportsExpression);
     }
@@ -29049,7 +29053,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29067,7 +29071,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29140,7 +29144,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29482,7 +29486,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29508,7 +29512,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29549,7 +29553,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29575,7 +29579,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29601,8 +29605,11 @@ function createNgModuleDefinitionMap(meta) {
   if (meta.kind === R3NgModuleMetadataKind.Local) {
     throw new Error('Invalid path! Local compilation mode should not get into the partial compilation path');
   }
+  if (meta.kind === R3NgModuleMetadataKind.Isolated) {
+    throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
+  }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29640,7 +29647,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-df68a96'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-06b004e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29714,7 +29721,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.0+sha-df68a96');
+const VERSION = new Version('22.1.0-next.0+sha-06b004e');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
