@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-a68a33e
+ * @license Angular v22.1.0-next.0+sha-db59909
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -2332,6 +2332,10 @@ class Identifiers {
   };
   static elementEnd = {
     name: 'ɵɵelementEnd',
+    moduleName: CORE
+  };
+  static foreignComponent = {
+    name: 'ɵɵforeignComponent',
     moduleName: CORE
   };
   static domElement = {
@@ -7545,61 +7549,62 @@ var OpKind;
   OpKind[OpKind["Variable"] = 2] = "Variable";
   OpKind[OpKind["ElementStart"] = 3] = "ElementStart";
   OpKind[OpKind["Element"] = 4] = "Element";
-  OpKind[OpKind["Template"] = 5] = "Template";
-  OpKind[OpKind["ElementEnd"] = 6] = "ElementEnd";
-  OpKind[OpKind["ContainerStart"] = 7] = "ContainerStart";
-  OpKind[OpKind["Container"] = 8] = "Container";
-  OpKind[OpKind["ContainerEnd"] = 9] = "ContainerEnd";
-  OpKind[OpKind["DisableBindings"] = 10] = "DisableBindings";
-  OpKind[OpKind["ConditionalCreate"] = 11] = "ConditionalCreate";
-  OpKind[OpKind["ConditionalBranchCreate"] = 12] = "ConditionalBranchCreate";
-  OpKind[OpKind["Conditional"] = 13] = "Conditional";
-  OpKind[OpKind["EnableBindings"] = 14] = "EnableBindings";
-  OpKind[OpKind["Text"] = 15] = "Text";
-  OpKind[OpKind["Listener"] = 16] = "Listener";
-  OpKind[OpKind["InterpolateText"] = 17] = "InterpolateText";
-  OpKind[OpKind["Binding"] = 18] = "Binding";
-  OpKind[OpKind["Property"] = 19] = "Property";
-  OpKind[OpKind["StyleProp"] = 20] = "StyleProp";
-  OpKind[OpKind["ClassProp"] = 21] = "ClassProp";
-  OpKind[OpKind["StyleMap"] = 22] = "StyleMap";
-  OpKind[OpKind["ClassMap"] = 23] = "ClassMap";
-  OpKind[OpKind["Advance"] = 24] = "Advance";
-  OpKind[OpKind["Pipe"] = 25] = "Pipe";
-  OpKind[OpKind["Attribute"] = 26] = "Attribute";
-  OpKind[OpKind["ExtractedAttribute"] = 27] = "ExtractedAttribute";
-  OpKind[OpKind["Defer"] = 28] = "Defer";
-  OpKind[OpKind["DeferOn"] = 29] = "DeferOn";
-  OpKind[OpKind["DeferWhen"] = 30] = "DeferWhen";
-  OpKind[OpKind["I18nMessage"] = 31] = "I18nMessage";
-  OpKind[OpKind["DomProperty"] = 32] = "DomProperty";
-  OpKind[OpKind["Namespace"] = 33] = "Namespace";
-  OpKind[OpKind["ProjectionDef"] = 34] = "ProjectionDef";
-  OpKind[OpKind["EnableIncrementalHydrationRuntime"] = 35] = "EnableIncrementalHydrationRuntime";
-  OpKind[OpKind["Projection"] = 36] = "Projection";
-  OpKind[OpKind["RepeaterCreate"] = 37] = "RepeaterCreate";
-  OpKind[OpKind["Repeater"] = 38] = "Repeater";
-  OpKind[OpKind["TwoWayProperty"] = 39] = "TwoWayProperty";
-  OpKind[OpKind["TwoWayListener"] = 40] = "TwoWayListener";
-  OpKind[OpKind["DeclareLet"] = 41] = "DeclareLet";
-  OpKind[OpKind["StoreLet"] = 42] = "StoreLet";
-  OpKind[OpKind["I18nStart"] = 43] = "I18nStart";
-  OpKind[OpKind["I18n"] = 44] = "I18n";
-  OpKind[OpKind["I18nEnd"] = 45] = "I18nEnd";
-  OpKind[OpKind["I18nExpression"] = 46] = "I18nExpression";
-  OpKind[OpKind["I18nApply"] = 47] = "I18nApply";
-  OpKind[OpKind["IcuStart"] = 48] = "IcuStart";
-  OpKind[OpKind["IcuEnd"] = 49] = "IcuEnd";
-  OpKind[OpKind["IcuPlaceholder"] = 50] = "IcuPlaceholder";
-  OpKind[OpKind["I18nContext"] = 51] = "I18nContext";
-  OpKind[OpKind["I18nAttributes"] = 52] = "I18nAttributes";
-  OpKind[OpKind["SourceLocation"] = 53] = "SourceLocation";
-  OpKind[OpKind["Animation"] = 54] = "Animation";
-  OpKind[OpKind["AnimationString"] = 55] = "AnimationString";
-  OpKind[OpKind["AnimationBinding"] = 56] = "AnimationBinding";
-  OpKind[OpKind["AnimationListener"] = 57] = "AnimationListener";
-  OpKind[OpKind["Control"] = 58] = "Control";
-  OpKind[OpKind["ControlCreate"] = 59] = "ControlCreate";
+  OpKind[OpKind["ForeignComponent"] = 5] = "ForeignComponent";
+  OpKind[OpKind["Template"] = 6] = "Template";
+  OpKind[OpKind["ElementEnd"] = 7] = "ElementEnd";
+  OpKind[OpKind["ContainerStart"] = 8] = "ContainerStart";
+  OpKind[OpKind["Container"] = 9] = "Container";
+  OpKind[OpKind["ContainerEnd"] = 10] = "ContainerEnd";
+  OpKind[OpKind["DisableBindings"] = 11] = "DisableBindings";
+  OpKind[OpKind["ConditionalCreate"] = 12] = "ConditionalCreate";
+  OpKind[OpKind["ConditionalBranchCreate"] = 13] = "ConditionalBranchCreate";
+  OpKind[OpKind["Conditional"] = 14] = "Conditional";
+  OpKind[OpKind["EnableBindings"] = 15] = "EnableBindings";
+  OpKind[OpKind["Text"] = 16] = "Text";
+  OpKind[OpKind["Listener"] = 17] = "Listener";
+  OpKind[OpKind["InterpolateText"] = 18] = "InterpolateText";
+  OpKind[OpKind["Binding"] = 19] = "Binding";
+  OpKind[OpKind["Property"] = 20] = "Property";
+  OpKind[OpKind["StyleProp"] = 21] = "StyleProp";
+  OpKind[OpKind["ClassProp"] = 22] = "ClassProp";
+  OpKind[OpKind["StyleMap"] = 23] = "StyleMap";
+  OpKind[OpKind["ClassMap"] = 24] = "ClassMap";
+  OpKind[OpKind["Advance"] = 25] = "Advance";
+  OpKind[OpKind["Pipe"] = 26] = "Pipe";
+  OpKind[OpKind["Attribute"] = 27] = "Attribute";
+  OpKind[OpKind["ExtractedAttribute"] = 28] = "ExtractedAttribute";
+  OpKind[OpKind["Defer"] = 29] = "Defer";
+  OpKind[OpKind["DeferOn"] = 30] = "DeferOn";
+  OpKind[OpKind["DeferWhen"] = 31] = "DeferWhen";
+  OpKind[OpKind["I18nMessage"] = 32] = "I18nMessage";
+  OpKind[OpKind["DomProperty"] = 33] = "DomProperty";
+  OpKind[OpKind["Namespace"] = 34] = "Namespace";
+  OpKind[OpKind["ProjectionDef"] = 35] = "ProjectionDef";
+  OpKind[OpKind["EnableIncrementalHydrationRuntime"] = 36] = "EnableIncrementalHydrationRuntime";
+  OpKind[OpKind["Projection"] = 37] = "Projection";
+  OpKind[OpKind["RepeaterCreate"] = 38] = "RepeaterCreate";
+  OpKind[OpKind["Repeater"] = 39] = "Repeater";
+  OpKind[OpKind["TwoWayProperty"] = 40] = "TwoWayProperty";
+  OpKind[OpKind["TwoWayListener"] = 41] = "TwoWayListener";
+  OpKind[OpKind["DeclareLet"] = 42] = "DeclareLet";
+  OpKind[OpKind["StoreLet"] = 43] = "StoreLet";
+  OpKind[OpKind["I18nStart"] = 44] = "I18nStart";
+  OpKind[OpKind["I18n"] = 45] = "I18n";
+  OpKind[OpKind["I18nEnd"] = 46] = "I18nEnd";
+  OpKind[OpKind["I18nExpression"] = 47] = "I18nExpression";
+  OpKind[OpKind["I18nApply"] = 48] = "I18nApply";
+  OpKind[OpKind["IcuStart"] = 49] = "IcuStart";
+  OpKind[OpKind["IcuEnd"] = 50] = "IcuEnd";
+  OpKind[OpKind["IcuPlaceholder"] = 51] = "IcuPlaceholder";
+  OpKind[OpKind["I18nContext"] = 52] = "I18nContext";
+  OpKind[OpKind["I18nAttributes"] = 53] = "I18nAttributes";
+  OpKind[OpKind["SourceLocation"] = 54] = "SourceLocation";
+  OpKind[OpKind["Animation"] = 55] = "Animation";
+  OpKind[OpKind["AnimationString"] = 56] = "AnimationString";
+  OpKind[OpKind["AnimationBinding"] = 57] = "AnimationBinding";
+  OpKind[OpKind["AnimationListener"] = 58] = "AnimationListener";
+  OpKind[OpKind["Control"] = 59] = "Control";
+  OpKind[OpKind["ControlCreate"] = 60] = "ControlCreate";
 })(OpKind || (OpKind = {}));
 var ExpressionKind;
 (function (ExpressionKind) {
@@ -9027,6 +9032,11 @@ function transformExpressionsInOp(op, transform, flags) {
     case OpKind.StoreLet:
       op.value = transformExpressionsInExpression(op.value, transform, flags);
       break;
+    case OpKind.ForeignComponent:
+      if (op.props !== null) {
+        op.props = transformExpressionsInExpression(op.props, transform, flags);
+      }
+      break;
     case OpKind.Advance:
     case OpKind.Container:
     case OpKind.ContainerEnd:
@@ -9180,6 +9190,18 @@ function createElementStartOp(tag, xref, namespace, i18nPlaceholder, startSource
     i18nPlaceholder,
     startSourceSpan,
     wholeSourceSpan,
+    ...TRAIT_CONSUMES_SLOT,
+    ...NEW_OP
+  };
+}
+function createForeignComponentOp(xref, foreignComponentRef, props, sourceSpan) {
+  return {
+    kind: OpKind.ForeignComponent,
+    xref,
+    handle: new SlotHandle(),
+    foreignComponentRef,
+    props,
+    sourceSpan,
     ...TRAIT_CONSUMES_SLOT,
     ...NEW_OP
   };
@@ -9669,7 +9691,9 @@ class ComponentCompilationJob extends CompilationJob {
   allDeferrableDepsFn;
   relativeTemplatePath;
   enableDebugLocations;
-  constructor(componentName, pool, mode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations, legacyOptionalChaining) {
+  foreignImports;
+  foreignMatcher;
+  constructor(componentName, pool, mode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations, legacyOptionalChaining, foreignImports) {
     super(componentName, pool, mode, legacyOptionalChaining);
     this.relativeContextFilePath = relativeContextFilePath;
     this.i18nUseExternalIds = i18nUseExternalIds;
@@ -9677,8 +9701,25 @@ class ComponentCompilationJob extends CompilationJob {
     this.allDeferrableDepsFn = allDeferrableDepsFn;
     this.relativeTemplatePath = relativeTemplatePath;
     this.enableDebugLocations = enableDebugLocations;
+    this.foreignImports = foreignImports;
     this.root = new ViewCompilationUnit(this, this.allocateXrefId(), null);
     this.views.set(this.root.xref, this.root);
+    if (foreignImports && foreignImports.length > 0) {
+      const registry = new Map();
+      for (const meta of foreignImports) {
+        registry.set(meta.name, [meta]);
+      }
+      this.foreignMatcher = new SelectorlessMatcher(registry);
+    } else {
+      this.foreignMatcher = null;
+    }
+  }
+  getForeignComponent(element) {
+    if (this.foreignMatcher === null) {
+      return null;
+    }
+    const matches = this.foreignMatcher.match(element.name);
+    return matches.length > 0 ? matches[0] : null;
   }
   kind = CompilationJobKind.Tmpl;
   fnSuffix = 'Template';
@@ -19721,6 +19762,13 @@ function element(slot, tag, constIndex, localRefIndex, sourceSpan) {
 function elementStart(slot, tag, constIndex, localRefIndex, sourceSpan) {
   return elementOrContainerBase(Identifiers.elementStart, slot, tag, constIndex, localRefIndex, sourceSpan);
 }
+function foreignComponent(slot, foreignComponentRef, props, sourceSpan) {
+  const args = [literal(slot), foreignComponentRef];
+  if (props !== null) {
+    args.push(props);
+  }
+  return call(Identifiers.foreignComponent, args, sourceSpan);
+}
 function elementOrContainerBase(instruction, slot, tag, constIndex, localRefIndex, sourceSpan) {
   const args = [literal(slot)];
   if (tag !== null) {
@@ -20209,6 +20257,9 @@ function reifyCreateOperations(unit, ops) {
         break;
       case OpKind.Element:
         OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly ? domElement(op.handle.slot, op.tag, op.attributes, op.localRefs, op.wholeSourceSpan) : element(op.handle.slot, op.tag, op.attributes, op.localRefs, op.wholeSourceSpan));
+        break;
+      case OpKind.ForeignComponent:
+        OpList.replace(op, foreignComponent(op.handle.slot, op.foreignComponentRef, op.props, op.sourceSpan));
         break;
       case OpKind.ElementEnd:
         OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly ? domElementEnd(op.sourceSpan) : elementEnd(op.sourceSpan));
@@ -22368,8 +22419,8 @@ function isI18nRootNode(meta) {
 function isSingleI18nIcu(meta) {
   return isI18nRootNode(meta) && meta.nodes.length === 1 && meta.nodes[0] instanceof Icu;
 }
-function ingestComponent(componentName, template, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations, legacyOptionalChaining) {
-  const job = new ComponentCompilationJob(componentName, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations, legacyOptionalChaining);
+function ingestComponent(componentName, template, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations, legacyOptionalChaining, foreignImports) {
+  const job = new ComponentCompilationJob(componentName, constantPool, compilationMode, relativeContextFilePath, i18nUseExternalIds, deferMeta, allDeferrableDepsFn, relativeTemplatePath, enableDebugLocations, legacyOptionalChaining, foreignImports);
   ingestNodes(job.root, template);
   return job;
 }
@@ -22457,6 +22508,27 @@ function ingestElement(unit, element) {
     throw Error(`Unhandled i18n metadata type for element: ${element.i18n.constructor.name}`);
   }
   const id = unit.job.allocateXrefId();
+  const foreignComp = unit.job.getForeignComponent(element);
+  if (foreignComp) {
+    const propEntries = [];
+    for (const attr of element.attributes) {
+      propEntries.push({
+        key: attr.name,
+        value: literal(attr.value),
+        quoted: isUnsafeObjectKey(attr.name)
+      });
+    }
+    for (const input of element.inputs) {
+      propEntries.push({
+        key: input.name,
+        value: convertAst(input.value, unit.job, input.sourceSpan),
+        quoted: isUnsafeObjectKey(input.name)
+      });
+    }
+    const props = propEntries.length > 0 ? literalMap(propEntries) : null;
+    unit.create.push(createForeignComponentOp(id, foreignComp.component, props, element.startSourceSpan));
+    return;
+  }
   const [namespaceKey, elementName] = splitNsName(element.name);
   const startOp = createElementStartOp(elementName, id, namespaceForKey(namespaceKey), element.i18n instanceof TagPlaceholder ? element.i18n : undefined, element.startSourceSpan, element.sourceSpan);
   unit.create.push(startOp);
@@ -25458,7 +25530,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
     allDeferrableDepsFn = variable(fnName);
   }
   const compilationMode = meta.isStandalone && !meta.hasDirectiveDependencies ? TemplateCompilationMode.DomOnly : TemplateCompilationMode.Full;
-  const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, compilationMode, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn, meta.relativeTemplatePath, getTemplateSourceLocationsEnabled(), meta.legacyOptionalChaining);
+  const tpl = ingestComponent(meta.name, meta.template.nodes, constantPool, compilationMode, meta.relativeContextFilePath, meta.i18nUseExternalIds, meta.defer, allDeferrableDepsFn, meta.relativeTemplatePath, getTemplateSourceLocationsEnabled(), meta.legacyOptionalChaining, meta.foreignImports);
   transform(tpl, CompilationJobKind.Tmpl);
   const templateFn = emitTemplateFn(tpl, constantPool);
   if (tpl.contentSelectors !== null) {
@@ -27028,7 +27100,8 @@ class CompilerFacadeImpl {
       viewProviders: facade.viewProviders != null ? new WrappedNodeExpr(facade.viewProviders) : null,
       relativeContextFilePath: '',
       i18nUseExternalIds: true,
-      relativeTemplatePath: null
+      relativeTemplatePath: null,
+      foreignImports: null
     };
     const jitExpressionSourceMap = `ng:///${facade.name}.js`;
     return this.compileComponentFromMeta(angularCoreEnv, jitExpressionSourceMap, meta);
@@ -27256,7 +27329,8 @@ function convertDeclareComponentFacadeToMetadata(decl, typeSourceSpan, sourceMap
     i18nUseExternalIds: true,
     relativeTemplatePath: null,
     hasDirectiveDependencies,
-    legacyOptionalChaining: decl.legacyOptionalChaining ?? LEGACY_OPTIONAL_CHAINING_DEFAULT
+    legacyOptionalChaining: decl.legacyOptionalChaining ?? LEGACY_OPTIONAL_CHAINING_DEFAULT,
+    foreignImports: null
   };
 }
 function convertDeclarationFacadeToMetadata(declaration) {
@@ -29063,7 +29137,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29081,7 +29155,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29154,7 +29228,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29496,7 +29570,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29522,7 +29596,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29563,7 +29637,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29589,7 +29663,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29619,7 +29693,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29657,7 +29731,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-a68a33e'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-db59909'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29731,7 +29805,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.0+sha-a68a33e');
+const VERSION = new Version('22.1.0-next.0+sha-db59909');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
