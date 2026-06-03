@@ -1,6 +1,6 @@
 {
   "name": "@angular/compiler",
-  "version": "22.0.0-rc.3+sha-3401189",
+  "version": "22.0.0+sha-1cb0524",
   "description": "Angular - the compiler library",
   "author": "angular",
   "license": "MIT",
