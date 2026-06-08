@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-255151a
+ * @license Angular v22.1.0-next.0+sha-11b206b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -2342,6 +2342,10 @@ class Identifiers {
     name: 'ɵɵforeignContent',
     moduleName: CORE
   };
+  static foreignContentFn = {
+    name: 'ɵɵforeignContentFn',
+    moduleName: CORE
+  };
   static domElement = {
     name: 'ɵɵdomElement',
     moduleName: CORE
@@ -3961,6 +3965,7 @@ function escapeIdentifier(input, alwaysQuote = true) {
 
 const UNSAFE_OBJECT_KEY_NAME_REGEXP = /[-.]/;
 const IDENTIFIER_PATTERN = /^[$A-Z_][0-9A-Z_$]*$/i;
+const LET_PATTERN = /^let\s+([\S\s]*)/;
 function typeWithParameters(type, numParams) {
   if (numParams === 0) {
     return expressionType(type);
@@ -5115,11 +5120,13 @@ class DeferredBlockError extends BlockNode {
 }
 class ContentBlock extends BlockNode {
   name;
+  variables;
   children;
   i18n;
-  constructor(name, children, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+  constructor(name, variables, children, nameSpan, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
     super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
     this.name = name;
+    this.variables = variables;
     this.children = children;
     this.i18n = i18n;
   }
@@ -8281,22 +8288,24 @@ class ReferenceExpr extends ExpressionBase {
 class ForeignContentExpr extends ExpressionBase {
   childrenViewXref;
   childrenViewHandle;
+  foreignComponentConstIndex;
   kind = ExpressionKind.ForeignContent;
-  constructor(childrenViewXref, childrenViewHandle) {
+  constructor(childrenViewXref, childrenViewHandle, foreignComponentConstIndex) {
     super();
     this.childrenViewXref = childrenViewXref;
     this.childrenViewHandle = childrenViewHandle;
+    this.foreignComponentConstIndex = foreignComponentConstIndex;
   }
   visitExpression() {}
   isEquivalent(e) {
-    return e instanceof ForeignContentExpr && e.childrenViewXref === this.childrenViewXref;
+    return e instanceof ForeignContentExpr && e.childrenViewXref === this.childrenViewXref && e.foreignComponentConstIndex === this.foreignComponentConstIndex;
   }
   isConstant() {
     return false;
   }
   transformInternalExpressions() {}
   clone() {
-    return new ForeignContentExpr(this.childrenViewXref, this.childrenViewHandle);
+    return new ForeignContentExpr(this.childrenViewXref, this.childrenViewHandle, this.foreignComponentConstIndex);
   }
 }
 class StoreLetExpr extends ExpressionBase {
@@ -9240,12 +9249,12 @@ function createElementStartOp(tag, xref, namespace, i18nPlaceholder, startSource
     ...NEW_OP
   };
 }
-function createForeignComponentOp(xref, foreignComponentRef, props, sourceSpan) {
+function createForeignComponentOp(xref, constIndex, props, sourceSpan) {
   return {
     kind: OpKind.ForeignComponent,
     xref,
     handle: new SlotHandle(),
-    foreignComponentRef,
+    constIndex,
     props,
     sourceSpan,
     ...TRAIT_CONSUMES_SLOT,
@@ -11310,7 +11319,14 @@ function generateVariablesInScopeForView(view, scope, isCallback) {
   const scopeView = view.job.views.get(scope.view);
   for (const [name, value] of scopeView.contextVariables) {
     const context = new ContextExpr(scope.view);
-    const variable = value === CTX_REF ? context : new ReadPropExpr(context, value);
+    let variable;
+    if (value === CTX_REF) {
+      variable = context;
+    } else if (typeof value === 'number') {
+      variable = new ReadKeyExpr(context, literal(value));
+    } else {
+      variable = new ReadPropExpr(context, value);
+    }
     newOps.push(createVariableOp(view.job.allocateXrefId(), scope.contextVariables.get(name), variable, VariableFlags.None));
   }
   for (const alias of scopeView.aliases) {
@@ -20333,7 +20349,7 @@ function reifyCreateOperations(unit, ops) {
           value,
           quoted: isUnsafeObjectKey(key)
         }))) : null;
-        OpList.replace(op, foreignComponent(op.handle.slot, op.foreignComponentRef, propsExpr, op.sourceSpan));
+        OpList.replace(op, foreignComponent(op.handle.slot, literal(op.constIndex), propsExpr, op.sourceSpan));
         break;
       case OpKind.ElementEnd:
         OpList.replace(op, unit.job.mode === TemplateCompilationMode.DomOnly ? domElementEnd(op.sourceSpan) : elementEnd(op.sourceSpan));
@@ -20673,7 +20689,12 @@ function reifyIrExpression(unit, expr) {
     case ExpressionKind.Reference:
       return reference(expr.targetSlot.slot + 1 + expr.offset);
     case ExpressionKind.ForeignContent:
-      return importExpr(Identifiers.foreignContent).callFn([literal(expr.childrenViewHandle.slot)]);
+      if (!(unit instanceof ViewCompilationUnit)) {
+        throw new Error(`AssertionError: must be compiling a component`);
+      }
+      const isFn = unit.job.views.get(expr.childrenViewXref).contextVariables.size > 0;
+      const slot = literal(expr.childrenViewHandle.slot);
+      return isFn ? importExpr(Identifiers.foreignContentFn).callFn([slot, literal(expr.foreignComponentConstIndex)]) : importExpr(Identifiers.foreignContent).callFn([slot]);
     case ExpressionKind.LexicalRead:
       throw new Error(`AssertionError: unresolved LexicalRead of ${expr.name}`);
     case ExpressionKind.TwoWayBindingSet:
@@ -20963,7 +20984,7 @@ function resolveForeignContent(job) {
       const templateName = op.propertyName.charAt(0).toUpperCase() + op.propertyName.slice(1);
       const templateOp = createTemplateOp(op.view, TemplateKind.NgTemplate, null, templateName, Namespace.HTML, undefined, op.startSourceSpan, op.sourceSpan);
       OpList.replace(op, templateOp);
-      const foreignContent = new ForeignContentExpr(templateOp.xref, templateOp.handle);
+      const foreignContent = new ForeignContentExpr(templateOp.xref, templateOp.handle, target.constIndex);
       target.props.set(op.propertyName, foreignContent);
     }
   }
@@ -22653,6 +22674,9 @@ function ingestForeignComponent(unit, id, element, foreignComp) {
   }
   for (const block of contentBlocks) {
     const blockView = unit.job.allocateView(unit.xref);
+    for (let i = 0; i < block.variables.length; i++) {
+      blockView.contextVariables.set(block.variables[i].name, i);
+    }
     ingestNodes(blockView, block.children);
     unit.create.push(createContentOp(id, blockView.xref, block.name, block.startSourceSpan, block.sourceSpan));
   }
@@ -22661,7 +22685,8 @@ function ingestForeignComponent(unit, id, element, foreignComp) {
     ingestNodes(childView, childNodes);
     unit.create.push(createContentOp(id, childView.xref, 'children', element.startSourceSpan, element.sourceSpan));
   }
-  unit.create.push(createForeignComponentOp(id, foreignComp.component, props, element.startSourceSpan));
+  const constIndex = unit.job.addConst(foreignComp.component);
+  unit.create.push(createForeignComponentOp(id, constIndex, props, element.startSourceSpan));
 }
 function ingestTemplate(unit, tmpl) {
   if (tmpl.i18n !== undefined && !(tmpl.i18n instanceof Message || tmpl.i18n instanceof TagPlaceholder)) {
@@ -23967,7 +23992,6 @@ const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+([\S\s]*)/;
 const FOR_LOOP_TRACK_PATTERN = /^track\s+([\S\s]*)/;
 const CONDITIONAL_ALIAS_PATTERN = /^(as\s+)(.*)/;
 const ELSE_IF_PATTERN = /^else[^\S\r\n]+if/;
-const FOR_LOOP_LET_PATTERN = /^let\s+([\S\s]*)/;
 const CHARACTERS_IN_SURROUNDING_WHITESPACE_PATTERN = /(\s*)(\S+)(\s*)/;
 const ALLOWED_FOR_LOOP_LET_VARIABLES = new Set(['$index', '$first', '$last', '$even', '$odd', '$count']);
 function isConnectedForLoopBlock(name) {
@@ -24134,7 +24158,7 @@ function parseForLoopParameters(block, errors, bindingParser) {
     })
   };
   for (const param of secondaryParams) {
-    const letMatch = param.expression.match(FOR_LOOP_LET_PATTERN);
+    const letMatch = param.expression.match(LET_PATTERN);
     if (letMatch !== null) {
       const variablesSpan = new ParseSourceSpan(param.sourceSpan.start.moveBy(letMatch[0].length - letMatch[1].length), param.sourceSpan.end);
       parseLetParameter(param.sourceSpan, letMatch[1], variablesSpan, itemName, result.context, errors);
@@ -24883,39 +24907,91 @@ function parsePrimaryTriggers(ast, bindingParser, errors, placeholder) {
 
 function createContentBlock(ast, visitor) {
   const errors = [];
-  if (ast.parameters.length !== 1) {
-    errors.push(new ParseError(ast.startSourceSpan, '@content block must have exactly one parameter'));
+  if (ast.parameters.length < 1 || ast.parameters.length > 2) {
+    errors.push(new ParseError(ast.startSourceSpan, '@content block must have one or two parameters, e.g. ' + '"@content(header)" or "@content(items; let item, index)"'));
     return {
       node: null,
       errors
     };
   }
-  const param = ast.parameters[0];
-  let expr = param.expression.trim();
-  if (expr.startsWith('(') && expr.endsWith(')')) {
-    expr = expr.slice(1, -1).trim();
-  }
-  const parts = expr.split(',').map(p => p.trim());
-  if (parts.length !== 1 || parts[0] === '') {
-    errors.push(new ParseError(ast.startSourceSpan, '@content block must have exactly one parameter'));
+  const nameParam = ast.parameters[0];
+  const name = nameParam.expression.trim();
+  if (name.includes(',')) {
+    errors.push(new ParseError(ast.startSourceSpan, '@content block must have exactly one name parameter'));
     return {
       node: null,
       errors
     };
   }
-  const name = parts[0];
   if (!IDENTIFIER_PATTERN.test(name)) {
-    errors.push(new ParseError(param.sourceSpan, '@content name must be a valid JavaScript identifier'));
+    errors.push(new ParseError(nameParam.sourceSpan, '@content name must be a valid JavaScript identifier'));
     return {
       node: null,
       errors
     };
   }
-  const node = new ContentBlock(name, visitAll(visitor, ast.children, ast.children), ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.i18n);
+  const variables = parseContentBlockVariables(ast, errors);
+  if (variables === null) {
+    return {
+      node: null,
+      errors
+    };
+  }
+  const node = new ContentBlock(name, variables, visitAll(visitor, ast.children, ast.children), ast.nameSpan, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.i18n);
   return {
     node,
     errors
   };
+}
+function parseContentBlockVariables(ast, errors) {
+  const variables = [];
+  if (ast.parameters.length < 2) {
+    return variables;
+  }
+  const varsParam = ast.parameters[1];
+  const varsExpr = varsParam.expression.trim();
+  const letMatch = varsExpr.match(LET_PATTERN);
+  if (!letMatch) {
+    errors.push(new ParseError(varsParam.sourceSpan, '@content block variables must start with "let", e.g. "let item, index"'));
+    return null;
+  }
+  const varNames = letMatch[1].split(',').map(v => v.trim());
+  const variablesRawString = letMatch[1];
+  const variablesStartOffset = varsParam.expression.indexOf(variablesRawString);
+  const variablesStartLocation = varsParam.sourceSpan.start.moveBy(variablesStartOffset);
+  let searchIndex = 0;
+  for (let varName of varNames) {
+    if (varName === '') {
+      errors.push(new ParseError(varsParam.sourceSpan, 'Invalid variable name in @content block'));
+      continue;
+    }
+    let varSpan;
+    const index = variablesRawString.indexOf(varName, searchIndex);
+    const varStart = variablesStartLocation.moveBy(index);
+    if (varName.includes('=')) {
+      const eqIndex = varName.indexOf('=');
+      const namePart = varName.substring(0, eqIndex).trim();
+      const fullVarSpan = new ParseSourceSpan(varStart, varStart.moveBy(varName.length));
+      errors.push(new ParseError(fullVarSpan, `@content block variables cannot be assigned a value`));
+      varName = namePart;
+      varSpan = new ParseSourceSpan(varStart, varStart.moveBy(varName.length));
+    } else {
+      varSpan = new ParseSourceSpan(varStart, varStart.moveBy(varName.length));
+    }
+    if (!IDENTIFIER_PATTERN.test(varName)) {
+      errors.push(new ParseError(varSpan, `Variable name "${varName}" must be a valid JavaScript identifier`));
+      searchIndex = index + varName.length;
+      continue;
+    }
+    if (variables.some(v => v.name === varName)) {
+      errors.push(new ParseError(varSpan, `Duplicate variable name "${varName}" in @content block`));
+      searchIndex = index + varName.length;
+      continue;
+    }
+    variables.push(new Variable(varName, '', varSpan, varSpan));
+    searchIndex = index + varName.length;
+  }
+  return variables;
 }
 
 const BIND_NAME_REGEXP = /^(?:(bind-)|(let-)|(ref-|#)|(on-)|(bindon-)|(@))(.*)$/;
@@ -29306,7 +29382,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29324,7 +29400,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29397,7 +29473,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29739,7 +29815,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29765,7 +29841,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29806,7 +29882,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29832,7 +29908,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29862,7 +29938,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29900,7 +29976,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.0+sha-255151a'));
+  definitionMap.set('version', literal('22.1.0-next.0+sha-11b206b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29974,7 +30050,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.0+sha-255151a');
+const VERSION = new Version('22.1.0-next.0+sha-11b206b');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {

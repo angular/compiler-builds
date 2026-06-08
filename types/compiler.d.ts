@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.0+sha-255151a
+ * @license Angular v22.1.0-next.0+sha-11b206b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3406,9 +3406,10 @@ declare class DeferredBlockError extends BlockNode implements Node {
 }
 declare class ContentBlock extends BlockNode implements Node {
     name: string;
+    variables: Variable[];
     children: Node[];
     i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    constructor(name: string, variables: Variable[], children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 interface DeferredBlockTriggers {
@@ -5721,6 +5722,7 @@ declare class Identifiers {
     static elementEnd: ExternalReference;
     static foreignComponent: ExternalReference;
     static foreignContent: ExternalReference;
+    static foreignContentFn: ExternalReference;
     static domElement: ExternalReference;
     static domElementStart: ExternalReference;
     static domElementEnd: ExternalReference;
