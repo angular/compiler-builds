@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.1+sha-6f11719
+ * @license Angular v22.0.1+sha-be45e8e
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -13863,7 +13863,7 @@ class _Tokenizer {
         this.handleError(e);
       }
     }
-    this._beginToken(41);
+    this._beginToken(42);
     this._endToken([]);
   }
   _getBlockName() {
@@ -13883,7 +13883,7 @@ class _Tokenizer {
   }
   _consumeBlockStart(start) {
     this._requireCharCode($AT);
-    this._beginToken(24, start);
+    this._beginToken(25, start);
     const startToken = this._endToken([this._getBlockName()]);
     if (this._cursor.peek() === $LPAREN) {
       this._cursor.advance();
@@ -13892,37 +13892,37 @@ class _Tokenizer {
       if (this._attemptCharCode($RPAREN)) {
         this._attemptCharCodeUntilFn(isNotWhitespace);
       } else {
-        startToken.type = 28;
+        startToken.type = 29;
         return;
       }
     }
     if (startToken.parts[0] === 'default never' && this._attemptCharCode($SEMICOLON)) {
-      this._beginToken(25);
-      this._endToken([]);
       this._beginToken(26);
+      this._endToken([]);
+      this._beginToken(27);
       this._endToken([]);
       return;
     }
     if (this._attemptCharCode($LBRACE)) {
-      this._beginToken(25);
-      this._endToken([]);
-    } else if (this._isBlockStart() && (startToken.parts[0] === 'case' || startToken.parts[0] === 'default')) {
-      this._beginToken(25);
-      this._endToken([]);
       this._beginToken(26);
       this._endToken([]);
+    } else if (this._isBlockStart() && (startToken.parts[0] === 'case' || startToken.parts[0] === 'default')) {
+      this._beginToken(26);
+      this._endToken([]);
+      this._beginToken(27);
+      this._endToken([]);
     } else {
-      startToken.type = 28;
+      startToken.type = 29;
     }
   }
   _consumeBlockEnd(start) {
-    this._beginToken(26, start);
+    this._beginToken(27, start);
     this._endToken([]);
   }
   _consumeBlockParameters() {
     this._attemptCharCodeUntilFn(isBlockParameterChar);
     while (this._cursor.peek() !== $RPAREN && this._cursor.peek() !== $EOF) {
-      this._beginToken(27);
+      this._beginToken(28);
       const start = this._cursor.clone();
       let inQuote = null;
       let openParens = 0;
@@ -13951,29 +13951,29 @@ class _Tokenizer {
   }
   _consumeLetDeclaration(start) {
     this._requireStr('@let');
-    this._beginToken(29, start);
+    this._beginToken(30, start);
     if (isWhitespace(this._cursor.peek())) {
       this._attemptCharCodeUntilFn(isNotWhitespace);
     } else {
       const token = this._endToken([this._cursor.getChars(start)]);
-      token.type = 32;
+      token.type = 33;
       return;
     }
     const startToken = this._endToken([this._getLetDeclarationName()]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
     if (!this._attemptCharCode($EQ)) {
-      startToken.type = 32;
+      startToken.type = 33;
       return;
     }
     this._attemptCharCodeUntilFn(code => isNotWhitespace(code) && !isNewLine(code));
     this._consumeLetDeclarationValue();
     const endChar = this._cursor.peek();
     if (endChar === $SEMICOLON) {
-      this._beginToken(31);
+      this._beginToken(32);
       this._cursor.advance();
       this._endToken([]);
     } else {
-      startToken.type = 32;
+      startToken.type = 33;
       startToken.sourceSpan = this._cursor.getSpan(start);
     }
   }
@@ -13991,7 +13991,7 @@ class _Tokenizer {
   }
   _consumeLetDeclarationValue() {
     const start = this._cursor.clone();
-    this._beginToken(30, start);
+    this._beginToken(31, start);
     while (this._cursor.peek() !== $EOF) {
       const char = this._cursor.peek();
       if (char === $SEMICOLON) {
@@ -14232,16 +14232,16 @@ class _Tokenizer {
     this._endToken([]);
   }
   _consumeCdata(start) {
-    this._beginToken(12, start);
+    this._beginToken(13, start);
     this._requireStr('CDATA[');
     this._endToken([]);
     this._consumeRawText(false, () => this._attemptStr(']]>'));
-    this._beginToken(13);
+    this._beginToken(14);
     this._requireStr(']]>');
     this._endToken([]);
   }
   _consumeDocType(start) {
-    this._beginToken(18, start);
+    this._beginToken(19, start);
     const contentStart = this._cursor.clone();
     this._attemptUntilChar($GT);
     const content = this._cursor.getChars(contentStart);
@@ -14266,11 +14266,17 @@ class _Tokenizer {
     const name = this._cursor.getChars(nameStart);
     return [prefix, name];
   }
-  _consumeSingleLineComment() {
+  _consumeSingleLineComment(start) {
+    const contentStart = this._cursor.clone();
     this._attemptCharCodeUntilFn(code => isNewLine(code) || code === $EOF);
+    const spanEnd = this._cursor.clone();
+    const content = spanEnd.getChars(contentStart);
+    this._beginToken(12, start);
+    this._endToken([content], spanEnd);
     this._attemptCharCodeUntilFn(isNotWhitespace);
   }
-  _consumeMultiLineComment() {
+  _consumeMultiLineComment(start) {
+    const contentStart = this._cursor.clone();
     this._attemptCharCodeUntilFn(code => {
       if (code === $EOF) {
         return true;
@@ -14282,9 +14288,15 @@ class _Tokenizer {
       }
       return false;
     });
+    const contentEnd = this._cursor.clone();
+    const content = contentEnd.getChars(contentStart);
+    let spanEnd = contentEnd;
     if (this._attemptStr('*/')) {
+      spanEnd = this._cursor.clone();
       this._attemptCharCodeUntilFn(isNotWhitespace);
     }
+    this._beginToken(12, start);
+    this._endToken([content], spanEnd);
   }
   _consumeTagOpen(start) {
     let tagName;
@@ -14312,12 +14324,13 @@ class _Tokenizer {
         this._attemptCharCodeUntilFn(isNotWhitespace);
       }
       while (true) {
+        const commentStart = this._cursor.clone();
         if (this._attemptStr('//')) {
-          this._consumeSingleLineComment();
+          this._consumeSingleLineComment(commentStart);
           continue;
         }
         if (this._attemptStr('/*')) {
-          this._consumeMultiLineComment();
+          this._consumeMultiLineComment(commentStart);
           continue;
         }
         if (isAttributeTerminator(this._cursor.peek())) {
@@ -14334,7 +14347,7 @@ class _Tokenizer {
           this._consumeAttribute();
         }
       }
-      if (openToken.type === 33) {
+      if (openToken.type === 34) {
         this._consumeComponentOpenEnd();
       } else {
         this._consumeTagOpenEnd();
@@ -14342,7 +14355,7 @@ class _Tokenizer {
     } catch (e) {
       if (e instanceof ParseError) {
         if (openToken) {
-          openToken.type = openToken.type === 33 ? 37 : 4;
+          openToken.type = openToken.type === 34 ? 38 : 4;
         } else {
           this._beginToken(5, start);
           this._endToken(['<']);
@@ -14367,7 +14380,7 @@ class _Tokenizer {
       this._attemptCharCodeUntilFn(isNotWhitespace);
       return this._attemptCharCode($GT);
     });
-    this._beginToken(openToken.type === 33 ? 36 : 3);
+    this._beginToken(openToken.type === 34 ? 37 : 3);
     this._requireCharCodeUntilFn(code => code === $GT, 3);
     this._cursor.advance();
     this._endToken(openToken.parts);
@@ -14378,7 +14391,7 @@ class _Tokenizer {
     return this._endToken(parts);
   }
   _consumeComponentOpenStart(start) {
-    this._beginToken(33, start);
+    this._beginToken(34, start);
     const parts = this._consumeComponentName();
     return this._endToken(parts);
   }
@@ -14410,7 +14423,7 @@ class _Tokenizer {
     if (attrNameStart === $SQ || attrNameStart === $DQ) {
       throw this._createError(_unexpectedCharacterErrorMsg(attrNameStart), this._cursor.getSpan());
     }
-    this._beginToken(14);
+    this._beginToken(15);
     let nameEndPredicate;
     if (this._openDirectiveCount > 0) {
       let openParens = 0;
@@ -14448,15 +14461,15 @@ class _Tokenizer {
       const quoteChar = this._cursor.peek();
       this._consumeQuote(quoteChar);
       const endPredicate = () => this._cursor.peek() === quoteChar;
-      this._consumeWithInterpolation(16, 17, endPredicate, endPredicate);
+      this._consumeWithInterpolation(17, 18, endPredicate, endPredicate);
       this._consumeQuote(quoteChar);
     } else {
       const endPredicate = () => isNameEnd(this._cursor.peek());
-      this._consumeWithInterpolation(16, 17, endPredicate, endPredicate);
+      this._consumeWithInterpolation(17, 18, endPredicate, endPredicate);
     }
   }
   _consumeQuote(quoteChar) {
-    this._beginToken(15);
+    this._beginToken(16);
     this._requireCharCode(quoteChar);
     this._endToken([String.fromCodePoint(quoteChar)]);
   }
@@ -14467,7 +14480,7 @@ class _Tokenizer {
     this._endToken([]);
   }
   _consumeComponentOpenEnd() {
-    const tokenType = this._attemptCharCode($SLASH) ? 35 : 34;
+    const tokenType = this._attemptCharCode($SLASH) ? 36 : 35;
     this._beginToken(tokenType);
     this._requireCharCode($GT);
     this._endToken([]);
@@ -14479,7 +14492,7 @@ class _Tokenizer {
         clone.advance();
       }
       if (isSelectorlessNameStart(clone.peek())) {
-        this._beginToken(36, start);
+        this._beginToken(37, start);
         const parts = this._consumeComponentName();
         this._attemptCharCodeUntilFn(isNotWhitespace);
         this._requireCharCode($GT);
@@ -14495,10 +14508,10 @@ class _Tokenizer {
     this._endToken(prefixAndName);
   }
   _consumeExpansionFormStart() {
-    this._beginToken(19);
+    this._beginToken(20);
     this._requireCharCode($LBRACE);
     this._endToken([]);
-    this._expansionCaseStack.push(19);
+    this._expansionCaseStack.push(20);
     this._beginToken(7);
     const condition = this._readUntil($COMMA);
     const normalizedCondition = this._processCarriageReturns(condition);
@@ -14519,25 +14532,25 @@ class _Tokenizer {
     this._attemptCharCodeUntilFn(isNotWhitespace);
   }
   _consumeExpansionCaseStart() {
-    this._beginToken(20);
+    this._beginToken(21);
     const value = this._readUntil($LBRACE).trim();
     this._endToken([value]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
-    this._beginToken(21);
+    this._beginToken(22);
     this._requireCharCode($LBRACE);
     this._endToken([]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
-    this._expansionCaseStack.push(21);
+    this._expansionCaseStack.push(22);
   }
   _consumeExpansionCaseEnd() {
-    this._beginToken(22);
+    this._beginToken(23);
     this._requireCharCode($RBRACE);
     this._endToken([]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
     this._expansionCaseStack.pop();
   }
   _consumeExpansionFormEnd() {
-    this._beginToken(23);
+    this._beginToken(24);
     this._requireCharCode($RBRACE);
     this._endToken([]);
     this._expansionCaseStack.pop();
@@ -14608,7 +14621,7 @@ class _Tokenizer {
     while (isSelectorlessNameChar(this._cursor.peek())) {
       this._cursor.advance();
     }
-    this._beginToken(38, start);
+    this._beginToken(39, start);
     const name = this._cursor.getChars(nameStart);
     this._endToken([name]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -14616,7 +14629,7 @@ class _Tokenizer {
       return;
     }
     this._openDirectiveCount++;
-    this._beginToken(39);
+    this._beginToken(40);
     this._cursor.advance();
     this._endToken([]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -14631,7 +14644,7 @@ class _Tokenizer {
       }
       throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
     }
-    this._beginToken(40);
+    this._beginToken(41);
     this._cursor.advance();
     this._endToken([]);
     this._attemptCharCodeUntilFn(isNotWhitespace);
@@ -14676,10 +14689,10 @@ class _Tokenizer {
     return this._isInExpansionCase() || this._isInExpansionForm();
   }
   _isInExpansionCase() {
-    return this._expansionCaseStack.length > 0 && this._expansionCaseStack[this._expansionCaseStack.length - 1] === 21;
+    return this._expansionCaseStack.length > 0 && this._expansionCaseStack[this._expansionCaseStack.length - 1] === 22;
   }
   _isInExpansionForm() {
-    return this._expansionCaseStack.length > 0 && this._expansionCaseStack[this._expansionCaseStack.length - 1] === 19;
+    return this._expansionCaseStack.length > 0 && this._expansionCaseStack[this._expansionCaseStack.length - 1] === 20;
   }
   isExpansionFormStart() {
     if (this._cursor.peek() !== $LBRACE) {
@@ -14735,7 +14748,7 @@ function mergeTextTokens(srcTokens) {
   let lastDstToken = undefined;
   for (let i = 0; i < srcTokens.length; i++) {
     const token = srcTokens[i];
-    if (lastDstToken && lastDstToken.type === 5 && token.type === 5 || lastDstToken && lastDstToken.type === 16 && token.type === 16) {
+    if (lastDstToken && lastDstToken.type === 5 && token.type === 5 || lastDstToken && lastDstToken.type === 17 && token.type === 17) {
       lastDstToken.parts[0] += token.parts[0];
       lastDstToken.sourceSpan.end = token.sourceSpan.end;
     } else {
@@ -15001,12 +15014,12 @@ class _TreeBuilder {
     this._advance();
   }
   build() {
-    while (this._peek.type !== 41) {
+    while (this._peek.type !== 42) {
       if (this._peek.type === 0 || this._peek.type === 4) {
         this._consumeElementStartTag(this._advance());
       } else if (this._peek.type === 3) {
         this._consumeElementEndTag(this._advance());
-      } else if (this._peek.type === 12) {
+      } else if (this._peek.type === 13) {
         this._closeVoidElement();
         this._consumeCdata(this._advance());
       } else if (this._peek.type === 10) {
@@ -15015,26 +15028,26 @@ class _TreeBuilder {
       } else if (this._peek.type === 5 || this._peek.type === 7 || this._peek.type === 6) {
         this._closeVoidElement();
         this._consumeText(this._advance());
-      } else if (this._peek.type === 19) {
+      } else if (this._peek.type === 20) {
         this._consumeExpansion(this._advance());
-      } else if (this._peek.type === 24) {
+      } else if (this._peek.type === 25) {
         this._closeVoidElement();
         this._consumeBlockOpen(this._advance());
-      } else if (this._peek.type === 26) {
+      } else if (this._peek.type === 27) {
         this._closeVoidElement();
         this._consumeBlockClose(this._advance());
-      } else if (this._peek.type === 28) {
-        this._closeVoidElement();
-        this._consumeIncompleteBlock(this._advance());
       } else if (this._peek.type === 29) {
         this._closeVoidElement();
+        this._consumeIncompleteBlock(this._advance());
+      } else if (this._peek.type === 30) {
+        this._closeVoidElement();
         this._consumeLet(this._advance());
-      } else if (this._peek.type === 32) {
+      } else if (this._peek.type === 33) {
         this._closeVoidElement();
         this._consumeIncompleteLet(this._advance());
-      } else if (this._peek.type === 33 || this._peek.type === 37) {
+      } else if (this._peek.type === 34 || this._peek.type === 38) {
         this._consumeComponentStartTag(this._advance());
-      } else if (this._peek.type === 36) {
+      } else if (this._peek.type === 37) {
         this._consumeComponentEndTag(this._advance());
       } else {
         this._advance();
@@ -15062,7 +15075,7 @@ class _TreeBuilder {
   }
   _consumeCdata(_startToken) {
     this._consumeText(this._advance());
-    this._advanceIf(13);
+    this._advanceIf(14);
   }
   _consumeComment(token) {
     const text = this._advanceIf(7);
@@ -15075,12 +15088,12 @@ class _TreeBuilder {
     const switchValue = this._advance();
     const type = this._advance();
     const cases = [];
-    while (this._peek.type === 20) {
+    while (this._peek.type === 21) {
       const expCase = this._parseExpansionCase();
       if (!expCase) return;
       cases.push(expCase);
     }
-    if (this._peek.type !== 23) {
+    if (this._peek.type !== 24) {
       this.errors.push(TreeError.create(null, this._peek.sourceSpan, `Invalid ICU message. Missing '}'.`));
       return;
     }
@@ -15090,7 +15103,7 @@ class _TreeBuilder {
   }
   _parseExpansionCase() {
     const value = this._advance();
-    if (this._peek.type !== 21) {
+    if (this._peek.type !== 22) {
       this.errors.push(TreeError.create(null, this._peek.sourceSpan, `Invalid ICU message. Missing '{'.`));
       return null;
     }
@@ -15099,7 +15112,7 @@ class _TreeBuilder {
     if (!exp) return null;
     const end = this._advance();
     exp.push({
-      type: 41,
+      type: 42,
       parts: [],
       sourceSpan: end.sourceSpan
     });
@@ -15115,13 +15128,13 @@ class _TreeBuilder {
   }
   _collectExpansionExpTokens(start) {
     const exp = [];
-    const expansionFormStack = [21];
+    const expansionFormStack = [22];
     while (true) {
-      if (this._peek.type === 19 || this._peek.type === 21) {
+      if (this._peek.type === 20 || this._peek.type === 22) {
         expansionFormStack.push(this._peek.type);
       }
-      if (this._peek.type === 22) {
-        if (lastOnStack(expansionFormStack, 21)) {
+      if (this._peek.type === 23) {
+        if (lastOnStack(expansionFormStack, 22)) {
           expansionFormStack.pop();
           if (expansionFormStack.length === 0) return exp;
         } else {
@@ -15129,15 +15142,15 @@ class _TreeBuilder {
           return null;
         }
       }
-      if (this._peek.type === 23) {
-        if (lastOnStack(expansionFormStack, 19)) {
+      if (this._peek.type === 24) {
+        if (lastOnStack(expansionFormStack, 20)) {
           expansionFormStack.pop();
         } else {
           this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
           return null;
         }
       }
-      if (this._peek.type === 41) {
+      if (this._peek.type === 42) {
         this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
         return null;
       }
@@ -15220,7 +15233,7 @@ class _TreeBuilder {
     const closestElement = this._getClosestElementLikeParent();
     const tagName = this._getComponentTagName(startToken, closestElement);
     const fullName = this._getComponentFullName(startToken, closestElement);
-    const selfClosing = this._peek.type === 35;
+    const selfClosing = this._peek.type === 36;
     this._advance();
     const end = this._peek.sourceSpan.fullStart;
     const span = new ParseSourceSpan(startToken.sourceSpan.start, end, startToken.sourceSpan.fullStart);
@@ -15231,17 +15244,20 @@ class _TreeBuilder {
     this._pushContainer(node, isClosedByChild);
     if (selfClosing) {
       this._popContainer(fullName, Component, span);
-    } else if (startToken.type === 37) {
+    } else if (startToken.type === 38) {
       this._popContainer(fullName, Component, null);
       this.errors.push(TreeError.create(fullName, span, `Opening tag "${fullName}" not terminated.`));
     }
   }
   _consumeAttributesAndDirectives(attributesResult, directivesResult) {
-    while (this._peek.type === 14 || this._peek.type === 38) {
-      if (this._peek.type === 38) {
+    while (this._peek.type === 15 || this._peek.type === 39 || this._peek.type === 12) {
+      if (this._peek.type === 39) {
         directivesResult.push(this._consumeDirective(this._peek));
-      } else {
+      } else if (this._peek.type === 15) {
         attributesResult.push(this._consumeAttr(this._advance()));
+      } else {
+        const commentToken = this._advance();
+        this._addToParent(new Comment(commentToken.parts[0], commentToken.sourceSpan));
       }
     }
   }
@@ -15306,7 +15322,7 @@ class _TreeBuilder {
   _consumeAttr(attrName) {
     const fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
     let attrEnd = attrName.sourceSpan.end;
-    if (this._peek.type === 15) {
+    if (this._peek.type === 16) {
       this._advance();
     }
     let value = '';
@@ -15314,13 +15330,13 @@ class _TreeBuilder {
     let valueStartSpan = undefined;
     let valueEnd = undefined;
     const nextTokenType = this._peek.type;
-    if (nextTokenType === 16) {
+    if (nextTokenType === 17) {
       valueStartSpan = this._peek.sourceSpan;
       valueEnd = this._peek.sourceSpan.end;
-      while (this._peek.type === 16 || this._peek.type === 17 || this._peek.type === 9) {
+      while (this._peek.type === 17 || this._peek.type === 18 || this._peek.type === 9) {
         const valueToken = this._advance();
         valueTokens.push(valueToken);
-        if (valueToken.type === 17) {
+        if (valueToken.type === 18) {
           value += valueToken.parts.join('').replace(/&([^;]+);/g, decodeEntity);
         } else if (valueToken.type === 9) {
           value += valueToken.parts[0];
@@ -15330,7 +15346,7 @@ class _TreeBuilder {
         valueEnd = attrEnd = valueToken.sourceSpan.end;
       }
     }
-    if (this._peek.type === 15) {
+    if (this._peek.type === 16) {
       const quoteToken = this._advance();
       attrEnd = quoteToken.sourceSpan.end;
     }
@@ -15342,13 +15358,13 @@ class _TreeBuilder {
     let startSourceSpanEnd = nameToken.sourceSpan.end;
     let endSourceSpan = null;
     this._advance();
-    if (this._peek.type === 39) {
+    if (this._peek.type === 40) {
       startSourceSpanEnd = this._peek.sourceSpan.end;
       this._advance();
-      while (this._peek.type === 14) {
+      while (this._peek.type === 15) {
         attributes.push(this._consumeAttr(this._advance()));
       }
-      if (this._peek.type === 40) {
+      if (this._peek.type === 41) {
         endSourceSpan = this._peek.sourceSpan;
         this._advance();
       } else {
@@ -15361,11 +15377,11 @@ class _TreeBuilder {
   }
   _consumeBlockOpen(token) {
     const parameters = [];
-    while (this._peek.type === 27) {
+    while (this._peek.type === 28) {
       const paramToken = this._advance();
       parameters.push(new BlockParameter(paramToken.parts[0], paramToken.sourceSpan));
     }
-    if (this._peek.type === 25) {
+    if (this._peek.type === 26) {
       this._advance();
     }
     const end = this._peek.sourceSpan.fullStart;
@@ -15388,7 +15404,7 @@ class _TreeBuilder {
   }
   _consumeIncompleteBlock(token) {
     const parameters = [];
-    while (this._peek.type === 27) {
+    while (this._peek.type === 28) {
       const paramToken = this._advance();
       parameters.push(new BlockParameter(paramToken.parts[0], paramToken.sourceSpan));
     }
@@ -15404,13 +15420,13 @@ class _TreeBuilder {
     const name = startToken.parts[0];
     let valueToken;
     let endToken;
-    if (this._peek.type !== 30) {
+    if (this._peek.type !== 31) {
       this.errors.push(TreeError.create(startToken.parts[0], startToken.sourceSpan, `Invalid @let declaration "${name}". Declaration must have a value.`));
       return;
     } else {
       valueToken = this._advance();
     }
-    if (this._peek.type !== 31) {
+    if (this._peek.type !== 32) {
       this.errors.push(TreeError.create(startToken.parts[0], startToken.sourceSpan, `Unterminated @let declaration "${name}". Declaration must be terminated with a semicolon.`));
       return;
     } else {
@@ -15483,7 +15499,7 @@ class _TreeBuilder {
   _getPrefix(token, parent) {
     let prefix;
     let tagName;
-    if (token.type === 33 || token.type === 37 || token.type === 36) {
+    if (token.type === 34 || token.type === 38 || token.type === 37) {
       prefix = token.parts[1];
       tagName = token.parts[2];
     } else {
@@ -18293,7 +18309,7 @@ class _I18nVisitor {
     for (const token of tokens) {
       switch (token.type) {
         case 8:
-        case 17:
+        case 18:
           hasInterpolation = true;
           const [startMarker, expression, endMarker] = token.parts;
           const baseName = extractPlaceholderName(expression) || 'INTERPOLATION';
@@ -27774,8 +27790,8 @@ class _Visitor {
   _isPlaceholderOnlyAttributeValue(ast) {
     if (!isAttrNode(ast)) return false;
     const tokens = ast[0].valueTokens ?? [];
-    const interpolations = tokens.filter(token => token.type === 17);
-    const plainText = tokens.filter(token => token.type === 16).map(token => token.parts[0].trim()).join('');
+    const interpolations = tokens.filter(token => token.type === 18);
+    const plainText = tokens.filter(token => token.type === 17).map(token => token.parts[0].trim()).join('');
     return interpolations.length === 1 && plainText === '';
   }
   _isPlaceholderOnlyMessage(ast) {
@@ -29072,7 +29088,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29090,7 +29106,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29163,7 +29179,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29505,7 +29521,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29531,7 +29547,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29572,7 +29588,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29598,7 +29614,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -29628,7 +29644,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -29666,7 +29682,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.0.1+sha-6f11719'));
+  definitionMap.set('version', literal('22.0.1+sha-be45e8e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -29740,7 +29756,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.0.1+sha-6f11719');
+const VERSION = new Version('22.0.1+sha-be45e8e');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
