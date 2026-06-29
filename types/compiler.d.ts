@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.0.4+sha-ca76b2c
+ * @license Angular v22.0.4+sha-b5ea340
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -703,14 +703,14 @@ interface Visitor$1 {
     visitLetDeclaration(decl: LetDeclaration$1, context: any): any;
     visitComponent(component: Component$1, context: any): any;
     visitDirective(directive: Directive$1, context: any): any;
-    visitAttributeComment?(comment: StartTagComment, context: any): any;
+    visitStartTagComment?(comment: StartTagComment, context: any): any;
 }
 declare function visitAll$1(visitor: Visitor$1, nodes: Node$1[], context?: any): any[];
 declare class RecursiveVisitor$1 implements Visitor$1 {
     constructor();
     visitElement(ast: Element$1, context: any): any;
     visitAttribute(ast: Attribute, context: any): any;
-    visitAttributeComment(ast: StartTagComment, context: any): any;
+    visitStartTagComment(ast: StartTagComment, context: any): any;
     visitText(ast: Text$1, context: any): any;
     visitComment(ast: Comment$1, context: any): any;
     visitExpansion(ast: Expansion, context: any): any;
