@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.3+sha-d7f7061
+ * @license Angular v22.1.0-next.3+sha-c4cb66e
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -13920,6 +13920,8 @@ const INTERPOLATION = {
   start: '{{',
   end: '}}'
 };
+const DEFAULT_NEVER_PATTERN = /^default[^\S\r\n]+never/;
+const ELSE_IF_PATTERN = /^else[^\S\r\n]+if/;
 class _Tokenizer {
   _getTagDefinition;
   _cursor;
@@ -14013,7 +14015,13 @@ class _Tokenizer {
       }
       return true;
     });
-    return this._cursor.getChars(nameCursor).trim();
+    let result = this._cursor.getChars(nameCursor).trim();
+    if (ELSE_IF_PATTERN.test(result)) {
+      result = 'else if';
+    } else if (DEFAULT_NEVER_PATTERN.test(result)) {
+      result = 'default never';
+    }
+    return result;
   }
   _consumeBlockStart(start) {
     this._requireCharCode($AT);
@@ -24137,14 +24145,13 @@ function parseContentBlockVariables(ast, errors) {
 const FOR_LOOP_EXPRESSION_PATTERN = /^\s*([0-9A-Za-z_$]*)\s+of\s+([\S\s]*)/;
 const FOR_LOOP_TRACK_PATTERN = /^track\s+([\S\s]*)/;
 const CONDITIONAL_ALIAS_PATTERN = /^(as\s+)(.*)/;
-const ELSE_IF_PATTERN = /^else[^\S\r\n]+if/;
 const CHARACTERS_IN_SURROUNDING_WHITESPACE_PATTERN = /(\s*)(\S+)(\s*)/;
 const ALLOWED_FOR_LOOP_LET_VARIABLES = new Set(['$index', '$first', '$last', '$even', '$odd', '$count']);
 function isConnectedForLoopBlock(name) {
   return name === 'empty';
 }
 function isConnectedIfLoopBlock(name) {
-  return name === 'else' || ELSE_IF_PATTERN.test(name);
+  return name === 'else' || name === 'else if';
 }
 function createIfBlock(ast, connectedBlocks, visitor, bindingParser) {
   const errors = validateIfConnectedBlocks(connectedBlocks);
@@ -24154,7 +24161,7 @@ function createIfBlock(ast, connectedBlocks, visitor, bindingParser) {
     branches.push(new IfBlockBranch(mainBlockParams.expression, visitAll(visitor, ast.children, ast.children), mainBlockParams.expressionAlias, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.nameSpan, ast.i18n));
   }
   for (const block of connectedBlocks) {
-    if (ELSE_IF_PATTERN.test(block.name)) {
+    if (block.name === 'else if') {
       const params = parseConditionalBlockParameters(block, errors, bindingParser);
       if (params !== null) {
         const children = visitAll(visitor, block.children, block.children);
@@ -24381,7 +24388,7 @@ function validateIfConnectedBlocks(connectedBlocks) {
         errors.push(new ParseError(block.startSourceSpan, '@else block cannot have parameters'));
       }
       hasElse = true;
-    } else if (!ELSE_IF_PATTERN.test(block.name)) {
+    } else if (block.name !== 'else if') {
       errors.push(new ParseError(block.startSourceSpan, `Unrecognized conditional block @${block.name}`));
     }
   }
@@ -24444,7 +24451,7 @@ function parseConditionalBlockParameters(block, errors, bindingParser) {
     const aliasMatch = param.expression.match(CONDITIONAL_ALIAS_PATTERN);
     if (aliasMatch === null) {
       errors.push(new ParseError(param.sourceSpan, `Unrecognized conditional parameter "${param.expression}"`));
-    } else if (block.name !== 'if' && !ELSE_IF_PATTERN.test(block.name)) {
+    } else if (block.name !== 'if' && block.name !== 'else if') {
       errors.push(new ParseError(param.sourceSpan, '"as" expression is only allowed on `@if` and `@else if` blocks'));
     } else if (expressionAlias !== null) {
       errors.push(new ParseError(param.sourceSpan, 'Conditional can only have one "as" expression'));
@@ -29464,7 +29471,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29482,7 +29489,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29555,7 +29562,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29897,7 +29904,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29923,7 +29930,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29964,7 +29971,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29990,7 +29997,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30020,7 +30027,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30058,7 +30065,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.3+sha-d7f7061'));
+  definitionMap.set('version', literal('22.1.0-next.3+sha-c4cb66e'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30132,7 +30139,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.3+sha-d7f7061');
+const VERSION = new Version('22.1.0-next.3+sha-c4cb66e');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
