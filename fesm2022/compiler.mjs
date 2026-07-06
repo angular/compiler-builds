@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.4+sha-b126dc9
+ * @license Angular v22.1.0-next.4+sha-731d665
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3292,6 +3292,13 @@ function getJitStandaloneDefaultForVersion(version) {
     return false;
   }
   return true;
+}
+function namespaceCssVariable(varName) {
+  if (varName.startsWith('--global--')) {
+    return '--' + varName.substring('--global--'.length);
+  } else {
+    return '--%NS%' + varName.substring('--'.length);
+  }
 }
 
 const VERSION$1 = 3;
@@ -7444,6 +7451,15 @@ const COLON_IN_PLACEHOLDER = '%COLON_IN_PLACEHOLDER%';
 const _cssCommaInPlaceholderReGlobal = new RegExp(COMMA_IN_PLACEHOLDER, 'g');
 const _cssSemiInPlaceholderReGlobal = new RegExp(SEMI_IN_PLACEHOLDER, 'g');
 const _cssColonInPlaceholderReGlobal = new RegExp(COLON_IN_PLACEHOLDER, 'g');
+const _cssVariableRe = /(var\(\s*)?(--(?:[a-zA-Z0-9_-]|[^\x00-\x7F])+)(\s*:)?/g;
+function namespaceCssVariables(cssText) {
+  return cssText.replace(_cssVariableRe, (match, leadingVar, varName, trailingColon) => {
+    if (!leadingVar && !trailingColon) {
+      return match;
+    }
+    return (leadingVar ?? '') + namespaceCssVariable(varName) + (trailingColon ?? '');
+  });
+}
 class CssRule {
   selector;
   content;
@@ -11392,6 +11408,8 @@ function parseHostStyleProperties(job) {
       op.name = op.name.substring(STYLE_DOT.length);
       if (!isCssCustomProperty(op.name)) {
         op.name = hyphenate$1(op.name);
+      } else {
+        op.name = namespaceCssVariable(op.name);
       }
       const {
         property,
@@ -23787,7 +23805,16 @@ class BindingParser {
         securityContexts = [SecurityContext.NONE];
       } else if (parts[0] == STYLE_PREFIX) {
         unit = parts.length > 2 ? parts[2] : null;
-        boundPropertyName = parts[1];
+        const boundName = parts[1];
+        if (!boundName.startsWith('--')) {
+          boundPropertyName = boundName;
+        } else {
+          try {
+            boundPropertyName = namespaceCssVariable(boundName);
+          } catch (e) {
+            this._reportError(e.message, boundProp.sourceSpan);
+          }
+        }
         bindingType = BindingType.Style;
         securityContexts = [SecurityContext.STYLE];
       } else if (parts[0] == ANIMATE_PREFIX) {
@@ -25872,7 +25899,8 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
   }
   let hasStyles = !!meta.externalStyles?.length;
   if (meta.styles && meta.styles.length) {
-    const styleValues = meta.encapsulation == ViewEncapsulation$1.Emulated ? compileStyles(meta.styles, CONTENT_ATTR, HOST_ATTR) : meta.styles;
+    const namespacedStyles = meta.styles.map(s => namespaceCssVariables(s));
+    const styleValues = meta.encapsulation == ViewEncapsulation$1.Emulated ? compileStyles(namespacedStyles, CONTENT_ATTR, HOST_ATTR) : namespacedStyles;
     const styleNodes = styleValues.reduce((result, style) => {
       if (style.trim().length > 0) {
         result.push(constantPool.getConstLiteral(literal(style)));
@@ -29471,7 +29499,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29489,7 +29517,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29562,7 +29590,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29904,7 +29932,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29930,7 +29958,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -29971,7 +29999,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -29997,7 +30025,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30027,7 +30055,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30065,7 +30093,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.0-next.4+sha-b126dc9'));
+  definitionMap.set('version', literal('22.1.0-next.4+sha-731d665'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30139,7 +30167,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.0-next.4+sha-b126dc9');
+const VERSION = new Version('22.1.0-next.4+sha-731d665');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -30735,7 +30763,7 @@ class TcbExprTranslator {
     const expr = exprNode.print();
     const args = argNodes.map(node => node.print()).join(', ');
     if (this.config.strictSafeNavigationTypes) {
-      return new TcbExpr(`(0 as any ? ${expr}!(${args}) : undefined)`);
+      return new TcbExpr(`(${expr}?.(${args}))`);
     }
     if (VeSafeLhsInferenceBugDetector.veWillInferAnyFor(ast)) {
       return new TcbExpr(`(${expr} as any)(${args})`);
