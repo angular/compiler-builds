@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.4+sha-731d665
+ * @license Angular v22.1.0-next.4+sha-1f6b1ce
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3813,11 +3813,6 @@ interface ForeignComponentMeta {
      * Name of the foreign component (used for matching and debugging).
      */
     name: string;
-    /** Reference to the foreign component declaration site. */
-    ref: {
-        /** Key that uniquely identifies the reference. */
-        key: string;
-    };
 }
 /**
  * Possible ways that a directive can be matched.
