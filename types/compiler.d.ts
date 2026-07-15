@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0-next.5+sha-d997a96
+ * @license Angular v22.1.0-next.5+sha-0ae6d81
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -543,7 +543,8 @@ declare const enum TokenType$1 {
     DIRECTIVE_NAME = 39,
     DIRECTIVE_OPEN = 40,
     DIRECTIVE_CLOSE = 41,
-    EOF = 42
+    PROCESSING_INSTRUCTION = 42,
+    EOF = 43
 }
 type InterpolatedTextToken = TextToken | InterpolationToken | EncodedEntityToken;
 type InterpolatedAttributeToken = AttributeValueTextToken | AttributeValueInterpolationToken | EncodedEntityToken;
