@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-next.0+sha-5ad8231
+ * @license Angular v22.2.0-next.0+sha-9182253
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -21520,7 +21520,7 @@ function resolveSanitizers(job) {
         case OpKind.DomProperty:
         case OpKind.TwoWayProperty:
           let sanitizerFn = null;
-          if (Array.isArray(op.securityContext) && op.securityContext.length === 2 && op.securityContext.includes(SecurityContext.URL) && op.securityContext.includes(SecurityContext.RESOURCE_URL)) {
+          if (Array.isArray(op.securityContext) && hasCompositeUrlSecurityContext(op.securityContext)) {
             sanitizerFn = Identifiers.sanitizeUrlOrResourceUrl;
           } else {
             sanitizerFn = sanitizerFns.get(getOnlySecurityContext(op.securityContext)) ?? null;
@@ -21531,14 +21531,39 @@ function resolveSanitizers(job) {
     }
   }
 }
-function getOnlySecurityContext(securityContext) {
-  if (Array.isArray(securityContext)) {
-    if (securityContext.length > 1) {
-      throw Error(`AssertionError: Ambiguous security context`);
+function hasCompositeUrlSecurityContext(securityContext) {
+  let hasUrlContext = false;
+  let hasResourceUrlContext = false;
+  let hasNoneContext = false;
+  for (const context of securityContext) {
+    switch (context) {
+      case SecurityContext.URL:
+        hasUrlContext = true;
+        break;
+      case SecurityContext.RESOURCE_URL:
+        hasResourceUrlContext = true;
+        break;
+      case SecurityContext.NONE:
+        hasNoneContext = true;
+        break;
+      default:
+        return false;
     }
-    return securityContext[0] || SecurityContext.NONE;
   }
-  return securityContext;
+  return (hasUrlContext || hasResourceUrlContext) && hasNoneContext || hasUrlContext && hasResourceUrlContext;
+}
+function getOnlySecurityContext(securityContext) {
+  if (!Array.isArray(securityContext)) {
+    return securityContext;
+  }
+  if (securityContext.length < 2) {
+    return securityContext[0] ?? SecurityContext.NONE;
+  }
+  const nonNoneSecurityContexts = securityContext.filter(context => context !== SecurityContext.NONE);
+  if (nonNoneSecurityContexts.length > 1) {
+    throw Error(`AssertionError: Ambiguous security context`);
+  }
+  return nonNoneSecurityContexts[0] ?? SecurityContext.NONE;
 }
 
 function removeSafeNavigationMigration(job) {
@@ -22644,9 +22669,414 @@ function emitHostBindingFunction(job) {
   return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
 }
 
+const PROPERTY_PARTS_SEPARATOR = '.';
+const ATTRIBUTE_PREFIX = 'attr';
+const ANIMATE_PREFIX$1 = 'animate';
+const CLASS_PREFIX = 'class';
+const STYLE_PREFIX = 'style';
+const TEMPLATE_ATTR_PREFIX$1 = '*';
+const LEGACY_ANIMATE_PROP_PREFIX = 'animate-';
+class BindingParser {
+  _exprParser;
+  _schemaRegistry;
+  errors;
+  constructor(_exprParser, _schemaRegistry, errors) {
+    this._exprParser = _exprParser;
+    this._schemaRegistry = _schemaRegistry;
+    this.errors = errors;
+  }
+  createBoundHostProperties(properties, sourceSpan) {
+    const boundProps = [];
+    for (const propName of Object.keys(properties)) {
+      const expression = properties[propName];
+      if (typeof expression === 'string') {
+        this.parsePropertyBinding(propName, expression, true, false, sourceSpan, sourceSpan.start.offset, undefined, [], boundProps, sourceSpan);
+      } else {
+        this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
+      }
+    }
+    return boundProps;
+  }
+  createDirectiveHostEventAsts(hostListeners, sourceSpan) {
+    const targetEvents = [];
+    for (const propName of Object.keys(hostListeners)) {
+      const expression = hostListeners[propName];
+      if (typeof expression === 'string') {
+        this.parseEvent(propName, expression, false, sourceSpan, sourceSpan, [], targetEvents, sourceSpan);
+      } else {
+        this._reportError(`Value of the host listener "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
+      }
+    }
+    return targetEvents;
+  }
+  parseInterpolation(value, sourceSpan, interpolatedTokens) {
+    const absoluteOffset = sourceSpan.fullStart.offset;
+    try {
+      const ast = this._exprParser.parseInterpolation(value, sourceSpan, absoluteOffset, interpolatedTokens);
+      if (ast) {
+        this.errors.push(...ast.errors);
+      }
+      return ast;
+    } catch (e) {
+      this._reportError(`${e}`, sourceSpan);
+      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
+    }
+  }
+  parseInterpolationExpression(expression, sourceSpan) {
+    const absoluteOffset = sourceSpan.start.offset;
+    try {
+      const ast = this._exprParser.parseInterpolationExpression(expression, sourceSpan, absoluteOffset);
+      if (ast) {
+        this.errors.push(...ast.errors);
+      }
+      return ast;
+    } catch (e) {
+      this._reportError(`${e}`, sourceSpan);
+      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
+    }
+  }
+  parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars, isIvyAst) {
+    const absoluteKeyOffset = sourceSpan.start.offset + TEMPLATE_ATTR_PREFIX$1.length;
+    const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
+    for (const binding of bindings) {
+      const bindingSpan = moveParseSourceSpan(sourceSpan, binding.sourceSpan);
+      const key = binding.key.source;
+      const keySpan = moveParseSourceSpan(sourceSpan, binding.key.span);
+      if (binding instanceof VariableBinding) {
+        const value = binding.value ? binding.value.source : '$implicit';
+        const valueSpan = binding.value ? moveParseSourceSpan(sourceSpan, binding.value.span) : undefined;
+        targetVars.push(new ParsedVariable(key, value, bindingSpan, keySpan, valueSpan));
+      } else if (binding.value) {
+        const srcSpan = isIvyAst ? bindingSpan : sourceSpan;
+        const valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
+        this._parsePropertyAst(key, binding.value, false, srcSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+      } else {
+        targetMatchableAttrs.push([key, '']);
+        this.parseLiteralAttr(key, null, keySpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps, keySpan);
+      }
+    }
+  }
+  _parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset) {
+    try {
+      const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
+      bindingsResult.errors.forEach(e => this.errors.push(e));
+      bindingsResult.warnings.forEach(warning => {
+        this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING);
+      });
+      return bindingsResult.templateBindings;
+    } catch (e) {
+      this._reportError(`${e}`, sourceSpan);
+      return [];
+    }
+  }
+  parseLiteralAttr(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
+    if (isLegacyAnimationLabel(name)) {
+      name = name.substring(1);
+      if (keySpan !== undefined) {
+        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
+      }
+      if (value) {
+        this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` + ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.ERROR);
+      }
+      this._parseLegacyAnimation(name, value, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+    } else {
+      targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan, keySpan, valueSpan));
+    }
+  }
+  parsePropertyBinding(name, expression, isHost, isPartOfAssignmentBinding, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
+    if (name.length === 0) {
+      this._reportError(`Property name is missing in binding`, sourceSpan);
+    }
+    let isLegacyAnimationProp = false;
+    if (name.startsWith(LEGACY_ANIMATE_PROP_PREFIX)) {
+      isLegacyAnimationProp = true;
+      name = name.substring(LEGACY_ANIMATE_PROP_PREFIX.length);
+      if (keySpan !== undefined) {
+        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + LEGACY_ANIMATE_PROP_PREFIX.length, keySpan.end.offset));
+      }
+    } else if (isLegacyAnimationLabel(name)) {
+      isLegacyAnimationProp = true;
+      name = name.substring(1);
+      if (keySpan !== undefined) {
+        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
+      }
+    }
+    if (isLegacyAnimationProp) {
+      this._parseLegacyAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+    } else if (name.startsWith(`${ANIMATE_PREFIX$1}${PROPERTY_PARTS_SEPARATOR}`)) {
+      this._parseAnimation(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+    } else {
+      this._parsePropertyAst(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+    }
+  }
+  parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan, interpolatedTokens) {
+    const expr = this.parseInterpolation(value, valueSpan || sourceSpan, interpolatedTokens);
+    if (expr) {
+      this._parsePropertyAst(name, expr, false, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
+      return true;
+    }
+    return false;
+  }
+  _parsePropertyAst(name, ast, isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+    targetMatchableAttrs.push([name, ast.source]);
+    targetProps.push(new ParsedProperty(name, ast, isPartOfAssignmentBinding ? ParsedPropertyType.TWO_WAY : ParsedPropertyType.DEFAULT, sourceSpan, keySpan, valueSpan));
+  }
+  _parseAnimation(name, ast, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+    targetMatchableAttrs.push([name, ast.source]);
+    targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan, keySpan, valueSpan));
+  }
+  _parseLegacyAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
+    if (name.length === 0) {
+      this._reportError('Animation trigger is missing', sourceSpan);
+    }
+    const ast = this.parseBinding(expression || 'undefined', false, valueSpan || sourceSpan, absoluteOffset);
+    targetMatchableAttrs.push([name, ast.source]);
+    targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.LEGACY_ANIMATION, sourceSpan, keySpan, valueSpan));
+  }
+  parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
+    try {
+      const ast = isHostBinding ? this._exprParser.parseSimpleBinding(value, sourceSpan, absoluteOffset) : this._exprParser.parseBinding(value, sourceSpan, absoluteOffset);
+      if (ast) {
+        this.errors.push(...ast.errors);
+      }
+      return ast;
+    } catch (e) {
+      this._reportError(`${e}`, sourceSpan);
+      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
+    }
+  }
+  createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
+    if (boundProp.isLegacyAnimation) {
+      return new BoundElementProperty(boundProp.name, BindingType.LegacyAnimation, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+    }
+    let unit = null;
+    let bindingType = undefined;
+    let boundPropertyName = null;
+    const parts = boundProp.name.split(PROPERTY_PARTS_SEPARATOR);
+    let securityContexts = undefined;
+    if (parts.length > 1) {
+      if (parts[0] == ATTRIBUTE_PREFIX) {
+        boundPropertyName = parts.slice(1).join(PROPERTY_PARTS_SEPARATOR);
+        if (!skipValidation) {
+          this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
+        }
+        securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, true);
+        const nsSeparatorIdx = boundPropertyName.indexOf(':');
+        if (nsSeparatorIdx > -1) {
+          const ns = boundPropertyName.substring(0, nsSeparatorIdx);
+          const name = boundPropertyName.substring(nsSeparatorIdx + 1);
+          boundPropertyName = mergeNsAndName(ns, name);
+        }
+        bindingType = BindingType.Attribute;
+      } else if (parts[0] == CLASS_PREFIX) {
+        boundPropertyName = parts[1];
+        bindingType = BindingType.Class;
+        securityContexts = [SecurityContext.NONE];
+      } else if (parts[0] == STYLE_PREFIX) {
+        unit = parts.length > 2 ? parts[2] : null;
+        const boundName = parts[1];
+        if (!boundName.startsWith('--')) {
+          boundPropertyName = boundName;
+        } else {
+          try {
+            boundPropertyName = namespaceCssVariable(boundName);
+          } catch (e) {
+            this._reportError(e.message, boundProp.sourceSpan);
+          }
+        }
+        bindingType = BindingType.Style;
+        securityContexts = [SecurityContext.STYLE];
+      } else if (parts[0] == ANIMATE_PREFIX$1) {
+        boundPropertyName = boundProp.name;
+        bindingType = BindingType.Animation;
+        securityContexts = [SecurityContext.NONE];
+      }
+    }
+    if (boundPropertyName === null) {
+      const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
+      boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
+      securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
+      bindingType = boundProp.type === ParsedPropertyType.TWO_WAY ? BindingType.TwoWay : BindingType.Property;
+      if (!skipValidation) {
+        this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
+      }
+    }
+    return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
+  }
+  parseEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
+    if (name.length === 0) {
+      this._reportError(`Event name is missing in binding`, sourceSpan);
+    }
+    if (isLegacyAnimationLabel(name)) {
+      name = name.slice(1);
+      if (keySpan !== undefined) {
+        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
+      }
+      this._parseLegacyAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan);
+    } else {
+      this._parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan);
+    }
+  }
+  calcPossibleSecurityContexts(selector, propName, isAttribute) {
+    const prop = this._schemaRegistry.getMappedPropName(propName);
+    return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
+  }
+  parseEventListenerName(rawName) {
+    const [target, eventName] = splitAtColon(rawName, [null, rawName]);
+    return {
+      eventName: eventName,
+      target
+    };
+  }
+  parseLegacyAnimationEventName(rawName) {
+    const matches = splitAtPeriod(rawName, [rawName, null]);
+    return {
+      eventName: matches[0],
+      phase: matches[1] === null ? null : matches[1].toLowerCase()
+    };
+  }
+  _parseLegacyAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan) {
+    const {
+      eventName,
+      phase
+    } = this.parseLegacyAnimationEventName(name);
+    const ast = this._parseAction(expression, handlerSpan);
+    targetEvents.push(new ParsedEvent(eventName, phase, ParsedEventType.LegacyAnimation, ast, sourceSpan, handlerSpan, keySpan));
+    if (eventName.length === 0) {
+      this._reportError(`Animation event name is missing in binding`, sourceSpan);
+    }
+    if (phase) {
+      if (phase !== 'start' && phase !== 'done') {
+        this._reportError(`The provided animation output phase value "${phase}" for "@${eventName}" is not supported (use start or done)`, sourceSpan);
+      }
+    } else {
+      this._reportError(`The animation trigger output event (@${eventName}) is missing its phase value name (start or done are currently supported)`, sourceSpan);
+    }
+  }
+  _parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
+    const {
+      eventName,
+      target
+    } = this.parseEventListenerName(name);
+    const prevErrorCount = this.errors.length;
+    const ast = this._parseAction(expression, handlerSpan);
+    const isValid = this.errors.length === prevErrorCount;
+    targetMatchableAttrs.push([name, ast.source]);
+    if (isAssignmentEvent && isValid && !this._isAllowedAssignmentEvent(ast)) {
+      this._reportError('Unsupported expression in a two-way binding', sourceSpan);
+    }
+    let eventType = ParsedEventType.Regular;
+    if (isAssignmentEvent) {
+      eventType = ParsedEventType.TwoWay;
+    }
+    if (name.startsWith(`${ANIMATE_PREFIX$1}${PROPERTY_PARTS_SEPARATOR}`)) {
+      eventType = ParsedEventType.Animation;
+    }
+    targetEvents.push(new ParsedEvent(eventName, target, eventType, ast, sourceSpan, handlerSpan, keySpan));
+  }
+  _parseAction(value, sourceSpan) {
+    const absoluteOffset = sourceSpan && sourceSpan.start ? sourceSpan.start.offset : 0;
+    try {
+      const ast = this._exprParser.parseAction(value, sourceSpan, absoluteOffset);
+      if (ast) {
+        this.errors.push(...ast.errors);
+      }
+      if (!ast || ast.ast instanceof EmptyExpr$1) {
+        this._reportError(`Empty expressions are not allowed`, sourceSpan);
+        return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
+      }
+      return ast;
+    } catch (e) {
+      this._reportError(`${e}`, sourceSpan);
+      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
+    }
+  }
+  _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
+    this.errors.push(new ParseError(sourceSpan, message, level));
+  }
+  _validatePropertyOrAttributeName(propName, sourceSpan, isAttr) {
+    const report = isAttr ? this._schemaRegistry.validateAttribute(propName) : this._schemaRegistry.validateProperty(propName);
+    if (report.error) {
+      this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
+    }
+  }
+  _isAllowedAssignmentEvent(ast) {
+    if (ast instanceof ASTWithSource) {
+      return this._isAllowedAssignmentEvent(ast.ast);
+    }
+    if (ast instanceof NonNullAssert) {
+      return this._isAllowedAssignmentEvent(ast.expression);
+    }
+    if (ast instanceof Call && ast.args.length === 1 && ast.receiver instanceof PropertyRead && ast.receiver.name === '$any' && ast.receiver.receiver instanceof ImplicitReceiver) {
+      return this._isAllowedAssignmentEvent(ast.args[0]);
+    }
+    if (ast instanceof PropertyRead || ast instanceof KeyedRead) {
+      if (!hasRecursiveSafeReceiver(ast)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+function hasRecursiveSafeReceiver(ast) {
+  if (ast instanceof SafePropertyRead || ast instanceof SafeKeyedRead) {
+    return true;
+  }
+  if (ast instanceof ParenthesizedExpression) {
+    return hasRecursiveSafeReceiver(ast.expression);
+  }
+  if (ast instanceof PropertyRead || ast instanceof KeyedRead || ast instanceof Call) {
+    return hasRecursiveSafeReceiver(ast.receiver);
+  }
+  return false;
+}
+function isLegacyAnimationLabel(name) {
+  return name[0] == '@';
+}
+function calcPossibleSecurityContexts(registry, selector, propName, isAttribute) {
+  let ctxs;
+  const [namespaceKey, baseSelector] = selector ? splitNsName(selector, false) : [null, selector];
+  const nameToContext = elName => {
+    const [nsStr, name] = splitNsName(elName, false);
+    const ns = nsStr ?? namespaceKey;
+    const fullName = ns ? `:${ns}:${name}` : name;
+    return registry.securityContext(fullName, propName, isAttribute);
+  };
+  const allKnownElements = registry.allKnownElementNames();
+  if (baseSelector === null) {
+    ctxs = allKnownElements.map(nameToContext);
+  } else {
+    ctxs = [];
+    CssSelector.parse(baseSelector).forEach(selector => {
+      let elementNames = selector.element ? [selector.element] : allKnownElements;
+      if (selector.element && !registry.hasElement(selector.element, [])) {
+        const svgElement = `:${SVG_NAMESPACE}:${selector.element}`;
+        const mathElement = `:${MATH_ML_NAMESPACE}:${selector.element}`;
+        if (registry.hasElement(svgElement, [])) {
+          elementNames = [svgElement];
+        } else if (registry.hasElement(mathElement, [])) {
+          elementNames = [mathElement];
+        }
+      }
+      const notElementNames = new Set(selector.notSelectors.filter(selector => selector.isElementSelector()).map(selector => selector.element?.toLowerCase()));
+      const possibleElementNames = elementNames.filter(elName => {
+        const elNameLowerCase = elName.toLowerCase();
+        return !notElementNames.has(elNameLowerCase) && !notElementNames.has(splitNsName(elNameLowerCase)[1]);
+      });
+      ctxs.push(...possibleElementNames.map(nameToContext));
+    });
+  }
+  return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
+}
+function moveParseSourceSpan(sourceSpan, absoluteSpan) {
+  const startDiff = absoluteSpan.start - sourceSpan.start.offset;
+  const endDiff = absoluteSpan.end - sourceSpan.end.offset;
+  return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff), sourceSpan.fullStart.moveBy(startDiff), sourceSpan.details);
+}
+
 const domSchema = new DomElementSchemaRegistry();
 const NG_TEMPLATE_TAG_NAME = 'ng-template';
-const ANIMATE_PREFIX$1 = 'animate.';
+const ANIMATE_PREFIX = 'animate.';
 function isI18nRootNode(meta) {
   return meta instanceof Message;
 }
@@ -22672,17 +23102,31 @@ function ingestHostBinding(input, bindingParser, constantPool) {
     if (property.isAnimation) {
       bindingKind = BindingKind.Animation;
     }
-    const securityContexts = bindingParser.calcPossibleSecurityContexts(input.componentSelector, property.name, bindingKind === BindingKind.Attribute).filter(context => context !== SecurityContext.NONE);
+    const securityContexts = calcHostBindingSecurityContexts(bindingParser, input.componentSelector, property.name, bindingKind === BindingKind.Attribute);
     ingestDomProperty(job, property, bindingKind, securityContexts);
   }
   for (const [name, expr] of Object.entries(input.attributes) ?? []) {
-    const securityContexts = bindingParser.calcPossibleSecurityContexts(input.componentSelector, name, true).filter(context => context !== SecurityContext.NONE);
+    const securityContexts = calcHostBindingSecurityContexts(bindingParser, input.componentSelector, name, true);
     ingestHostAttribute(job, name, expr, securityContexts);
   }
   for (const event of input.events ?? []) {
     ingestHostEvent(job, event);
   }
   return job;
+}
+function calcHostBindingSecurityContexts(bindingParser, selector, name, isAttribute) {
+  const declaringSelectorContexts = bindingParser.calcPossibleSecurityContexts(selector, name, isAttribute);
+  const concreteHostContexts = calcPossibleSecurityContexts(domSchema, null, domSchema.getMappedPropName(name), isAttribute);
+  const concreteHostNonNoneContexts = concreteHostContexts.filter(context => context !== SecurityContext.NONE);
+  const concreteHostNonNoneCount = concreteHostNonNoneContexts.length;
+  const hasConcreteHostNoneContext = concreteHostNonNoneCount !== concreteHostContexts.length;
+  if (hasConcreteHostNoneContext && concreteHostNonNoneCount > 0) {
+    return concreteHostContexts;
+  }
+  if (concreteHostNonNoneContexts.some(context => !declaringSelectorContexts.includes(context))) {
+    return concreteHostContexts;
+  }
+  return declaringSelectorContexts.filter(context => context !== SecurityContext.NONE);
 }
 function ingestDomProperty(job, property, bindingKind, securityContexts) {
   let expression;
@@ -23450,7 +23894,7 @@ function ingestControlFlowInsertionPoint(unit, xref, node) {
   }
   if (root !== null) {
     for (const attr of root.attributes) {
-      if (!attr.name.startsWith(ANIMATE_PREFIX$1)) {
+      if (!attr.name.startsWith(ANIMATE_PREFIX)) {
         const securityContext = domSchema.securityContext(NG_TEMPLATE_TAG_NAME, attr.name, true);
         unit.update.push(createBindingOp(xref, BindingKind.Attribute, attr.name, literal(attr.value), null, securityContext, true, false, null, asMessage(attr.i18n), attr.sourceSpan));
       }
@@ -23624,411 +24068,6 @@ class HtmlParser extends Parser$1 {
   parse(source, url, options) {
     return super.parse(source, url, options);
   }
-}
-
-const PROPERTY_PARTS_SEPARATOR = '.';
-const ATTRIBUTE_PREFIX = 'attr';
-const ANIMATE_PREFIX = 'animate';
-const CLASS_PREFIX = 'class';
-const STYLE_PREFIX = 'style';
-const TEMPLATE_ATTR_PREFIX$1 = '*';
-const LEGACY_ANIMATE_PROP_PREFIX = 'animate-';
-class BindingParser {
-  _exprParser;
-  _schemaRegistry;
-  errors;
-  constructor(_exprParser, _schemaRegistry, errors) {
-    this._exprParser = _exprParser;
-    this._schemaRegistry = _schemaRegistry;
-    this.errors = errors;
-  }
-  createBoundHostProperties(properties, sourceSpan) {
-    const boundProps = [];
-    for (const propName of Object.keys(properties)) {
-      const expression = properties[propName];
-      if (typeof expression === 'string') {
-        this.parsePropertyBinding(propName, expression, true, false, sourceSpan, sourceSpan.start.offset, undefined, [], boundProps, sourceSpan);
-      } else {
-        this._reportError(`Value of the host property binding "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
-      }
-    }
-    return boundProps;
-  }
-  createDirectiveHostEventAsts(hostListeners, sourceSpan) {
-    const targetEvents = [];
-    for (const propName of Object.keys(hostListeners)) {
-      const expression = hostListeners[propName];
-      if (typeof expression === 'string') {
-        this.parseEvent(propName, expression, false, sourceSpan, sourceSpan, [], targetEvents, sourceSpan);
-      } else {
-        this._reportError(`Value of the host listener "${propName}" needs to be a string representing an expression but got "${expression}" (${typeof expression})`, sourceSpan);
-      }
-    }
-    return targetEvents;
-  }
-  parseInterpolation(value, sourceSpan, interpolatedTokens) {
-    const absoluteOffset = sourceSpan.fullStart.offset;
-    try {
-      const ast = this._exprParser.parseInterpolation(value, sourceSpan, absoluteOffset, interpolatedTokens);
-      if (ast) {
-        this.errors.push(...ast.errors);
-      }
-      return ast;
-    } catch (e) {
-      this._reportError(`${e}`, sourceSpan);
-      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
-    }
-  }
-  parseInterpolationExpression(expression, sourceSpan) {
-    const absoluteOffset = sourceSpan.start.offset;
-    try {
-      const ast = this._exprParser.parseInterpolationExpression(expression, sourceSpan, absoluteOffset);
-      if (ast) {
-        this.errors.push(...ast.errors);
-      }
-      return ast;
-    } catch (e) {
-      this._reportError(`${e}`, sourceSpan);
-      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
-    }
-  }
-  parseInlineTemplateBinding(tplKey, tplValue, sourceSpan, absoluteValueOffset, targetMatchableAttrs, targetProps, targetVars, isIvyAst) {
-    const absoluteKeyOffset = sourceSpan.start.offset + TEMPLATE_ATTR_PREFIX$1.length;
-    const bindings = this._parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
-    for (const binding of bindings) {
-      const bindingSpan = moveParseSourceSpan(sourceSpan, binding.sourceSpan);
-      const key = binding.key.source;
-      const keySpan = moveParseSourceSpan(sourceSpan, binding.key.span);
-      if (binding instanceof VariableBinding) {
-        const value = binding.value ? binding.value.source : '$implicit';
-        const valueSpan = binding.value ? moveParseSourceSpan(sourceSpan, binding.value.span) : undefined;
-        targetVars.push(new ParsedVariable(key, value, bindingSpan, keySpan, valueSpan));
-      } else if (binding.value) {
-        const srcSpan = isIvyAst ? bindingSpan : sourceSpan;
-        const valueSpan = moveParseSourceSpan(sourceSpan, binding.value.ast.sourceSpan);
-        this._parsePropertyAst(key, binding.value, false, srcSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
-      } else {
-        targetMatchableAttrs.push([key, '']);
-        this.parseLiteralAttr(key, null, keySpan, absoluteValueOffset, undefined, targetMatchableAttrs, targetProps, keySpan);
-      }
-    }
-  }
-  _parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset) {
-    try {
-      const bindingsResult = this._exprParser.parseTemplateBindings(tplKey, tplValue, sourceSpan, absoluteKeyOffset, absoluteValueOffset);
-      bindingsResult.errors.forEach(e => this.errors.push(e));
-      bindingsResult.warnings.forEach(warning => {
-        this._reportError(warning, sourceSpan, ParseErrorLevel.WARNING);
-      });
-      return bindingsResult.templateBindings;
-    } catch (e) {
-      this._reportError(`${e}`, sourceSpan);
-      return [];
-    }
-  }
-  parseLiteralAttr(name, value, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
-    if (isLegacyAnimationLabel(name)) {
-      name = name.substring(1);
-      if (keySpan !== undefined) {
-        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
-      }
-      if (value) {
-        this._reportError(`Assigning animation triggers via @prop="exp" attributes with an expression is invalid.` + ` Use property bindings (e.g. [@prop]="exp") or use an attribute without a value (e.g. @prop) instead.`, sourceSpan, ParseErrorLevel.ERROR);
-      }
-      this._parseLegacyAnimation(name, value, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
-    } else {
-      targetProps.push(new ParsedProperty(name, this._exprParser.wrapLiteralPrimitive(value, '', absoluteOffset), ParsedPropertyType.LITERAL_ATTR, sourceSpan, keySpan, valueSpan));
-    }
-  }
-  parsePropertyBinding(name, expression, isHost, isPartOfAssignmentBinding, sourceSpan, absoluteOffset, valueSpan, targetMatchableAttrs, targetProps, keySpan) {
-    if (name.length === 0) {
-      this._reportError(`Property name is missing in binding`, sourceSpan);
-    }
-    let isLegacyAnimationProp = false;
-    if (name.startsWith(LEGACY_ANIMATE_PROP_PREFIX)) {
-      isLegacyAnimationProp = true;
-      name = name.substring(LEGACY_ANIMATE_PROP_PREFIX.length);
-      if (keySpan !== undefined) {
-        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + LEGACY_ANIMATE_PROP_PREFIX.length, keySpan.end.offset));
-      }
-    } else if (isLegacyAnimationLabel(name)) {
-      isLegacyAnimationProp = true;
-      name = name.substring(1);
-      if (keySpan !== undefined) {
-        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
-      }
-    }
-    if (isLegacyAnimationProp) {
-      this._parseLegacyAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps);
-    } else if (name.startsWith(`${ANIMATE_PREFIX}${PROPERTY_PARTS_SEPARATOR}`)) {
-      this._parseAnimation(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
-    } else {
-      this._parsePropertyAst(name, this.parseBinding(expression, isHost, valueSpan || sourceSpan, absoluteOffset), isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
-    }
-  }
-  parsePropertyInterpolation(name, value, sourceSpan, valueSpan, targetMatchableAttrs, targetProps, keySpan, interpolatedTokens) {
-    const expr = this.parseInterpolation(value, valueSpan || sourceSpan, interpolatedTokens);
-    if (expr) {
-      this._parsePropertyAst(name, expr, false, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps);
-      return true;
-    }
-    return false;
-  }
-  _parsePropertyAst(name, ast, isPartOfAssignmentBinding, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
-    targetMatchableAttrs.push([name, ast.source]);
-    targetProps.push(new ParsedProperty(name, ast, isPartOfAssignmentBinding ? ParsedPropertyType.TWO_WAY : ParsedPropertyType.DEFAULT, sourceSpan, keySpan, valueSpan));
-  }
-  _parseAnimation(name, ast, sourceSpan, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
-    targetMatchableAttrs.push([name, ast.source]);
-    targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.ANIMATION, sourceSpan, keySpan, valueSpan));
-  }
-  _parseLegacyAnimation(name, expression, sourceSpan, absoluteOffset, keySpan, valueSpan, targetMatchableAttrs, targetProps) {
-    if (name.length === 0) {
-      this._reportError('Animation trigger is missing', sourceSpan);
-    }
-    const ast = this.parseBinding(expression || 'undefined', false, valueSpan || sourceSpan, absoluteOffset);
-    targetMatchableAttrs.push([name, ast.source]);
-    targetProps.push(new ParsedProperty(name, ast, ParsedPropertyType.LEGACY_ANIMATION, sourceSpan, keySpan, valueSpan));
-  }
-  parseBinding(value, isHostBinding, sourceSpan, absoluteOffset) {
-    try {
-      const ast = isHostBinding ? this._exprParser.parseSimpleBinding(value, sourceSpan, absoluteOffset) : this._exprParser.parseBinding(value, sourceSpan, absoluteOffset);
-      if (ast) {
-        this.errors.push(...ast.errors);
-      }
-      return ast;
-    } catch (e) {
-      this._reportError(`${e}`, sourceSpan);
-      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
-    }
-  }
-  createBoundElementProperty(elementSelector, boundProp, skipValidation = false, mapPropertyName = true) {
-    if (boundProp.isLegacyAnimation) {
-      return new BoundElementProperty(boundProp.name, BindingType.LegacyAnimation, SecurityContext.NONE, boundProp.expression, null, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
-    }
-    let unit = null;
-    let bindingType = undefined;
-    let boundPropertyName = null;
-    const parts = boundProp.name.split(PROPERTY_PARTS_SEPARATOR);
-    let securityContexts = undefined;
-    if (parts.length > 1) {
-      if (parts[0] == ATTRIBUTE_PREFIX) {
-        boundPropertyName = parts.slice(1).join(PROPERTY_PARTS_SEPARATOR);
-        if (!skipValidation) {
-          this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
-        }
-        securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, true);
-        const nsSeparatorIdx = boundPropertyName.indexOf(':');
-        if (nsSeparatorIdx > -1) {
-          const ns = boundPropertyName.substring(0, nsSeparatorIdx);
-          const name = boundPropertyName.substring(nsSeparatorIdx + 1);
-          boundPropertyName = mergeNsAndName(ns, name);
-        }
-        bindingType = BindingType.Attribute;
-      } else if (parts[0] == CLASS_PREFIX) {
-        boundPropertyName = parts[1];
-        bindingType = BindingType.Class;
-        securityContexts = [SecurityContext.NONE];
-      } else if (parts[0] == STYLE_PREFIX) {
-        unit = parts.length > 2 ? parts[2] : null;
-        const boundName = parts[1];
-        if (!boundName.startsWith('--')) {
-          boundPropertyName = boundName;
-        } else {
-          try {
-            boundPropertyName = namespaceCssVariable(boundName);
-          } catch (e) {
-            this._reportError(e.message, boundProp.sourceSpan);
-          }
-        }
-        bindingType = BindingType.Style;
-        securityContexts = [SecurityContext.STYLE];
-      } else if (parts[0] == ANIMATE_PREFIX) {
-        boundPropertyName = boundProp.name;
-        bindingType = BindingType.Animation;
-        securityContexts = [SecurityContext.NONE];
-      }
-    }
-    if (boundPropertyName === null) {
-      const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
-      boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
-      securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
-      bindingType = boundProp.type === ParsedPropertyType.TWO_WAY ? BindingType.TwoWay : BindingType.Property;
-      if (!skipValidation) {
-        this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
-      }
-    }
-    return new BoundElementProperty(boundPropertyName, bindingType, securityContexts[0], boundProp.expression, unit, boundProp.sourceSpan, boundProp.keySpan, boundProp.valueSpan);
-  }
-  parseEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
-    if (name.length === 0) {
-      this._reportError(`Event name is missing in binding`, sourceSpan);
-    }
-    if (isLegacyAnimationLabel(name)) {
-      name = name.slice(1);
-      if (keySpan !== undefined) {
-        keySpan = moveParseSourceSpan(keySpan, new AbsoluteSourceSpan(keySpan.start.offset + 1, keySpan.end.offset));
-      }
-      this._parseLegacyAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan);
-    } else {
-      this._parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan);
-    }
-  }
-  calcPossibleSecurityContexts(selector, propName, isAttribute) {
-    const prop = this._schemaRegistry.getMappedPropName(propName);
-    return calcPossibleSecurityContexts(this._schemaRegistry, selector, prop, isAttribute);
-  }
-  parseEventListenerName(rawName) {
-    const [target, eventName] = splitAtColon(rawName, [null, rawName]);
-    return {
-      eventName: eventName,
-      target
-    };
-  }
-  parseLegacyAnimationEventName(rawName) {
-    const matches = splitAtPeriod(rawName, [rawName, null]);
-    return {
-      eventName: matches[0],
-      phase: matches[1] === null ? null : matches[1].toLowerCase()
-    };
-  }
-  _parseLegacyAnimationEvent(name, expression, sourceSpan, handlerSpan, targetEvents, keySpan) {
-    const {
-      eventName,
-      phase
-    } = this.parseLegacyAnimationEventName(name);
-    const ast = this._parseAction(expression, handlerSpan);
-    targetEvents.push(new ParsedEvent(eventName, phase, ParsedEventType.LegacyAnimation, ast, sourceSpan, handlerSpan, keySpan));
-    if (eventName.length === 0) {
-      this._reportError(`Animation event name is missing in binding`, sourceSpan);
-    }
-    if (phase) {
-      if (phase !== 'start' && phase !== 'done') {
-        this._reportError(`The provided animation output phase value "${phase}" for "@${eventName}" is not supported (use start or done)`, sourceSpan);
-      }
-    } else {
-      this._reportError(`The animation trigger output event (@${eventName}) is missing its phase value name (start or done are currently supported)`, sourceSpan);
-    }
-  }
-  _parseRegularEvent(name, expression, isAssignmentEvent, sourceSpan, handlerSpan, targetMatchableAttrs, targetEvents, keySpan) {
-    const {
-      eventName,
-      target
-    } = this.parseEventListenerName(name);
-    const prevErrorCount = this.errors.length;
-    const ast = this._parseAction(expression, handlerSpan);
-    const isValid = this.errors.length === prevErrorCount;
-    targetMatchableAttrs.push([name, ast.source]);
-    if (isAssignmentEvent && isValid && !this._isAllowedAssignmentEvent(ast)) {
-      this._reportError('Unsupported expression in a two-way binding', sourceSpan);
-    }
-    let eventType = ParsedEventType.Regular;
-    if (isAssignmentEvent) {
-      eventType = ParsedEventType.TwoWay;
-    }
-    if (name.startsWith(`${ANIMATE_PREFIX}${PROPERTY_PARTS_SEPARATOR}`)) {
-      eventType = ParsedEventType.Animation;
-    }
-    targetEvents.push(new ParsedEvent(eventName, target, eventType, ast, sourceSpan, handlerSpan, keySpan));
-  }
-  _parseAction(value, sourceSpan) {
-    const absoluteOffset = sourceSpan && sourceSpan.start ? sourceSpan.start.offset : 0;
-    try {
-      const ast = this._exprParser.parseAction(value, sourceSpan, absoluteOffset);
-      if (ast) {
-        this.errors.push(...ast.errors);
-      }
-      if (!ast || ast.ast instanceof EmptyExpr$1) {
-        this._reportError(`Empty expressions are not allowed`, sourceSpan);
-        return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
-      }
-      return ast;
-    } catch (e) {
-      this._reportError(`${e}`, sourceSpan);
-      return this._exprParser.wrapLiteralPrimitive('ERROR', sourceSpan, absoluteOffset);
-    }
-  }
-  _reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
-    this.errors.push(new ParseError(sourceSpan, message, level));
-  }
-  _validatePropertyOrAttributeName(propName, sourceSpan, isAttr) {
-    const report = isAttr ? this._schemaRegistry.validateAttribute(propName) : this._schemaRegistry.validateProperty(propName);
-    if (report.error) {
-      this._reportError(report.msg, sourceSpan, ParseErrorLevel.ERROR);
-    }
-  }
-  _isAllowedAssignmentEvent(ast) {
-    if (ast instanceof ASTWithSource) {
-      return this._isAllowedAssignmentEvent(ast.ast);
-    }
-    if (ast instanceof NonNullAssert) {
-      return this._isAllowedAssignmentEvent(ast.expression);
-    }
-    if (ast instanceof Call && ast.args.length === 1 && ast.receiver instanceof PropertyRead && ast.receiver.name === '$any' && ast.receiver.receiver instanceof ImplicitReceiver) {
-      return this._isAllowedAssignmentEvent(ast.args[0]);
-    }
-    if (ast instanceof PropertyRead || ast instanceof KeyedRead) {
-      if (!hasRecursiveSafeReceiver(ast)) {
-        return true;
-      }
-    }
-    return false;
-  }
-}
-function hasRecursiveSafeReceiver(ast) {
-  if (ast instanceof SafePropertyRead || ast instanceof SafeKeyedRead) {
-    return true;
-  }
-  if (ast instanceof ParenthesizedExpression) {
-    return hasRecursiveSafeReceiver(ast.expression);
-  }
-  if (ast instanceof PropertyRead || ast instanceof KeyedRead || ast instanceof Call) {
-    return hasRecursiveSafeReceiver(ast.receiver);
-  }
-  return false;
-}
-function isLegacyAnimationLabel(name) {
-  return name[0] == '@';
-}
-function calcPossibleSecurityContexts(registry, selector, propName, isAttribute) {
-  let ctxs;
-  const [namespaceKey, baseSelector] = selector ? splitNsName(selector, false) : [null, selector];
-  const nameToContext = elName => {
-    const [nsStr, name] = splitNsName(elName, false);
-    const ns = nsStr ?? namespaceKey;
-    const fullName = ns ? `:${ns}:${name}` : name;
-    return registry.securityContext(fullName, propName, isAttribute);
-  };
-  const allKnownElements = registry.allKnownElementNames();
-  if (baseSelector === null) {
-    ctxs = allKnownElements.map(nameToContext);
-  } else {
-    ctxs = [];
-    CssSelector.parse(baseSelector).forEach(selector => {
-      let elementNames = selector.element ? [selector.element] : allKnownElements;
-      if (selector.element && !registry.hasElement(selector.element, [])) {
-        const svgElement = `:${SVG_NAMESPACE}:${selector.element}`;
-        const mathElement = `:${MATH_ML_NAMESPACE}:${selector.element}`;
-        if (registry.hasElement(svgElement, [])) {
-          elementNames = [svgElement];
-        } else if (registry.hasElement(mathElement, [])) {
-          elementNames = [mathElement];
-        }
-      }
-      const notElementNames = new Set(selector.notSelectors.filter(selector => selector.isElementSelector()).map(selector => selector.element?.toLowerCase()));
-      const possibleElementNames = elementNames.filter(elName => {
-        const elNameLowerCase = elName.toLowerCase();
-        return !notElementNames.has(elNameLowerCase) && !notElementNames.has(splitNsName(elNameLowerCase)[1]);
-      });
-      ctxs.push(...possibleElementNames.map(nameToContext));
-    });
-  }
-  return ctxs.length === 0 ? [SecurityContext.NONE] : Array.from(new Set(ctxs)).sort();
-}
-function moveParseSourceSpan(sourceSpan, absoluteSpan) {
-  const startDiff = absoluteSpan.start - sourceSpan.start.offset;
-  const endDiff = absoluteSpan.end - sourceSpan.end.offset;
-  return new ParseSourceSpan(sourceSpan.start.moveBy(startDiff), sourceSpan.end.moveBy(endDiff), sourceSpan.fullStart.moveBy(startDiff), sourceSpan.details);
 }
 
 function isStyleUrlResolvable(url) {
@@ -29525,7 +29564,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29543,7 +29582,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29616,7 +29655,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29958,7 +29997,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -29984,7 +30023,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30025,7 +30064,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30051,7 +30090,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30081,7 +30120,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30119,7 +30158,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.2.0-next.0+sha-5ad8231'));
+  definitionMap.set('version', literal('22.2.0-next.0+sha-9182253'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30193,7 +30232,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.2.0-next.0+sha-5ad8231');
+const VERSION = new Version('22.2.0-next.0+sha-9182253');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
