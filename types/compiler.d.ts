@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.0+sha-832ff2a
+ * @license Angular v22.1.0+sha-3478df7
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1697,7 +1697,6 @@ declare class ConstantPool {
     private readonly isClosureCompilerEnabled;
     statements: Statement[];
     private literals;
-    private literalFactories;
     private sharedConstants;
     /**
      * Constant pool also tracks claimed names from {@link uniqueName}.
@@ -1706,7 +1705,6 @@ declare class ConstantPool {
      * them with unique numbers.
      */
     private _claimedNames;
-    private nextNameIndex;
     constructor(isClosureCompilerEnabled?: boolean);
     getConstLiteral(literal: Expression, forceShared?: boolean): Expression;
     getSharedConstant(def: SharedConstantDefinition, expr: Expression): Expression;
@@ -5280,6 +5278,36 @@ interface ParsedTemplate {
     commentNodes?: Comment[];
 }
 
+interface DeclareComponentTemplateInfo {
+    /**
+     * The string contents of the template.
+     *
+     * This is the "logical" template string, after expansion of any escaped characters (for inline
+     * templates). This may differ from the actual template bytes as they appear in the .ts file.
+     */
+    content: string;
+    /**
+     * A full path to the file which contains the template.
+     *
+     * This can be either the original .ts file if the template is inline, or the .html file if an
+     * external file was used.
+     */
+    sourceUrl: string;
+    /**
+     * Whether the template was inline (using `template`) or external (using `templateUrl`).
+     */
+    isInline: boolean;
+    /**
+     * If the template was defined inline by a direct string literal, then this is that literal
+     * expression. Otherwise `null`, if the template was not defined inline or was not a literal.
+     */
+    inlineTemplateLiteralExpression: Expression | null;
+}
+/**
+ * Compile a component declaration defined by the `R3ComponentMetadata`.
+ */
+declare function compileDeclareComponentFromMetadata(meta: R3ComponentMetadata<R3TemplateDependencyMetadata>, template: ParsedTemplate, additionalTemplateInfo: DeclareComponentTemplateInfo): R3CompiledExpression;
+
 /**
  * A css selector contains an element name,
  * css classes and attribute/value pairs with the purpose
@@ -5386,36 +5414,6 @@ declare class SelectorlessMatcher<T = unknown> {
  * Creates a `CssSelector` from an AST node.
  */
 declare function createCssSelectorFromNode(node: Element | Template): CssSelector;
-
-interface DeclareComponentTemplateInfo {
-    /**
-     * The string contents of the template.
-     *
-     * This is the "logical" template string, after expansion of any escaped characters (for inline
-     * templates). This may differ from the actual template bytes as they appear in the .ts file.
-     */
-    content: string;
-    /**
-     * A full path to the file which contains the template.
-     *
-     * This can be either the original .ts file if the template is inline, or the .html file if an
-     * external file was used.
-     */
-    sourceUrl: string;
-    /**
-     * Whether the template was inline (using `template`) or external (using `templateUrl`).
-     */
-    isInline: boolean;
-    /**
-     * If the template was defined inline by a direct string literal, then this is that literal
-     * expression. Otherwise `null`, if the template was not defined inline or was not a literal.
-     */
-    inlineTemplateLiteralExpression: Expression | null;
-}
-/**
- * Compile a component declaration defined by the `R3ComponentMetadata`.
- */
-declare function compileDeclareComponentFromMetadata(meta: R3ComponentMetadata<R3TemplateDependencyMetadata>, template: ParsedTemplate, additionalTemplateInfo: DeclareComponentTemplateInfo): R3CompiledExpression;
 
 /**
  * Compile a directive declaration defined by the `R3DirectiveMetadata`.
