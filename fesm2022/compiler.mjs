@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-next.1+sha-cf1844b
+ * @license Angular v22.2.0-next.1+sha-adb770b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -29562,7 +29562,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29580,7 +29580,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29653,7 +29653,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29995,7 +29995,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30021,7 +30021,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30062,7 +30062,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30088,7 +30088,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30118,7 +30118,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30156,7 +30156,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.2.0-next.1+sha-cf1844b'));
+  definitionMap.set('version', literal('22.2.0-next.1+sha-adb770b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30230,7 +30230,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.2.0-next.1+sha-cf1844b');
+const VERSION = new Version('22.2.0-next.1+sha-adb770b');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -30630,7 +30630,10 @@ class TcbExprTranslator {
     return new TcbExpr(`"" + ${exprs.join(' + ')}`);
   }
   visitKeyedRead(ast) {
-    const receiver = this.translate(ast.receiver).wrapForTypeChecker();
+    const receiver = this.translate(ast.receiver);
+    if (!this.isStrictSafeNavigationChain(ast.receiver)) {
+      receiver.wrapForTypeChecker();
+    }
     const key = this.translate(ast.key);
     return new TcbExpr(`${receiver.print()}[${key.print()}]`).addParseSpanInfo(ast.sourceSpan);
   }
@@ -30705,7 +30708,10 @@ class TcbExprTranslator {
     return new TcbExpr(`void ${expression.print()}`).addParseSpanInfo(ast.sourceSpan);
   }
   visitPropertyRead(ast) {
-    const receiver = this.translate(ast.receiver).wrapForTypeChecker();
+    const receiver = this.translate(ast.receiver);
+    if (!this.isStrictSafeNavigationChain(ast.receiver)) {
+      receiver.wrapForTypeChecker();
+    }
     return new TcbExpr(`${receiver.print()}.${ast.name}`).addParseSpanInfo(ast.nameSpan).wrapForTypeChecker().addParseSpanInfo(ast.sourceSpan);
   }
   visitSafePropertyRead(ast) {
@@ -30744,7 +30750,10 @@ class TcbExprTranslator {
       if (resolved !== null) {
         expr = resolved;
       } else {
-        const propertyReceiver = this.translate(receiver.receiver).wrapForTypeChecker();
+        const propertyReceiver = this.translate(receiver.receiver);
+        if (!this.isStrictSafeNavigationChain(receiver.receiver)) {
+          propertyReceiver.wrapForTypeChecker();
+        }
         expr = new TcbExpr(`${propertyReceiver.print()}.${receiver.name}`).addParseSpanInfo(receiver.nameSpan);
       }
     } else {
@@ -30835,6 +30844,9 @@ class TcbExprTranslator {
   }
   escapeTemplateLiteral(value) {
     return value.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\${/g, '$\\{');
+  }
+  isStrictSafeNavigationChain(ast) {
+    return this.config.strictSafeNavigationTypes && (ast instanceof SafePropertyRead || ast instanceof SafeKeyedRead || ast instanceof SafeCall);
   }
 }
 class VeSafeLhsInferenceBugDetector {
