@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.1.2+sha-85f12a5
+ * @license Angular v22.1.2+sha-4413711
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5873,10 +5873,10 @@ class SimplePlaceholderMapper extends RecurseVisitor {
     message.nodes.forEach(node => node.visit(this));
   }
   toPublicName(internalName) {
-    return this.internalToPublic.hasOwnProperty(internalName) ? this.internalToPublic[internalName] : null;
+    return Object.hasOwn(this.internalToPublic, internalName) ? this.internalToPublic[internalName] : null;
   }
   toInternalName(publicName) {
-    return this.publicToInternal.hasOwnProperty(publicName) ? this.publicToInternal[publicName] : null;
+    return Object.hasOwn(this.publicToInternal, publicName) ? this.publicToInternal[publicName] : null;
   }
   visitText(text, context) {
     return null;
@@ -5898,11 +5898,11 @@ class SimplePlaceholderMapper extends RecurseVisitor {
     this.visitPlaceholderName(ph.name);
   }
   visitPlaceholderName(internalName) {
-    if (!internalName || this.internalToPublic.hasOwnProperty(internalName)) {
+    if (!internalName || Object.hasOwn(this.internalToPublic, internalName)) {
       return;
     }
     let publicName = this.mapName(internalName);
-    if (this.publicToInternal.hasOwnProperty(publicName)) {
+    if (Object.hasOwn(this.publicToInternal, publicName)) {
       const nextId = this.publicToNextId[publicName];
       this.publicToNextId[publicName] = nextId + 1;
       publicName = `${publicName}_${nextId}`;
@@ -6869,7 +6869,7 @@ class R3JitReflector {
     if (ref.moduleName !== '@angular/core') {
       throw new Error(`Cannot resolve external reference to ${ref.moduleName}, only references to @angular/core are supported.`);
     }
-    if (!this.context.hasOwnProperty(ref.name)) {
+    if (!Object.hasOwn(this.context, ref.name)) {
       throw new Error(`No value provided for @angular/core symbol '${ref.name}'.`);
     }
     return this.context[ref.name];
@@ -14361,7 +14361,7 @@ class _Tokenizer {
       } else {
         const name = this._cursor.getChars(nameStart);
         this._cursor.advance();
-        const char = NAMED_ENTITIES.hasOwnProperty(name) && NAMED_ENTITIES[name];
+        const char = Object.hasOwn(NAMED_ENTITIES, name) && NAMED_ENTITIES[name];
         if (!char) {
           throw this._createError(_unknownEntityErrorMsg(name), this._cursor.getSpan(start));
         }
@@ -18341,7 +18341,7 @@ class PlaceholderRegistry {
     return name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
   }
   _generateUniqueName(base) {
-    const seen = this._placeHolderNameCounts.hasOwnProperty(base);
+    const seen = Object.hasOwn(this._placeHolderNameCounts, base);
     if (!seen) {
       this._placeHolderNameCounts[base] = 1;
       return base;
@@ -26250,7 +26250,7 @@ function createHostDirectivesFeatureArg(hostDirectives) {
 function createHostDirectivesMappingArray(mapping) {
   const elements = [];
   for (const publicName in mapping) {
-    if (mapping.hasOwnProperty(publicName)) {
+    if (Object.hasOwn(mapping, publicName)) {
       elements.push(literal(publicName), literal(mapping[publicName]));
     }
   }
@@ -27594,7 +27594,7 @@ function convertDirectiveFacadeToMetadata(facade) {
   const inputsFromType = {};
   const outputsFromType = {};
   for (const field in propMetadata) {
-    if (propMetadata.hasOwnProperty(field)) {
+    if (Object.hasOwn(propMetadata, field)) {
       propMetadata[field].forEach(ann => {
         if (isInput(ann)) {
           inputsFromType[field] = {
@@ -27812,14 +27812,14 @@ function parseJitTemplate(template, typeName, sourceMapUrl, preserveWhitespaces,
   };
 }
 function convertToProviderExpression(obj, property) {
-  if (obj.hasOwnProperty(property)) {
+  if (Object.hasOwn(obj, property)) {
     return createMayBeForwardRefExpression(new WrappedNodeExpr(obj[property]), 0);
   } else {
     return undefined;
   }
 }
 function wrapExpression(obj, property) {
-  if (obj.hasOwnProperty(property)) {
+  if (Object.hasOwn(obj, property)) {
     return new WrappedNodeExpr(obj[property]);
   } else {
     return undefined;
@@ -27869,7 +27869,7 @@ function createR3ComponentDeferMetadata(boundTarget, deferBlockDependencies) {
 function extractHostBindings(propMetadata, sourceSpan, host) {
   const bindings = parseHostBindings(host || {});
   for (const field in propMetadata) {
-    if (propMetadata.hasOwnProperty(field)) {
+    if (Object.hasOwn(propMetadata, field)) {
       propMetadata[field].forEach(ann => {
         if (isHostBinding(ann)) {
           bindings.properties[ann.hostPropertyName || field] = getSafePropertyAccessString('this', field);
@@ -28297,7 +28297,7 @@ class _Visitor {
       if (attr.name === _I18N_ATTR || attr.name.startsWith(_I18N_ATTR_PREFIX)) {
         return;
       }
-      if (attr.value && attr.value != '' && i18nParsedMessageMeta.hasOwnProperty(attr.name)) {
+      if (attr.value && attr.value != '' && Object.hasOwn(i18nParsedMessageMeta, attr.name)) {
         const {
           meaning,
           description,
@@ -28620,7 +28620,7 @@ class XliffParser {
           this._addError(element, `<${_UNIT_TAG$1}> misses the "id" attribute`);
         } else {
           const id = idAttr.value;
-          if (this._msgIdToHtml.hasOwnProperty(id)) {
+          if (Object.hasOwn(this._msgIdToHtml, id)) {
             this._addError(element, `Duplicated translations for msg ${id}`);
           } else {
             visitAll(this, element.children, null);
@@ -28934,7 +28934,7 @@ class Xliff2Parser {
           this._addError(element, `<${_UNIT_TAG}> misses the "id" attribute`);
         } else {
           const id = idAttr.value;
-          if (this._msgIdToHtml.hasOwnProperty(id)) {
+          if (Object.hasOwn(this._msgIdToHtml, id)) {
             this._addError(element, `Duplicated translations for msg ${id}`);
           } else {
             visitAll(this, element.children, null);
@@ -29176,7 +29176,7 @@ class XtbParser {
           this._addError(element, `<${_TRANSLATION_TAG}> misses the "id" attribute`);
         } else {
           const id = idAttr.value;
-          if (this._msgIdToHtml.hasOwnProperty(id)) {
+          if (Object.hasOwn(this._msgIdToHtml, id)) {
             this._addError(element, `Duplicated translations for msg ${id}`);
           } else {
             const innerTextStart = element.startSourceSpan.end.offset;
@@ -29337,15 +29337,15 @@ class I18nToHtmlVisitor {
   }
   visitIcu(icu, context) {
     const cases = Object.keys(icu.cases).map(k => `${k} {${icu.cases[k].visit(this)}}`);
-    const exp = this._srcMsg.placeholders.hasOwnProperty(icu.expression) ? this._srcMsg.placeholders[icu.expression].text : icu.expression;
+    const exp = Object.hasOwn(this._srcMsg.placeholders, icu.expression) ? this._srcMsg.placeholders[icu.expression].text : icu.expression;
     return `{${exp}, ${icu.type}, ${cases.join(' ')}}`;
   }
   visitPlaceholder(ph, context) {
     const phName = this._mapper(ph.name);
-    if (this._srcMsg.placeholders.hasOwnProperty(phName)) {
+    if (Object.hasOwn(this._srcMsg.placeholders, phName)) {
       return this._srcMsg.placeholders[phName].text;
     }
-    if (this._srcMsg.placeholderToMessage.hasOwnProperty(phName)) {
+    if (Object.hasOwn(this._srcMsg.placeholderToMessage, phName)) {
       return this._convertToText(this._srcMsg.placeholderToMessage[phName]);
     }
     this._addError(ph, `Unknown placeholder "${ph.name}"`);
@@ -29377,7 +29377,7 @@ class I18nToHtmlVisitor {
       mapper: this._mapper
     });
     this._srcMsg = srcMsg;
-    if (this._i18nNodesByMsgId.hasOwnProperty(id)) {
+    if (Object.hasOwn(this._i18nNodesByMsgId, id)) {
       nodes = this._i18nNodesByMsgId[id];
       this._mapper = name => mapper ? mapper.toInternalName(name) : name;
     } else {
@@ -29479,7 +29479,7 @@ class MessageBundle {
     const mapperVisitor = new MapPlaceholderNames();
     this._messages.forEach(message => {
       const id = serializer.digest(message);
-      if (!messages.hasOwnProperty(id)) {
+      if (!Object.hasOwn(messages, id)) {
         messages[id] = message;
       } else {
         messages[id].sources.push(...message.sources);
@@ -29562,7 +29562,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29580,7 +29580,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29653,7 +29653,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -29995,7 +29995,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30021,7 +30021,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30062,7 +30062,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30088,7 +30088,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30118,7 +30118,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30156,7 +30156,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.1.2+sha-85f12a5'));
+  definitionMap.set('version', literal('22.1.2+sha-4413711'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30230,7 +30230,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.1.2+sha-85f12a5');
+const VERSION = new Version('22.1.2+sha-4413711');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
