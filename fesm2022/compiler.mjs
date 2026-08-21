@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-next.3+sha-d609cf6
+ * @license Angular v22.2.0-next.3+sha-2e2c426
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5160,6 +5160,7 @@ class DeferredBlock extends BlockNode {
   loading;
   error;
   mainBlockSpan;
+  definedName;
   i18n;
   triggers;
   prefetchTriggers;
@@ -5167,13 +5168,14 @@ class DeferredBlock extends BlockNode {
   definedTriggers;
   definedPrefetchTriggers;
   definedHydrateTriggers;
-  constructor(children, triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, i18n) {
+  constructor(children, triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, nameSpan, sourceSpan, mainBlockSpan, startSourceSpan, endSourceSpan, definedName, i18n) {
     super(nameSpan, sourceSpan, startSourceSpan, endSourceSpan);
     this.children = children;
     this.placeholder = placeholder;
     this.loading = loading;
     this.error = error;
     this.mainBlockSpan = mainBlockSpan;
+    this.definedName = definedName;
     this.i18n = i18n;
     this.triggers = triggers;
     this.prefetchTriggers = prefetchTriggers;
@@ -25008,6 +25010,7 @@ const MINIMUM_PARAMETER_PATTERN = /^minimum\s/;
 const AFTER_PARAMETER_PATTERN = /^after\s/;
 const WHEN_PARAMETER_PATTERN = /^when\s/;
 const ON_PARAMETER_PATTERN = /^on\s/;
+const NAME_PARAMETER_PATTERN = /^name\s+/;
 function isConnectedDeferLoopBlock(name) {
   return name === 'placeholder' || name === 'loading' || name === 'error';
 }
@@ -25021,7 +25024,8 @@ function createDeferredBlock(ast, connectedBlocks, visitor, bindingParser) {
   const {
     triggers,
     prefetchTriggers,
-    hydrateTriggers
+    hydrateTriggers,
+    definedName
   } = parsePrimaryTriggers(ast, bindingParser, errors);
   let lastEndSourceSpan = ast.endSourceSpan;
   let endOfLastSourceSpan = ast.sourceSpan.end;
@@ -25031,7 +25035,7 @@ function createDeferredBlock(ast, connectedBlocks, visitor, bindingParser) {
     endOfLastSourceSpan = lastConnectedBlock.sourceSpan.end;
   }
   const sourceSpanWithConnectedBlocks = new ParseSourceSpan(ast.sourceSpan.start, endOfLastSourceSpan);
-  const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, ast.nameSpan, sourceSpanWithConnectedBlocks, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan, ast.i18n);
+  const node = new DeferredBlock(visitAll(visitor, ast.children, ast.children), triggers, prefetchTriggers, hydrateTriggers, placeholder, loading, error, ast.nameSpan, sourceSpanWithConnectedBlocks, ast.sourceSpan, ast.startSourceSpan, lastEndSourceSpan, definedName, ast.i18n);
   return {
     node,
     errors
@@ -25136,6 +25140,7 @@ function parsePrimaryTriggers(ast, bindingParser, errors, placeholder) {
   const triggers = {};
   const prefetchTriggers = {};
   const hydrateTriggers = {};
+  let definedName = null;
   for (const param of ast.parameters) {
     if (WHEN_PARAMETER_PATTERN.test(param.expression)) {
       parseWhenTrigger(param, bindingParser, triggers, errors);
@@ -25151,6 +25156,19 @@ function parsePrimaryTriggers(ast, bindingParser, errors, placeholder) {
       parseOnTrigger(param, bindingParser, hydrateTriggers, errors);
     } else if (HYDRATE_NEVER_PATTERN.test(param.expression)) {
       parseNeverTrigger(param, hydrateTriggers, errors);
+    } else if (NAME_PARAMETER_PATTERN.test(param.expression)) {
+      if (definedName !== null) {
+        errors.push(new ParseError(param.sourceSpan, 'Cannot specify multiple name parameters'));
+      } else {
+        const name = param.expression.slice(5).trim();
+        if (name.startsWith("'") || name.startsWith('"') || name.endsWith("'") || name.endsWith('"')) {
+          errors.push(new ParseError(param.sourceSpan, 'Block names cannot be quoted in @defer blocks'));
+        } else if (!/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name)) {
+          errors.push(new ParseError(param.sourceSpan, `Invalid block name "${name}"`));
+        } else {
+          definedName = name;
+        }
+      }
     } else {
       errors.push(new ParseError(param.sourceSpan, 'Unrecognized trigger'));
     }
@@ -25161,7 +25179,8 @@ function parsePrimaryTriggers(ast, bindingParser, errors, placeholder) {
   return {
     triggers,
     prefetchTriggers,
-    hydrateTriggers
+    hydrateTriggers,
+    definedName
   };
 }
 
@@ -26577,18 +26596,19 @@ class R3TargetBinder {
     const usedPipes = new Set();
     const eagerPipes = new Set();
     const deferBlocks = [];
+    const pipes = new Map();
     const conflictingHostDirectiveBindings = new Map();
     if (target.template) {
       const scope = Scope$1.apply(target.template);
       extractScopedNodeEntities(scope, scopedNodeEntities);
       DirectiveBinder.apply(target.template, this.directiveMatcher, this.foreignComponentMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
-      TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
+      TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks, pipes);
     }
     if (target.host) {
       directives.set(target.host.node, target.host.directives);
-      TemplateBinder.applyWithScope(target.host.node, Scope$1.apply(target.host.node), expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks);
+      TemplateBinder.applyWithScope(target.host.node, Scope$1.apply(target.host.node), expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks, pipes);
     }
-    return new R3BoundTarget(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, conflictingHostDirectiveBindings);
+    return new R3BoundTarget(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, pipes, conflictingHostDirectiveBindings);
   }
 }
 let Scope$1 = class Scope {
@@ -26634,6 +26654,7 @@ let Scope$1 = class Scope {
     this.visitElementLike(element);
   }
   visitTemplate(template) {
+    this.elementLikeInScope.add(template);
     template.directives.forEach(node => node.visit(this));
     template.references.forEach(node => this.visitReference(node));
     this.ingestScopedNode(template);
@@ -26693,6 +26714,7 @@ let Scope$1 = class Scope {
     this.visitElementLike(component);
   }
   visitDirective(directive) {
+    this.elementLikeInScope.add(directive);
     directive.references.forEach(current => this.visitReference(current));
   }
   visitBoundAttribute(attr) {}
@@ -26708,6 +26730,17 @@ let Scope$1 = class Scope {
     node.references.forEach(current => this.visitReference(current));
     node.children.forEach(current => current.visit(this));
     this.elementLikeInScope.add(node);
+  }
+  getEnclosingDeferBlocks() {
+    const blocks = [];
+    let current = this;
+    while (current !== null) {
+      if (current.rootNode instanceof DeferredBlock) {
+        blocks.push(current.rootNode);
+      }
+      current = current.parentScope;
+    }
+    return blocks.reverse();
   }
   maybeDeclare(thing) {
     if (!this.namedEntities.has(thing.name)) {
@@ -27025,8 +27058,9 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
   scope;
   rootNode;
   level;
+  pipes;
   visitNode = node => node.visit(this);
-  constructor(bindings, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, rootNode, level) {
+  constructor(bindings, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, rootNode, level, pipes) {
     super();
     this.bindings = bindings;
     this.symbols = symbols;
@@ -27037,10 +27071,11 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
     this.scope = scope;
     this.rootNode = rootNode;
     this.level = level;
+    this.pipes = pipes;
   }
-  static applyWithScope(nodeOrNodes, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks) {
+  static applyWithScope(nodeOrNodes, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks, pipes) {
     const template = nodeOrNodes instanceof Template ? nodeOrNodes : null;
-    const binder = new TemplateBinder(expressions, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, template, 0);
+    const binder = new TemplateBinder(expressions, symbols, usedPipes, eagerPipes, deferBlocks, nestingLevel, scope, template, 0, pipes);
     binder.ingest(nodeOrNodes);
   }
   ingest(nodeOrNodes) {
@@ -27152,6 +27187,7 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
     if (!this.scope.isDeferred) {
       this.eagerPipes.add(ast.name);
     }
+    this.pipes.set(ast, this.scope.getEnclosingDeferBlocks());
     return super.visitPipe(ast, context);
   }
   visitPropertyRead(ast, context) {
@@ -27164,7 +27200,7 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
   }
   ingestScopedNode(node) {
     const childScope = this.scope.getChildScope(node);
-    const binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.eagerPipes, this.deferBlocks, this.nestingLevel, childScope, node, this.level + 1);
+    const binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.eagerPipes, this.deferBlocks, this.nestingLevel, childScope, node, this.level + 1, this.pipes);
     binder.ingest(node);
   }
   maybeMap(ast, name) {
@@ -27191,10 +27227,11 @@ class R3BoundTarget {
   scopedNodeEntities;
   usedPipes;
   eagerPipes;
+  pipes;
   conflictingHostDirectiveBindings;
   deferredBlocks;
   deferredScopes;
-  constructor(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, conflictingHostDirectiveBindings) {
+  constructor(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, pipes, conflictingHostDirectiveBindings) {
     this.target = target;
     this.directives = directives;
     this.foreignComponents = foreignComponents;
@@ -27208,6 +27245,7 @@ class R3BoundTarget {
     this.scopedNodeEntities = scopedNodeEntities;
     this.usedPipes = usedPipes;
     this.eagerPipes = eagerPipes;
+    this.pipes = pipes;
     this.conflictingHostDirectiveBindings = conflictingHostDirectiveBindings;
     this.deferredBlocks = rawDeferred.map(current => current[0]);
     this.deferredScopes = new Map(rawDeferred);
@@ -27292,7 +27330,11 @@ class R3BoundTarget {
     }
     return null;
   }
-  isDeferred(element) {
+  isDeferred(node) {
+    return this.getDeferBlocksOfNode(node).length > 0;
+  }
+  getDeferBlocksOfNode(node) {
+    const blocks = [];
     for (const block of this.deferredBlocks) {
       if (!this.deferredScopes.has(block)) {
         continue;
@@ -27300,13 +27342,17 @@ class R3BoundTarget {
       const stack = [this.deferredScopes.get(block)];
       while (stack.length > 0) {
         const current = stack.pop();
-        if (current.elementLikeInScope.has(element)) {
-          return true;
+        if (current.elementLikeInScope.has(node)) {
+          blocks.push(block);
+          break;
         }
         stack.push(...current.childScopes.values());
       }
     }
-    return false;
+    return blocks;
+  }
+  getDeferBlocksOfPipe(ast) {
+    return this.pipes.get(ast) ?? [];
   }
   referencedDirectiveExists(name) {
     return !this.missingDirectives.has(name);
@@ -29579,7 +29625,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -29597,7 +29643,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -29670,7 +29716,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -30012,7 +30058,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30038,7 +30084,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30079,7 +30125,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30105,7 +30151,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30135,7 +30181,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30173,7 +30219,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.2.0-next.3+sha-d609cf6'));
+  definitionMap.set('version', literal('22.2.0-next.3+sha-2e2c426'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30247,7 +30293,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.2.0-next.3+sha-d609cf6');
+const VERSION = new Version('22.2.0-next.3+sha-2e2c426');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -31049,9 +31095,25 @@ class TcbExpressionTranslator {
       if (pipeMeta === null) {
         this.tcb.oobRecorder.missingPipe(this.tcb.id, ast, this.tcb.hostIsStandalone);
         pipe = new TcbExpr('(0 as any)');
-      } else if (pipeMeta.isExplicitlyDeferred && this.tcb.boundTarget.getEagerlyUsedPipes().includes(ast.name)) {
-        this.tcb.oobRecorder.deferredPipeUsedEagerly(this.tcb.id, ast);
-        pipe = new TcbExpr('(0 as any)');
+      } else if (pipeMeta.isExplicitlyDeferred) {
+        const enclosingBlocks = this.tcb.boundTarget.getDeferBlocksOfPipe(ast);
+        const isDeferred = enclosingBlocks.length > 0;
+        if (!isDeferred) {
+          this.tcb.oobRecorder.deferredPipeUsedEagerly(this.tcb.id, ast, null, null);
+          pipe = new TcbExpr('(0 as any)');
+        } else if (pipeMeta.deferredBlocks != null) {
+          const isAllowedInBlock = enclosingBlocks.some(b => b.definedName !== null && pipeMeta.deferredBlocks.has(b.definedName));
+          if (!isAllowedInBlock) {
+            const currentBlockName = enclosingBlocks[enclosingBlocks.length - 1].definedName ?? 'unnamed';
+            const declaredBlocks = Array.from(pipeMeta.deferredBlocks);
+            this.tcb.oobRecorder.deferredPipeUsedEagerly(this.tcb.id, ast, currentBlockName, declaredBlocks);
+            pipe = new TcbExpr('(0 as any)');
+          } else {
+            pipe = this.tcb.env.pipeInst(pipeMeta);
+          }
+        } else {
+          pipe = this.tcb.env.pipeInst(pipeMeta);
+        }
       } else {
         pipe = this.tcb.env.pipeInst(pipeMeta);
       }
@@ -32835,10 +32897,23 @@ class Scope {
       return;
     }
     this.reportConflictingBindings(node);
-    if (node instanceof Element$1) {
-      const isDeferred = this.tcb.boundTarget.isDeferred(node);
-      if (!isDeferred && directives.some(dirMeta => dirMeta.isExplicitlyDeferred)) {
-        this.tcb.oobRecorder.deferredComponentUsedEagerly(this.tcb.id, node);
+    if (node instanceof Element$1 || node instanceof Template) {
+      const enclosingBlocks = this.tcb.boundTarget.getDeferBlocksOfNode(node);
+      const isDeferred = enclosingBlocks.length > 0;
+      for (const dirMeta of directives) {
+        if (!dirMeta.isExplicitlyDeferred) {
+          continue;
+        }
+        if (!isDeferred) {
+          this.tcb.oobRecorder.deferredComponentUsedEagerly(this.tcb.id, node, dirMeta, null, null);
+        } else if (dirMeta.deferredBlocks != null) {
+          const isAllowedInBlock = enclosingBlocks.some(b => b.definedName !== null && dirMeta.deferredBlocks.has(b.definedName));
+          if (!isAllowedInBlock) {
+            const currentBlockName = enclosingBlocks[enclosingBlocks.length - 1].definedName ?? 'unnamed';
+            const declaredBlocks = Array.from(dirMeta.deferredBlocks);
+            this.tcb.oobRecorder.deferredComponentUsedEagerly(this.tcb.id, node, dirMeta, currentBlockName, declaredBlocks);
+          }
+        }
       }
     }
     if (node instanceof Element$1) {

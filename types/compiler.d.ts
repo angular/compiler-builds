@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-next.3+sha-d609cf6
+ * @license Angular v22.2.0-next.3+sha-2e2c426
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3439,6 +3439,7 @@ declare class DeferredBlock extends BlockNode implements Node {
     loading: DeferredBlockLoading | null;
     error: DeferredBlockError | null;
     mainBlockSpan: ParseSourceSpan$1;
+    definedName: string | null;
     i18n?: I18nMeta$1 | undefined;
     readonly triggers: Readonly<DeferredBlockTriggers>;
     readonly prefetchTriggers: Readonly<DeferredBlockTriggers>;
@@ -3446,7 +3447,7 @@ declare class DeferredBlock extends BlockNode implements Node {
     private readonly definedTriggers;
     private readonly definedPrefetchTriggers;
     private readonly definedHydrateTriggers;
-    constructor(children: Node[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, hydrateTriggers: DeferredBlockTriggers, placeholder: DeferredBlockPlaceholder | null, loading: DeferredBlockLoading | null, error: DeferredBlockError | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    constructor(children: Node[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, hydrateTriggers: DeferredBlockTriggers, placeholder: DeferredBlockPlaceholder | null, loading: DeferredBlockLoading | null, error: DeferredBlockError | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, definedName: string | null, i18n?: I18nMeta$1 | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
     visitAll(visitor: Visitor<unknown>): void;
     private visitTriggers;
@@ -3927,7 +3928,15 @@ interface BoundTarget<DirectiveT extends DirectiveMeta> {
     /**
      * Whether a given node is located in a `@defer` block.
      */
-    isDeferred(node: Element): boolean;
+    isDeferred(node: DirectiveOwner): boolean;
+    /**
+     * Gets the list of `@defer` blocks enclosing a given element, ordered from outermost to innermost.
+     */
+    getDeferBlocksOfNode(node: DirectiveOwner): DeferredBlock[];
+    /**
+     * Gets the list of `@defer` blocks enclosing a given pipe, ordered from outermost to innermost.
+     */
+    getDeferBlocksOfPipe(ast: BindingPipe): DeferredBlock[];
     /**
      * Checks whether a component/directive that was referenced directly in the template exists.
      * @param name Name of the component/directive.
@@ -6315,6 +6324,7 @@ interface TcbPipeMetadata {
     name: string;
     ref: TcbReferenceMetadata;
     isExplicitlyDeferred: boolean;
+    deferredBlocks?: Set<string> | null;
 }
 /**
  * Metadata that describes a template guard for one of the directive's inputs.
@@ -6342,6 +6352,7 @@ interface TcbDirectiveMetadata {
     isStructural: boolean;
     isStandalone: boolean;
     isExplicitlyDeferred: boolean;
+    deferredBlocks?: Set<string> | null;
     preserveWhitespaces: boolean;
     exportAs: string[] | null;
     matchSource: MatchSource;
@@ -6600,7 +6611,7 @@ interface OutOfBandDiagnosticRecorder<T> {
      * @param id the type-checking ID of the template which contains the unknown pipe.
      * @param ast the `BindingPipe` invocation of the pipe which could not be found.
      */
-    deferredPipeUsedEagerly(id: TypeCheckId, ast: BindingPipe): void;
+    deferredPipeUsedEagerly(id: TypeCheckId, ast: BindingPipe, currentBlockName: string | null, declaredBlocks: string[] | null): void;
     /**
      * Reports usage of a component/directive imported via `@Component.deferredImports` outside
      * of a `@defer` block in a template.
@@ -6608,7 +6619,7 @@ interface OutOfBandDiagnosticRecorder<T> {
      * @param id the type-checking ID of the template which contains the unknown pipe.
      * @param element the element which hosts a component that was defer-loaded.
      */
-    deferredComponentUsedEagerly(id: TypeCheckId, element: Element): void;
+    deferredComponentUsedEagerly(id: TypeCheckId, element: Element | Template, dirMeta: TcbDirectiveMetadata, currentBlockName: string | null, declaredBlocks: string[] | null): void;
     /**
      * Reports a duplicate declaration of a template variable.
      *
