@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-next.5+sha-9a58353
+ * @license Angular v22.2.0-next.5+sha-5afdd98
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -2776,6 +2776,473 @@ interface ParseSourceSpan {
     fullStart: any;
 }
 
+interface Node {
+    sourceSpan: ParseSourceSpan$1;
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+/**
+ * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
+ * require the implementation of a visitor for Comments as they are only collected at
+ * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
+ * is true.
+ */
+declare class Comment implements Node {
+    value: string;
+    sourceSpan: ParseSourceSpan$1;
+    constructor(value: string, sourceSpan: ParseSourceSpan$1);
+    visit<Result>(_visitor: Visitor<Result>): Result;
+}
+declare class Text implements Node {
+    value: string;
+    sourceSpan: ParseSourceSpan$1;
+    constructor(value: string, sourceSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class BoundText implements Node {
+    value: AST;
+    sourceSpan: ParseSourceSpan$1;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(value: AST, sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+/**
+ * Represents a text attribute in the template.
+ *
+ * `valueSpan` may not be present in cases where there is no value `<div a></div>`.
+ * `keySpan` may also not be present for synthetic attributes from ICU expansions.
+ */
+declare class TextAttribute implements Node {
+    name: string;
+    value: string;
+    sourceSpan: ParseSourceSpan$1;
+    readonly keySpan: ParseSourceSpan$1 | undefined;
+    valueSpan?: ParseSourceSpan$1 | undefined;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1 | undefined, valueSpan?: ParseSourceSpan$1 | undefined, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class BoundAttribute implements Node {
+    name: string;
+    type: BindingType;
+    securityContext: SecurityContext;
+    value: AST;
+    unit: string | null;
+    sourceSpan: ParseSourceSpan$1;
+    readonly keySpan: ParseSourceSpan$1;
+    valueSpan: ParseSourceSpan$1 | undefined;
+    i18n: I18nMeta$1 | undefined;
+    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1 | undefined, i18n: I18nMeta$1 | undefined);
+    static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nMeta$1): BoundAttribute;
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class BoundEvent implements Node {
+    name: string;
+    type: ParsedEventType;
+    handler: AST;
+    target: string | null;
+    phase: string | null;
+    sourceSpan: ParseSourceSpan$1;
+    handlerSpan: ParseSourceSpan$1;
+    readonly keySpan: ParseSourceSpan$1;
+    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan$1, handlerSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1);
+    static fromParsedEvent(event: ParsedEvent): BoundEvent;
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Element implements Node {
+    name: string;
+    attributes: TextAttribute[];
+    inputs: BoundAttribute[];
+    outputs: BoundEvent[];
+    directives: Directive[];
+    children: Node[];
+    references: Reference[];
+    isSelfClosing: boolean;
+    sourceSpan: ParseSourceSpan$1;
+    startSourceSpan: ParseSourceSpan$1;
+    endSourceSpan: ParseSourceSpan$1 | null;
+    readonly isVoid: boolean;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, isVoid: boolean, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare abstract class DeferredTrigger implements Node {
+    nameSpan: ParseSourceSpan$1 | null;
+    sourceSpan: ParseSourceSpan$1;
+    prefetchSpan: ParseSourceSpan$1 | null;
+    whenOrOnSourceSpan: ParseSourceSpan$1 | null;
+    hydrateSpan: ParseSourceSpan$1 | null;
+    constructor(nameSpan: ParseSourceSpan$1 | null, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, whenOrOnSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class BoundDeferredTrigger extends DeferredTrigger {
+    value: AST;
+    constructor(value: AST, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, whenSourceSpan: ParseSourceSpan$1, hydrateSpan: ParseSourceSpan$1 | null);
+}
+declare class NeverDeferredTrigger extends DeferredTrigger {
+}
+declare class IdleDeferredTrigger extends DeferredTrigger {
+    timeout: number | null;
+    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null, timeout: number | null);
+}
+declare class ImmediateDeferredTrigger extends DeferredTrigger {
+}
+declare class HoverDeferredTrigger extends DeferredTrigger {
+    reference: string | null;
+    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
+}
+declare class TimerDeferredTrigger extends DeferredTrigger {
+    delay: number;
+    constructor(delay: number, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
+}
+declare class InteractionDeferredTrigger extends DeferredTrigger {
+    reference: string | null;
+    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
+}
+declare class ViewportDeferredTrigger extends DeferredTrigger {
+    readonly reference: string | null;
+    readonly options: LiteralMap | null;
+    constructor(reference: string | null, options: LiteralMap | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
+}
+declare class BlockNode {
+    nameSpan: ParseSourceSpan$1;
+    sourceSpan: ParseSourceSpan$1;
+    startSourceSpan: ParseSourceSpan$1;
+    endSourceSpan: ParseSourceSpan$1 | null;
+    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null);
+}
+declare class DeferredBlockPlaceholder extends BlockNode implements Node {
+    children: Node[];
+    minimumTime: number | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(children: Node[], minimumTime: number | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class DeferredBlockLoading extends BlockNode implements Node {
+    children: Node[];
+    afterTime: number | null;
+    minimumTime: number | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(children: Node[], afterTime: number | null, minimumTime: number | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class DeferredBlockError extends BlockNode implements Node {
+    children: Node[];
+    i18n?: I18nMeta$1 | undefined;
+    constructor(children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class ContentBlock extends BlockNode implements Node {
+    name: string;
+    variables: Variable[];
+    children: Node[];
+    i18n?: I18nMeta$1 | undefined;
+    constructor(name: string, variables: Variable[], children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class BoundaryBlock extends BlockNode implements Node {
+    children: Node[];
+    errorBlocks: BoundaryErrorBlock[];
+    mainBlockSpan: ParseSourceSpan$1;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(children: Node[], errorBlocks: BoundaryErrorBlock[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class BoundaryErrorBlock extends BlockNode implements Node {
+    children: Node[];
+    contextVariables: Variable[];
+    expression: AST | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(children: Node[], contextVariables: Variable[], expression: AST | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+interface DeferredBlockTriggers {
+    when?: BoundDeferredTrigger;
+    idle?: IdleDeferredTrigger;
+    immediate?: ImmediateDeferredTrigger;
+    hover?: HoverDeferredTrigger;
+    timer?: TimerDeferredTrigger;
+    interaction?: InteractionDeferredTrigger;
+    viewport?: ViewportDeferredTrigger;
+    never?: NeverDeferredTrigger;
+}
+declare class DeferredBlock extends BlockNode implements Node {
+    children: Node[];
+    placeholder: DeferredBlockPlaceholder | null;
+    loading: DeferredBlockLoading | null;
+    error: DeferredBlockError | null;
+    mainBlockSpan: ParseSourceSpan$1;
+    definedName: string | null;
+    i18n?: I18nMeta$1 | undefined;
+    readonly triggers: Readonly<DeferredBlockTriggers>;
+    readonly prefetchTriggers: Readonly<DeferredBlockTriggers>;
+    readonly hydrateTriggers: Readonly<DeferredBlockTriggers>;
+    private readonly definedTriggers;
+    private readonly definedPrefetchTriggers;
+    private readonly definedHydrateTriggers;
+    constructor(children: Node[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, hydrateTriggers: DeferredBlockTriggers, placeholder: DeferredBlockPlaceholder | null, loading: DeferredBlockLoading | null, error: DeferredBlockError | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, definedName: string | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+    visitAll(visitor: Visitor<unknown>): void;
+    private visitTriggers;
+}
+declare class SwitchBlock extends BlockNode implements Node {
+    expression: AST;
+    groups: SwitchBlockCaseGroup[];
+    /**
+     * These blocks are only captured to allow for autocompletion in the language service. They
+     * aren't meant to be processed in any other way.
+     */
+    unknownBlocks: UnknownBlock[];
+    exhaustiveCheck: SwitchExhaustiveCheck | null;
+    constructor(expression: AST, groups: SwitchBlockCaseGroup[], 
+    /**
+     * These blocks are only captured to allow for autocompletion in the language service. They
+     * aren't meant to be processed in any other way.
+     */
+    unknownBlocks: UnknownBlock[], exhaustiveCheck: SwitchExhaustiveCheck | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class SwitchBlockCase extends BlockNode implements Node {
+    expression: AST | null;
+    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class SwitchBlockCaseGroup extends BlockNode implements Node {
+    cases: SwitchBlockCase[];
+    children: Node[];
+    i18n?: I18nMeta$1 | undefined;
+    constructor(cases: SwitchBlockCase[], children: Node[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class SwitchExhaustiveCheck extends BlockNode implements Node {
+    expression: AST | null;
+    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class ForLoopBlock extends BlockNode implements Node {
+    item: Variable;
+    expression: ASTWithSource;
+    trackBy: ASTWithSource | null;
+    trackKeywordSpan: ParseSourceSpan$1 | null;
+    contextVariables: Variable[];
+    children: Node[];
+    empty: ForLoopBlockEmpty | null;
+    mainBlockSpan: ParseSourceSpan$1;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(item: Variable, expression: ASTWithSource, trackBy: ASTWithSource | null, trackKeywordSpan: ParseSourceSpan$1 | null, contextVariables: Variable[], children: Node[], empty: ForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class ForLoopBlockEmpty extends BlockNode implements Node {
+    children: Node[];
+    i18n?: I18nMeta$1 | undefined;
+    constructor(children: Node[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class IfBlock extends BlockNode implements Node {
+    branches: IfBlockBranch[];
+    constructor(branches: IfBlockBranch[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class IfBlockBranch extends BlockNode implements Node {
+    expression: AST | null;
+    children: Node[];
+    expressionAlias: Variable | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(expression: AST | null, children: Node[], expressionAlias: Variable | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class UnknownBlock implements Node {
+    name: string;
+    sourceSpan: ParseSourceSpan$1;
+    nameSpan: ParseSourceSpan$1;
+    constructor(name: string, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class LetDeclaration implements Node {
+    name: string;
+    value: AST;
+    sourceSpan: ParseSourceSpan$1;
+    nameSpan: ParseSourceSpan$1;
+    valueSpan: ParseSourceSpan$1;
+    constructor(name: string, value: AST, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Component implements Node {
+    componentName: string;
+    tagName: string | null;
+    fullName: string;
+    attributes: TextAttribute[];
+    inputs: BoundAttribute[];
+    outputs: BoundEvent[];
+    directives: Directive[];
+    children: Node[];
+    references: Reference[];
+    isSelfClosing: boolean;
+    sourceSpan: ParseSourceSpan$1;
+    startSourceSpan: ParseSourceSpan$1;
+    endSourceSpan: ParseSourceSpan$1 | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(componentName: string, tagName: string | null, fullName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Directive implements Node {
+    name: string;
+    attributes: TextAttribute[];
+    inputs: BoundAttribute[];
+    outputs: BoundEvent[];
+    references: Reference[];
+    sourceSpan: ParseSourceSpan$1;
+    startSourceSpan: ParseSourceSpan$1;
+    endSourceSpan: ParseSourceSpan$1 | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], references: Reference[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Template implements Node {
+    tagName: string | null;
+    attributes: TextAttribute[];
+    inputs: BoundAttribute[];
+    outputs: BoundEvent[];
+    directives: Directive[];
+    templateAttrs: (BoundAttribute | TextAttribute)[];
+    children: Node[];
+    references: Reference[];
+    variables: Variable[];
+    isSelfClosing: boolean;
+    sourceSpan: ParseSourceSpan$1;
+    startSourceSpan: ParseSourceSpan$1;
+    endSourceSpan: ParseSourceSpan$1 | null;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Content implements Node {
+    selector: string;
+    attributes: TextAttribute[];
+    children: Node[];
+    isSelfClosing: boolean;
+    sourceSpan: ParseSourceSpan$1;
+    startSourceSpan: ParseSourceSpan$1;
+    endSourceSpan: ParseSourceSpan$1 | null;
+    i18n?: I18nMeta$1 | undefined;
+    readonly name = "ng-content";
+    constructor(selector: string, attributes: TextAttribute[], children: Node[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Variable implements Node {
+    name: string;
+    value: string;
+    sourceSpan: ParseSourceSpan$1;
+    readonly keySpan: ParseSourceSpan$1;
+    valueSpan?: ParseSourceSpan$1 | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Reference implements Node {
+    name: string;
+    value: string;
+    sourceSpan: ParseSourceSpan$1;
+    readonly keySpan: ParseSourceSpan$1;
+    valueSpan?: ParseSourceSpan$1 | undefined;
+    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+declare class Icu implements Node {
+    vars: {
+        [name: string]: BoundText;
+    };
+    placeholders: {
+        [name: string]: Text | BoundText;
+    };
+    sourceSpan: ParseSourceSpan$1;
+    i18n?: I18nMeta$1 | undefined;
+    constructor(vars: {
+        [name: string]: BoundText;
+    }, placeholders: {
+        [name: string]: Text | BoundText;
+    }, sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
+    visit<Result>(visitor: Visitor<Result>): Result;
+}
+/**
+ * AST node that represents the host element of a directive.
+ * This node is used only for type checking purposes and cannot be produced from a user's template.
+ */
+declare class HostElement implements Node {
+    readonly tagNames: string[];
+    readonly bindings: BoundAttribute[];
+    readonly listeners: BoundEvent[];
+    readonly sourceSpan: ParseSourceSpan$1;
+    constructor(tagNames: string[], bindings: BoundAttribute[], listeners: BoundEvent[], sourceSpan: ParseSourceSpan$1);
+    visit<Result>(): Result;
+}
+interface Visitor<Result = any> {
+    visit?(node: Node): Result;
+    visitElement(element: Element): Result;
+    visitTemplate(template: Template): Result;
+    visitContent(content: Content): Result;
+    visitVariable(variable: Variable): Result;
+    visitReference(reference: Reference): Result;
+    visitTextAttribute(attribute: TextAttribute): Result;
+    visitBoundAttribute(attribute: BoundAttribute): Result;
+    visitBoundEvent(attribute: BoundEvent): Result;
+    visitText(text: Text): Result;
+    visitBoundText(text: BoundText): Result;
+    visitIcu(icu: Icu): Result;
+    visitDeferredBlock(deferred: DeferredBlock): Result;
+    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): Result;
+    visitDeferredBlockError(block: DeferredBlockError): Result;
+    visitDeferredBlockLoading(block: DeferredBlockLoading): Result;
+    visitDeferredTrigger(trigger: DeferredTrigger): Result;
+    visitSwitchBlock(block: SwitchBlock): Result;
+    visitSwitchBlockCase(block: SwitchBlockCase): Result;
+    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): Result;
+    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): Result;
+    visitForLoopBlock(block: ForLoopBlock): Result;
+    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): Result;
+    visitIfBlock(block: IfBlock): Result;
+    visitIfBlockBranch(block: IfBlockBranch): Result;
+    visitBoundaryBlock(block: BoundaryBlock): Result;
+    visitBoundaryErrorBlock(block: BoundaryErrorBlock): Result;
+    visitUnknownBlock(block: UnknownBlock): Result;
+    visitLetDeclaration(decl: LetDeclaration): Result;
+    visitComponent(component: Component): Result;
+    visitDirective(directive: Directive): Result;
+    visitContentBlock(block: ContentBlock): Result;
+}
+declare class RecursiveVisitor implements Visitor<void> {
+    visitElement(element: Element): void;
+    visitTemplate(template: Template): void;
+    visitDeferredBlock(deferred: DeferredBlock): void;
+    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): void;
+    visitDeferredBlockError(block: DeferredBlockError): void;
+    visitDeferredBlockLoading(block: DeferredBlockLoading): void;
+    visitSwitchBlock(block: SwitchBlock): void;
+    visitSwitchBlockCase(block: SwitchBlockCase): void;
+    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): void;
+    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): void;
+    visitForLoopBlock(block: ForLoopBlock): void;
+    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): void;
+    visitIfBlock(block: IfBlock): void;
+    visitIfBlockBranch(block: IfBlockBranch): void;
+    visitBoundaryBlock(block: BoundaryBlock): void;
+    visitBoundaryErrorBlock(block: BoundaryErrorBlock): void;
+    visitContent(content: Content): void;
+    visitComponent(component: Component): void;
+    visitDirective(directive: Directive): void;
+    visitVariable(variable: Variable): void;
+    visitReference(reference: Reference): void;
+    visitTextAttribute(attribute: TextAttribute): void;
+    visitBoundAttribute(attribute: BoundAttribute): void;
+    visitBoundEvent(attribute: BoundEvent): void;
+    visitText(text: Text): void;
+    visitBoundText(text: BoundText): void;
+    visitIcu(icu: Icu): void;
+    visitDeferredTrigger(trigger: DeferredTrigger): void;
+    visitUnknownBlock(block: UnknownBlock): void;
+    visitLetDeclaration(decl: LetDeclaration): void;
+    visitContentBlock(block: ContentBlock): void;
+}
+declare function visitAll<Result>(visitor: Visitor<Result>, nodes: Node[]): Result[];
+
 interface R3Reference {
     value: Expression;
     type: Expression;
@@ -3259,453 +3726,6 @@ declare class ClassPropertyMapping<T extends InputOrOutput = InputOrOutput> {
      */
     [Symbol.iterator](): IterableIterator<T>;
 }
-
-interface Node {
-    sourceSpan: ParseSourceSpan$1;
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-/**
- * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
- * require the implementation of a visitor for Comments as they are only collected at
- * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
- * is true.
- */
-declare class Comment implements Node {
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    constructor(value: string, sourceSpan: ParseSourceSpan$1);
-    visit<Result>(_visitor: Visitor<Result>): Result;
-}
-declare class Text implements Node {
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    constructor(value: string, sourceSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundText implements Node {
-    value: AST;
-    sourceSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(value: AST, sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-/**
- * Represents a text attribute in the template.
- *
- * `valueSpan` may not be present in cases where there is no value `<div a></div>`.
- * `keySpan` may also not be present for synthetic attributes from ICU expansions.
- */
-declare class TextAttribute implements Node {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1 | undefined;
-    valueSpan?: ParseSourceSpan$1 | undefined;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1 | undefined, valueSpan?: ParseSourceSpan$1 | undefined, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundAttribute implements Node {
-    name: string;
-    type: BindingType;
-    securityContext: SecurityContext;
-    value: AST;
-    unit: string | null;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan: ParseSourceSpan$1 | undefined;
-    i18n: I18nMeta$1 | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1 | undefined, i18n: I18nMeta$1 | undefined);
-    static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nMeta$1): BoundAttribute;
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundEvent implements Node {
-    name: string;
-    type: ParsedEventType;
-    handler: AST;
-    target: string | null;
-    phase: string | null;
-    sourceSpan: ParseSourceSpan$1;
-    handlerSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan$1, handlerSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1);
-    static fromParsedEvent(event: ParsedEvent): BoundEvent;
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Element implements Node {
-    name: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    children: Node[];
-    references: Reference[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    readonly isVoid: boolean;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, isVoid: boolean, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare abstract class DeferredTrigger implements Node {
-    nameSpan: ParseSourceSpan$1 | null;
-    sourceSpan: ParseSourceSpan$1;
-    prefetchSpan: ParseSourceSpan$1 | null;
-    whenOrOnSourceSpan: ParseSourceSpan$1 | null;
-    hydrateSpan: ParseSourceSpan$1 | null;
-    constructor(nameSpan: ParseSourceSpan$1 | null, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, whenOrOnSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundDeferredTrigger extends DeferredTrigger {
-    value: AST;
-    constructor(value: AST, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, whenSourceSpan: ParseSourceSpan$1, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class NeverDeferredTrigger extends DeferredTrigger {
-}
-declare class IdleDeferredTrigger extends DeferredTrigger {
-    timeout: number | null;
-    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null, timeout: number | null);
-}
-declare class ImmediateDeferredTrigger extends DeferredTrigger {
-}
-declare class HoverDeferredTrigger extends DeferredTrigger {
-    reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class TimerDeferredTrigger extends DeferredTrigger {
-    delay: number;
-    constructor(delay: number, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class InteractionDeferredTrigger extends DeferredTrigger {
-    reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class ViewportDeferredTrigger extends DeferredTrigger {
-    readonly reference: string | null;
-    readonly options: LiteralMap | null;
-    constructor(reference: string | null, options: LiteralMap | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class BlockNode {
-    nameSpan: ParseSourceSpan$1;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null);
-}
-declare class DeferredBlockPlaceholder extends BlockNode implements Node {
-    children: Node[];
-    minimumTime: number | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], minimumTime: number | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class DeferredBlockLoading extends BlockNode implements Node {
-    children: Node[];
-    afterTime: number | null;
-    minimumTime: number | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], afterTime: number | null, minimumTime: number | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class DeferredBlockError extends BlockNode implements Node {
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class ContentBlock extends BlockNode implements Node {
-    name: string;
-    variables: Variable[];
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, variables: Variable[], children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-interface DeferredBlockTriggers {
-    when?: BoundDeferredTrigger;
-    idle?: IdleDeferredTrigger;
-    immediate?: ImmediateDeferredTrigger;
-    hover?: HoverDeferredTrigger;
-    timer?: TimerDeferredTrigger;
-    interaction?: InteractionDeferredTrigger;
-    viewport?: ViewportDeferredTrigger;
-    never?: NeverDeferredTrigger;
-}
-declare class DeferredBlock extends BlockNode implements Node {
-    children: Node[];
-    placeholder: DeferredBlockPlaceholder | null;
-    loading: DeferredBlockLoading | null;
-    error: DeferredBlockError | null;
-    mainBlockSpan: ParseSourceSpan$1;
-    definedName: string | null;
-    i18n?: I18nMeta$1 | undefined;
-    readonly triggers: Readonly<DeferredBlockTriggers>;
-    readonly prefetchTriggers: Readonly<DeferredBlockTriggers>;
-    readonly hydrateTriggers: Readonly<DeferredBlockTriggers>;
-    private readonly definedTriggers;
-    private readonly definedPrefetchTriggers;
-    private readonly definedHydrateTriggers;
-    constructor(children: Node[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, hydrateTriggers: DeferredBlockTriggers, placeholder: DeferredBlockPlaceholder | null, loading: DeferredBlockLoading | null, error: DeferredBlockError | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, definedName: string | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-    visitAll(visitor: Visitor<unknown>): void;
-    private visitTriggers;
-}
-declare class SwitchBlock extends BlockNode implements Node {
-    expression: AST;
-    groups: SwitchBlockCaseGroup[];
-    /**
-     * These blocks are only captured to allow for autocompletion in the language service. They
-     * aren't meant to be processed in any other way.
-     */
-    unknownBlocks: UnknownBlock[];
-    exhaustiveCheck: SwitchExhaustiveCheck | null;
-    constructor(expression: AST, groups: SwitchBlockCaseGroup[], 
-    /**
-     * These blocks are only captured to allow for autocompletion in the language service. They
-     * aren't meant to be processed in any other way.
-     */
-    unknownBlocks: UnknownBlock[], exhaustiveCheck: SwitchExhaustiveCheck | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class SwitchBlockCase extends BlockNode implements Node {
-    expression: AST | null;
-    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class SwitchBlockCaseGroup extends BlockNode implements Node {
-    cases: SwitchBlockCase[];
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(cases: SwitchBlockCase[], children: Node[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class SwitchExhaustiveCheck extends BlockNode implements Node {
-    expression: AST | null;
-    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class ForLoopBlock extends BlockNode implements Node {
-    item: Variable;
-    expression: ASTWithSource;
-    trackBy: ASTWithSource | null;
-    trackKeywordSpan: ParseSourceSpan$1 | null;
-    contextVariables: Variable[];
-    children: Node[];
-    empty: ForLoopBlockEmpty | null;
-    mainBlockSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(item: Variable, expression: ASTWithSource, trackBy: ASTWithSource | null, trackKeywordSpan: ParseSourceSpan$1 | null, contextVariables: Variable[], children: Node[], empty: ForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class ForLoopBlockEmpty extends BlockNode implements Node {
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class IfBlock extends BlockNode implements Node {
-    branches: IfBlockBranch[];
-    constructor(branches: IfBlockBranch[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class IfBlockBranch extends BlockNode implements Node {
-    expression: AST | null;
-    children: Node[];
-    expressionAlias: Variable | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(expression: AST | null, children: Node[], expressionAlias: Variable | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class UnknownBlock implements Node {
-    name: string;
-    sourceSpan: ParseSourceSpan$1;
-    nameSpan: ParseSourceSpan$1;
-    constructor(name: string, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class LetDeclaration implements Node {
-    name: string;
-    value: AST;
-    sourceSpan: ParseSourceSpan$1;
-    nameSpan: ParseSourceSpan$1;
-    valueSpan: ParseSourceSpan$1;
-    constructor(name: string, value: AST, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Component implements Node {
-    componentName: string;
-    tagName: string | null;
-    fullName: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    children: Node[];
-    references: Reference[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(componentName: string, tagName: string | null, fullName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Directive implements Node {
-    name: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    references: Reference[];
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], references: Reference[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Template implements Node {
-    tagName: string | null;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    templateAttrs: (BoundAttribute | TextAttribute)[];
-    children: Node[];
-    references: Reference[];
-    variables: Variable[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Content implements Node {
-    selector: string;
-    attributes: TextAttribute[];
-    children: Node[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    readonly name = "ng-content";
-    constructor(selector: string, attributes: TextAttribute[], children: Node[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Variable implements Node {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan?: ParseSourceSpan$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Reference implements Node {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan?: ParseSourceSpan$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Icu implements Node {
-    vars: {
-        [name: string]: BoundText;
-    };
-    placeholders: {
-        [name: string]: Text | BoundText;
-    };
-    sourceSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(vars: {
-        [name: string]: BoundText;
-    }, placeholders: {
-        [name: string]: Text | BoundText;
-    }, sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-/**
- * AST node that represents the host element of a directive.
- * This node is used only for type checking purposes and cannot be produced from a user's template.
- */
-declare class HostElement implements Node {
-    readonly tagNames: string[];
-    readonly bindings: BoundAttribute[];
-    readonly listeners: BoundEvent[];
-    readonly sourceSpan: ParseSourceSpan$1;
-    constructor(tagNames: string[], bindings: BoundAttribute[], listeners: BoundEvent[], sourceSpan: ParseSourceSpan$1);
-    visit<Result>(): Result;
-}
-interface Visitor<Result = any> {
-    visit?(node: Node): Result;
-    visitElement(element: Element): Result;
-    visitTemplate(template: Template): Result;
-    visitContent(content: Content): Result;
-    visitVariable(variable: Variable): Result;
-    visitReference(reference: Reference): Result;
-    visitTextAttribute(attribute: TextAttribute): Result;
-    visitBoundAttribute(attribute: BoundAttribute): Result;
-    visitBoundEvent(attribute: BoundEvent): Result;
-    visitText(text: Text): Result;
-    visitBoundText(text: BoundText): Result;
-    visitIcu(icu: Icu): Result;
-    visitDeferredBlock(deferred: DeferredBlock): Result;
-    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): Result;
-    visitDeferredBlockError(block: DeferredBlockError): Result;
-    visitDeferredBlockLoading(block: DeferredBlockLoading): Result;
-    visitDeferredTrigger(trigger: DeferredTrigger): Result;
-    visitSwitchBlock(block: SwitchBlock): Result;
-    visitSwitchBlockCase(block: SwitchBlockCase): Result;
-    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): Result;
-    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): Result;
-    visitForLoopBlock(block: ForLoopBlock): Result;
-    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): Result;
-    visitIfBlock(block: IfBlock): Result;
-    visitIfBlockBranch(block: IfBlockBranch): Result;
-    visitUnknownBlock(block: UnknownBlock): Result;
-    visitLetDeclaration(decl: LetDeclaration): Result;
-    visitComponent(component: Component): Result;
-    visitDirective(directive: Directive): Result;
-    visitContentBlock(block: ContentBlock): Result;
-}
-declare class RecursiveVisitor implements Visitor<void> {
-    visitElement(element: Element): void;
-    visitTemplate(template: Template): void;
-    visitDeferredBlock(deferred: DeferredBlock): void;
-    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): void;
-    visitDeferredBlockError(block: DeferredBlockError): void;
-    visitDeferredBlockLoading(block: DeferredBlockLoading): void;
-    visitSwitchBlock(block: SwitchBlock): void;
-    visitSwitchBlockCase(block: SwitchBlockCase): void;
-    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): void;
-    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): void;
-    visitForLoopBlock(block: ForLoopBlock): void;
-    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): void;
-    visitIfBlock(block: IfBlock): void;
-    visitIfBlockBranch(block: IfBlockBranch): void;
-    visitContent(content: Content): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
-    visitVariable(variable: Variable): void;
-    visitReference(reference: Reference): void;
-    visitTextAttribute(attribute: TextAttribute): void;
-    visitBoundAttribute(attribute: BoundAttribute): void;
-    visitBoundEvent(attribute: BoundEvent): void;
-    visitText(text: Text): void;
-    visitBoundText(text: BoundText): void;
-    visitIcu(icu: Icu): void;
-    visitDeferredTrigger(trigger: DeferredTrigger): void;
-    visitUnknownBlock(block: UnknownBlock): void;
-    visitLetDeclaration(decl: LetDeclaration): void;
-    visitContentBlock(block: ContentBlock): void;
-}
-declare function visitAll<Result>(visitor: Visitor<Result>, nodes: Node[]): Result[];
 
 /** Node that has a `Scope` associated with it. */
 type ScopedNode = Template | SwitchBlockCaseGroup | IfBlockBranch | ForLoopBlock | ForLoopBlockEmpty | DeferredBlock | DeferredBlockError | DeferredBlockLoading | DeferredBlockPlaceholder | Content | ContentBlock | HostElement;
@@ -5803,6 +5823,9 @@ declare class Identifiers {
     static conditionalCreate: ExternalReference;
     static conditionalBranchCreate: ExternalReference;
     static conditional: ExternalReference;
+    static boundaryCreate: ExternalReference;
+    static boundaryUpdate: ExternalReference;
+    static getBoundary: ExternalReference;
     static repeater: ExternalReference;
     static repeaterCreate: ExternalReference;
     static repeaterTrackByIndex: ExternalReference;
@@ -6076,6 +6099,8 @@ declare class CombinedRecursiveAstVisitor extends RecursiveAstVisitor implements
     visitForLoopBlockEmpty(block: ForLoopBlockEmpty): void;
     visitIfBlock(block: IfBlock): void;
     visitIfBlockBranch(block: IfBlockBranch): void;
+    visitBoundaryBlock(block: BoundaryBlock): void;
+    visitBoundaryErrorBlock(block: BoundaryErrorBlock): void;
     visitLetDeclaration(decl: LetDeclaration): void;
     visitComponent(component: Component): void;
     visitDirective(directive: Directive): void;
@@ -6810,5 +6835,5 @@ declare enum TcbGenericContextBehavior {
  */
 declare const LEGACY_OPTIONAL_CHAINING_DEFAULT = false;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, Component as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core_d as core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, BoundaryBlock as TmplAstBoundaryBlock, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, Component as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core_d as core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll as tmplAstVisitAll, verifyHostBindings, visitAll$1 as visitAll };
 export type { ArrowFunctionParameter, AssignmentOperation, AstVisitor, BindingPropertyName, BoundTarget, ClassPropertyName, CompileClassMetadataFn, CompileIdentifierMetadata, ConflictingHostDirectiveBinding, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, DomSchemaChecker, ExpressionVisitor, ForeignComponentMeta, HostBindingDecorator, HostListenerDecorator, HostObjectLiteralBinding, InputOrOutput, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LexerRange, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MaybeForwardRefExpression, Node$1 as Node, OutOfBandDiagnosticRecorder, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareServiceMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3ForeignComponentMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3ServiceMetadata, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, SourceNode, StatementVisitor, StaticSourceNode, TagDefinition, Target, TargetBinder, TcbComponentMetadata, TcbDirectiveMetadata, TcbEnvironment, TcbInputMapping, TcbPipeMetadata, TcbReferenceKey, TcbReferenceMetadata, TcbTypeCheckBlockMetadata, TcbTypeParameter, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, TemplateGuardMeta, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TypeCheckId, TypeCheckingConfig, TypeCtorMetadata, TypeVisitor, Visitor$1 as Visitor };
