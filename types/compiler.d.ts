@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-next.7+sha-5cdae0a
+ * @license Angular v22.2.0-next.7+sha-312e1d8
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6159,6 +6159,7 @@ declare const _ATTR_TO_PROP: Map<string, string>;
 declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
     private _schema;
     private _eventSchema;
+    private _allKnownEvents;
     constructor();
     hasProperty(tagName: string, propName: string, schemaMetas: SchemaMetadata[]): boolean;
     hasElement(tagName: string, schemaMetas: SchemaMetadata[]): boolean;
@@ -6186,6 +6187,7 @@ declare class DomElementSchemaRegistry extends ElementSchemaRegistry {
     allKnownElementNames(): string[];
     allKnownAttributesOfElement(tagName: string): string[];
     allKnownEventsOfElement(tagName: string): string[];
+    isKnownEventOfAnyElement(eventName: string): boolean;
     normalizeAnimationStyleProperty(propName: string): string;
     normalizeAnimationStyleValue(camelCaseProp: string, userProvidedProp: string, val: string | number): {
         error: string;
@@ -6460,6 +6462,11 @@ interface TypeCheckingConfig {
      * Whether to infer the type of the `$event` variable in event bindings to DOM events.
      */
     checkTypeOfDomEvents: boolean;
+    /**
+     * Whether to report event bindings on elements with matched directives whose name matches
+     * neither an output of the matched directives nor a known native DOM event.
+     */
+    checkUnclaimedEventNames: boolean;
     /**
      * Whether to infer the type of local references to DOM elements.
      */
@@ -6776,6 +6783,21 @@ interface DomSchemaChecker<T> {
      * property.
      */
     checkTemplateElementProperty(id: string, tagName: string, name: string, span: ParseSourceSpan$1, schemas: SchemaMetadata[], hostIsStandalone: boolean): void;
+    /**
+     * Check an event binding on an element that wasn't claimed by any directive's output and record
+     * any diagnostics about it.
+     *
+     * @param id the type check ID, suitable for resolution with a `TcbSourceResolver`.
+     * @param tagName tag name of the element.
+     * @param eventName the name of the event being checked.
+     * @param span the source span of the event binding's key.
+     * @param schemas any active schemas for the template, which might affect the validity of the
+     * event.
+     * @param hasComponent whether an Angular component matched on the element. Elements with a
+     * matched component are checked even in the presence of `CUSTOM_ELEMENTS_SCHEMA`, since they
+     * aren't custom elements.
+     */
+    checkTemplateElementEvent(id: TypeCheckId, tagName: string, eventName: string, span: ParseSourceSpan$1, schemas: SchemaMetadata[], hasComponent: boolean): void;
     /**
      * Check a property binding on a host element and record any diagnostics about it.
      * @param id the type check ID, suitable for resolution with a `TcbSourceResolver`.
