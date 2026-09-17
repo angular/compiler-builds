@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.0+sha-7e678e0
+ * @license Angular v22.3.0-next.0+sha-a783c4e
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1708,7 +1708,7 @@ declare class ConstantPool {
     constructor(isClosureCompilerEnabled?: boolean);
     getConstLiteral(literal: Expression, forceShared?: boolean): Expression;
     getSharedConstant(def: SharedConstantDefinition, expr: Expression): Expression;
-    getSharedFunctionReference(fn: Expression, prefix: string, useUniqueName?: boolean): Expression;
+    getSharedFunctionReference(fn: Expression, prefix: string, useUniqueName?: boolean): ReadVarExpr;
     /**
      * Produce a unique name in the context of this pool.
      *
