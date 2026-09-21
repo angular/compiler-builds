@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.0+sha-34c84cd
+ * @license Angular v22.3.0-next.0+sha-93a351d
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3443,6 +3443,7 @@ declare class EmitterVisitorContext {
     toSource(): string;
     toSourceMapGenerator(genFilePath: string, startsAtLine?: number): SourceMapGenerator;
     spanOf(line: number, column: number): ParseSourceSpan$1 | null;
+    addUniqueSingleLineComment(commentText: string): void;
 }
 declare abstract class AbstractEmitterVisitor implements StatementVisitor, ExpressionVisitor, TypeVisitor {
     protected readonly printComments: boolean;
