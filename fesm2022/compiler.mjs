@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0-rc.0+sha-378ecfc
+ * @license Angular v22.2.0-rc.0+sha-bc402cf
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1606,16 +1606,18 @@ class LiteralMapPropertyAssignment {
   key;
   value;
   quoted;
-  constructor(key, value, quoted) {
+  leadingComments;
+  constructor(key, value, quoted, leadingComments) {
     this.key = key;
     this.value = value;
     this.quoted = quoted;
+    this.leadingComments = leadingComments;
   }
   isEquivalent(e) {
     return this.key === e.key && this.value.isEquivalent(e.value);
   }
   clone() {
-    return new LiteralMapPropertyAssignment(this.key, this.value.clone(), this.quoted);
+    return new LiteralMapPropertyAssignment(this.key, this.value.clone(), this.quoted, this.leadingComments ? [...this.leadingComments] : undefined);
   }
   isConstant() {
     return this.value.isConstant();
@@ -3863,15 +3865,26 @@ class AbstractEmitterVisitor {
   visitLiteralMapExpr(ast, ctx) {
     this.printLeadingComments(ast, ctx);
     ctx.print(ast, `{`);
-    this.visitAllObjects(entry => {
+    for (let i = 0; i < ast.entries.length; i++) {
+      const entry = ast.entries[i];
       if (entry instanceof LiteralMapSpreadAssignment) {
+        if (i > 0) {
+          ctx.print(ast, ', ', false);
+        }
         ctx.print(ast, '...');
         entry.expression.visitExpression(this, ctx);
       } else {
+        const hasLeadingComments = this.printComments && entry.leadingComments !== undefined && entry.leadingComments.length > 0;
+        if (i > 0) {
+          ctx.print(ast, hasLeadingComments ? ',' : ', ', hasLeadingComments);
+        } else if (hasLeadingComments) {
+          ctx.println(ast);
+        }
+        this.printLeadingComments(entry, ctx);
         ctx.print(ast, `${escapeIdentifier(entry.key, entry.quoted)}: `);
         entry.value.visitExpression(this, ctx);
       }
-    }, ast.entries, ctx, ', ');
+    }
     ctx.print(ast, `}`);
   }
   visitCommaExpr(ast, ctx) {
@@ -30082,7 +30095,27 @@ function compileClassMetadata(metadata) {
   return arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]).callFn([]);
 }
 function internalCompileClassMetadata(metadata) {
-  return importExpr(Identifiers.setClassMetadata).callFn([metadata.type, metadata.decorators, metadata.ctorParameters ?? literal(null), metadata.propDecorators ?? literal(null)]);
+  return importExpr(Identifiers.setClassMetadata).callFn([metadata.type, metadata.decorators, compileCtorParameters(metadata.ctorParameters, true), metadata.propDecorators ?? literal(null)]);
+}
+function compileCtorParameters(ctorParameters, allowSuppressions) {
+  if (ctorParameters === null) {
+    return literal(null);
+  }
+  if (!Array.isArray(ctorParameters)) {
+    return ctorParameters;
+  }
+  const params = ctorParameters.map(param => {
+    const typeProp = new LiteralMapPropertyAssignment('type', param.type ?? literal(undefined), false);
+    if (allowSuppressions && param.type !== null && param.suppressTypeErrors) {
+      typeProp.leadingComments = [tsIgnoreComment()];
+    }
+    const entries = [typeProp];
+    if (param.decorators !== null) {
+      entries.push(new LiteralMapPropertyAssignment('decorators', param.decorators, false));
+    }
+    return new LiteralMapExpr(entries);
+  });
+  return arrowFn([], literalArr(params));
 }
 function compileComponentClassMetadata(metadata, dependencies) {
   if (dependencies === null || dependencies.length === 0) {
@@ -30121,11 +30154,11 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
-  definitionMap.set('ctorParameters', metadata.ctorParameters);
+  definitionMap.set('ctorParameters', metadata.ctorParameters === null ? null : compileCtorParameters(metadata.ctorParameters, false));
   definitionMap.set('propDecorators', metadata.propDecorators);
   return importExpr(Identifiers.declareClassMetadata).callFn([definitionMap.toLiteralMap()]);
 }
@@ -30136,10 +30169,10 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   const definitionMap = new DefinitionMap();
   const callbackReturnDefinitionMap = new DefinitionMap();
   callbackReturnDefinitionMap.set('decorators', metadata.decorators);
-  callbackReturnDefinitionMap.set('ctorParameters', metadata.ctorParameters ?? literal(null));
+  callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30212,7 +30245,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -30554,7 +30587,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30580,7 +30613,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30621,7 +30654,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30647,7 +30680,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30677,7 +30710,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30715,7 +30748,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.2.0-rc.0+sha-378ecfc'));
+  definitionMap.set('version', literal('22.2.0-rc.0+sha-bc402cf'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30789,7 +30822,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.2.0-rc.0+sha-378ecfc');
+const VERSION = new Version('22.2.0-rc.0+sha-bc402cf');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
