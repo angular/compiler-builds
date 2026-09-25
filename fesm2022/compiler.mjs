@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.0+sha-d3eaf9a
+ * @license Angular v22.3.0-next.0+sha-3c5ed06
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -824,6 +824,8 @@ var UnaryOperator;
 (function (UnaryOperator) {
   UnaryOperator[UnaryOperator["Minus"] = 0] = "Minus";
   UnaryOperator[UnaryOperator["Plus"] = 1] = "Plus";
+  UnaryOperator[UnaryOperator["Increment"] = 2] = "Increment";
+  UnaryOperator[UnaryOperator["Decrement"] = 3] = "Decrement";
 })(UnaryOperator || (UnaryOperator = {}));
 var BinaryOperator;
 (function (BinaryOperator) {
@@ -1463,14 +1465,16 @@ class UnaryOperatorExpr extends Expression {
   operator;
   expr;
   parens;
-  constructor(operator, expr, type, sourceSpan, parens = true, leadingComments) {
+  isPrefix;
+  constructor(operator, expr, type, sourceSpan, parens = true, leadingComments, isPrefix = true) {
     super(type || NUMBER_TYPE, sourceSpan, leadingComments);
     this.operator = operator;
     this.expr = expr;
     this.parens = parens;
+    this.isPrefix = isPrefix;
   }
   isEquivalent(e) {
-    return e instanceof UnaryOperatorExpr && this.operator === e.operator && this.expr.isEquivalent(e.expr);
+    return e instanceof UnaryOperatorExpr && this.operator === e.operator && this.expr.isEquivalent(e.expr) && this.isPrefix === e.isPrefix;
   }
   isConstant() {
     return false;
@@ -1479,7 +1483,7 @@ class UnaryOperatorExpr extends Expression {
     return visitor.visitUnaryOperatorExpr(this, context);
   }
   clone() {
-    return new UnaryOperatorExpr(this.operator, this.expr.clone(), this.type, this.sourceSpan, this.parens);
+    return new UnaryOperatorExpr(this.operator, this.expr.clone(), this.type, this.sourceSpan, this.parens, this.leadingComments, this.isPrefix);
   }
 }
 class ParenthesizedExpr extends Expression {
@@ -3821,13 +3825,24 @@ class AbstractEmitterVisitor {
       case UnaryOperator.Minus:
         opStr = '-';
         break;
+      case UnaryOperator.Increment:
+        opStr = '++';
+        break;
+      case UnaryOperator.Decrement:
+        opStr = '--';
+        break;
       default:
         throw new Error(`Unknown operator ${ast.operator}`);
     }
     const parens = ast !== this.lastIfCondition;
     if (parens) ctx.print(ast, `(`);
-    ctx.print(ast, opStr);
-    ast.expr.visitExpression(this, ctx);
+    if (ast.isPrefix) {
+      ctx.print(ast, opStr);
+      ast.expr.visitExpression(this, ctx);
+    } else {
+      ast.expr.visitExpression(this, ctx);
+      ctx.print(ast, opStr);
+    }
     if (parens) ctx.print(ast, `)`);
   }
   visitBinaryOperatorExpr(ast, ctx) {
@@ -4481,19 +4496,30 @@ class Binary extends AST {
 class Unary extends Binary {
   operator;
   expr;
+  isPrefix;
   left = null;
   right = null;
   operation = null;
+  static isUpdateOperation(op) {
+    return op === '++' || op === '--';
+  }
   static createMinus(span, sourceSpan, expr) {
-    return new Unary(span, sourceSpan, '-', expr, '-', new LiteralPrimitive(span, sourceSpan, 0), expr);
+    return new Unary(span, sourceSpan, '-', expr);
   }
   static createPlus(span, sourceSpan, expr) {
-    return new Unary(span, sourceSpan, '+', expr, '-', expr, new LiteralPrimitive(span, sourceSpan, 0));
+    return new Unary(span, sourceSpan, '+', expr);
   }
-  constructor(span, sourceSpan, operator, expr, binaryOp, binaryLeft, binaryRight) {
-    super(span, sourceSpan, binaryOp, binaryLeft, binaryRight);
+  static createPrefixUpdate(span, sourceSpan, operator, expr) {
+    return new Unary(span, sourceSpan, operator, expr, true);
+  }
+  static createPostfixUpdate(span, sourceSpan, operator, expr) {
+    return new Unary(span, sourceSpan, operator, expr, false);
+  }
+  constructor(span, sourceSpan, operator, expr, isPrefix = true) {
+    super(span, sourceSpan, null, null, null);
     this.operator = operator;
     this.expr = expr;
+    this.isPrefix = isPrefix;
   }
   visit(visitor, context = null) {
     if (visitor.visitUnary !== undefined) {
@@ -4613,6 +4639,13 @@ class ParenthesizedExpression extends AST {
   visit(visitor, context) {
     return visitor.visitParenthesizedExpression(this, context);
   }
+}
+function unwrapWriteTarget(ast) {
+  let current = ast;
+  while (current instanceof ParenthesizedExpression || current instanceof NonNullAssert) {
+    current = current.expression;
+  }
+  return current;
 }
 class ArrowFunctionIdentifierParameter {
   name;
@@ -10554,6 +10587,7 @@ function generateBoundaryConditions(job) {
 }
 
 const BINARY_OPERATORS = new Map([['&&', BinaryOperator.And], ['>', BinaryOperator.Bigger], ['>=', BinaryOperator.BiggerEquals], ['|', BinaryOperator.BitwiseOr], ['&', BinaryOperator.BitwiseAnd], ['/', BinaryOperator.Divide], ['=', BinaryOperator.Assign], ['==', BinaryOperator.Equals], ['===', BinaryOperator.Identical], ['<', BinaryOperator.Lower], ['<=', BinaryOperator.LowerEquals], ['-', BinaryOperator.Minus], ['%', BinaryOperator.Modulo], ['**', BinaryOperator.Exponentiation], ['*', BinaryOperator.Multiply], ['!=', BinaryOperator.NotEquals], ['!==', BinaryOperator.NotIdentical], ['??', BinaryOperator.NullishCoalesce], ['||', BinaryOperator.Or], ['+', BinaryOperator.Plus], ['in', BinaryOperator.In], ['instanceof', BinaryOperator.InstanceOf], ['+=', BinaryOperator.AdditionAssignment], ['-=', BinaryOperator.SubtractionAssignment], ['*=', BinaryOperator.MultiplicationAssignment], ['/=', BinaryOperator.DivisionAssignment], ['%=', BinaryOperator.RemainderAssignment], ['**=', BinaryOperator.ExponentiationAssignment], ['&&=', BinaryOperator.AndAssignment], ['||=', BinaryOperator.OrAssignment], ['??=', BinaryOperator.NullishCoalesceAssignment]]);
+const UNARY_OPERATORS = new Map([['+', UnaryOperator.Plus], ['-', UnaryOperator.Minus], ['++', UnaryOperator.Increment], ['--', UnaryOperator.Decrement]]);
 function namespaceForKey(namespacePrefixKey) {
   const NAMESPACES = new Map([['svg', Namespace.SVG], ['math', Namespace.Math]]);
   if (namespacePrefixKey === null) {
@@ -16920,9 +16954,8 @@ class _Scanner {
       case $HASH:
         return this.scanPrivateIdentifier();
       case $PLUS:
-        return this.scanComplexOperator(start, '+', $EQ, '=');
       case $MINUS:
-        return this.scanComplexOperator(start, '-', $EQ, '=');
+        return this.scanPlusOrMinus(start, peek);
       case $SLASH:
         return this.isStartOfRegex() ? this.scanRegex(index) : this.scanComplexOperator(start, '/', $EQ, '=');
       case $PERCENT:
@@ -17144,6 +17177,19 @@ class _Scanner {
     }
     buffer += String.fromCharCode(unescapedCode);
     return buffer;
+  }
+  scanPlusOrMinus(start, code) {
+    const char = String.fromCharCode(code);
+    this.advance();
+    let operator = char;
+    if (this.peek === code) {
+      operator += char;
+      this.advance();
+    } else if (this.peek === $EQ) {
+      operator += '=';
+      this.advance();
+    }
+    return newOperatorToken(start, this.index, operator);
   }
   scanStar(start) {
     this.advance();
@@ -17620,6 +17666,24 @@ class _ParseAST {
   isAssignmentOperator(token) {
     return token.type === TokenType.Operator && Binary.isAssignmentOperation(token.strValue);
   }
+  validateIncrementDecrementTarget(operand) {
+    if (!(this.parseFlags & 1)) {
+      this.error('Bindings cannot contain assignments');
+      return false;
+    }
+    const target = unwrapWriteTarget(operand);
+    if (target instanceof PropertyRead || target instanceof KeyedRead) {
+      return true;
+    }
+    if (!(target instanceof EmptyExpr$1)) {
+      if (target instanceof SafePropertyRead || target instanceof SafeKeyedRead) {
+        this.error(`The '?.' operator cannot be used in the assignment`);
+      } else {
+        this.error('The expression cannot be used in the assignment');
+      }
+    }
+    return false;
+  }
   expectOperator(operator) {
     if (this.consumeOptionalOperator(operator)) return;
     this.error(`Missing expected operator ${operator}`);
@@ -17843,7 +17907,7 @@ class _ParseAST {
     const start = this.inputIndex;
     let result = this.parsePrefix();
     while (this.next.type == TokenType.Operator && this.next.strValue === '**') {
-      if (result instanceof Unary || result instanceof PrefixNot || result instanceof TypeofExpression || result instanceof VoidExpression) {
+      if (result instanceof Unary && !Unary.isUpdateOperation(result.operator) || result instanceof PrefixNot || result instanceof TypeofExpression || result instanceof VoidExpression) {
         this.error('Unary operator used immediately before exponentiation expression. Parenthesis must be used to disambiguate operator precedence');
       }
       this.advance();
@@ -17870,6 +17934,13 @@ class _ParseAST {
           this.advance();
           result = this.parsePrefix();
           return new PrefixNot(this.span(start), this.sourceSpan(start), result);
+        case '++':
+        case '--':
+          {
+            this.advance();
+            const operand = this.parsePrefix();
+            return this.validateIncrementDecrementTarget(operand) ? Unary.createPrefixUpdate(this.span(start), this.sourceSpan(start), operator, operand) : new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+          }
       }
     } else if (this.next.isKeywordTypeof()) {
       const start = this.inputIndex;
@@ -17907,9 +17978,15 @@ class _ParseAST {
       } else if (this.next.isTemplateLiteralPart()) {
         result = this.parseTaggedTemplateLiteral(result, start);
       } else {
-        return result;
+        break;
       }
     }
+    if (this.next.isOperator('++') || this.next.isOperator('--')) {
+      const operator = this.next.strValue;
+      this.advance();
+      return this.validateIncrementDecrementTarget(result) ? Unary.createPostfixUpdate(this.span(start), this.sourceSpan(start), operator, result) : new EmptyExpr$1(this.span(start), this.sourceSpan(start));
+    }
+    return result;
   }
   parsePrimary() {
     const start = this.inputIndex;
@@ -18427,7 +18504,12 @@ function serialize(expression) {
 }
 class SerializeExpressionVisitor {
   visitUnary(ast, context) {
-    return `${ast.operator}${ast.expr.visit(this, context)}`;
+    const inner = ast.expr.visit(this, context);
+    if (ast.isPrefix) {
+      const space = inner.startsWith(ast.operator[0]) ? ' ' : '';
+      return `${ast.operator}${space}${inner}`;
+    }
+    return `${inner}${ast.operator}`;
   }
   visitBinary(ast, context) {
     return `${ast.left.visit(this, context)} ${ast.operation} ${ast.right.visit(this, context)}`;
@@ -24045,14 +24127,10 @@ function convertAst(ast, job, baseSourceSpan) {
   } else if (ast instanceof LiteralPrimitive) {
     return literal(ast.value, undefined, convertSourceSpan(ast.span, baseSourceSpan));
   } else if (ast instanceof Unary) {
-    switch (ast.operator) {
-      case '+':
-        return new UnaryOperatorExpr(UnaryOperator.Plus, convertAst(ast.expr, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
-      case '-':
-        return new UnaryOperatorExpr(UnaryOperator.Minus, convertAst(ast.expr, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan));
-      default:
-        throw new Error(`AssertionError: unknown unary operator ${ast.operator}`);
+    if (!UNARY_OPERATORS.has(ast.operator)) {
+      throw new Error(`AssertionError: unknown unary operator ${ast.operator}`);
     }
+    return new UnaryOperatorExpr(UNARY_OPERATORS.get(ast.operator), convertAst(ast.expr, job, baseSourceSpan), undefined, convertSourceSpan(ast.span, baseSourceSpan), undefined, undefined, ast.isPrefix);
   } else if (ast instanceof Binary) {
     const operator = BINARY_OPERATORS.get(ast.operation);
     if (operator === undefined) {
@@ -30154,7 +30232,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -30172,7 +30250,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30245,7 +30323,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -30587,7 +30665,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30613,7 +30691,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30654,7 +30732,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30680,7 +30758,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30710,7 +30788,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30748,7 +30826,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-d3eaf9a'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-3c5ed06'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30822,7 +30900,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.3.0-next.0+sha-d3eaf9a');
+const VERSION = new Version('22.3.0-next.0+sha-3c5ed06');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -31174,8 +31252,8 @@ class TcbExprTranslator {
     return ast.visit(this);
   }
   visitUnary(ast) {
-    const expr = this.translate(ast.expr);
-    const node = new TcbExpr(`${ast.operator}${expr.print()}`);
+    const expr = this.translate(ast.expr).print();
+    const node = new TcbExpr(ast.isPrefix ? `${ast.operator}${expr}` : `${expr}${ast.operator}`);
     return node.wrapForTypeChecker().addParseSpanInfo(ast.sourceSpan);
   }
   visitBinary(ast) {
@@ -31624,15 +31702,24 @@ class TcbExpressionTranslator {
         }
       }
       return targetExpression;
-    } else if (ast instanceof Binary && Binary.isAssignmentOperation(ast.operation) && ast.left instanceof PropertyRead && (ast.left.receiver instanceof ImplicitReceiver || ast.left.receiver instanceof ThisReceiver)) {
-      const read = ast.left;
+    } else if (ast instanceof Binary && Binary.isAssignmentOperation(ast.operation) || ast instanceof Unary && Unary.isUpdateOperation(ast.operator)) {
+      const update = ast instanceof Unary ? ast : null;
+      const read = unwrapWriteTarget(update !== null ? update.expr : ast.left);
+      if (!(read instanceof PropertyRead) || !(read.receiver instanceof ImplicitReceiver || read.receiver instanceof ThisReceiver)) {
+        return null;
+      }
       const target = this.tcb.boundTarget.getExpressionTarget(read);
       if (target === null) {
         return null;
       }
       const targetExpression = this.getTargetNodeExpression(target, read);
-      const expr = this.translate(ast.right);
-      const result = new TcbExpr(`(${targetExpression.print()} = ${expr.print()})`);
+      let result;
+      if (update !== null) {
+        result = new TcbExpr(update.isPrefix ? `(${update.operator}${targetExpression.print()})` : `(${targetExpression.print()}${update.operator})`);
+      } else {
+        const expr = this.translate(ast.right);
+        result = new TcbExpr(`(${targetExpression.print()} = ${expr.print()})`);
+      }
       result.addParseSpanInfo(read.sourceSpan);
       if (target instanceof LetDeclaration$1) {
         result.markIgnoreDiagnostics();
@@ -33872,5 +33959,5 @@ function renderBlockStatements(env, scope, wrapperExpression) {
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, BoundaryBlock as TmplAstBoundaryBlock, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, Component$1 as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, BoundaryBlock as TmplAstBoundaryBlock, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, Component$1 as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, unwrapWriteTarget, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map
