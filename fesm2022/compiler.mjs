@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.0+sha-222f713
+ * @license Angular v22.2.0+sha-d23932f
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -2249,7 +2249,7 @@ class ConstantPool {
       let value;
       let usage;
       if (this.isClosureCompilerEnabled && isLongStringLiteral(literal)) {
-        value = new FunctionExpr([], [new ReturnStatement(literal)]);
+        value = new FunctionExpr([], [new ReturnStatement(literal)], DYNAMIC_TYPE);
         usage = variable(name).callFn([]);
       } else {
         value = literal;
@@ -5766,7 +5766,7 @@ function wrapReference(value) {
 }
 function refsToArray(refs, shouldForwardDeclare) {
   const values = literalArr(refs.map(ref => ref.value));
-  return shouldForwardDeclare ? arrowFn([], values) : values;
+  return shouldForwardDeclare ? arrowFn([], values, DYNAMIC_TYPE) : values;
 }
 function tsIgnoreComment() {
   return leadingComment('@ts-ignore', true, true);
@@ -5793,7 +5793,7 @@ function convertFromMaybeForwardRefExpression({
   }
 }
 function generateForwardRef(expr) {
-  return importExpr(Identifiers.forwardRef).callFn([arrowFn([], expr)]);
+  return importExpr(Identifiers.forwardRef).callFn([arrowFn([], expr, DYNAMIC_TYPE)]);
 }
 
 var R3FactoryDelegateType;
@@ -5842,9 +5842,9 @@ function compileFactoryFunction(meta) {
   } else {
     body.push(new ReturnStatement(retExpr, null, factoryComments));
   }
-  let factoryFn = fn([new FnParam(t.name, DYNAMIC_TYPE)], body, INFERRED_TYPE, undefined, `${meta.name}_Factory`);
+  let factoryFn = fn([new FnParam(t.name, DYNAMIC_TYPE)], body, DYNAMIC_TYPE, undefined, `${meta.name}_Factory`);
   if (baseFactoryVar !== null) {
-    factoryFn = arrowFn([], [new DeclareVarStmt(baseFactoryVar.name, undefined, DYNAMIC_TYPE), new ReturnStatement(factoryFn)]).callFn([], undefined, true);
+    factoryFn = arrowFn([], [new DeclareVarStmt(baseFactoryVar.name, undefined, DYNAMIC_TYPE), new ReturnStatement(factoryFn)], DYNAMIC_TYPE).callFn([], undefined, true);
   }
   return {
     expression: factoryFn,
@@ -6716,7 +6716,7 @@ function compileInjectable(meta, resolveForwardRefs) {
     } else {
       result = {
         statements: [],
-        expression: arrowFn([], meta.useFactory.callFn([]))
+        expression: arrowFn([], meta.useFactory.callFn([]), DYNAMIC_TYPE)
       };
     }
   } else if (meta.useValue !== undefined) {
@@ -6764,7 +6764,7 @@ function delegateToFactory(type, useType, unwrapForwardRefs) {
 }
 function createFactoryFunction(type) {
   const t = new FnParam('__ngFactoryType__', DYNAMIC_TYPE);
-  return arrowFn([t], type.prop('ɵfac').callFn([variable(t.name)]));
+  return arrowFn([t], type.prop('ɵfac').callFn([variable(t.name)]), DYNAMIC_TYPE);
 }
 
 const LEGACY_OPTIONAL_CHAINING_DEFAULT = false;
@@ -7115,7 +7115,7 @@ function generateSetNgModuleScopeCall(meta) {
   }
   const fnCall = new InvokeFunctionExpr(importExpr(Identifiers.setNgModuleScope), [meta.type.value, scopeMap.toLiteralMap()]);
   const guardedCall = jitOnlyGuardedExpression(fnCall);
-  const iife = new FunctionExpr([], [guardedCall.toStmt()]);
+  const iife = new FunctionExpr([], [guardedCall.toStmt()], DYNAMIC_TYPE);
   const iifeCall = new InvokeFunctionExpr(iife, []);
   return iifeCall.toStmt();
 }
@@ -20782,7 +20782,7 @@ function reifyCreateOperations(unit, ops) {
           value,
           quoted: isUnsafeObjectKey(key)
         }))) : null;
-        const propsExpr = propsMap !== null ? arrowFn([], propsMap) : null;
+        const propsExpr = propsMap !== null ? arrowFn([], propsMap, DYNAMIC_TYPE) : null;
         OpList.replace(op, foreignComponent(op.handle.slot, literal(op.constIndex), propsExpr, op.sourceSpan));
         break;
       case OpKind.ElementEnd:
@@ -21231,7 +21231,7 @@ function reifyListenerHandler(unit, name, handlerOps, consumesDollarEvent) {
   if (consumesDollarEvent) {
     params.push(new FnParam('$event', DYNAMIC_TYPE));
   }
-  return fn(params, handlerStmts, undefined, undefined, name);
+  return fn(params, handlerStmts, DYNAMIC_TYPE, undefined, name);
 }
 function reifyTrackBy(unit, op) {
   if (op.trackByFn !== null) {
@@ -21240,7 +21240,7 @@ function reifyTrackBy(unit, op) {
   const params = [new FnParam('$index', NUMBER_TYPE), new FnParam('$item', DYNAMIC_TYPE)];
   let fn$1;
   if (op.trackByOps === null) {
-    fn$1 = op.usesComponentInstance ? fn(params, [new ReturnStatement(op.track)]) : arrowFn(params, op.track);
+    fn$1 = op.usesComponentInstance ? fn(params, [new ReturnStatement(op.track)], DYNAMIC_TYPE) : arrowFn(params, op.track, DYNAMIC_TYPE);
   } else {
     reifyUpdateOperations(unit, op.trackByOps);
     const statements = [];
@@ -21250,7 +21250,7 @@ function reifyTrackBy(unit, op) {
       }
       statements.push(trackOp.statement);
     }
-    fn$1 = op.usesComponentInstance || statements.length !== 1 || !(statements[0] instanceof ReturnStatement) ? fn(params, statements) : arrowFn(params, statements[0].value);
+    fn$1 = op.usesComponentInstance || statements.length !== 1 || !(statements[0] instanceof ReturnStatement) ? fn(params, statements, DYNAMIC_TYPE) : arrowFn(params, statements[0].value, DYNAMIC_TYPE);
   }
   op.trackByFn = unit.job.pool.getSharedFunctionReference(fn$1, '_forTrack');
   return op.trackByFn;
@@ -21265,7 +21265,7 @@ function getArrowFunctionFactory(unit, expr) {
     statements.push(op.statement);
   }
   const body = statements.length === 1 && statements[0] instanceof ReturnStatement ? statements[0].value : statements;
-  return arrowFn([new FnParam(expr.contextName, DYNAMIC_TYPE), new FnParam(expr.currentViewName, DYNAMIC_TYPE)], arrowFn(expr.parameters, body), DYNAMIC_TYPE);
+  return arrowFn([new FnParam(expr.contextName, DYNAMIC_TYPE), new FnParam(expr.currentViewName, DYNAMIC_TYPE)], arrowFn(expr.parameters, body, DYNAMIC_TYPE), DYNAMIC_TYPE);
 }
 
 function removeEmptyBindings(job) {
@@ -23033,7 +23033,7 @@ function emitView(view) {
   }
   const createCond = maybeGenerateRfBlock(1, createStatements);
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
-  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, view.fnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], DYNAMIC_TYPE, undefined, view.fnName);
 }
 function maybeGenerateRfBlock(flag, statements) {
   if (statements.length === 0) {
@@ -23064,7 +23064,7 @@ function emitHostBindingFunction(job) {
   }
   const createCond = maybeGenerateRfBlock(1, createStatements);
   const updateCond = maybeGenerateRfBlock(2, updateStatements);
-  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], undefined, undefined, job.root.fnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [...createCond, ...updateCond], DYNAMIC_TYPE, undefined, job.root.fnName);
 }
 
 const PROPERTY_PARTS_SEPARATOR = '.';
@@ -24104,7 +24104,7 @@ function convertAst(ast, job, baseSourceSpan) {
   } else if (ast instanceof SpreadElement) {
     return new SpreadElementExpr(convertAst(ast.expression, job, baseSourceSpan));
   } else if (ast instanceof ArrowFunction) {
-    return updateParameterReferences(arrowFn(ast.parameters.map(arg => new FnParam(arg.name, DYNAMIC_TYPE)), convertAst(ast.body, job, baseSourceSpan)));
+    return updateParameterReferences(arrowFn(ast.parameters.map(arg => new FnParam(arg.name, DYNAMIC_TYPE)), convertAst(ast.body, job, baseSourceSpan), DYNAMIC_TYPE));
   } else {
     throw new Error(`Unhandled expression type "${ast.constructor.name}" in file "${baseSourceSpan?.start.file.url}"`);
   }
@@ -24448,7 +24448,7 @@ function createViewQueriesFunction(viewQueries, constantPool, name) {
     createStatements.push(new ExpressionStatement(viewQueryCall));
   }
   const viewQueryFnName = name ? `${name}_Query` : null;
-  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, viewQueryFnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], DYNAMIC_TYPE, null, viewQueryFnName);
 }
 function createContentQueriesFunction(queries, constantPool, name) {
   const createStatements = [];
@@ -24482,7 +24482,7 @@ function createContentQueriesFunction(queries, constantPool, name) {
     createStatements.push(new ExpressionStatement(contentQueryCall));
   }
   const contentQueriesFnName = name ? `${name}_ContentQueries` : null;
-  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE), new FnParam('dirIndex', NUMBER_TYPE)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], INFERRED_TYPE, null, contentQueriesFnName);
+  return fn([new FnParam(RENDER_FLAGS, NUMBER_TYPE), new FnParam(CONTEXT_NAME, DYNAMIC_TYPE), new FnParam('dirIndex', NUMBER_TYPE)], [renderFlagCheckIfStmt(1, createStatements), renderFlagCheckIfStmt(2, collapseAdvanceStatements(updateStatements))], DYNAMIC_TYPE, null, contentQueriesFnName);
 }
 
 class HtmlParser extends Parser$1 {
@@ -26444,7 +26444,7 @@ function compileComponentFromMetadata(meta, constantPool, bindingParser) {
   definitionMap.set('vars', literal(tpl.root.vars));
   if (tpl.consts.length > 0) {
     if (tpl.constsInitializers.length > 0) {
-      definitionMap.set('consts', arrowFn([], [...tpl.constsInitializers, new ReturnStatement(literalArr(tpl.consts))]));
+      definitionMap.set('consts', arrowFn([], [...tpl.constsInitializers, new ReturnStatement(literalArr(tpl.consts))], DYNAMIC_TYPE));
     } else {
       definitionMap.set('consts', literalArr(tpl.consts));
     }
@@ -26520,10 +26520,10 @@ function compileDeclarationList(list, mode) {
     case 0:
       return list;
     case 1:
-      return arrowFn([], list);
+      return arrowFn([], list, DYNAMIC_TYPE);
     case 2:
       const resolvedList = list.prop('map').callFn([importExpr(Identifiers.resolveForwardRef)]);
-      return arrowFn([], resolvedList);
+      return arrowFn([], resolvedList, DYNAMIC_TYPE);
     case 3:
       throw new Error(`Unsupported with an array of pre-resolved dependencies`);
   }
@@ -26747,7 +26747,7 @@ function createHostDirectivesFeatureArg(hostDirectives) {
       hasForwardRef = true;
     }
   }
-  return hasForwardRef ? new FunctionExpr([], [new ReturnStatement(literalArr(expressions))]) : literalArr(expressions);
+  return hasForwardRef ? new FunctionExpr([], [new ReturnStatement(literalArr(expressions))], DYNAMIC_TYPE) : literalArr(expressions);
 }
 function createHostDirectivesMappingArray(mapping) {
   const elements = [];
@@ -26763,7 +26763,7 @@ function compileDeferResolverFunction(meta) {
   if (meta.mode === 0) {
     for (const dep of meta.dependencies) {
       if (dep.isDeferrable) {
-        const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(dep.isDefaultImport ? 'default' : dep.symbolName));
+        const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(dep.isDefaultImport ? 'default' : dep.symbolName), DYNAMIC_TYPE);
         const importExpr = new DynamicImportExpr(dep.importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
         depExpressions.push(importExpr);
       } else {
@@ -26776,12 +26776,12 @@ function compileDeferResolverFunction(meta) {
       importPath,
       isDefaultImport
     } of meta.dependencies) {
-      const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
+      const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName), DYNAMIC_TYPE);
       const importExpr = new DynamicImportExpr(importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
       depExpressions.push(importExpr);
     }
   }
-  return arrowFn([], literalArr(depExpressions));
+  return arrowFn([], literalArr(depExpressions), DYNAMIC_TYPE);
 }
 
 class CombinedRecursiveAstVisitor extends RecursiveAstVisitor {
@@ -27917,7 +27917,7 @@ class ResourceLoader {}
 function compileService(meta, resolveForwardRefs) {
   const def = new DefinitionMap();
   def.set('token', meta.type.value);
-  def.set('factory', meta.factory === undefined ? delegateToFactory(meta.type.value, meta.type.value, resolveForwardRefs) : arrowFn([], meta.factory.callFn([])));
+  def.set('factory', meta.factory === undefined ? delegateToFactory(meta.type.value, meta.type.value, resolveForwardRefs) : arrowFn([], meta.factory.callFn([]), DYNAMIC_TYPE));
   if (meta.autoProvided === false) {
     def.set('autoProvided', literal(false));
   }
@@ -30092,7 +30092,7 @@ class MapPlaceholderNames extends CloneVisitor {
 
 function compileClassMetadata(metadata) {
   const fnCall = internalCompileClassMetadata(metadata);
-  return arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]).callFn([]);
+  return arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()], DYNAMIC_TYPE).callFn([]);
 }
 function internalCompileClassMetadata(metadata) {
   return importExpr(Identifiers.setClassMetadata).callFn([metadata.type, metadata.decorators, compileCtorParameters(metadata.ctorParameters, true), metadata.propDecorators ?? literal(null)]);
@@ -30115,7 +30115,7 @@ function compileCtorParameters(ctorParameters, allowSuppressions) {
     }
     return new LiteralMapExpr(entries);
   });
-  return arrowFn([], literalArr(params));
+  return arrowFn([], literalArr(params), DYNAMIC_TYPE);
 }
 function compileComponentClassMetadata(metadata, dependencies) {
   if (dependencies === null || dependencies.length === 0) {
@@ -30133,9 +30133,9 @@ function compileOpaqueAsyncClassMetadata(metadata, deferResolver, deferredDepend
 }
 function internalCompileSetClassMetadataAsync(metadata, wrapperParams, dependencyResolverFn) {
   const setClassMetadataCall = internalCompileClassMetadata(metadata);
-  const setClassMetaWrapper = arrowFn(wrapperParams, [setClassMetadataCall.toStmt()]);
+  const setClassMetaWrapper = arrowFn(wrapperParams, [setClassMetadataCall.toStmt()], DYNAMIC_TYPE);
   const setClassMetaAsync = importExpr(Identifiers.setClassMetadataAsync).callFn([metadata.type, dependencyResolverFn, setClassMetaWrapper]);
-  return arrowFn([], [devOnlyGuardedExpression(setClassMetaAsync).toStmt()]).callFn([]);
+  return arrowFn([], [devOnlyGuardedExpression(setClassMetaAsync).toStmt()], DYNAMIC_TYPE).callFn([]);
 }
 function compileComponentMetadataAsyncResolver(dependencies) {
   const dynamicImports = dependencies.map(({
@@ -30143,10 +30143,10 @@ function compileComponentMetadataAsyncResolver(dependencies) {
     importPath,
     isDefaultImport
   }) => {
-    const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName));
+    const innerFn = arrowFn([new FnParam('m', DYNAMIC_TYPE)], variable('m').prop(isDefaultImport ? 'default' : symbolName), DYNAMIC_TYPE);
     return new DynamicImportExpr(importPath).prop('then').callFn([innerFn], undefined, undefined, [tsIgnoreComment()]);
   });
-  return arrowFn([], literalArr(dynamicImports));
+  return arrowFn([], literalArr(dynamicImports), DYNAMIC_TYPE);
 }
 
 const MINIMUM_PARTIAL_LINKER_VERSION$6 = '12.0.0';
@@ -30154,7 +30154,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -30172,11 +30172,11 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
-  definitionMap.set('resolveMetadata', arrowFn(dependencies.map(dep => new FnParam(dep.symbolName, DYNAMIC_TYPE)), callbackReturnDefinitionMap.toLiteralMap()));
+  definitionMap.set('resolveMetadata', arrowFn(dependencies.map(dep => new FnParam(dep.symbolName, DYNAMIC_TYPE)), callbackReturnDefinitionMap.toLiteralMap(), DYNAMIC_TYPE));
   return importExpr(Identifiers.declareClassMetadataAsync).callFn([definitionMap.toLiteralMap()]);
 }
 
@@ -30245,7 +30245,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -30587,7 +30587,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30613,7 +30613,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30654,7 +30654,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30680,7 +30680,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30710,7 +30710,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30748,7 +30748,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.2.0+sha-222f713'));
+  definitionMap.set('version', literal('22.2.0+sha-d23932f'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30773,7 +30773,7 @@ function compileClassDebugInfo(debugInfo) {
     debugInfoObject.forbidOrphanRendering = literal(true);
   }
   const fnCall = importExpr(Identifiers.setClassDebugInfo).callFn([debugInfo.type, mapLiteral(debugInfoObject)]);
-  const iife = arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()]);
+  const iife = arrowFn([], [devOnlyGuardedExpression(fnCall).toStmt()], DYNAMIC_TYPE);
   return iife.callFn([]);
 }
 
@@ -30791,14 +30791,14 @@ function compileHmrInitializer(meta) {
   });
   const defaultRead = variable(moduleName).prop('default');
   const replaceCall = importExpr(Identifiers.replaceMetadata).callFn([meta.type, defaultRead, literalArr(namespaces), literalArr(meta.localDependencies.map(l => l.runtimeRepresentation)), variable('import').prop('meta'), variable(idName)]);
-  const replaceCallback = arrowFn([new FnParam(moduleName, DYNAMIC_TYPE)], defaultRead.and(replaceCall));
+  const replaceCallback = arrowFn([new FnParam(moduleName, DYNAMIC_TYPE)], defaultRead.and(replaceCall), DYNAMIC_TYPE);
   const url = importExpr(Identifiers.getReplaceMetadataURL).callFn([variable(idName), variable(timestampName), variable('import').prop('meta').prop('url')]);
-  const importCallback = new DeclareFunctionStmt(importCallbackName, [new FnParam(timestampName, DYNAMIC_TYPE)], [new DynamicImportExpr(url, null, '@vite-ignore').prop('then').callFn([replaceCallback]).toStmt()], null, StmtModifier.Final);
-  const updateCallback = arrowFn([new FnParam(dataName, DYNAMIC_TYPE)], variable(dataName).prop('id').identical(variable(idName)).and(variable(importCallbackName).callFn([variable(dataName).prop('timestamp')])));
+  const importCallback = new DeclareFunctionStmt(importCallbackName, [new FnParam(timestampName, DYNAMIC_TYPE)], [new DynamicImportExpr(url, null, '@vite-ignore').prop('then').callFn([replaceCallback]).toStmt()], DYNAMIC_TYPE, StmtModifier.Final);
+  const updateCallback = arrowFn([new FnParam(dataName, DYNAMIC_TYPE)], variable(dataName).prop('id').identical(variable(idName)).and(variable(importCallbackName).callFn([variable(dataName).prop('timestamp')])), DYNAMIC_TYPE);
   const initialCall = variable(importCallbackName).callFn([variable('Date').prop('now').callFn([])]);
   const hotRead = variable('import').prop('meta').prop('hot');
   const hotListener = hotRead.clone().prop('on').callFn([literal('angular:component-update'), updateCallback]);
-  return arrowFn([], [new DeclareVarStmt(idName, literal(encodeURIComponent(`${meta.filePath}@${meta.className}`)), null, StmtModifier.Final), importCallback, devOnlyGuardedExpression(initialCall).toStmt(), devOnlyGuardedExpression(hotRead.and(hotListener)).toStmt()]).callFn([]);
+  return arrowFn([], [new DeclareVarStmt(idName, literal(encodeURIComponent(`${meta.filePath}@${meta.className}`)), null, StmtModifier.Final), importCallback, devOnlyGuardedExpression(initialCall).toStmt(), devOnlyGuardedExpression(hotRead.and(hotListener)).toStmt()], DYNAMIC_TYPE).callFn([]);
 }
 function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   const namespaces = 'ɵɵnamespaces';
@@ -30819,10 +30819,10 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
       }
     }
   }
-  return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, null, StmtModifier.Final);
+  return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, DYNAMIC_TYPE, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.2.0+sha-222f713');
+const VERSION = new Version('22.2.0+sha-d23932f');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
