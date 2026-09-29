@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.0+sha-2ce1826
+ * @license Angular v22.3.0-next.0+sha-91b8391
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -22183,6 +22183,7 @@ function stripNonrequiredParentheses(job) {
     for (const op of unit.ops()) {
       visitExpressionsInOp(op, expr => {
         if (expr instanceof BinaryOperatorExpr) {
+          checkArrowFunctionOperandParens(expr, requiredParens);
           switch (expr.operator) {
             case BinaryOperator.Exponentiation:
               checkExponentiationParens(expr, requiredParens);
@@ -22194,6 +22195,12 @@ function stripNonrequiredParentheses(job) {
             case BinaryOperator.Or:
               checkAndOrParens(expr, requiredParens);
           }
+        } else if (expr instanceof ReadPropExpr || expr instanceof ReadKeyExpr) {
+          checkTargetParens(expr.receiver, requiredParens);
+        } else if (expr instanceof InvokeFunctionExpr) {
+          checkTargetParens(expr.fn, requiredParens);
+        } else if (expr instanceof TaggedTemplateLiteralExpr) {
+          checkTargetParens(expr.tag, requiredParens);
         }
       });
     }
@@ -22210,7 +22217,7 @@ function stripNonrequiredParentheses(job) {
   }
 }
 function checkExponentiationParens(expr, requiredParens) {
-  if (expr.lhs instanceof ParenthesizedExpr && expr.lhs.expr instanceof UnaryOperatorExpr) {
+  if (expr.lhs instanceof ParenthesizedExpr && (expr.lhs.expr instanceof UnaryOperatorExpr || isUnaryLikeExpr(expr.lhs.expr))) {
     requiredParens.add(expr.lhs);
   }
 }
@@ -22229,6 +22236,22 @@ function checkAndOrParens(expr, requiredParens) {
 }
 function isLogicalAndOr(expr) {
   return expr instanceof BinaryOperatorExpr && (expr.operator === BinaryOperator.And || expr.operator === BinaryOperator.Or);
+}
+function checkTargetParens(target, requiredParens) {
+  if (target instanceof ParenthesizedExpr && (isUnaryLikeExpr(target.expr) || target.expr instanceof ArrowFunctionExpr$1 || target.expr instanceof LiteralExpr && typeof target.expr.value === 'number')) {
+    requiredParens.add(target);
+  }
+}
+function checkArrowFunctionOperandParens(expr, requiredParens) {
+  if (expr.lhs instanceof ParenthesizedExpr && expr.lhs.expr instanceof ArrowFunctionExpr$1) {
+    requiredParens.add(expr.lhs);
+  }
+  if (!expr.isAssignment() && expr.rhs instanceof ParenthesizedExpr && expr.rhs.expr instanceof ArrowFunctionExpr$1) {
+    requiredParens.add(expr.rhs);
+  }
+}
+function isUnaryLikeExpr(expr) {
+  return expr instanceof NotExpr || expr instanceof TypeofExpr || expr instanceof VoidExpr;
 }
 
 function specializeStyleBindings(job) {
@@ -30240,7 +30263,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -30258,7 +30281,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -30331,7 +30354,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -30673,7 +30696,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -30699,7 +30722,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -30740,7 +30763,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -30766,7 +30789,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -30796,7 +30819,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -30834,7 +30857,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.0+sha-2ce1826'));
+  definitionMap.set('version', literal('22.3.0-next.0+sha-91b8391'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -30908,7 +30931,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, DYNAMIC_TYPE, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.3.0-next.0+sha-2ce1826');
+const VERSION = new Version('22.3.0-next.0+sha-91b8391');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -33658,7 +33681,7 @@ class Scope {
         }
       }
       this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs));
-      const checkElement = directives.length === 0;
+      const checkElement = this.requiresUnknownElementCheck(node, directives);
       this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
     }
   }
@@ -33786,11 +33809,7 @@ class Scope {
             directives.push(...directiveResults);
           }
         }
-        let hasDirectives;
-        if (directives === null || directives.length === 0) {
-          hasDirectives = false;
-        } else {
-          hasDirectives = true;
+        if (directives !== null && directives.length > 0) {
           for (const dir of directives) {
             for (const propertyName of dir.inputs.propertyNames) {
               claimedInputs.add(propertyName);
@@ -33799,7 +33818,8 @@ class Scope {
         }
         const isForeign = this.tcb.boundTarget.getForeignComponent(node) !== null;
         if (!isForeign) {
-          this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, !hasDirectives, claimedInputs));
+          const checkElement = this.requiresUnknownElementCheck(node, directives);
+          this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
         }
       }
       this.appendDeepSchemaChecks(node.children);
@@ -33933,6 +33953,28 @@ class Scope {
         this.tcb.oobRecorder.conflictingHostDirectiveBinding(this.tcb.id, node, binding.directive.name, binding.kind, binding.classPropertyName, Array.from(binding.conflictingAliases));
       }
     }
+  }
+  requiresUnknownElementCheck(node, directives) {
+    if (directives === null || directives.length === 0) {
+      return true;
+    }
+    if (!this.tcb.env.config.checkUnknownElements) {
+      return false;
+    }
+    const hasComponent = directives.some(dir => dir.isComponent);
+    const hasDirectiveMatchingTag = directives.some(dir => matchesTagName(dir.selector, node.name));
+    return !hasComponent && !hasDirectiveMatchingTag;
+  }
+}
+function matchesTagName(selector, tagName) {
+  if (selector === null) {
+    return false;
+  }
+  const lowerTag = splitNsName(tagName, false)[1].toLowerCase();
+  try {
+    return CssSelector.parse(selector).some(sel => sel.element?.toLowerCase() === lowerTag);
+  } catch {
+    return false;
   }
 }
 

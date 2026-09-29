@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.0+sha-2ce1826
+ * @license Angular v22.3.0-next.0+sha-91b8391
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6586,6 +6586,10 @@ interface TypeCheckingConfig {
      * Whether to descend into the bodies of control flow blocks (`@if`, `@switch` and `@for`).
      */
     checkControlFlowBodies: boolean;
+    /**
+     * Whether to validate unknown element tags even when matched by attribute directives.
+     */
+    checkUnknownElements: boolean;
 }
 
 /**
