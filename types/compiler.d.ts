@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.2.2+sha-3b65dbe
+ * @license Angular v22.2.2+sha-54f3de5
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -6714,7 +6714,7 @@ interface OutOfBandDiagnosticRecorder<T> {
     /**
      * Reports cases where control flow nodes prevent content projection.
      */
-    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty, preservesWhitespaces: boolean): void;
+    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty | BoundaryBlock, preservesWhitespaces: boolean): void;
     /** Reports cases where users are writing to `@let` declarations. */
     illegalWriteToLetDeclaration(id: TypeCheckId, node: AST, target: LetDeclaration): void;
     /** Reports cases where users are accessing an `@let` before it is defined.. */
