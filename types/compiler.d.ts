@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.1+sha-ec1bd2a
+ * @license Angular v22.3.0-next.1+sha-b6b5324
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1722,6 +1722,7 @@ declare class ConstantPool {
      */
     uniqueName(name: string, alwaysIncludeSuffix?: boolean): string;
     private freshName;
+    private getVariableDeclaration;
 }
 interface ExpressionKeyFn {
     keyOf(expr: Expression): string;
@@ -6735,7 +6736,7 @@ interface OutOfBandDiagnosticRecorder<T> {
     /**
      * Reports cases where control flow nodes prevent content projection.
      */
-    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty, preservesWhitespaces: boolean): void;
+    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty | BoundaryBlock, preservesWhitespaces: boolean): void;
     /** Reports cases where users are writing to `@let` declarations. */
     illegalWriteToLetDeclaration(id: TypeCheckId, node: AST, target: LetDeclaration): void;
     /** Reports cases where users are accessing an `@let` before it is defined.. */
