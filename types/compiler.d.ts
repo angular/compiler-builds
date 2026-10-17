@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.2+sha-92e5aa8
+ * @license Angular v22.3.0-next.2+sha-ce30bb0
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3443,10 +3443,17 @@ declare class SourceMapGenerator {
     toJsComment(): string;
 }
 
+declare class EmittedLine {
+    indent: number;
+    partsLength: number;
+    readonly parts: string[];
+    readonly srcSpans: (ParseSourceSpan$1 | null)[];
+    constructor(indent: number);
+}
 declare class EmitterVisitorContext {
     private _indent;
     static createRoot(): EmitterVisitorContext;
-    private _lines;
+    protected lines: EmittedLine[];
     constructor(_indent: number);
     println(from?: {
         sourceSpan?: ParseSourceSpan$1 | null;
