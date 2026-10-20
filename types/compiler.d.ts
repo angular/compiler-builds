@@ -1,27 +1,11 @@
 /**
- * @license Angular v22.3.0-next.2+sha-091b322
+ * @license Angular v22.3.0-next.2+sha-33f8855
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
 
-/**
- * A SecurityContext marks a location that has dangerous security implications, e.g. a DOM property
- * like `innerHTML` that could cause Cross Site Scripting (XSS) security bugs when improperly
- * handled.
- *
- * See DomSanitizer for more details on security in Angular applications.
- *
- * @publicApi
- */
-declare enum SecurityContext {
-    NONE = 0,
-    HTML = 1,
-    STYLE = 2,
-    SCRIPT = 3,
-    URL = 4,
-    RESOURCE_URL = 5,
-    ATTRIBUTE_NO_BINDING = 6
-}
+import { SecurityContext, ParseSourceSpan as ParseSourceSpan$1, I18nMeta as I18nMeta$1, ParseError, Message, ASTWithSource, TemplateBinding, Node as Node$1, Node$1 as Node$2, HostElement, Element as Element$1, Template, Component as Component$1, Directive as Directive$1, Reference, BoundAttribute, BoundEvent, TextAttribute, AST, Variable, LetDeclaration as LetDeclaration$1, SwitchBlockCaseGroup, IfBlockBranch, ForLoopBlock, ForLoopBlockEmpty, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, Content, ContentBlock, DeferredTrigger, BindingPipe, ParsedProperty, ParsedEvent, ParsedVariable, BoundElementProperty, Comment as Comment$1, AbsoluteSourceSpan, PropertyRead, HoverDeferredTrigger, InteractionDeferredTrigger, ViewportDeferredTrigger, SwitchBlockCase, BoundaryBlock } from './_index-chunk.js';
+export { ASTWithName, AbstractBoundTemplate, ArrowFunction, ArrowFunctionIdentifierParameter, ArrowFunctionParameter, AssignmentOperation, AstVisitor, AttributeIdentifier, Binary, BindingPipeType, BindingType, BoundAttributeIdentifier, Call, Chain, CombinedRecursiveAstVisitor, CompileIdentifierMetadata, ComponentNodeIdentifier, Conditional, DirectiveHostIdentifier, DirectiveNodeIdentifier, DirectiveReference, ElementIdentifier, EmptyExpr, ExpressionBinding, IdentifierKind, ImplicitReceiver, IndexedComponent, IndexerComponentInfo, IndexerVisitor, IndexingContext, Interpolation, KeyedRead, LetDeclarationIdentifier, LiteralArray, LiteralMap, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, LiteralPrimitive, MethodIdentifier, NodeAdapter, NonNullAssert, ParenthesizedExpression, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSpan, ParsedEventType, ParsedPropertyType, PipeIdentifier, PrefixNot, PropertyIdentifier, RecursiveAstVisitor, ReferenceIdentifier, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SpreadElement, TaggedTemplateLiteral, TemplateBindingIdentifier, TemplateIdentifier, TemplateLiteral, TemplateLiteralElement, TemplateNodeIdentifier, ThisReceiver, BlockNode as TmplAstBlockNode, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundText as TmplAstBoundText, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, SwitchBlock as TmplAstSwitchBlock, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Text as TmplAstText, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Visitor as TmplAstVisitor, TopLevelIdentifier, TypeofExpression, Unary, VariableBinding, VariableIdentifier, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, identifierName, r3JitTypeSourceSpan, sanitizeIdentifier, visitAll as tmplAstVisitAll, unwrapWriteTarget } from './_index-chunk.js';
 
 declare const emitDistinctChangesOnlyDefaultValue = true;
 declare enum ViewEncapsulation$1 {
@@ -256,7 +240,6 @@ type core_d_R3CssSelectorList = R3CssSelectorList;
 type core_d_RenderFlags = RenderFlags;
 declare const core_d_RenderFlags: typeof RenderFlags;
 type core_d_SchemaMetadata = SchemaMetadata;
-type core_d_SecurityContext = SecurityContext;
 declare const core_d_SecurityContext: typeof SecurityContext;
 type core_d_SelectorFlags = SelectorFlags;
 declare const core_d_SelectorFlags: typeof SelectorFlags;
@@ -265,239 +248,6 @@ declare const core_d_parseSelectorToR3Selector: typeof parseSelectorToR3Selector
 declare namespace core_d {
   export { core_d_AttributeMarker as AttributeMarker, core_d_CUSTOM_ELEMENTS_SCHEMA as CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, core_d_InjectFlags as InjectFlags, core_d_InputFlags as InputFlags, core_d_MissingTranslationStrategy as MissingTranslationStrategy, core_d_NO_ERRORS_SCHEMA as NO_ERRORS_SCHEMA, core_d_RenderFlags as RenderFlags, core_d_SecurityContext as SecurityContext, core_d_SelectorFlags as SelectorFlags, Type$2 as Type, ViewEncapsulation$1 as ViewEncapsulation, core_d_emitDistinctChangesOnlyDefaultValue as emitDistinctChangesOnlyDefaultValue, core_d_parseSelectorToR3Selector as parseSelectorToR3Selector };
   export type { core_d_HostBinding as HostBinding, core_d_HostListener as HostListener, core_d_Input as Input, core_d_Output as Output, core_d_R3CssSelector as R3CssSelector, core_d_R3CssSelectorList as R3CssSelectorList, core_d_SchemaMetadata as SchemaMetadata };
-}
-
-declare class ParseLocation {
-    file: ParseSourceFile;
-    offset: number;
-    line: number;
-    col: number;
-    constructor(file: ParseSourceFile, offset: number, line: number, col: number);
-    toString(): string;
-    moveBy(delta: number): ParseLocation;
-    getContext(maxChars: number, maxLines: number): {
-        before: string;
-        after: string;
-    } | null;
-}
-declare class ParseSourceFile {
-    content: string;
-    url: string;
-    constructor(content: string, url: string);
-}
-declare class ParseSourceSpan$1 {
-    start: ParseLocation;
-    end: ParseLocation;
-    fullStart: ParseLocation;
-    details: string | null;
-    /**
-     * Create an object that holds information about spans of tokens/nodes captured during
-     * lexing/parsing of text.
-     *
-     * @param start
-     * The location of the start of the span (having skipped leading trivia).
-     * Skipping leading trivia makes source-spans more "user friendly", since things like HTML
-     * elements will appear to begin at the start of the opening tag, rather than at the start of any
-     * leading trivia, which could include newlines.
-     *
-     * @param end
-     * The location of the end of the span.
-     *
-     * @param fullStart
-     * The start of the token without skipping the leading trivia.
-     * This is used by tooling that splits tokens further, such as extracting Angular interpolations
-     * from text tokens. Such tooling creates new source-spans relative to the original token's
-     * source-span. If leading trivia characters have been skipped then the new source-spans may be
-     * incorrectly offset.
-     *
-     * @param details
-     * Additional information (such as identifier names) that should be associated with the span.
-     */
-    constructor(start: ParseLocation, end: ParseLocation, fullStart?: ParseLocation, details?: string | null);
-    toString(): string;
-}
-declare enum ParseErrorLevel {
-    WARNING = 0,
-    ERROR = 1
-}
-declare class ParseError extends Error {
-    /** Location of the error. */
-    readonly span: ParseSourceSpan$1;
-    /** Error message. */
-    readonly msg: string;
-    /** Severity level of the error. */
-    readonly level: ParseErrorLevel;
-    /**
-     * Error that caused the error to be surfaced. For example, an error in a sub-expression that
-     * couldn't be parsed. Not guaranteed to be defined, but can be used to provide more context.
-     */
-    readonly relatedError?: unknown | undefined;
-    constructor(
-    /** Location of the error. */
-    span: ParseSourceSpan$1, 
-    /** Error message. */
-    msg: string, 
-    /** Severity level of the error. */
-    level?: ParseErrorLevel, 
-    /**
-     * Error that caused the error to be surfaced. For example, an error in a sub-expression that
-     * couldn't be parsed. Not guaranteed to be defined, but can be used to provide more context.
-     */
-    relatedError?: unknown | undefined);
-    contextualMessage(): string;
-    toString(): string;
-}
-/**
- * Generates Source Span object for a given R3 Type for JIT mode.
- *
- * @param kind Component or Directive.
- * @param typeName name of the Component or Directive.
- * @param sourceUrl reference to Component or Directive source.
- * @returns instance of ParseSourceSpan that represent a given Component or Directive.
- */
-declare function r3JitTypeSourceSpan(kind: string, typeName: string, sourceUrl: string): ParseSourceSpan$1;
-declare function identifierName(compileIdentifier: CompileIdentifierMetadata | null | undefined): string | null;
-interface CompileIdentifierMetadata {
-    reference: any;
-}
-declare function sanitizeIdentifier(name: string): string;
-
-/**
- * Describes the text contents of a placeholder as it appears in an ICU expression, including its
- * source span information.
- */
-interface MessagePlaceholder {
-    /** The text contents of the placeholder */
-    text: string;
-    /** The source span of the placeholder */
-    sourceSpan: ParseSourceSpan$1;
-}
-declare class Message {
-    nodes: Node$2[];
-    placeholders: {
-        [phName: string]: MessagePlaceholder;
-    };
-    placeholderToMessage: {
-        [phName: string]: Message;
-    };
-    meaning: string;
-    description: string;
-    customId: string;
-    sources: MessageSpan[];
-    id: string;
-    /** The ids to use if there are no custom id and if `i18nLegacyMessageIdFormat` is not empty */
-    legacyIds: string[];
-    messageString: string;
-    /**
-     * @param nodes message AST
-     * @param placeholders maps placeholder names to static content and their source spans
-     * @param placeholderToMessage maps placeholder names to messages (used for nested ICU messages)
-     * @param meaning
-     * @param description
-     * @param customId
-     */
-    constructor(nodes: Node$2[], placeholders: {
-        [phName: string]: MessagePlaceholder;
-    }, placeholderToMessage: {
-        [phName: string]: Message;
-    }, meaning: string, description: string, customId: string);
-}
-interface MessageSpan {
-    filePath: string;
-    startLine: number;
-    startCol: number;
-    endLine: number;
-    endCol: number;
-}
-interface Node$2 {
-    sourceSpan: ParseSourceSpan$1;
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class Text$2 implements Node$2 {
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    constructor(value: string, sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class Container implements Node$2 {
-    children: Node$2[];
-    sourceSpan: ParseSourceSpan$1;
-    constructor(children: Node$2[], sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class Icu$1 implements Node$2 {
-    expression: string;
-    type: string;
-    cases: {
-        [k: string]: Node$2;
-    };
-    sourceSpan: ParseSourceSpan$1;
-    expressionPlaceholder?: string | undefined;
-    constructor(expression: string, type: string, cases: {
-        [k: string]: Node$2;
-    }, sourceSpan: ParseSourceSpan$1, expressionPlaceholder?: string | undefined);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class TagPlaceholder implements Node$2 {
-    tag: string;
-    attrs: {
-        [k: string]: string;
-    };
-    startName: string;
-    closeName: string;
-    children: Node$2[];
-    isVoid: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1 | null;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    constructor(tag: string, attrs: {
-        [k: string]: string;
-    }, startName: string, closeName: string, children: Node$2[], isVoid: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1 | null, endSourceSpan: ParseSourceSpan$1 | null);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class Placeholder implements Node$2 {
-    value: string;
-    name: string;
-    sourceSpan: ParseSourceSpan$1;
-    constructor(value: string, name: string, sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class IcuPlaceholder implements Node$2 {
-    value: Icu$1;
-    name: string;
-    sourceSpan: ParseSourceSpan$1;
-    /** Used to capture a message computed from a previous processing pass (see `setI18nRefs()`). */
-    previousMessage?: Message;
-    constructor(value: Icu$1, name: string, sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-declare class BlockPlaceholder implements Node$2 {
-    name: string;
-    parameters: string[];
-    startName: string;
-    closeName: string;
-    children: Node$2[];
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1 | null;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    constructor(name: string, parameters: string[], startName: string, closeName: string, children: Node$2[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1 | null, endSourceSpan: ParseSourceSpan$1 | null);
-    visit(visitor: Visitor$2, context?: any): any;
-}
-/**
- * Each HTML node that is affect by an i18n tag will also have an `i18n` property that is of type
- * `I18nMeta`.
- * This information is either a `Message`, which indicates it is the root of an i18n message, or a
- * `Node`, which indicates is it part of a containing `Message`.
- */
-type I18nMeta$1 = Message | Node$2;
-interface Visitor$2 {
-    visitText(text: Text$2, context?: any): any;
-    visitContainer(container: Container, context?: any): any;
-    visitIcu(icu: Icu$1, context?: any): any;
-    visitTagPlaceholder(ph: TagPlaceholder, context?: any): any;
-    visitPlaceholder(ph: Placeholder, context?: any): any;
-    visitIcuPlaceholder(ph: IcuPlaceholder, context?: any): any;
-    visitBlockPlaceholder(ph: BlockPlaceholder, context?: any): any;
 }
 
 declare const enum TokenType$1 {
@@ -576,20 +326,20 @@ interface AttributeValueInterpolationToken extends TokenBase {
 
 interface BaseNode {
     sourceSpan: ParseSourceSpan$1;
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
-type Node$1 = Attribute | Comment$1 | Element$1 | Expansion | ExpansionCase | Text$1 | Block | BlockParameter | Component$1 | Directive$1 | StartTagComment;
+type Node = Attribute | Comment | Element | Expansion | ExpansionCase | Text | Block | BlockParameter | Component | Directive | StartTagComment;
 declare abstract class NodeWithI18n implements BaseNode {
     sourceSpan: ParseSourceSpan$1;
     i18n?: I18nMeta$1 | undefined;
     constructor(sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    abstract visit(visitor: Visitor$1, context: any): any;
+    abstract visit(visitor: Visitor, context: any): any;
 }
-declare class Text$1 extends NodeWithI18n {
+declare class Text extends NodeWithI18n {
     value: string;
     tokens: InterpolatedTextToken[];
     constructor(value: string, sourceSpan: ParseSourceSpan$1, tokens: InterpolatedTextToken[], i18n?: I18nMeta$1);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
 declare class Expansion extends NodeWithI18n {
     switchValue: string;
@@ -597,16 +347,16 @@ declare class Expansion extends NodeWithI18n {
     cases: ExpansionCase[];
     switchValueSourceSpan: ParseSourceSpan$1;
     constructor(switchValue: string, type: string, cases: ExpansionCase[], sourceSpan: ParseSourceSpan$1, switchValueSourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
 declare class ExpansionCase implements BaseNode {
     value: string;
-    expression: Node$1[];
+    expression: Node[];
     sourceSpan: ParseSourceSpan$1;
     valueSourceSpan: ParseSourceSpan$1;
     expSourceSpan: ParseSourceSpan$1;
-    constructor(value: string, expression: Node$1[], sourceSpan: ParseSourceSpan$1, valueSourceSpan: ParseSourceSpan$1, expSourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$1, context: any): any;
+    constructor(value: string, expression: Node[], sourceSpan: ParseSourceSpan$1, valueSourceSpan: ParseSourceSpan$1, expSourceSpan: ParseSourceSpan$1);
+    visit(visitor: Visitor, context: any): any;
 }
 declare class Attribute extends NodeWithI18n {
     name: string;
@@ -615,112 +365,112 @@ declare class Attribute extends NodeWithI18n {
     valueSpan: ParseSourceSpan$1 | undefined;
     valueTokens: InterpolatedAttributeToken[] | undefined;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1 | undefined, valueSpan: ParseSourceSpan$1 | undefined, valueTokens: InterpolatedAttributeToken[] | undefined, i18n: I18nMeta$1 | undefined);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
 declare class StartTagComment implements BaseNode {
     value: string;
     type: 'single' | 'multi';
     sourceSpan: ParseSourceSpan$1;
     constructor(value: string, type: 'single' | 'multi', sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
-declare class Element$1 extends NodeWithI18n {
+declare class Element extends NodeWithI18n {
     name: string;
     attrs: Attribute[];
-    readonly directives: Directive$1[];
-    children: Node$1[];
+    readonly directives: Directive[];
+    children: Node[];
     readonly isSelfClosing: boolean;
     startSourceSpan: ParseSourceSpan$1;
     endSourceSpan: ParseSourceSpan$1 | null;
     readonly isVoid: boolean;
     comments: StartTagComment[];
-    constructor(name: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: (ParseSourceSpan$1 | null) | undefined, isVoid: boolean, i18n?: I18nMeta$1, comments?: StartTagComment[]);
-    visit(visitor: Visitor$1, context: any): any;
+    constructor(name: string, attrs: Attribute[], directives: Directive[], children: Node[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: (ParseSourceSpan$1 | null) | undefined, isVoid: boolean, i18n?: I18nMeta$1, comments?: StartTagComment[]);
+    visit(visitor: Visitor, context: any): any;
 }
-declare class Comment$1 implements BaseNode {
+declare class Comment implements BaseNode {
     value: string | null;
     sourceSpan: ParseSourceSpan$1;
     constructor(value: string | null, sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
 declare class Block extends NodeWithI18n {
     name: string;
     parameters: BlockParameter[];
-    children: Node$1[];
+    children: Node[];
     nameSpan: ParseSourceSpan$1;
     startSourceSpan: ParseSourceSpan$1;
     endSourceSpan: ParseSourceSpan$1 | null;
-    constructor(name: string, parameters: BlockParameter[], children: Node$1[], sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan?: ParseSourceSpan$1 | null, i18n?: I18nMeta$1);
-    visit(visitor: Visitor$1, context: any): any;
+    constructor(name: string, parameters: BlockParameter[], children: Node[], sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan?: ParseSourceSpan$1 | null, i18n?: I18nMeta$1);
+    visit(visitor: Visitor, context: any): any;
 }
-declare class Component$1 extends NodeWithI18n {
+declare class Component extends NodeWithI18n {
     readonly componentName: string;
     readonly tagName: string | null;
     readonly fullName: string;
     attrs: Attribute[];
-    readonly directives: Directive$1[];
-    readonly children: Node$1[];
+    readonly directives: Directive[];
+    readonly children: Node[];
     readonly isSelfClosing: boolean;
     readonly startSourceSpan: ParseSourceSpan$1;
     endSourceSpan: ParseSourceSpan$1 | null;
     comments: StartTagComment[];
-    constructor(componentName: string, tagName: string | null, fullName: string, attrs: Attribute[], directives: Directive$1[], children: Node$1[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan?: ParseSourceSpan$1 | null, i18n?: I18nMeta$1, comments?: StartTagComment[]);
-    visit(visitor: Visitor$1, context: any): any;
+    constructor(componentName: string, tagName: string | null, fullName: string, attrs: Attribute[], directives: Directive[], children: Node[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan?: ParseSourceSpan$1 | null, i18n?: I18nMeta$1, comments?: StartTagComment[]);
+    visit(visitor: Visitor, context: any): any;
 }
-declare class Directive$1 implements BaseNode {
+declare class Directive implements BaseNode {
     readonly name: string;
     readonly attrs: Attribute[];
     readonly sourceSpan: ParseSourceSpan$1;
     readonly startSourceSpan: ParseSourceSpan$1;
     readonly endSourceSpan: ParseSourceSpan$1 | null;
     constructor(name: string, attrs: Attribute[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan?: ParseSourceSpan$1 | null);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
 declare class BlockParameter implements BaseNode {
     expression: string;
     sourceSpan: ParseSourceSpan$1;
     constructor(expression: string, sourceSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
-declare class LetDeclaration$1 implements BaseNode {
+declare class LetDeclaration implements BaseNode {
     name: string;
     value: string;
     sourceSpan: ParseSourceSpan$1;
     readonly nameSpan: ParseSourceSpan$1;
     valueSpan: ParseSourceSpan$1;
     constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1);
-    visit(visitor: Visitor$1, context: any): any;
+    visit(visitor: Visitor, context: any): any;
 }
-interface Visitor$1 {
-    visit?(node: Node$1, context: any): any;
-    visitElement(element: Element$1, context: any): any;
+interface Visitor {
+    visit?(node: Node, context: any): any;
+    visitElement(element: Element, context: any): any;
     visitAttribute(attribute: Attribute, context: any): any;
-    visitText(text: Text$1, context: any): any;
-    visitComment(comment: Comment$1, context: any): any;
+    visitText(text: Text, context: any): any;
+    visitComment(comment: Comment, context: any): any;
     visitExpansion(expansion: Expansion, context: any): any;
     visitExpansionCase(expansionCase: ExpansionCase, context: any): any;
     visitBlock(block: Block, context: any): any;
     visitBlockParameter(parameter: BlockParameter, context: any): any;
-    visitLetDeclaration(decl: LetDeclaration$1, context: any): any;
-    visitComponent(component: Component$1, context: any): any;
-    visitDirective(directive: Directive$1, context: any): any;
+    visitLetDeclaration(decl: LetDeclaration, context: any): any;
+    visitComponent(component: Component, context: any): any;
+    visitDirective(directive: Directive, context: any): any;
     visitStartTagComment?(comment: StartTagComment, context: any): any;
 }
-declare function visitAll$1(visitor: Visitor$1, nodes: Node$1[], context?: any): any[];
-declare class RecursiveVisitor$1 implements Visitor$1 {
+declare function visitAll(visitor: Visitor, nodes: Node[], context?: any): any[];
+declare class RecursiveVisitor implements Visitor {
     constructor();
-    visitElement(ast: Element$1, context: any): any;
+    visitElement(ast: Element, context: any): any;
     visitAttribute(ast: Attribute, context: any): any;
     visitStartTagComment(ast: StartTagComment, context: any): any;
-    visitText(ast: Text$1, context: any): any;
-    visitComment(ast: Comment$1, context: any): any;
+    visitText(ast: Text, context: any): any;
+    visitComment(ast: Comment, context: any): any;
     visitExpansion(ast: Expansion, context: any): any;
     visitExpansionCase(ast: ExpansionCase, context: any): any;
     visitBlock(block: Block, context: any): any;
     visitBlockParameter(ast: BlockParameter, context: any): any;
-    visitLetDeclaration(decl: LetDeclaration$1, context: any): void;
-    visitComponent(component: Component$1, context: any): void;
-    visitDirective(directive: Directive$1, context: any): void;
+    visitLetDeclaration(decl: LetDeclaration, context: any): void;
+    visitComponent(component: Component, context: any): void;
+    visitDirective(directive: Directive, context: any): void;
     private visitChildren;
 }
 
@@ -827,9 +577,9 @@ declare class TreeError extends ParseError {
     constructor(elementName: string | null, span: ParseSourceSpan$1, msg: string);
 }
 declare class ParseTreeResult {
-    rootNodes: Node$1[];
+    rootNodes: Node[];
     errors: ParseError[];
-    constructor(rootNodes: Node$1[], errors: ParseError[]);
+    constructor(rootNodes: Node[], errors: ParseError[]);
 }
 declare class Parser$1 {
     getTagDefinition: (tagName: string) => TagDefinition;
@@ -1451,7 +1201,7 @@ interface StatementVisitor {
     visitReturnStmt(stmt: ReturnStatement, context: any): any;
     visitIfStmt(stmt: IfStmt, context: any): any;
 }
-declare class RecursiveAstVisitor$1 implements StatementVisitor, ExpressionVisitor {
+declare class RecursiveAstVisitor implements StatementVisitor, ExpressionVisitor {
     visitType(ast: Type$1, context: any): any;
     visitExpression(ast: Expression, context: any): any;
     visitBuiltinType(type: BuiltinType, context: any): any;
@@ -1620,6 +1370,8 @@ type output_ast_d_ReadPropExpr = ReadPropExpr;
 declare const output_ast_d_ReadPropExpr: typeof ReadPropExpr;
 type output_ast_d_ReadVarExpr = ReadVarExpr;
 declare const output_ast_d_ReadVarExpr: typeof ReadVarExpr;
+type output_ast_d_RecursiveAstVisitor = RecursiveAstVisitor;
+declare const output_ast_d_RecursiveAstVisitor: typeof RecursiveAstVisitor;
 type output_ast_d_RegularExpressionLiteralExpr = RegularExpressionLiteralExpr;
 declare const output_ast_d_RegularExpressionLiteralExpr: typeof RegularExpressionLiteralExpr;
 type output_ast_d_ReturnStatement = ReturnStatement;
@@ -1676,7 +1428,7 @@ declare const output_ast_d_typeofExpr: typeof typeofExpr;
 declare const output_ast_d_unary: typeof unary;
 declare const output_ast_d_variable: typeof variable;
 declare namespace output_ast_d {
-  export { output_ast_d_ArrayType as ArrayType, output_ast_d_ArrowFunctionExpr as ArrowFunctionExpr, output_ast_d_BOOL_TYPE as BOOL_TYPE, output_ast_d_BinaryOperator as BinaryOperator, output_ast_d_BinaryOperatorExpr as BinaryOperatorExpr, output_ast_d_BuiltinType as BuiltinType, output_ast_d_BuiltinTypeName as BuiltinTypeName, output_ast_d_CommaExpr as CommaExpr, output_ast_d_ConditionalExpr as ConditionalExpr, output_ast_d_DYNAMIC_TYPE as DYNAMIC_TYPE, output_ast_d_DeclareFunctionStmt as DeclareFunctionStmt, output_ast_d_DeclareVarStmt as DeclareVarStmt, output_ast_d_DynamicImportExpr as DynamicImportExpr, output_ast_d_Expression as Expression, output_ast_d_ExpressionStatement as ExpressionStatement, output_ast_d_ExpressionType as ExpressionType, output_ast_d_ExternalExpr as ExternalExpr, output_ast_d_ExternalReference as ExternalReference, output_ast_d_FUNCTION_TYPE as FUNCTION_TYPE, output_ast_d_FnParam as FnParam, output_ast_d_FunctionExpr as FunctionExpr, output_ast_d_INFERRED_TYPE as INFERRED_TYPE, output_ast_d_INT_TYPE as INT_TYPE, output_ast_d_IfStmt as IfStmt, output_ast_d_InstantiateExpr as InstantiateExpr, output_ast_d_InvokeFunctionExpr as InvokeFunctionExpr, output_ast_d_JSDocComment as JSDocComment, output_ast_d_JSDocTagName as JSDocTagName, output_ast_d_LeadingComment as LeadingComment, output_ast_d_LiteralArrayExpr as LiteralArrayExpr, output_ast_d_LiteralExpr as LiteralExpr, output_ast_d_LiteralMapExpr as LiteralMapExpr, output_ast_d_LiteralMapPropertyAssignment as LiteralMapPropertyAssignment, output_ast_d_LiteralMapSpreadAssignment as LiteralMapSpreadAssignment, output_ast_d_LiteralPiece as LiteralPiece, output_ast_d_LocalizedString as LocalizedString, output_ast_d_MapType as MapType, output_ast_d_NONE_TYPE as NONE_TYPE, output_ast_d_NULL_EXPR as NULL_EXPR, output_ast_d_NUMBER_TYPE as NUMBER_TYPE, output_ast_d_NotExpr as NotExpr, output_ast_d_ParenthesizedExpr as ParenthesizedExpr, output_ast_d_PlaceholderPiece as PlaceholderPiece, output_ast_d_ReadKeyExpr as ReadKeyExpr, output_ast_d_ReadPropExpr as ReadPropExpr, output_ast_d_ReadVarExpr as ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, output_ast_d_RegularExpressionLiteralExpr as RegularExpressionLiteralExpr, output_ast_d_ReturnStatement as ReturnStatement, output_ast_d_STRING_TYPE as STRING_TYPE, output_ast_d_SpreadElementExpr as SpreadElementExpr, output_ast_d_Statement as Statement, output_ast_d_StmtModifier as StmtModifier, output_ast_d_TYPED_NULL_EXPR as TYPED_NULL_EXPR, output_ast_d_TaggedTemplateLiteralExpr as TaggedTemplateLiteralExpr, output_ast_d_TemplateLiteralElementExpr as TemplateLiteralElementExpr, output_ast_d_TemplateLiteralExpr as TemplateLiteralExpr, output_ast_d_TransplantedType as TransplantedType, Type$1 as Type, output_ast_d_TypeModifier as TypeModifier, output_ast_d_TypeofExpr as TypeofExpr, output_ast_d_UnaryOperator as UnaryOperator, output_ast_d_UnaryOperatorExpr as UnaryOperatorExpr, output_ast_d_VoidExpr as VoidExpr, output_ast_d_WrappedNodeExpr as WrappedNodeExpr, output_ast_d_areAllEquivalent as areAllEquivalent, output_ast_d_arrowFn as arrowFn, output_ast_d_expressionType as expressionType, output_ast_d_fn as fn, output_ast_d_ifStmt as ifStmt, output_ast_d_importExpr as importExpr, output_ast_d_importType as importType, output_ast_d_isNull as isNull, output_ast_d_jsDocComment as jsDocComment, output_ast_d_leadingComment as leadingComment, output_ast_d_literal as literal, output_ast_d_literalArr as literalArr, output_ast_d_literalMap as literalMap, output_ast_d_localizedString as localizedString, output_ast_d_not as not, output_ast_d_nullSafeIsEquivalent as nullSafeIsEquivalent, output_ast_d_taggedTemplate as taggedTemplate, output_ast_d_transplantedType as transplantedType, output_ast_d_typeofExpr as typeofExpr, output_ast_d_unary as unary, output_ast_d_variable as variable };
+  export { output_ast_d_ArrayType as ArrayType, output_ast_d_ArrowFunctionExpr as ArrowFunctionExpr, output_ast_d_BOOL_TYPE as BOOL_TYPE, output_ast_d_BinaryOperator as BinaryOperator, output_ast_d_BinaryOperatorExpr as BinaryOperatorExpr, output_ast_d_BuiltinType as BuiltinType, output_ast_d_BuiltinTypeName as BuiltinTypeName, output_ast_d_CommaExpr as CommaExpr, output_ast_d_ConditionalExpr as ConditionalExpr, output_ast_d_DYNAMIC_TYPE as DYNAMIC_TYPE, output_ast_d_DeclareFunctionStmt as DeclareFunctionStmt, output_ast_d_DeclareVarStmt as DeclareVarStmt, output_ast_d_DynamicImportExpr as DynamicImportExpr, output_ast_d_Expression as Expression, output_ast_d_ExpressionStatement as ExpressionStatement, output_ast_d_ExpressionType as ExpressionType, output_ast_d_ExternalExpr as ExternalExpr, output_ast_d_ExternalReference as ExternalReference, output_ast_d_FUNCTION_TYPE as FUNCTION_TYPE, output_ast_d_FnParam as FnParam, output_ast_d_FunctionExpr as FunctionExpr, output_ast_d_INFERRED_TYPE as INFERRED_TYPE, output_ast_d_INT_TYPE as INT_TYPE, output_ast_d_IfStmt as IfStmt, output_ast_d_InstantiateExpr as InstantiateExpr, output_ast_d_InvokeFunctionExpr as InvokeFunctionExpr, output_ast_d_JSDocComment as JSDocComment, output_ast_d_JSDocTagName as JSDocTagName, output_ast_d_LeadingComment as LeadingComment, output_ast_d_LiteralArrayExpr as LiteralArrayExpr, output_ast_d_LiteralExpr as LiteralExpr, output_ast_d_LiteralMapExpr as LiteralMapExpr, output_ast_d_LiteralMapPropertyAssignment as LiteralMapPropertyAssignment, output_ast_d_LiteralMapSpreadAssignment as LiteralMapSpreadAssignment, output_ast_d_LiteralPiece as LiteralPiece, output_ast_d_LocalizedString as LocalizedString, output_ast_d_MapType as MapType, output_ast_d_NONE_TYPE as NONE_TYPE, output_ast_d_NULL_EXPR as NULL_EXPR, output_ast_d_NUMBER_TYPE as NUMBER_TYPE, output_ast_d_NotExpr as NotExpr, output_ast_d_ParenthesizedExpr as ParenthesizedExpr, output_ast_d_PlaceholderPiece as PlaceholderPiece, output_ast_d_ReadKeyExpr as ReadKeyExpr, output_ast_d_ReadPropExpr as ReadPropExpr, output_ast_d_ReadVarExpr as ReadVarExpr, output_ast_d_RecursiveAstVisitor as RecursiveAstVisitor, output_ast_d_RegularExpressionLiteralExpr as RegularExpressionLiteralExpr, output_ast_d_ReturnStatement as ReturnStatement, output_ast_d_STRING_TYPE as STRING_TYPE, output_ast_d_SpreadElementExpr as SpreadElementExpr, output_ast_d_Statement as Statement, output_ast_d_StmtModifier as StmtModifier, output_ast_d_TYPED_NULL_EXPR as TYPED_NULL_EXPR, output_ast_d_TaggedTemplateLiteralExpr as TaggedTemplateLiteralExpr, output_ast_d_TemplateLiteralElementExpr as TemplateLiteralElementExpr, output_ast_d_TemplateLiteralExpr as TemplateLiteralExpr, output_ast_d_TransplantedType as TransplantedType, Type$1 as Type, output_ast_d_TypeModifier as TypeModifier, output_ast_d_TypeofExpr as TypeofExpr, output_ast_d_UnaryOperator as UnaryOperator, output_ast_d_UnaryOperatorExpr as UnaryOperatorExpr, output_ast_d_VoidExpr as VoidExpr, output_ast_d_WrappedNodeExpr as WrappedNodeExpr, output_ast_d_areAllEquivalent as areAllEquivalent, output_ast_d_arrowFn as arrowFn, output_ast_d_expressionType as expressionType, output_ast_d_fn as fn, output_ast_d_ifStmt as ifStmt, output_ast_d_importExpr as importExpr, output_ast_d_importType as importType, output_ast_d_isNull as isNull, output_ast_d_jsDocComment as jsDocComment, output_ast_d_leadingComment as leadingComment, output_ast_d_literal as literal, output_ast_d_literalArr as literalArr, output_ast_d_literalMap as literalMap, output_ast_d_localizedString as localizedString, output_ast_d_not as not, output_ast_d_nullSafeIsEquivalent as nullSafeIsEquivalent, output_ast_d_taggedTemplate as taggedTemplate, output_ast_d_transplantedType as transplantedType, output_ast_d_typeofExpr as typeofExpr, output_ast_d_unary as unary, output_ast_d_variable as variable };
   export type { output_ast_d_CookedRawString as CookedRawString, output_ast_d_ExpressionVisitor as ExpressionVisitor, output_ast_d_JSDocTag as JSDocTag, output_ast_d_LiteralMapEntry as LiteralMapEntry, output_ast_d_MessagePiece as MessagePiece, output_ast_d_StatementVisitor as StatementVisitor, output_ast_d_TypeVisitor as TypeVisitor };
 }
 
@@ -1729,482 +1481,6 @@ interface ExpressionKeyFn {
 }
 interface SharedConstantDefinition extends ExpressionKeyFn {
     toSharedConstantDeclaration(declName: string, keyExpr: Expression): Statement;
-}
-
-declare class ParseSpan {
-    start: number;
-    end: number;
-    constructor(start: number, end: number);
-    toAbsolute(absoluteOffset: number): AbsoluteSourceSpan;
-}
-declare abstract class AST {
-    span: ParseSpan;
-    /**
-     * Absolute location of the expression AST in a source code file.
-     */
-    sourceSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, 
-    /**
-     * Absolute location of the expression AST in a source code file.
-     */
-    sourceSpan: AbsoluteSourceSpan);
-    abstract visit(visitor: AstVisitor, context?: any): any;
-    toString(): string;
-}
-declare abstract class ASTWithName extends AST {
-    nameSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan);
-}
-declare class EmptyExpr extends AST {
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class ImplicitReceiver extends AST {
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class ThisReceiver extends AST {
-    visit(visitor: AstVisitor, context?: any): any;
-}
-/**
- * Multiple expressions separated by a semicolon.
- */
-declare class Chain extends AST {
-    expressions: AST[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: AST[]);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class Conditional extends AST {
-    condition: AST;
-    trueExp: AST;
-    falseExp: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, condition: AST, trueExp: AST, falseExp: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class PropertyRead extends ASTWithName {
-    receiver: AST;
-    name: string;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan, receiver: AST, name: string);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class SafePropertyRead extends ASTWithName {
-    receiver: AST;
-    name: string;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, nameSpan: AbsoluteSourceSpan, receiver: AST, name: string);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class KeyedRead extends AST {
-    receiver: AST;
-    key: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class SafeKeyedRead extends AST {
-    receiver: AST;
-    key: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-/** Possible types for a pipe. */
-declare enum BindingPipeType {
-    /**
-     * Pipe is being referenced by its name, for example:
-     * `@Pipe({name: 'foo'}) class FooPipe` and `{{123 | foo}}`.
-     */
-    ReferencedByName = 0,
-    /**
-     * Pipe is being referenced by its class name, for example:
-     * `@Pipe() class FooPipe` and `{{123 | FooPipe}}`.
-     */
-    ReferencedDirectly = 1
-}
-declare class BindingPipe extends ASTWithName {
-    exp: AST;
-    name: string;
-    args: AST[];
-    readonly type: BindingPipeType;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: AST[], type: BindingPipeType, nameSpan: AbsoluteSourceSpan);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class LiteralPrimitive extends AST {
-    value: string | number | boolean | null | undefined;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, value: string | number | boolean | null | undefined);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class LiteralArray extends AST {
-    expressions: AST[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expressions: AST[]);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class SpreadElement extends AST {
-    readonly expression: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-interface LiteralMapPropertyKey {
-    kind: 'property';
-    key: string;
-    quoted: boolean;
-    span: ParseSpan;
-    sourceSpan: AbsoluteSourceSpan;
-    isShorthandInitialized?: boolean;
-}
-interface LiteralMapSpreadKey {
-    kind: 'spread';
-    span: ParseSpan;
-    sourceSpan: AbsoluteSourceSpan;
-}
-type LiteralMapKey = LiteralMapPropertyKey | LiteralMapSpreadKey;
-declare class LiteralMap extends AST {
-    keys: LiteralMapKey[];
-    values: AST[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, keys: LiteralMapKey[], values: AST[]);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class Interpolation extends AST {
-    strings: string[];
-    expressions: AST[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, strings: string[], expressions: AST[]);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-type AssignmentOperation = '=' | '+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '&&=' | '||=' | '??=';
-type BinaryOperation = AssignmentOperation | '&&' | '||' | '??' | '==' | '!=' | '===' | '!==' | '<' | '>' | '<=' | '>=' | 'in' | 'instanceof' | '+' | '-' | '*' | '%' | '/' | '**';
-declare class Binary extends AST {
-    operation: BinaryOperation;
-    left: AST;
-    right: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operation: BinaryOperation, left: AST, right: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-    static isAssignmentOperation(op: string): op is AssignmentOperation;
-}
-/**
- * For backwards compatibility reasons, `Unary` inherits from `Binary` and mimics the binary AST
- * node that was originally used. This inheritance relation can be deleted in some future major,
- * after consumers have been given a chance to fully support Unary.
- */
-declare class Unary extends Binary {
-    operator: '+' | '-' | '++' | '--';
-    expr: AST;
-    isPrefix: boolean;
-    left: never;
-    right: never;
-    operation: never;
-    static isUpdateOperation(op: string): op is '++' | '--';
-    /**
-     * Creates a unary minus expression (e.g. `-x`).
-     */
-    static createMinus(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expr: AST): Unary;
-    /**
-     * Creates a unary plus expression (e.g. `+x`).
-     */
-    static createPlus(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expr: AST): Unary;
-    /**
-     * Creates a prefix expression (e.g. `++x` or `--y`).
-     */
-    static createPrefixUpdate(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operator: '++' | '--', expr: AST): Unary;
-    /**
-     * Creates a postfix expression (e.g. `x++` or `y--`).
-     */
-    static createPostfixUpdate(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, operator: '++' | '--', expr: AST): Unary;
-    /**
-     * During the deprecation period this constructor is private, to avoid consumers from creating
-     * a `Unary` with the fallback properties for `Binary`.
-     */
-    private constructor();
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class PrefixNot extends AST {
-    expression: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class TypeofExpression extends AST {
-    expression: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class VoidExpression extends AST {
-    expression: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class NonNullAssert extends AST {
-    expression: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class Call extends AST {
-    receiver: AST;
-    args: AST[];
-    argumentSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, args: AST[], argumentSpan: AbsoluteSourceSpan);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class SafeCall extends AST {
-    receiver: AST;
-    args: AST[];
-    argumentSpan: AbsoluteSourceSpan;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, args: AST[], argumentSpan: AbsoluteSourceSpan);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class TaggedTemplateLiteral extends AST {
-    tag: AST;
-    template: TemplateLiteral;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, tag: AST, template: TemplateLiteral);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class TemplateLiteral extends AST {
-    elements: TemplateLiteralElement[];
-    expressions: AST[];
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, elements: TemplateLiteralElement[], expressions: AST[]);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class TemplateLiteralElement extends AST {
-    text: string;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, text: string);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class ParenthesizedExpression extends AST {
-    expression: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, expression: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-/**
- * Unwraps any parentheses and non-null assertions around the target of a write operation.
- */
-declare function unwrapWriteTarget(ast: AST): AST;
-declare class ArrowFunctionIdentifierParameter {
-    name: string;
-    span: ParseSpan;
-    sourceSpan: AbsoluteSourceSpan;
-    constructor(name: string, span: ParseSpan, sourceSpan: AbsoluteSourceSpan);
-}
-type ArrowFunctionParameter = ArrowFunctionIdentifierParameter;
-declare class ArrowFunction extends AST {
-    parameters: ArrowFunctionParameter[];
-    body: AST;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, parameters: ArrowFunctionParameter[], body: AST);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-declare class RegularExpressionLiteral extends AST {
-    readonly body: string;
-    readonly flags: string | null;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, body: string, flags: string | null);
-    visit(visitor: AstVisitor, context?: any): any;
-}
-/**
- * Records the absolute position of a text span in a source file, where `start` and `end` are the
- * starting and ending byte offsets, respectively, of the text span in a source file.
- */
-declare class AbsoluteSourceSpan {
-    readonly start: number;
-    readonly end: number;
-    constructor(start: number, end: number);
-}
-declare class ASTWithSource<T extends AST = AST> extends AST {
-    ast: T;
-    source: string | null;
-    location: string;
-    errors: ParseError[];
-    constructor(ast: T, source: string | null, location: string, absoluteOffset: number, errors: ParseError[]);
-    visit(visitor: AstVisitor, context?: any): any;
-    toString(): string;
-}
-/**
- * TemplateBinding refers to a particular key-value pair in a microsyntax
- * expression. A few examples are:
- *
- *   |---------------------|--------------|---------|--------------|
- *   |     expression      |     key      |  value  | binding type |
- *   |---------------------|--------------|---------|--------------|
- *   | 1. let item         |    item      |  null   |   variable   |
- *   | 2. of items         |   ngForOf    |  items  |  expression  |
- *   | 3. let x = y        |      x       |    y    |   variable   |
- *   | 4. index as i       |      i       |  index  |   variable   |
- *   | 5. trackBy: func    | ngForTrackBy |   func  |  expression  |
- *   | 6. *ngIf="cond"     |     ngIf     |   cond  |  expression  |
- *   |---------------------|--------------|---------|--------------|
- *
- * (6) is a notable exception because it is a binding from the template key in
- * the LHS of a HTML attribute to the expression in the RHS. All other bindings
- * in the example above are derived solely from the RHS.
- */
-type TemplateBinding = VariableBinding | ExpressionBinding;
-declare class VariableBinding {
-    readonly sourceSpan: AbsoluteSourceSpan;
-    readonly key: TemplateBindingIdentifier;
-    readonly value: TemplateBindingIdentifier | null;
-    /**
-     * @param sourceSpan entire span of the binding.
-     * @param key name of the LHS along with its span.
-     * @param value optional value for the RHS along with its span.
-     */
-    constructor(sourceSpan: AbsoluteSourceSpan, key: TemplateBindingIdentifier, value: TemplateBindingIdentifier | null);
-}
-declare class ExpressionBinding {
-    readonly sourceSpan: AbsoluteSourceSpan;
-    readonly key: TemplateBindingIdentifier;
-    readonly value: ASTWithSource | null;
-    /**
-     * @param sourceSpan entire span of the binding.
-     * @param key binding name, like ngForOf, ngForTrackBy, ngIf, along with its
-     * span. Note that the length of the span may not be the same as
-     * `key.source.length`. For example,
-     * 1. key.source = ngFor, key.span is for "ngFor"
-     * 2. key.source = ngForOf, key.span is for "of"
-     * 3. key.source = ngForTrackBy, key.span is for "trackBy"
-     * @param value optional expression for the RHS.
-     */
-    constructor(sourceSpan: AbsoluteSourceSpan, key: TemplateBindingIdentifier, value: ASTWithSource | null);
-}
-interface TemplateBindingIdentifier {
-    source: string;
-    span: AbsoluteSourceSpan;
-}
-interface AstVisitor {
-    /**
-     * The `visitUnary` method is declared as optional for backwards compatibility. In an upcoming
-     * major release, this method will be made required.
-     */
-    visitUnary?(ast: Unary, context: any): any;
-    visitBinary(ast: Binary, context: any): any;
-    visitChain(ast: Chain, context: any): any;
-    visitConditional(ast: Conditional, context: any): any;
-    /**
-     * The `visitThisReceiver` method is declared as optional for backwards compatibility.
-     * In an upcoming major release, this method will be made required.
-     */
-    visitThisReceiver?(ast: ThisReceiver, context: any): any;
-    visitImplicitReceiver(ast: ImplicitReceiver, context: any): any;
-    visitInterpolation(ast: Interpolation, context: any): any;
-    visitKeyedRead(ast: KeyedRead, context: any): any;
-    visitLiteralArray(ast: LiteralArray, context: any): any;
-    visitLiteralMap(ast: LiteralMap, context: any): any;
-    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
-    visitPipe(ast: BindingPipe, context: any): any;
-    visitPrefixNot(ast: PrefixNot, context: any): any;
-    visitTypeofExpression(ast: TypeofExpression, context: any): any;
-    visitVoidExpression(ast: TypeofExpression, context: any): any;
-    visitNonNullAssert(ast: NonNullAssert, context: any): any;
-    visitPropertyRead(ast: PropertyRead, context: any): any;
-    visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
-    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
-    visitCall(ast: Call, context: any): any;
-    visitSafeCall(ast: SafeCall, context: any): any;
-    visitTemplateLiteral(ast: TemplateLiteral, context: any): any;
-    visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): any;
-    visitTaggedTemplateLiteral(ast: TaggedTemplateLiteral, context: any): any;
-    visitParenthesizedExpression(ast: ParenthesizedExpression, context: any): any;
-    visitArrowFunction(ast: ArrowFunction, context: any): any;
-    visitRegularExpressionLiteral(ast: RegularExpressionLiteral, context: any): any;
-    visitSpreadElement(ast: SpreadElement, context: any): any;
-    visitASTWithSource?(ast: ASTWithSource, context: any): any;
-    visitEmptyExpr?(ast: EmptyExpr, context: any): any;
-    /**
-     * This function is optionally defined to allow classes that implement this
-     * interface to selectively decide if the specified `ast` should be visited.
-     * @param ast node to visit
-     * @param context context that gets passed to the node and all its children
-     */
-    visit?(ast: AST, context?: any): any;
-}
-declare class RecursiveAstVisitor implements AstVisitor {
-    visit(ast: AST, context?: any): any;
-    visitUnary(ast: Unary, context: any): any;
-    visitBinary(ast: Binary, context: any): any;
-    visitChain(ast: Chain, context: any): any;
-    visitConditional(ast: Conditional, context: any): any;
-    visitPipe(ast: BindingPipe, context: any): any;
-    visitImplicitReceiver(ast: ThisReceiver, context: any): any;
-    visitThisReceiver(ast: ThisReceiver, context: any): any;
-    visitInterpolation(ast: Interpolation, context: any): any;
-    visitKeyedRead(ast: KeyedRead, context: any): any;
-    visitLiteralArray(ast: LiteralArray, context: any): any;
-    visitLiteralMap(ast: LiteralMap, context: any): any;
-    visitLiteralPrimitive(ast: LiteralPrimitive, context: any): any;
-    visitPrefixNot(ast: PrefixNot, context: any): any;
-    visitTypeofExpression(ast: TypeofExpression, context: any): void;
-    visitVoidExpression(ast: VoidExpression, context: any): void;
-    visitNonNullAssert(ast: NonNullAssert, context: any): any;
-    visitPropertyRead(ast: PropertyRead, context: any): any;
-    visitSafePropertyRead(ast: SafePropertyRead, context: any): any;
-    visitSafeKeyedRead(ast: SafeKeyedRead, context: any): any;
-    visitCall(ast: Call, context: any): any;
-    visitSafeCall(ast: SafeCall, context: any): any;
-    visitTemplateLiteral(ast: TemplateLiteral, context: any): void;
-    visitTemplateLiteralElement(ast: TemplateLiteralElement, context: any): void;
-    visitTaggedTemplateLiteral(ast: TaggedTemplateLiteral, context: any): void;
-    visitParenthesizedExpression(ast: ParenthesizedExpression, context: any): void;
-    visitArrowFunction(ast: ArrowFunction, context: any): any;
-    visitRegularExpressionLiteral(ast: RegularExpressionLiteral, context: any): void;
-    visitSpreadElement(ast: SpreadElement, context: any): void;
-    visitEmptyExpr(ast: EmptyExpr, context: any): any;
-    visitAll(asts: AST[], context: any): any;
-}
-declare class ParsedProperty {
-    name: string;
-    expression: ASTWithSource;
-    type: ParsedPropertyType;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan: ParseSourceSpan$1 | undefined;
-    readonly isLiteral: boolean;
-    readonly isLegacyAnimation: boolean;
-    readonly isAnimation: boolean;
-    constructor(name: string, expression: ASTWithSource, type: ParsedPropertyType, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1 | undefined);
-}
-declare enum ParsedPropertyType {
-    DEFAULT = 0,
-    LITERAL_ATTR = 1,
-    LEGACY_ANIMATION = 2,
-    TWO_WAY = 3,
-    ANIMATION = 4
-}
-declare enum ParsedEventType {
-    Regular = 0,
-    LegacyAnimation = 1,
-    TwoWay = 2,
-    Animation = 3
-}
-declare class ParsedEvent {
-    name: string;
-    targetOrPhase: string | null;
-    type: ParsedEventType;
-    handler: ASTWithSource;
-    sourceSpan: ParseSourceSpan$1;
-    handlerSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    constructor(name: string, targetOrPhase: string | null, type: ParsedEventType.TwoWay, handler: ASTWithSource<NonNullAssert | PropertyRead | KeyedRead>, sourceSpan: ParseSourceSpan$1, handlerSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1);
-    constructor(name: string, targetOrPhase: string | null, type: ParsedEventType, handler: ASTWithSource, sourceSpan: ParseSourceSpan$1, handlerSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1);
-}
-/**
- * ParsedVariable represents a variable declaration in a microsyntax expression.
- */
-declare class ParsedVariable {
-    readonly name: string;
-    readonly value: string;
-    readonly sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    readonly valueSpan?: ParseSourceSpan$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
-}
-declare enum BindingType {
-    Property = 0,
-    Attribute = 1,
-    Class = 2,
-    Style = 3,
-    LegacyAnimation = 4,
-    TwoWay = 5,
-    Animation = 6
-}
-declare class BoundElementProperty {
-    name: string;
-    type: BindingType;
-    securityContext: SecurityContext;
-    value: ASTWithSource;
-    unit: string | null;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1 | undefined;
-    valueSpan: ParseSourceSpan$1 | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: ASTWithSource, unit: string | null, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1 | undefined, valueSpan: ParseSourceSpan$1 | undefined);
 }
 
 declare enum TokenType {
@@ -2396,7 +1672,7 @@ declare abstract class Serializer {
     abstract load(content: string, url: string): {
         locale: string | null;
         i18nNodesByMsgId: {
-            [msgId: string]: Node$2[];
+            [msgId: string]: Node$1[];
         };
     };
     abstract digest(message: Message): string;
@@ -2436,7 +1712,7 @@ declare class Xliff extends Serializer {
     load(content: string, url: string): {
         locale: string;
         i18nNodesByMsgId: {
-            [msgId: string]: Node$2[];
+            [msgId: string]: Node$1[];
         };
     };
     digest(message: Message): string;
@@ -2447,7 +1723,7 @@ declare class Xliff2 extends Serializer {
     load(content: string, url: string): {
         locale: string;
         i18nNodesByMsgId: {
-            [msgId: string]: Node$2[];
+            [msgId: string]: Node$1[];
         };
     };
     digest(message: Message): string;
@@ -2458,7 +1734,7 @@ declare class Xmb extends Serializer {
     load(content: string, url: string): {
         locale: string;
         i18nNodesByMsgId: {
-            [msgId: string]: Node$2[];
+            [msgId: string]: Node$1[];
         };
     };
     digest(message: Message): string;
@@ -2470,7 +1746,7 @@ declare class Xtb extends Serializer {
     load(content: string, url: string): {
         locale: string;
         i18nNodesByMsgId: {
-            [msgId: string]: Node$2[];
+            [msgId: string]: Node$1[];
         };
     };
     digest(message: Message): string;
@@ -2794,473 +2070,6 @@ interface ParseSourceSpan {
     details: any;
     fullStart: any;
 }
-
-interface Node {
-    sourceSpan: ParseSourceSpan$1;
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-/**
- * This is an R3 `Node`-like wrapper for a raw `html.Comment` node. We do not currently
- * require the implementation of a visitor for Comments as they are only collected at
- * the top-level of the R3 AST, and only if `Render3ParseOptions['collectCommentNodes']`
- * is true.
- */
-declare class Comment implements Node {
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    constructor(value: string, sourceSpan: ParseSourceSpan$1);
-    visit<Result>(_visitor: Visitor<Result>): Result;
-}
-declare class Text implements Node {
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    constructor(value: string, sourceSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundText implements Node {
-    value: AST;
-    sourceSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(value: AST, sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-/**
- * Represents a text attribute in the template.
- *
- * `valueSpan` may not be present in cases where there is no value `<div a></div>`.
- * `keySpan` may also not be present for synthetic attributes from ICU expansions.
- */
-declare class TextAttribute implements Node {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1 | undefined;
-    valueSpan?: ParseSourceSpan$1 | undefined;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1 | undefined, valueSpan?: ParseSourceSpan$1 | undefined, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundAttribute implements Node {
-    name: string;
-    type: BindingType;
-    securityContext: SecurityContext;
-    value: AST;
-    unit: string | null;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan: ParseSourceSpan$1 | undefined;
-    i18n: I18nMeta$1 | undefined;
-    constructor(name: string, type: BindingType, securityContext: SecurityContext, value: AST, unit: string | null, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1 | undefined, i18n: I18nMeta$1 | undefined);
-    static fromBoundElementProperty(prop: BoundElementProperty, i18n?: I18nMeta$1): BoundAttribute;
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundEvent implements Node {
-    name: string;
-    type: ParsedEventType;
-    handler: AST;
-    target: string | null;
-    phase: string | null;
-    sourceSpan: ParseSourceSpan$1;
-    handlerSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    constructor(name: string, type: ParsedEventType, handler: AST, target: string | null, phase: string | null, sourceSpan: ParseSourceSpan$1, handlerSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1);
-    static fromParsedEvent(event: ParsedEvent): BoundEvent;
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Element implements Node {
-    name: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    children: Node[];
-    references: Reference[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    readonly isVoid: boolean;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, isVoid: boolean, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare abstract class DeferredTrigger implements Node {
-    nameSpan: ParseSourceSpan$1 | null;
-    sourceSpan: ParseSourceSpan$1;
-    prefetchSpan: ParseSourceSpan$1 | null;
-    whenOrOnSourceSpan: ParseSourceSpan$1 | null;
-    hydrateSpan: ParseSourceSpan$1 | null;
-    constructor(nameSpan: ParseSourceSpan$1 | null, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, whenOrOnSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundDeferredTrigger extends DeferredTrigger {
-    value: AST;
-    constructor(value: AST, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, whenSourceSpan: ParseSourceSpan$1, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class NeverDeferredTrigger extends DeferredTrigger {
-}
-declare class IdleDeferredTrigger extends DeferredTrigger {
-    timeout: number | null;
-    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null, timeout: number | null);
-}
-declare class ImmediateDeferredTrigger extends DeferredTrigger {
-}
-declare class HoverDeferredTrigger extends DeferredTrigger {
-    reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class TimerDeferredTrigger extends DeferredTrigger {
-    delay: number;
-    constructor(delay: number, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class InteractionDeferredTrigger extends DeferredTrigger {
-    reference: string | null;
-    constructor(reference: string | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class ViewportDeferredTrigger extends DeferredTrigger {
-    readonly reference: string | null;
-    readonly options: LiteralMap | null;
-    constructor(reference: string | null, options: LiteralMap | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, prefetchSpan: ParseSourceSpan$1 | null, onSourceSpan: ParseSourceSpan$1 | null, hydrateSpan: ParseSourceSpan$1 | null);
-}
-declare class BlockNode {
-    nameSpan: ParseSourceSpan$1;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    constructor(nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null);
-}
-declare class DeferredBlockPlaceholder extends BlockNode implements Node {
-    children: Node[];
-    minimumTime: number | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], minimumTime: number | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class DeferredBlockLoading extends BlockNode implements Node {
-    children: Node[];
-    afterTime: number | null;
-    minimumTime: number | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], afterTime: number | null, minimumTime: number | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class DeferredBlockError extends BlockNode implements Node {
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class ContentBlock extends BlockNode implements Node {
-    name: string;
-    variables: Variable[];
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, variables: Variable[], children: Node[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundaryBlock extends BlockNode implements Node {
-    children: Node[];
-    errorBlocks: BoundaryErrorBlock[];
-    mainBlockSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], errorBlocks: BoundaryErrorBlock[], nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class BoundaryErrorBlock extends BlockNode implements Node {
-    children: Node[];
-    contextVariables: Variable[];
-    expression: AST | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], contextVariables: Variable[], expression: AST | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-interface DeferredBlockTriggers {
-    when?: BoundDeferredTrigger;
-    idle?: IdleDeferredTrigger;
-    immediate?: ImmediateDeferredTrigger;
-    hover?: HoverDeferredTrigger;
-    timer?: TimerDeferredTrigger;
-    interaction?: InteractionDeferredTrigger;
-    viewport?: ViewportDeferredTrigger;
-    never?: NeverDeferredTrigger;
-}
-declare class DeferredBlock extends BlockNode implements Node {
-    children: Node[];
-    placeholder: DeferredBlockPlaceholder | null;
-    loading: DeferredBlockLoading | null;
-    error: DeferredBlockError | null;
-    mainBlockSpan: ParseSourceSpan$1;
-    definedName: string | null;
-    i18n?: I18nMeta$1 | undefined;
-    readonly triggers: Readonly<DeferredBlockTriggers>;
-    readonly prefetchTriggers: Readonly<DeferredBlockTriggers>;
-    readonly hydrateTriggers: Readonly<DeferredBlockTriggers>;
-    private readonly definedTriggers;
-    private readonly definedPrefetchTriggers;
-    private readonly definedHydrateTriggers;
-    constructor(children: Node[], triggers: DeferredBlockTriggers, prefetchTriggers: DeferredBlockTriggers, hydrateTriggers: DeferredBlockTriggers, placeholder: DeferredBlockPlaceholder | null, loading: DeferredBlockLoading | null, error: DeferredBlockError | null, nameSpan: ParseSourceSpan$1, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, definedName: string | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-    visitAll(visitor: Visitor<unknown>): void;
-    private visitTriggers;
-}
-declare class SwitchBlock extends BlockNode implements Node {
-    expression: AST;
-    groups: SwitchBlockCaseGroup[];
-    /**
-     * These blocks are only captured to allow for autocompletion in the language service. They
-     * aren't meant to be processed in any other way.
-     */
-    unknownBlocks: UnknownBlock[];
-    exhaustiveCheck: SwitchExhaustiveCheck | null;
-    constructor(expression: AST, groups: SwitchBlockCaseGroup[], 
-    /**
-     * These blocks are only captured to allow for autocompletion in the language service. They
-     * aren't meant to be processed in any other way.
-     */
-    unknownBlocks: UnknownBlock[], exhaustiveCheck: SwitchExhaustiveCheck | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class SwitchBlockCase extends BlockNode implements Node {
-    expression: AST | null;
-    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class SwitchBlockCaseGroup extends BlockNode implements Node {
-    cases: SwitchBlockCase[];
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(cases: SwitchBlockCase[], children: Node[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class SwitchExhaustiveCheck extends BlockNode implements Node {
-    expression: AST | null;
-    constructor(expression: AST | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class ForLoopBlock extends BlockNode implements Node {
-    item: Variable;
-    expression: ASTWithSource;
-    trackBy: ASTWithSource | null;
-    trackKeywordSpan: ParseSourceSpan$1 | null;
-    contextVariables: Variable[];
-    children: Node[];
-    empty: ForLoopBlockEmpty | null;
-    mainBlockSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(item: Variable, expression: ASTWithSource, trackBy: ASTWithSource | null, trackKeywordSpan: ParseSourceSpan$1 | null, contextVariables: Variable[], children: Node[], empty: ForLoopBlockEmpty | null, sourceSpan: ParseSourceSpan$1, mainBlockSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class ForLoopBlockEmpty extends BlockNode implements Node {
-    children: Node[];
-    i18n?: I18nMeta$1 | undefined;
-    constructor(children: Node[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class IfBlock extends BlockNode implements Node {
-    branches: IfBlockBranch[];
-    constructor(branches: IfBlockBranch[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class IfBlockBranch extends BlockNode implements Node {
-    expression: AST | null;
-    children: Node[];
-    expressionAlias: Variable | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(expression: AST | null, children: Node[], expressionAlias: Variable | null, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, nameSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class UnknownBlock implements Node {
-    name: string;
-    sourceSpan: ParseSourceSpan$1;
-    nameSpan: ParseSourceSpan$1;
-    constructor(name: string, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class LetDeclaration implements Node {
-    name: string;
-    value: AST;
-    sourceSpan: ParseSourceSpan$1;
-    nameSpan: ParseSourceSpan$1;
-    valueSpan: ParseSourceSpan$1;
-    constructor(name: string, value: AST, sourceSpan: ParseSourceSpan$1, nameSpan: ParseSourceSpan$1, valueSpan: ParseSourceSpan$1);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Component implements Node {
-    componentName: string;
-    tagName: string | null;
-    fullName: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    children: Node[];
-    references: Reference[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(componentName: string, tagName: string | null, fullName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Directive implements Node {
-    name: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    references: Reference[];
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], references: Reference[], sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Template implements Node {
-    tagName: string | null;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    templateAttrs: (BoundAttribute | TextAttribute)[];
-    children: Node[];
-    references: Reference[];
-    variables: Variable[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Content implements Node {
-    selector: string;
-    attributes: TextAttribute[];
-    children: Node[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan$1;
-    startSourceSpan: ParseSourceSpan$1;
-    endSourceSpan: ParseSourceSpan$1 | null;
-    i18n?: I18nMeta$1 | undefined;
-    readonly name = "ng-content";
-    constructor(selector: string, attributes: TextAttribute[], children: Node[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan$1, startSourceSpan: ParseSourceSpan$1, endSourceSpan: ParseSourceSpan$1 | null, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Variable implements Node {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan?: ParseSourceSpan$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Reference implements Node {
-    name: string;
-    value: string;
-    sourceSpan: ParseSourceSpan$1;
-    readonly keySpan: ParseSourceSpan$1;
-    valueSpan?: ParseSourceSpan$1 | undefined;
-    constructor(name: string, value: string, sourceSpan: ParseSourceSpan$1, keySpan: ParseSourceSpan$1, valueSpan?: ParseSourceSpan$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Icu implements Node {
-    vars: {
-        [name: string]: BoundText;
-    };
-    placeholders: {
-        [name: string]: Text | BoundText;
-    };
-    sourceSpan: ParseSourceSpan$1;
-    i18n?: I18nMeta$1 | undefined;
-    constructor(vars: {
-        [name: string]: BoundText;
-    }, placeholders: {
-        [name: string]: Text | BoundText;
-    }, sourceSpan: ParseSourceSpan$1, i18n?: I18nMeta$1 | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-/**
- * AST node that represents the host element of a directive.
- * This node is used only for type checking purposes and cannot be produced from a user's template.
- */
-declare class HostElement implements Node {
-    readonly tagNames: string[];
-    readonly bindings: BoundAttribute[];
-    readonly listeners: BoundEvent[];
-    readonly sourceSpan: ParseSourceSpan$1;
-    constructor(tagNames: string[], bindings: BoundAttribute[], listeners: BoundEvent[], sourceSpan: ParseSourceSpan$1);
-    visit<Result>(): Result;
-}
-interface Visitor<Result = any> {
-    visit?(node: Node): Result;
-    visitElement(element: Element): Result;
-    visitTemplate(template: Template): Result;
-    visitContent(content: Content): Result;
-    visitVariable(variable: Variable): Result;
-    visitReference(reference: Reference): Result;
-    visitTextAttribute(attribute: TextAttribute): Result;
-    visitBoundAttribute(attribute: BoundAttribute): Result;
-    visitBoundEvent(attribute: BoundEvent): Result;
-    visitText(text: Text): Result;
-    visitBoundText(text: BoundText): Result;
-    visitIcu(icu: Icu): Result;
-    visitDeferredBlock(deferred: DeferredBlock): Result;
-    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): Result;
-    visitDeferredBlockError(block: DeferredBlockError): Result;
-    visitDeferredBlockLoading(block: DeferredBlockLoading): Result;
-    visitDeferredTrigger(trigger: DeferredTrigger): Result;
-    visitSwitchBlock(block: SwitchBlock): Result;
-    visitSwitchBlockCase(block: SwitchBlockCase): Result;
-    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): Result;
-    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): Result;
-    visitForLoopBlock(block: ForLoopBlock): Result;
-    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): Result;
-    visitIfBlock(block: IfBlock): Result;
-    visitIfBlockBranch(block: IfBlockBranch): Result;
-    visitBoundaryBlock(block: BoundaryBlock): Result;
-    visitBoundaryErrorBlock(block: BoundaryErrorBlock): Result;
-    visitUnknownBlock(block: UnknownBlock): Result;
-    visitLetDeclaration(decl: LetDeclaration): Result;
-    visitComponent(component: Component): Result;
-    visitDirective(directive: Directive): Result;
-    visitContentBlock(block: ContentBlock): Result;
-}
-declare class RecursiveVisitor implements Visitor<void> {
-    visitElement(element: Element): void;
-    visitTemplate(template: Template): void;
-    visitDeferredBlock(deferred: DeferredBlock): void;
-    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): void;
-    visitDeferredBlockError(block: DeferredBlockError): void;
-    visitDeferredBlockLoading(block: DeferredBlockLoading): void;
-    visitSwitchBlock(block: SwitchBlock): void;
-    visitSwitchBlockCase(block: SwitchBlockCase): void;
-    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): void;
-    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): void;
-    visitForLoopBlock(block: ForLoopBlock): void;
-    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): void;
-    visitIfBlock(block: IfBlock): void;
-    visitIfBlockBranch(block: IfBlockBranch): void;
-    visitBoundaryBlock(block: BoundaryBlock): void;
-    visitBoundaryErrorBlock(block: BoundaryErrorBlock): void;
-    visitContent(content: Content): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
-    visitVariable(variable: Variable): void;
-    visitReference(reference: Reference): void;
-    visitTextAttribute(attribute: TextAttribute): void;
-    visitBoundAttribute(attribute: BoundAttribute): void;
-    visitBoundEvent(attribute: BoundEvent): void;
-    visitText(text: Text): void;
-    visitBoundText(text: BoundText): void;
-    visitIcu(icu: Icu): void;
-    visitDeferredTrigger(trigger: DeferredTrigger): void;
-    visitUnknownBlock(block: UnknownBlock): void;
-    visitLetDeclaration(decl: LetDeclaration): void;
-    visitContentBlock(block: ContentBlock): void;
-}
-declare function visitAll<Result>(visitor: Visitor<Result>, nodes: Node[]): Result[];
 
 interface R3Reference {
     value: Expression;
@@ -3762,11 +2571,11 @@ type ScopedNode = Template | SwitchBlockCaseGroup | IfBlockBranch | ForLoopBlock
 type ReferenceTarget<DirectiveT> = {
     directive: DirectiveT;
     node: Exclude<DirectiveOwner, HostElement>;
-} | Element | Template;
+} | Element$1 | Template;
 /** Entity that is local to the template and defined within the template. */
-type TemplateEntity = Reference | Variable | LetDeclaration;
+type TemplateEntity = Reference | Variable | LetDeclaration$1;
 /** Nodes that can have directives applied to them. */
-type DirectiveOwner = Element | Template | Component | Directive | HostElement;
+type DirectiveOwner = Element$1 | Template | Component$1 | Directive$1 | HostElement;
 /** Information about a host directive binding that was exposed under conflicting aliases. */
 interface ConflictingHostDirectiveBinding<DirectiveT> {
     /** Metadata of the directive that the binding belongs to. */
@@ -3782,7 +2591,7 @@ interface ConflictingHostDirectiveBinding<DirectiveT> {
  * A logical target for analysis, which could contain a template or other types of bindings.
  */
 interface Target<DirectiveT> {
-    template?: Node[];
+    template?: Node$2[];
     host?: {
         node: HostElement;
         directives: DirectiveT[];
@@ -3903,7 +2712,7 @@ interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * For a given template node (usually an `Element`), get the foreign component that matched
      * the node, if any.
      */
-    getForeignComponent(element: Element): ForeignComponentMeta | null;
+    getForeignComponent(element: Element$1): ForeignComponentMeta | null;
     /**
      * For a given `Reference`, get the reference's target - either an `Element`, a `Template`, or
      * a directive on a particular node.
@@ -3914,7 +2723,7 @@ interface BoundTarget<DirectiveT extends DirectiveMeta> {
      *
      * This will either be a directive or the node itself.
      */
-    getConsumerOfBinding(binding: BoundAttribute | BoundEvent | TextAttribute): DirectiveT | Element | Template | null;
+    getConsumerOfBinding(binding: BoundAttribute | BoundEvent | TextAttribute): DirectiveT | Element$1 | Template | null;
     /**
      * If the given `AST` expression refers to a `Reference` or `Variable` within the `Target`, then
      * return that.
@@ -3973,7 +2782,7 @@ interface BoundTarget<DirectiveT extends DirectiveMeta> {
      * @param block Block that the trigger belongs to.
      * @param trigger Trigger whose target is being looked up.
      */
-    getDeferredTriggerTarget(block: DeferredBlock, trigger: DeferredTrigger): Element | null;
+    getDeferredTriggerTarget(block: DeferredBlock, trigger: DeferredTrigger): Element$1 | null;
     /**
      * Whether a given node is located in a `@defer` block.
      */
@@ -4691,7 +3500,7 @@ interface R3ComponentMetadata<DeclarationT extends R3TemplateDependency> extends
         /**
          * Parsed nodes of the template.
          */
-        nodes: Node[];
+        nodes: Node$2[];
         /**
          * Any ng-content selectors extracted from the template. Contains `*` when an ng-content
          * element without selector is present.
@@ -5353,7 +4162,7 @@ interface ParsedTemplate {
     /**
      * The template AST, parsed from the template.
      */
-    nodes: Node[];
+    nodes: Node$2[];
     /**
      * Any styleUrls extracted from the metadata.
      */
@@ -5370,7 +4179,7 @@ interface ParsedTemplate {
      * Any R3 Comment Nodes extracted from the template when the `collectCommentNodes` parse template
      * option is enabled.
      */
-    commentNodes?: Comment[];
+    commentNodes?: Comment$1[];
 }
 
 interface DeclareComponentTemplateInfo {
@@ -5508,7 +4317,7 @@ declare class SelectorlessMatcher<T = unknown> {
 /**
  * Creates a `CssSelector` from an AST node.
  */
-declare function createCssSelectorFromNode(node: Element | Template): CssSelector;
+declare function createCssSelectorFromNode(node: Element$1 | Template): CssSelector;
 
 /**
  * Compile a directive declaration defined by the `R3DirectiveMetadata`.
@@ -6134,46 +4943,6 @@ declare class R3TargetBinder<DirectiveT extends DirectiveMeta> implements Target
 }
 
 /**
- * Visitor that traverses all template and expression AST nodes in a template.
- * Useful for cases where every single node needs to be visited.
- */
-declare class CombinedRecursiveAstVisitor extends RecursiveAstVisitor implements RecursiveVisitor {
-    visit(node: AST | Node): void;
-    visitElement(element: Element): void;
-    visitTemplate(template: Template): void;
-    visitContent(content: Content): void;
-    visitContentBlock(block: ContentBlock): void;
-    visitBoundAttribute(attribute: BoundAttribute): void;
-    visitBoundEvent(attribute: BoundEvent): void;
-    visitBoundText(text: BoundText): void;
-    visitIcu(icu: Icu): void;
-    visitDeferredBlock(deferred: DeferredBlock): void;
-    visitDeferredTrigger(trigger: DeferredTrigger): void;
-    visitDeferredBlockPlaceholder(block: DeferredBlockPlaceholder): void;
-    visitDeferredBlockError(block: DeferredBlockError): void;
-    visitDeferredBlockLoading(block: DeferredBlockLoading): void;
-    visitSwitchBlock(block: SwitchBlock): void;
-    visitSwitchBlockCase(block: SwitchBlockCase): void;
-    visitSwitchBlockCaseGroup(block: SwitchBlockCaseGroup): void;
-    visitSwitchExhaustiveCheck(block: SwitchExhaustiveCheck): void;
-    visitForLoopBlock(block: ForLoopBlock): void;
-    visitForLoopBlockEmpty(block: ForLoopBlockEmpty): void;
-    visitIfBlock(block: IfBlock): void;
-    visitIfBlockBranch(block: IfBlockBranch): void;
-    visitBoundaryBlock(block: BoundaryBlock): void;
-    visitBoundaryErrorBlock(block: BoundaryErrorBlock): void;
-    visitLetDeclaration(decl: LetDeclaration): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
-    visitVariable(variable: Variable): void;
-    visitReference(reference: Reference): void;
-    visitTextAttribute(attribute: TextAttribute): void;
-    visitText(text: Text): void;
-    visitUnknownBlock(block: UnknownBlock): void;
-    protected visitAllTemplateNodes(nodes: Node[]): void;
-}
-
-/**
  * This array represents the DOM schema. It encodes inheritance, properties, and events.
  *
  * ## Overview
@@ -6712,7 +5481,7 @@ interface OutOfBandDiagnosticRecorder<T> {
      * @param id the type-checking ID of the template which contains the unknown pipe.
      * @param element the element which hosts a component that was defer-loaded.
      */
-    deferredComponentUsedEagerly(id: TypeCheckId, element: Element | Template, dirMeta: TcbDirectiveMetadata, currentBlockName: string | null, declaredBlocks: string[] | null): void;
+    deferredComponentUsedEagerly(id: TypeCheckId, element: Element$1 | Template, dirMeta: TcbDirectiveMetadata, currentBlockName: string | null, declaredBlocks: string[] | null): void;
     /**
      * Reports a duplicate declaration of a template variable.
      *
@@ -6730,9 +5499,9 @@ interface OutOfBandDiagnosticRecorder<T> {
     /**
      * Reports a split two way binding error message.
      */
-    splitTwoWayBinding(id: TypeCheckId, input: BoundAttribute, output: BoundEvent, inputConsumer: Pick<TcbDirectiveMetadata, 'name' | 'isComponent' | 'ref'>, outputConsumer: Pick<TcbDirectiveMetadata, 'name' | 'isComponent' | 'ref'> | Element): void;
+    splitTwoWayBinding(id: TypeCheckId, input: BoundAttribute, output: BoundEvent, inputConsumer: Pick<TcbDirectiveMetadata, 'name' | 'isComponent' | 'ref'>, outputConsumer: Pick<TcbDirectiveMetadata, 'name' | 'isComponent' | 'ref'> | Element$1): void;
     /** Reports required inputs that haven't been bound. */
-    missingRequiredInputs(id: TypeCheckId, element: Element | Template | Component | Directive, directiveName: string, isComponent: boolean, inputAliases: string[]): void;
+    missingRequiredInputs(id: TypeCheckId, element: Element$1 | Template | Component$1 | Directive$1, directiveName: string, isComponent: boolean, inputAliases: string[]): void;
     /**
      * Reports accesses of properties that aren't available in a `for` block's tracking expression.
      */
@@ -6744,31 +5513,31 @@ interface OutOfBandDiagnosticRecorder<T> {
     /**
      * Reports cases where control flow nodes prevent content projection.
      */
-    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty | BoundaryBlock, preservesWhitespaces: boolean): void;
+    controlFlowPreventingContentProjection(id: TypeCheckId, category: OutOfBandDiagnosticCategory, projectionNode: Element$1 | Template, componentName: string, slotSelector: string, controlFlowNode: IfBlockBranch | SwitchBlockCase | ForLoopBlock | ForLoopBlockEmpty | BoundaryBlock, preservesWhitespaces: boolean): void;
     /** Reports cases where users are writing to `@let` declarations. */
-    illegalWriteToLetDeclaration(id: TypeCheckId, node: AST, target: LetDeclaration): void;
+    illegalWriteToLetDeclaration(id: TypeCheckId, node: AST, target: LetDeclaration$1): void;
     /** Reports cases where users are accessing an `@let` before it is defined.. */
-    letUsedBeforeDefinition(id: TypeCheckId, node: PropertyRead, target: LetDeclaration): void;
+    letUsedBeforeDefinition(id: TypeCheckId, node: PropertyRead, target: LetDeclaration$1): void;
     /**
      * Reports a `@let` declaration that conflicts with another symbol in the same scope.
      *
      * @param id the type-checking ID of the template which contains the declaration.
      * @param current the `LetDeclaration` which is invalid.
      */
-    conflictingDeclaration(id: TypeCheckId, current: LetDeclaration): void;
+    conflictingDeclaration(id: TypeCheckId, current: LetDeclaration$1): void;
     /**
      * Reports that a named template dependency (e.g. `<Missing/>`) is not available.
      * @param id Type checking ID of the template in which the dependency is declared.
      * @param node Node that declares the dependency.
      */
-    missingNamedTemplateDependency(id: TypeCheckId, node: Component | Directive): void;
+    missingNamedTemplateDependency(id: TypeCheckId, node: Component$1 | Directive$1): void;
     /**
      * Reports that a templace dependency of the wrong kind has been referenced at a specific position
      * (e.g. `<SomeDirective/>`).
      * @param id Type checking ID of the template in which the dependency is declared.
      * @param node Node that declares the dependency.
      */
-    incorrectTemplateDependencyType(id: TypeCheckId, node: Component | Directive): void;
+    incorrectTemplateDependencyType(id: TypeCheckId, node: Component$1 | Directive$1): void;
     /**
      * Reports a binding inside directive syntax that does not match any of the inputs/outputs of
      * the directive.
@@ -6776,7 +5545,7 @@ interface OutOfBandDiagnosticRecorder<T> {
      * @param directive Directive that contains the binding.
      * @param node Node declaring the binding.
      */
-    unclaimedDirectiveBinding(id: TypeCheckId, directive: Directive, node: BoundAttribute | TextAttribute | BoundEvent): void;
+    unclaimedDirectiveBinding(id: TypeCheckId, directive: Directive$1, node: BoundAttribute | TextAttribute | BoundEvent): void;
     /**
      * Reports that an implicit deferred trigger is set on a block that does not have a placeholder.
      */
@@ -6793,7 +5562,7 @@ interface OutOfBandDiagnosticRecorder<T> {
     /**
      * Reports that multiple components in the compilation scope match a given element.
      */
-    multipleMatchingComponents(id: TypeCheckId, element: Element, componentNames: string[]): void;
+    multipleMatchingComponents(id: TypeCheckId, element: Element$1, componentNames: string[]): void;
     /**
      * Reports that a host directive input/output has been exposed under multiple names.
      * @param id Type checking ID of the template in which the host directive was used.
@@ -6803,7 +5572,7 @@ interface OutOfBandDiagnosticRecorder<T> {
      * @param classPropertyName Name of the class member that declares the input/output.
      * @param aliases Aliases under which the binding is exposed.
      */
-    conflictingHostDirectiveBinding(id: TypeCheckId, node: Element | Template | Component | Directive, directiveName: string, kind: 'input' | 'output', classPropertyName: string, aliases: string[]): void;
+    conflictingHostDirectiveBinding(id: TypeCheckId, node: Element$1 | Template | Component$1 | Directive$1, directiveName: string, kind: 'input' | 'output', classPropertyName: string, aliases: string[]): void;
 }
 
 /**
@@ -6912,307 +5681,11 @@ declare enum TcbGenericContextBehavior {
 }
 
 /**
- * Describes the kind of identifier found in a template.
- */
-declare enum IdentifierKind {
-    Property = 0,
-    Method = 1,// TODO: No longer being used. To be removed together with `MethodIdentifier`.
-    Element = 2,
-    Template = 3,
-    Attribute = 4,
-    Reference = 5,
-    Variable = 6,
-    LetDeclaration = 7,
-    Component = 8,
-    Directive = 9,
-    Input = 10,
-    Output = 11,
-    Pipe = 12
-}
-/**
- * Describes a semantically-interesting identifier in a template, such as an interpolated variable
- * or selector.
- */
-interface TemplateIdentifier {
-    name: string;
-    span: AbsoluteSourceSpan;
-    kind: IdentifierKind;
-}
-/** Describes a template expression, which may have a template reference or variable target. */
-interface TemplateExpressionIdentifier<T = unknown> extends TemplateIdentifier {
-    /**
-     * ReferenceIdentifier or VariableIdentifier in the template that this identifier targets, if
-     * any. If the target is `null`, it points to a declaration on the component class.
-     */
-    target: ReferenceIdentifier<T> | VariableIdentifier | LetDeclarationIdentifier | null;
-}
-/** Describes a property accessed in a template. */
-interface PropertyIdentifier<T = unknown> extends TemplateExpressionIdentifier<T> {
-    kind: IdentifierKind.Property;
-}
-/**
- * Describes a method accessed in a template.
- * @deprecated No longer being used. To be removed.
- */
-interface MethodIdentifier<T = unknown> extends TemplateExpressionIdentifier<T> {
-    kind: IdentifierKind.Method;
-}
-/** Describes an element attribute in a template. */
-interface AttributeIdentifier extends TemplateIdentifier {
-    kind: IdentifierKind.Attribute;
-}
-/** A reference to a directive node and its selector. */
-interface DirectiveReference<T = unknown> {
-    node: T;
-    selector: string;
-}
-/** A base interface for element and template identifiers. */
-interface BaseDirectiveHostIdentifier<T = unknown> extends TemplateIdentifier {
-    /** Attributes on an element or template. */
-    attributes: Set<AttributeIdentifier>;
-    /** Directives applied to an element or template. */
-    usedDirectives: Set<DirectiveReference<T>>;
-}
-/**
- * Describes an indexed element in a template. The name of an `ElementIdentifier` is the entire
- * element tag, which can be parsed by an indexer to determine where used directives should be
- * referenced.
- */
-interface ElementIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
-    kind: IdentifierKind.Element;
-}
-/** Describes an indexed template node in a component template file. */
-interface TemplateNodeIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
-    kind: IdentifierKind.Template;
-}
-/** Describes a selectorless component node in a template file. */
-interface ComponentNodeIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
-    kind: IdentifierKind.Component;
-}
-/** Describes a selectorless directive node in a template file. */
-interface DirectiveNodeIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
-    kind: IdentifierKind.Directive;
-}
-/** Describes a reference in a template like "foo" in `<div #foo></div>`. */
-interface ReferenceIdentifier<T = unknown> extends TemplateIdentifier {
-    kind: IdentifierKind.Reference;
-    /** The target of this reference. If the target is not known, this is `null`. */
-    target: {
-        /** The template AST node that the reference targets. */
-        node: DirectiveHostIdentifier<T>;
-        /**
-         * The directive on `node` that the reference targets. If no directive is targeted, this is
-         * `null`.
-         */
-        directive: T | null;
-    } | null;
-}
-/** Describes a template variable like "foo" in `<div *ngFor="let foo of foos"></div>`. */
-interface VariableIdentifier extends TemplateIdentifier {
-    kind: IdentifierKind.Variable;
-}
-/** Describes an `@let` declaration in a template. */
-interface LetDeclarationIdentifier extends TemplateIdentifier {
-    kind: IdentifierKind.LetDeclaration;
-}
-/** Describes a bound attribute or event in a template targeting an Angular input/output. */
-interface BoundAttributeIdentifier<T = unknown> extends TemplateIdentifier {
-    kind: IdentifierKind.Input | IdentifierKind.Output;
-    target: {
-        node: T;
-    } | null;
-}
-/** Describes a pipe used in a template expression. */
-interface PipeIdentifier<T = unknown> extends TemplateIdentifier {
-    kind: IdentifierKind.Pipe;
-    target: {
-        node: T;
-    } | null;
-}
-/**
- * Identifiers recorded at the top level of the template, without any context about the HTML nodes
- * they were discovered in.
- */
-type TopLevelIdentifier<T = unknown> = PropertyIdentifier<T> | ElementIdentifier<T> | TemplateNodeIdentifier<T> | ReferenceIdentifier<T> | VariableIdentifier | MethodIdentifier<T> | LetDeclarationIdentifier | ComponentNodeIdentifier<T> | DirectiveNodeIdentifier<T> | BoundAttributeIdentifier<T> | PipeIdentifier<T>;
-/** Identifiers that can bring in directives to the template. */
-type DirectiveHostIdentifier<T = unknown> = ElementIdentifier<T> | TemplateNodeIdentifier<T> | ComponentNodeIdentifier<T> | DirectiveNodeIdentifier<T>;
-/**
- * Describes an analyzed, indexed component and its template.
- */
-interface IndexedComponent<T = unknown> {
-    name: string;
-    selector: string | null;
-    fileUrl: string;
-    template: {
-        identifiers: Set<TopLevelIdentifier<T>>;
-        fileUrl: string;
-    };
-    errors: Error[];
-}
-/**
- * Abstract representation of a bound template, providing methods to query
- * directives and targets in the template.
- */
-interface AbstractBoundTemplate<T = unknown> {
-    getDirectivesOfNode(node: Element | Template | Component | Directive): Array<{
-        ref: {
-            node: T;
-        };
-        selector: string | null;
-    }> | null;
-    getReferenceTarget(node: Reference): Element | Template | Component | Directive | {
-        node: Element | Template | Component | Directive;
-        directive: {
-            ref: {
-                node: T;
-            };
-        };
-    } | null;
-    getConsumerOfBinding?(binding: BoundAttribute | BoundEvent | TextAttribute): {
-        ref: {
-            node: T;
-        };
-    } | Element | Template | null;
-    getExpressionTarget(ast: AST): Reference | Variable | LetDeclaration | null;
-    getUsedDirectives(): Array<{
-        ref: {
-            node: T;
-        };
-        isComponent: boolean;
-    }>;
-    getTemplateAst(): Node[] | undefined;
-    getPipe(name: string): {
-        ref: {
-            node: T;
-        };
-    } | null;
-}
-/**
- * Adapter to extract information from a node, such as its name and file name.
- */
-interface NodeAdapter<T = unknown> {
-    getName(node: T): string;
-    getFileName(node: T): string;
-}
-
-/**
- * An intermediate representation of a component.
- */
-interface IndexerComponentInfo<T = unknown> {
-    /** Component class declaration */
-    declaration: T;
-    /** Component template selector if it exists, otherwise null. */
-    selector: string | null;
-    /**
-     * BoundTarget containing the parsed template. Can also be used to query for directives used in
-     * the template.
-     */
-    boundTemplate: AbstractBoundTemplate<T>;
-    /** Metadata about the template */
-    templateMeta: {
-        /** Whether the component template is inline */
-        isInline: boolean;
-        /** Template file recorded by template parser */
-        file: ParseSourceFile;
-    };
-}
-/**
- * A context for storing indexing information about components of a program.
- *
- * An `IndexingContext` collects component and template analysis information from
- * `DecoratorHandler`s and exposes them to be indexed.
- */
-declare class IndexingContext<T = unknown> {
-    readonly components: Set<IndexerComponentInfo<T>>;
-    /**
-     * Adds a component to the context.
-     */
-    addComponent(info: IndexerComponentInfo<T>): void;
-}
-
-/**
- * Visits the AST of a parsed Angular template. Discovers and stores
- * identifiers of interest, deferring to an `ExpressionVisitor` as needed.
- */
-declare class IndexerVisitor<T = unknown> extends CombinedRecursiveAstVisitor {
-    private boundTemplate;
-    readonly identifiers: Set<TopLevelIdentifier<T>>;
-    readonly errors: Error[];
-    private currentAstWithSource;
-    private readonly targetIdentifierCache;
-    private readonly directiveHostIdentifierCache;
-    /**
-     * Creates a template visitor for a bound template target. The bound target can be used when
-     * deferred to the expression visitor to get information about the target of an expression.
-     *
-     * @param boundTemplate bound template target
-     */
-    constructor(boundTemplate: AbstractBoundTemplate<T>);
-    /**
-     * Add an identifier for an HTML element and visit its children recursively.
-     *
-     * @param element
-     */
-    visitElement(element: Element): void;
-    visitTemplate(template: Template): void;
-    visitReference(reference: Reference): void;
-    visitVariable(variable: Variable): void;
-    visitLetDeclaration(decl: LetDeclaration): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
-    visitPropertyRead(ast: PropertyRead): void;
-    visitPipe(ast: BindingPipe): void;
-    private visitPipeIdentifier;
-    visitBoundAttribute(attribute: BoundAttribute): void;
-    visitBoundEvent(event: BoundEvent): void;
-    visitTextAttribute(attribute: TextAttribute): void;
-    private bindingToIdentifier;
-    /** Creates an identifier for a template element or template node. */
-    private directiveHostToIdentifier;
-    /** Creates an identifier for a template reference or template variable target. */
-    private targetToIdentifier;
-    /** Gets the start location of a string in a SourceSpan */
-    private getStartLocation;
-    /**
-     * Visits a node's expression and adds its identifiers, if any, to the visitor's state.
-     * Only ASTs with information about the expression source and its location are visited.
-     *
-     * @param node node whose expression to visit
-     */
-    visit(node: Node | AST): void;
-    /**
-     * Visits an identifier, adding it to the identifier store if it is useful for indexing.
-     *
-     * @param ast expression AST the identifier is in
-     * @param kind identifier kind
-     */
-    private visitIdentifier;
-}
-/**
- * Traverses a template AST and builds identifiers discovered in it.
- *
- * @param boundTemplate bound template target, which can be used for querying expression targets.
- * @return identifiers in template
- */
-declare function getIndexerTemplateIdentifiers<T>(boundTemplate: AbstractBoundTemplate<T>): {
-    identifiers: Set<TopLevelIdentifier<T>>;
-    errors: Error[];
-};
-
-/**
- * Generates `IndexedComponent` entries from a `IndexingContext`, which has information
- * about components discovered in the program registered in it.
- *
- * The context must be populated before `generateIndexerAnalysis` is called.
- */
-declare function generateIndexerAnalysis<T>(context: IndexingContext<T>, adapter: NodeAdapter<T>): Map<T, IndexedComponent<T>>;
-
-/**
  * Whether legacy optional chaining is opt-in (false) or opt-out (true).
  *
  * This is extracted in order to be patched in G3.
  */
 declare const LEGACY_OPTIONAL_CHAINING_DEFAULT = false;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment$1 as Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component$1 as Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive$1 as Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element$1 as Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IdentifierKind, IfStmt, ImplicitReceiver, IndexerVisitor, IndexingContext, InstantiateExpr, Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration$1 as LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseFlags, ParseLocation, ParseSourceFile, ParseSourceSpan$1 as ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PrefixNot, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor, RecursiveVisitor$1 as RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text$1 as Text, ThisReceiver, BlockNode as TmplAstBlockNode, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, BoundaryBlock as TmplAstBoundaryBlock, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, Component as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive as TmplAstDirective, Element as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core_d as core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateIndexerAnalysis, generateTypeCheckBlock, getHtmlTagDefinition, getIndexerTemplateIdentifiers, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll as tmplAstVisitAll, unwrapWriteTarget, verifyHostBindings, visitAll$1 as visitAll };
-export type { AbstractBoundTemplate, ArrowFunctionParameter, AssignmentOperation, AstVisitor, AttributeIdentifier, BindingPropertyName, BoundAttributeIdentifier, BoundTarget, ClassPropertyName, CompileClassMetadataFn, CompileIdentifierMetadata, ComponentNodeIdentifier, ConflictingHostDirectiveBinding, DeclareComponentTemplateInfo, DirectiveHostIdentifier, DirectiveMatcher, DirectiveMeta, DirectiveNodeIdentifier, DirectiveOwner, DirectiveReference, DomSchemaChecker, ElementIdentifier, ExpressionVisitor, ForeignComponentMeta, HostBindingDecorator, HostListenerDecorator, HostObjectLiteralBinding, IndexedComponent, IndexerComponentInfo, InputOrOutput, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LetDeclarationIdentifier, LexerRange, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MaybeForwardRefExpression, MethodIdentifier, Node$1 as Node, NodeAdapter, OutOfBandDiagnosticRecorder, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, PipeIdentifier, PropertyIdentifier, R3ClassDebugInfo, R3ClassMetadata, R3ClassMetadataCtorParameter, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareServiceMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3ForeignComponentMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3ServiceMetadata, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceIdentifier, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, SourceNode, StatementVisitor, StaticSourceNode, TagDefinition, Target, TargetBinder, TcbComponentMetadata, TcbDirectiveMetadata, TcbEnvironment, TcbInputMapping, TcbPipeMetadata, TcbReferenceKey, TcbReferenceMetadata, TcbTypeCheckBlockMetadata, TcbTypeParameter, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, TemplateGuardMeta, TemplateIdentifier, TemplateNodeIdentifier, DeferredBlockTriggers as TmplAstDeferredBlockTriggers, Node as TmplAstNode, Visitor as TmplAstVisitor, TopLevelIdentifier, TypeCheckId, TypeCheckingConfig, TypeCtorMetadata, TypeVisitor, VariableIdentifier, Visitor$1 as Visitor };
+export { AST, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunctionExpr, Attribute, BinaryOperator, BinaryOperatorExpr, BindingParser, BindingPipe, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, ChangeDetectionStrategy$1 as ChangeDetectionStrategy, ClassPropertyMapping, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclarationListEmitMode, DeclareFunctionStmt, DeclareVarStmt, DeferBlockDepsEmitMode, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, Expansion, ExpansionCase, Expression, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, ForwardRefHandling, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, InstantiateExpr, InvokeFunctionExpr, JSDocComment, JitEvaluator, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, TokenType$1 as LexerTokenType, LiteralArrayExpr, LiteralExpr, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParseError, ParseFlags, ParseSourceSpan$1 as ParseSourceSpan, ParseTreeResult, ParsedEvent, ParsedProperty, ParsedVariable, Parser, PropertyRead, QueryFlags, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveVisitor, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBinding, TemplateBindingParseResult, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, BoundAttribute as TmplAstBoundAttribute, BoundEvent as TmplAstBoundEvent, BoundaryBlock as TmplAstBoundaryBlock, Component$1 as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, DeferredTrigger as TmplAstDeferredTrigger, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, IfBlockBranch as TmplAstIfBlockBranch, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, Node$2 as TmplAstNode, Reference as TmplAstReference, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, Template as TmplAstTemplate, TextAttribute as TmplAstTextAttribute, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type$1 as Type, TypeModifier, TypeofExpr, UnaryOperator, UnaryOperatorExpr, VERSION, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core_d as core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast_d as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, splitNsName, verifyHostBindings, visitAll };
+export type { BindingPropertyName, BoundTarget, ClassPropertyName, CompileClassMetadataFn, ConflictingHostDirectiveBinding, DeclareComponentTemplateInfo, DirectiveMatcher, DirectiveMeta, DirectiveOwner, DomSchemaChecker, ExpressionVisitor, ForeignComponentMeta, HostBindingDecorator, HostListenerDecorator, HostObjectLiteralBinding, InputOrOutput, InterpolationPiece, LegacyAnimationTriggerNames, LegacyInputPartialMapping, LexerRange, MaybeForwardRefExpression, Node, OutOfBandDiagnosticRecorder, ParseTemplateOptions, ParsedHostBindings, ParsedTemplate, R3ClassDebugInfo, R3ClassMetadata, R3ClassMetadataCtorParameter, R3CompiledExpression, R3ComponentDeferMetadata, R3ComponentMetadata, R3DeclareClassMetadata, R3DeclareClassMetadataAsync, R3DeclareComponentMetadata, R3DeclareDependencyMetadata, R3DeclareDirectiveDependencyMetadata, R3DeclareDirectiveMetadata, R3DeclareFactoryMetadata, R3DeclareHostDirectiveMetadata, R3DeclareInjectableMetadata, R3DeclareInjectorMetadata, R3DeclareNgModuleDependencyMetadata, R3DeclareNgModuleMetadata, R3DeclarePipeDependencyMetadata, R3DeclarePipeMetadata, R3DeclareQueryMetadata, R3DeclareServiceMetadata, R3DeclareTemplateDependencyMetadata, R3DeferPerBlockDependency, R3DeferPerComponentDependency, R3DeferResolverFunctionMetadata, R3DependencyMetadata, R3DirectiveDependencyMetadata, R3DirectiveMetadata, R3FactoryMetadata, R3ForeignComponentMetadata, R3HmrMetadata, R3HmrNamespaceDependency, R3HostDirectiveMetadata, R3HostMetadata, R3InjectableMetadata, R3InjectorMetadata, R3InputMetadata, R3NgModuleDependencyMetadata, R3NgModuleMetadata, R3NgModuleMetadataGlobal, R3PartialDeclaration, R3PipeDependencyMetadata, R3PipeMetadata, R3QueryMetadata, R3Reference, R3ServiceMetadata, R3TemplateDependency, R3TemplateDependencyMetadata, ReferenceTarget, SchemaMetadata, ScopedNode, SourceMap, SourceNode, StatementVisitor, StaticSourceNode, TagDefinition, Target, TargetBinder, TcbComponentMetadata, TcbDirectiveMetadata, TcbEnvironment, TcbInputMapping, TcbPipeMetadata, TcbReferenceKey, TcbReferenceMetadata, TcbTypeCheckBlockMetadata, TcbTypeParameter, TemplateEntity, TemplateGuardMeta, TypeCheckId, TypeCheckingConfig, TypeCtorMetadata, TypeVisitor, Visitor };
