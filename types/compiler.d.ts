@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.2+sha-3715109
+ * @license Angular v22.3.0-next.2+sha-fdb84e2
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -3522,6 +3522,7 @@ declare abstract class AbstractEmitterVisitor implements StatementVisitor, Expre
         leadingComments?: LeadingComment[];
         sourceSpan?: ParseSourceSpan$1 | null;
     }, ctx: EmitterVisitorContext): void;
+    protected escapeStringOrIdentifier(input: string, alwaysQuote?: boolean, escapeNonAscii?: boolean): string;
 }
 
 interface ExternalReferenceResolver {
