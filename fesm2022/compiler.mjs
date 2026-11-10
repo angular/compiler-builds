@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.4+sha-0dafb36
+ * @license Angular v22.3.0-next.4+sha-225d600
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -366,7 +366,8 @@ function registerContext(ctx, namespace, specs) {
 }
 function checkSecurityContext(tagName, propName, namespace) {
   const securitySchema = SECURITY_SCHEMA();
-  const attrSchema = securitySchema[propName.toLowerCase()];
+  const normalizedPropName = propName.replace(/^:+/, '').toLowerCase();
+  const attrSchema = securitySchema[normalizedPropName];
   if (!attrSchema) {
     return SecurityContext.NONE;
   }
@@ -4590,7 +4591,7 @@ function splitNsName(elementName, fatal = true) {
     return [null, elementName];
   }
   const colonIndex = elementName.indexOf(':', 1);
-  if (colonIndex === -1) {
+  if (colonIndex === -1 || colonIndex === 1) {
     if (fatal) {
       throw new Error(`Unsupported format "${elementName}" expecting ":namespace:name"`);
     } else {
@@ -11758,7 +11759,7 @@ class _Tokenizer {
       this._cursor.advance();
     }
     let nameStart;
-    if (this._cursor.peek() === $COLON) {
+    if (this._cursor.peek() === $COLON && this._cursor.diff(nameOrPrefixStart) > 0) {
       prefix = this._cursor.getChars(nameOrPrefixStart);
       this._cursor.advance();
       nameStart = this._cursor.clone();
@@ -12826,6 +12827,9 @@ class _TreeBuilder {
   }
   _consumeAttr(attrName) {
     const fullName = mergeNsAndName(attrName.parts[0], attrName.parts[1]);
+    if (attrName.parts[0].length === 0 && attrName.parts[1].startsWith(':')) {
+      this.errors.push(TreeError.create(attrName.parts[1], attrName.sourceSpan, `Invalid attribute name '${attrName.parts[1]}'. Attribute names cannot start with a colon.`));
+    }
     let attrEnd = attrName.sourceSpan.end;
     if (this._peek.type === 16) {
       this._advance();
@@ -15322,8 +15326,16 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     return 'ng-component';
   }
   validateProperty(name) {
-    if (name.toLowerCase().startsWith('on')) {
-      const msg = `Binding to event property '${name}' is disallowed for security reasons, ` + `please use (${name.slice(2)})=...` + `\nIf '${name}' is a directive input, make sure the directive is imported by the` + ` current module.`;
+    if (name.startsWith(':')) {
+      return {
+        error: true,
+        msg: `Invalid property name '${name}'. Property names cannot start with a colon.`
+      };
+    }
+    const colonIdx = name.lastIndexOf(':');
+    const localName = colonIdx > -1 ? name.substring(colonIdx + 1) : name;
+    if (localName.toLowerCase().startsWith('on')) {
+      const msg = `Binding to event property '${name}' is disallowed for security reasons, ` + `please use (${localName.slice(2)})=...` + `\nIf '${name}' is a directive input, make sure the directive is imported by the` + ` current module.`;
       return {
         error: true,
         msg: msg
@@ -15335,8 +15347,16 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     }
   }
   validateAttribute(name) {
-    if (name.toLowerCase().startsWith('on')) {
-      const msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` + `please use (${name.slice(2)})=...`;
+    if (name.startsWith(':')) {
+      return {
+        error: true,
+        msg: `Invalid attribute name '${name}'. Attribute names cannot start with a colon.`
+      };
+    }
+    const colonIdx = name.lastIndexOf(':');
+    const localName = colonIdx > -1 ? name.substring(colonIdx + 1) : name;
+    if (localName.toLowerCase().startsWith('on')) {
+      const msg = `Binding to event attribute '${name}' is disallowed for security reasons, ` + `please use (${localName.slice(2)})=...`;
       return {
         error: true,
         msg: msg
@@ -19887,7 +19907,7 @@ class BindingParser {
     if (parts.length > 1) {
       if (parts[0] == ATTRIBUTE_PREFIX) {
         boundPropertyName = parts.slice(1).join(PROPERTY_PARTS_SEPARATOR);
-        if (!skipValidation) {
+        if (!skipValidation || boundPropertyName.startsWith(':')) {
           this._validatePropertyOrAttributeName(boundPropertyName, boundProp.sourceSpan, true);
         }
         securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, boundPropertyName, true);
@@ -19925,9 +19945,18 @@ class BindingParser {
     if (boundPropertyName === null) {
       const mappedPropName = this._schemaRegistry.getMappedPropName(boundProp.name);
       boundPropertyName = mapPropertyName ? mappedPropName : boundProp.name;
-      securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, false);
-      bindingType = boundProp.type === ParsedPropertyType.TWO_WAY ? BindingType.TwoWay : BindingType.Property;
-      if (!skipValidation) {
+      const [ns, name] = splitNsName(boundPropertyName, false);
+      if (ns !== null) {
+        bindingType = BindingType.Attribute;
+      } else {
+        bindingType = boundProp.type === ParsedPropertyType.TWO_WAY ? BindingType.TwoWay : BindingType.Property;
+      }
+      securityContexts = calcPossibleSecurityContexts(this._schemaRegistry, elementSelector, mappedPropName, bindingType === BindingType.Attribute);
+      if (ns !== null) {
+        if (!skipValidation || name.toLowerCase().startsWith('on')) {
+          this._validatePropertyOrAttributeName(`${ns}:${name}`, boundProp.sourceSpan, true);
+        }
+      } else if (!skipValidation || boundPropertyName.startsWith(':')) {
         this._validatePropertyOrAttributeName(mappedPropName, boundProp.sourceSpan, false);
       }
     }
@@ -20131,6 +20160,17 @@ function ingestHostBinding(input, bindingParser, constantPool) {
     }
     if (property.isAnimation) {
       bindingKind = BindingKind.Animation;
+    }
+    if (bindingKind === BindingKind.Attribute) {
+      const report = domSchema.validateAttribute(property.name);
+      if (report.error) {
+        bindingParser.errors.push(new ParseError(property.sourceSpan, report.msg));
+      }
+    } else if (bindingKind === BindingKind.Property && !property.name.startsWith('class.') && !property.name.startsWith('style.') && !property.name.startsWith('class!') && !property.name.startsWith('style!')) {
+      const report = domSchema.validateProperty(property.name);
+      if (report.error) {
+        bindingParser.errors.push(new ParseError(property.sourceSpan, report.msg));
+      }
     }
     const securityContexts = calcHostBindingSecurityContexts(bindingParser, input.componentSelector, property.name, bindingKind === BindingKind.Attribute);
     ingestDomProperty(job, property, bindingKind, securityContexts);
@@ -22584,8 +22624,13 @@ class HtmlAstToIvyAst {
       if (prop.isLiteral) {
         literal.push(new TextAttribute(prop.name, prop.expression.source || '', prop.sourceSpan, prop.keySpan, prop.valueSpan, i18n));
       } else {
-        const isAttrOn = prop.name.toLowerCase().startsWith('attr.on');
-        const bep = this.bindingParser.createBoundElementProperty(elementName, prop, !isAttrOn, false);
+        const isAttr = prop.name.startsWith('attr.');
+        const attrName = isAttr ? prop.name.slice(5) : prop.name;
+        const [ns, nsLocalName] = splitNsName(attrName, false);
+        const colonIdx = attrName.lastIndexOf(':');
+        const localName = colonIdx > -1 ? attrName.substring(colonIdx + 1) : attrName;
+        const isColonOrOn = isAttr && attrName.startsWith(':') || ns === null && attrName.startsWith(':') || isAttr && localName.toLowerCase().startsWith('on') || ns !== null && nsLocalName.toLowerCase().startsWith('on');
+        const bep = this.bindingParser.createBoundElementProperty(elementName, prop, !isColonOrOn, false);
         bound.push(BoundAttribute.fromBoundElementProperty(bep, i18n));
       }
     });
@@ -22605,6 +22650,10 @@ class HtmlAstToIvyAst {
     let i18nAttrsMeta = null;
     let elementHasInlineTemplate = false;
     for (const attribute of attrs) {
+      const rawName = attribute.keySpan?.toString();
+      if (rawName !== undefined ? rawName.startsWith(':') : attribute.name.startsWith(':') && splitNsName(attribute.name, false)[0] === null) {
+        continue;
+      }
       let hasBinding = false;
       let isTemplateBinding = false;
       if (attribute.i18n) {
@@ -22856,7 +22905,7 @@ class NonBindableVisitor {
     return new TextAttribute(attribute.name, attribute.value, attribute.sourceSpan, attribute.keySpan, attribute.valueSpan, attribute.i18n);
   }
   visitText(text) {
-    return new Text$3(text.value, text.sourceSpan);
+    return new Text$3(replaceNgsp(text.value), text.sourceSpan);
   }
   visitExpansion(expansion) {
     return null;
@@ -23297,11 +23346,21 @@ function verifyHostBindings(bindings, sourceSpan) {
 }
 function validateNoEventBindings(bindings, bindingParser, sourceSpan) {
   for (const prop in bindings.properties) {
+    if (prop.startsWith('class.') || prop.startsWith('style.') || prop.startsWith('class!') || prop.startsWith('style!')) {
+      continue;
+    }
     const isAttr = prop.startsWith('attr.');
     const boundName = isAttr ? prop.slice(5) : prop;
-    if (boundName.toLowerCase().startsWith('on')) {
+    if (boundName.startsWith(':')) {
+      const type = isAttr ? 'attribute' : 'property';
+      bindingParser.errors.push(new ParseError(sourceSpan, `Invalid ${type} name '${boundName}'. ${type === 'attribute' ? 'Attribute' : 'Property'} names cannot start with a colon.`));
+      continue;
+    }
+    const colonIdx = boundName.lastIndexOf(':');
+    const localName = colonIdx > -1 ? boundName.substring(colonIdx + 1) : boundName;
+    if (localName.toLowerCase().startsWith('on')) {
       const errorType = isAttr ? 'attribute' : 'property';
-      const suggestion = `(${boundName.slice(2)})=...`;
+      const suggestion = `(${localName.slice(2)})=...`;
       let msg = `Binding to event ${errorType} '${boundName}' is disallowed for security reasons, please use ${suggestion}`;
       if (!isAttr) {
         msg += `\nIf '${prop}' is a directive input, make sure the directive is imported by the current module.`;
@@ -26653,7 +26712,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -26671,7 +26730,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -26744,7 +26803,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -27086,7 +27145,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -27112,7 +27171,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -27153,7 +27212,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -27179,7 +27238,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -27209,7 +27268,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -27247,7 +27306,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-0dafb36'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-225d600'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -27321,7 +27380,7 @@ function compileHmrUpdateCallback(definitions, constantStatements, meta) {
   return new DeclareFunctionStmt(`${meta.className}_UpdateMetadata`, params, body, DYNAMIC_TYPE, StmtModifier.Final);
 }
 
-const VERSION = new Version('22.3.0-next.4+sha-0dafb36');
+const VERSION = new Version('22.3.0-next.4+sha-225d600');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
