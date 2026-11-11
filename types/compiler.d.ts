@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.4+sha-effbe56
+ * @license Angular v22.3.0-next.4+sha-e4f6744
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -5383,6 +5383,10 @@ interface TypeCheckingConfig {
      * Whether to validate unknown element tags even when matched by attribute directives.
      */
     checkUnknownElements: boolean;
+    /**
+     * Whether to check if unknown properties are bound to `<ng-template>`.
+     */
+    checkTypeOfNgTemplateBindings: boolean;
 }
 
 /**

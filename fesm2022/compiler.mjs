@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.4+sha-effbe56
+ * @license Angular v22.3.0-next.4+sha-e4f6744
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -14981,7 +14981,7 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     }
     const normalizedTag = normalizeTagName(tagName);
     if (normalizedTag.includes('-')) {
-      if (isNgContainer(normalizedTag) || isNgContent(normalizedTag)) {
+      if (isNgContainer(normalizedTag) || isNgContent(normalizedTag) || isNgTemplate(normalizedTag)) {
         return false;
       }
       if (schemaMetas.some(schema => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
@@ -14997,7 +14997,7 @@ class DomElementSchemaRegistry extends ElementSchemaRegistry {
     }
     const normalizedTag = normalizeTagName(tagName);
     if (normalizedTag.includes('-')) {
-      if (isNgContainer(normalizedTag) || isNgContent(normalizedTag)) {
+      if (isNgContainer(normalizedTag) || isNgContent(normalizedTag) || isNgTemplate(normalizedTag)) {
         return true;
       }
       if (schemaMetas.some(schema => schema.name === CUSTOM_ELEMENTS_SCHEMA.name)) {
@@ -26137,7 +26137,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -26155,7 +26155,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -26228,7 +26228,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -26567,7 +26567,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26593,7 +26593,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -26634,7 +26634,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -26660,7 +26660,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -26690,7 +26690,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -26728,7 +26728,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-effbe56'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-e4f6744'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -26864,7 +26864,7 @@ class PotentialTopLevelReadsVisitor extends RecursiveAstVisitor {
   }
 }
 
-const VERSION = new Version('22.3.0-next.4+sha-effbe56');
+const VERSION = new Version('22.3.0-next.4+sha-e4f6744');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -29022,10 +29022,10 @@ class TcbDomSchemaCheckerOp extends TcbOp {
   }
   execute() {
     const element = this.element;
-    const isTemplateElement = element instanceof Element$1;
+    const isTemplateElement = element instanceof Element$1 || element instanceof Template;
     const bindings = isTemplateElement ? element.inputs : element.bindings;
     if (this.checkElement && isTemplateElement) {
-      this.tcb.domSchemaChecker.checkElement(this.tcb.id, element.name, element.startSourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
+      this.tcb.domSchemaChecker.checkElement(this.tcb.id, this.getTagName(element), element.startSourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
     }
     for (const binding of bindings) {
       const isPropertyBinding = binding.type === BindingType.Property || binding.type === BindingType.TwoWay;
@@ -29035,13 +29035,19 @@ class TcbDomSchemaCheckerOp extends TcbOp {
       if (isPropertyBinding && binding.name !== 'style' && binding.name !== 'class') {
         const propertyName = REGISTRY.getMappedPropName(binding.name);
         if (isTemplateElement) {
-          this.tcb.domSchemaChecker.checkTemplateElementProperty(this.tcb.id, element.name, propertyName, binding.sourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
+          this.tcb.domSchemaChecker.checkTemplateElementProperty(this.tcb.id, this.getTagName(element), propertyName, binding.sourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
         } else {
           this.tcb.domSchemaChecker.checkHostElementProperty(this.tcb.id, element, propertyName, binding.keySpan, this.tcb.schemas);
         }
       }
     }
     return null;
+  }
+  getTagName(node) {
+    if (node instanceof Element$1) {
+      return node.name;
+    }
+    return splitNsName(node.tagName)[1];
   }
 }
 
@@ -29546,6 +29552,9 @@ class Scope {
         if (!isForeign) {
           this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, true, claimedInputs));
         }
+      } else if (isExplicitNgTemplate(node) && this.tcb.env.config.checkTypeOfNgTemplateBindings) {
+        this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs));
+        this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, false, claimedInputs));
       }
       return;
     }
@@ -29581,15 +29590,29 @@ class Scope {
       this.appendDirectiveInputs(dir, node, dirMap, directives, i);
     }
     this.directiveOpMap.set(node, dirMap);
-    if (node instanceof Element$1) {
+    if (node instanceof Element$1 || isExplicitNgTemplate(node) && this.tcb.env.config.checkTypeOfNgTemplateBindings) {
+      const explicitNgTemplate = isExplicitNgTemplate(node);
       for (const dir of directives) {
         for (const propertyName of dir.inputs.propertyNames) {
           claimedInputs.add(propertyName);
         }
       }
       this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs));
-      const checkElement = this.requiresUnknownElementCheck(node, directives);
-      this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
+      const schemaClaimedInputs = new Set(claimedInputs);
+      if (explicitNgTemplate) {
+        for (const dir of directives) {
+          if (dir.matchSource === MatchSource.Selector && dir.selector !== null) {
+            const selectors = CssSelector.parse(dir.selector);
+            for (const selector of selectors) {
+              for (let i = 0; i < selector.attrs.length; i += 2) {
+                schemaClaimedInputs.add(selector.attrs[i]);
+              }
+            }
+          }
+        }
+      }
+      const checkElement = node instanceof Element$1 && this.requiresUnknownElementCheck(node, directives);
+      this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, schemaClaimedInputs));
     }
   }
   appendOutputsOfElementLikeNode(node, bindings, events) {
@@ -29653,6 +29676,25 @@ class Scope {
           const checkElement = this.requiresUnknownElementCheck(node, directives);
           this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
         }
+      } else if (isExplicitNgTemplate(node) && this.tcb.env.config.checkTypeOfNgTemplateBindings) {
+        const schemaClaimedInputs = new Set();
+        const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
+        if (directives !== null && directives.length > 0) {
+          for (const dir of directives) {
+            for (const propertyName of dir.inputs.propertyNames) {
+              schemaClaimedInputs.add(propertyName);
+            }
+            if (dir.matchSource === MatchSource.Selector && dir.selector !== null) {
+              const selectors = CssSelector.parse(dir.selector);
+              for (const selector of selectors) {
+                for (let i = 0; i < selector.attrs.length; i += 2) {
+                  schemaClaimedInputs.add(selector.attrs[i]);
+                }
+              }
+            }
+          }
+        }
+        this.opQueue.push(new TcbDomSchemaCheckerOp(this.tcb, node, false, schemaClaimedInputs));
       }
       this.appendDeepSchemaChecks(node.children);
     }
@@ -29787,6 +29829,9 @@ function matchesTagName(selector, tagName) {
   } catch {
     return false;
   }
+}
+function isExplicitNgTemplate(node) {
+  return node instanceof Template && node.tagName !== null && isNgTemplate(node.tagName);
 }
 
 function generateTypeCheckBlock(env, component, name, meta, domSchemaChecker, oobRecorder) {
