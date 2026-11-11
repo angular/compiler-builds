@@ -1,10 +1,10 @@
 /**
- * @license Angular v22.3.0-next.4+sha-a3bc172
+ * @license Angular v22.3.0-next.4+sha-98b0f3b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
 
-import { Variable, Template, Element as Element$1, BindingType, ASTWithSource, AbsoluteSourceSpan, Interpolation as Interpolation$1, ParseSpan, LiteralPrimitive, Binary, PropertyRead, KeyedRead, EmptyExpr as EmptyExpr$1, SafePropertyRead, SafeKeyedRead, Chain, BindingPipe, Conditional, Unary, PrefixNot, TypeofExpression, VoidExpression, NonNullAssert, ParenthesizedExpression, ThisReceiver, ImplicitReceiver, LiteralArray, LiteralMap, SafeCall, Call, SpreadElement, ExpressionBinding, VariableBinding, TaggedTemplateLiteral, TemplateLiteral, TemplateLiteralElement, RegularExpressionLiteral, ArrowFunction, ArrowFunctionIdentifierParameter, RecursiveAstVisitor as RecursiveAstVisitor$1, unwrapWriteTarget, BindingPipeType, ParsedVariable, ParsedProperty, ParsedPropertyType, BoundElementProperty, ParsedEvent, ParsedEventType, Content, Text as Text$3, BoundText, IfBlock, SwitchBlock, DeferredBlock, Icu as Icu$1, ForLoopBlock, LetDeclaration as LetDeclaration$1, BoundaryBlock, Component as Component$1, Comment as Comment$1, TextAttribute, AST, ContentBlock, BoundaryErrorBlock, IfBlockBranch, ForLoopBlockEmpty, SwitchExhaustiveCheck, SwitchBlockCase, SwitchBlockCaseGroup, UnknownBlock, BoundDeferredTrigger, ViewportDeferredTrigger, HoverDeferredTrigger, ImmediateDeferredTrigger, InteractionDeferredTrigger, TimerDeferredTrigger, IdleDeferredTrigger, NeverDeferredTrigger, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, BoundAttribute, Directive as Directive$1, Reference, BoundEvent, HostElement, CombinedRecursiveAstVisitor, visitAll as visitAll$1, RecursiveVisitor as RecursiveVisitor$1, ASTWithName } from './_index-chunk.mjs';
+import { Variable, Template, Element as Element$1, BindingType, ASTWithSource, AbsoluteSourceSpan, Interpolation as Interpolation$1, ParseSpan, LiteralPrimitive, Binary, PropertyRead, KeyedRead, EmptyExpr as EmptyExpr$1, SafePropertyRead, SafeKeyedRead, Chain, BindingPipe, Conditional, Unary, PrefixNot, TypeofExpression, VoidExpression, NonNullAssert, ParenthesizedExpression, ThisReceiver, ImplicitReceiver, LiteralArray, LiteralMap, SafeCall, Call, SpreadElement, ExpressionBinding, VariableBinding, TaggedTemplateLiteral, TemplateLiteral, TemplateLiteralElement, RegularExpressionLiteral, ArrowFunction, ArrowFunctionIdentifierParameter, RecursiveAstVisitor as RecursiveAstVisitor$1, unwrapWriteTarget, ParsedVariable, ParsedProperty, ParsedPropertyType, BoundElementProperty, ParsedEvent, ParsedEventType, Content, Text as Text$3, BoundText, IfBlock, SwitchBlock, DeferredBlock, Icu as Icu$1, ForLoopBlock, LetDeclaration as LetDeclaration$1, BoundaryBlock, Comment as Comment$1, TextAttribute, AST, ContentBlock, BoundaryErrorBlock, IfBlockBranch, ForLoopBlockEmpty, SwitchExhaustiveCheck, SwitchBlockCase, SwitchBlockCaseGroup, UnknownBlock, BoundDeferredTrigger, ViewportDeferredTrigger, HoverDeferredTrigger, ImmediateDeferredTrigger, InteractionDeferredTrigger, TimerDeferredTrigger, IdleDeferredTrigger, NeverDeferredTrigger, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, BoundAttribute, Reference, BoundEvent, HostElement, CombinedRecursiveAstVisitor, visitAll as visitAll$1, RecursiveVisitor as RecursiveVisitor$1, ASTWithName } from './_index-chunk.mjs';
 export { IdentifierKind, IndexerVisitor, IndexingContext, BlockNode as TmplAstBlockNode, DeferredTrigger as TmplAstDeferredTrigger, generateIndexerAnalysis, getIndexerTemplateIdentifiers } from './_index-chunk.mjs';
 
 const _SELECTOR_REGEXP = new RegExp('(\\:not\\()|' + '(([\\.\\#]?)[-\\w]+)|' + '(?:\\[([-.\\w*\\\\$]+)(?:=(["\']?)([^\\]"\']*)\\5)?\\])|' + '(\\))|' + '(\\s*,\\s*)', 'g');
@@ -11036,18 +11036,16 @@ class StartTagComment {
 class Element extends NodeWithI18n {
   name;
   attrs;
-  directives;
   children;
   isSelfClosing;
   startSourceSpan;
   endSourceSpan;
   isVoid;
   comments;
-  constructor(name, attrs, directives, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, isVoid, i18n, comments = []) {
+  constructor(name, attrs, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, isVoid, i18n, comments = []) {
     super(sourceSpan, i18n);
     this.name = name;
     this.attrs = attrs;
-    this.directives = directives;
     this.children = children;
     this.isSelfClosing = isSelfClosing;
     this.startSourceSpan = startSourceSpan;
@@ -11088,51 +11086,6 @@ class Block extends NodeWithI18n {
   }
   visit(visitor, context) {
     return visitor.visitBlock(this, context);
-  }
-}
-class Component extends NodeWithI18n {
-  componentName;
-  tagName;
-  fullName;
-  attrs;
-  directives;
-  children;
-  isSelfClosing;
-  startSourceSpan;
-  endSourceSpan;
-  comments;
-  constructor(componentName, tagName, fullName, attrs, directives, children, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan = null, i18n, comments = []) {
-    super(sourceSpan, i18n);
-    this.componentName = componentName;
-    this.tagName = tagName;
-    this.fullName = fullName;
-    this.attrs = attrs;
-    this.directives = directives;
-    this.children = children;
-    this.isSelfClosing = isSelfClosing;
-    this.startSourceSpan = startSourceSpan;
-    this.endSourceSpan = endSourceSpan;
-    this.comments = comments;
-  }
-  visit(visitor, context) {
-    return visitor.visitComponent(this, context);
-  }
-}
-class Directive {
-  name;
-  attrs;
-  sourceSpan;
-  startSourceSpan;
-  endSourceSpan;
-  constructor(name, attrs, sourceSpan, startSourceSpan, endSourceSpan = null) {
-    this.name = name;
-    this.attrs = attrs;
-    this.sourceSpan = sourceSpan;
-    this.startSourceSpan = startSourceSpan;
-    this.endSourceSpan = endSourceSpan;
-  }
-  visit(visitor, context) {
-    return visitor.visitDirective(this, context);
   }
 }
 class BlockParameter {
@@ -11179,7 +11132,6 @@ class RecursiveVisitor {
   visitElement(ast, context) {
     this.visitChildren(context, visit => {
       visit(ast.attrs);
-      visit(ast.directives);
       visit(ast.comments);
       visit(ast.children);
     });
@@ -11202,18 +11154,6 @@ class RecursiveVisitor {
   }
   visitBlockParameter(ast, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {
-    this.visitChildren(context, visit => {
-      visit(component.attrs);
-      visit(component.comments);
-      visit(component.children);
-    });
-  }
-  visitDirective(directive, context) {
-    this.visitChildren(context, visit => {
-      visit(directive.attrs);
-    });
-  }
   visitChildren(context, cb) {
     let results = [];
     let t = this;
@@ -11275,13 +11215,11 @@ class _Tokenizer {
   _currentTokenStart = null;
   _currentTokenType = null;
   _expansionCaseStack = [];
-  _openDirectiveCount = 0;
   _inInterpolation = false;
   _preserveLineEndings;
   _i18nNormalizeLineEndingsInICUs;
   _tokenizeBlocks;
   _tokenizeLet;
-  _selectorlessEnabled;
   tokens = [];
   errors = [];
   nonNormalizedIcuExpressions = [];
@@ -11300,7 +11238,6 @@ class _Tokenizer {
     this._i18nNormalizeLineEndingsInICUs = options.i18nNormalizeLineEndingsInICUs || false;
     this._tokenizeBlocks = options.tokenizeBlocks ?? true;
     this._tokenizeLet = options.tokenizeLet ?? true;
-    this._selectorlessEnabled = options.selectorlessEnabled ?? false;
     try {
       this._cursor.init();
     } catch (e) {
@@ -11346,7 +11283,7 @@ class _Tokenizer {
         this.handleError(e);
       }
     }
-    this._beginToken(43);
+    this._beginToken(35);
     this._endToken([]);
   }
   _getBlockName() {
@@ -11741,7 +11678,7 @@ class _Tokenizer {
     this._endToken([content]);
   }
   _consumeProcessingInstruction(start) {
-    this._beginToken(42, start);
+    this._beginToken(34, start);
     const contentStart = this._cursor.clone();
     this._attemptUntilIgnoreQuotes(char => char === $QUESTION || char === $GT);
     const endChar = this._cursor.peek();
@@ -11805,28 +11742,15 @@ class _Tokenizer {
   _consumeTagOpen(start) {
     let tagName;
     let prefix;
-    let closingTagName;
     let openToken;
     try {
-      if (this._selectorlessEnabled && isSelectorlessNameStart(this._cursor.peek())) {
-        openToken = this._consumeComponentOpenStart(start);
-        [closingTagName, prefix, tagName] = openToken.parts;
-        if (prefix) {
-          closingTagName += `:${prefix}`;
-        }
-        if (tagName) {
-          closingTagName += `:${tagName}`;
-        }
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-      } else {
-        if (!isAsciiLetter(this._cursor.peek())) {
-          throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
-        }
-        openToken = this._consumeTagOpenStart(start);
-        prefix = openToken.parts[0];
-        tagName = closingTagName = openToken.parts[1];
-        this._attemptCharCodeUntilFn(isNotWhitespace);
+      if (!isAsciiLetter(this._cursor.peek())) {
+        throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
       }
+      openToken = this._consumeTagOpenStart(start);
+      prefix = openToken.parts[0];
+      tagName = openToken.parts[1];
+      this._attemptCharCodeUntilFn(isNotWhitespace);
       while (true) {
         const commentStart = this._cursor.clone();
         if (this._attemptStr('//')) {
@@ -11840,26 +11764,13 @@ class _Tokenizer {
         if (isAttributeTerminator(this._cursor.peek())) {
           break;
         }
-        if (this._selectorlessEnabled && this._cursor.peek() === $AT) {
-          const start = this._cursor.clone();
-          const nameStart = start.clone();
-          nameStart.advance();
-          if (isSelectorlessNameStart(nameStart.peek())) {
-            this._consumeDirective(start, nameStart);
-          }
-        } else {
-          this._consumeAttribute();
-        }
+        this._consumeAttribute();
       }
-      if (openToken.type === 34) {
-        this._consumeComponentOpenEnd();
-      } else {
-        this._consumeTagOpenEnd();
-      }
+      this._consumeTagOpenEnd();
     } catch (e) {
       if (e instanceof ParseError) {
         if (openToken) {
-          openToken.type = openToken.type === 34 ? 38 : 4;
+          openToken.type = 4;
         } else {
           this._beginToken(5, start);
           this._endToken(['<']);
@@ -11870,9 +11781,9 @@ class _Tokenizer {
     }
     const contentTokenType = this._getTagDefinition(tagName).getContentType(prefix);
     if (contentTokenType === TagContentType.RAW_TEXT) {
-      this._consumeRawTextWithTagClose(openToken, closingTagName, false);
+      this._consumeRawTextWithTagClose(openToken, tagName, false);
     } else if (contentTokenType === TagContentType.ESCAPABLE_RAW_TEXT) {
-      this._consumeRawTextWithTagClose(openToken, closingTagName, true);
+      this._consumeRawTextWithTagClose(openToken, tagName, true);
     }
   }
   _consumeRawTextWithTagClose(openToken, tagName, consumeEntities) {
@@ -11884,7 +11795,7 @@ class _Tokenizer {
       this._attemptCharCodeUntilFn(isNotWhitespace);
       return this._attemptCharCode($GT);
     });
-    this._beginToken(openToken.type === 34 ? 37 : 3);
+    this._beginToken(3);
     this._requireCharCodeUntilFn(code => code === $GT, 3);
     this._cursor.advance();
     this._endToken(openToken.parts);
@@ -11893,25 +11804,6 @@ class _Tokenizer {
     this._beginToken(0, start);
     const parts = this._consumePrefixAndName(isNameEnd);
     return this._endToken(parts);
-  }
-  _consumeComponentOpenStart(start) {
-    this._beginToken(34, start);
-    const parts = this._consumeComponentName();
-    return this._endToken(parts);
-  }
-  _consumeComponentName() {
-    const nameStart = this._cursor.clone();
-    while (isSelectorlessNameChar(this._cursor.peek())) {
-      this._cursor.advance();
-    }
-    const name = this._cursor.getChars(nameStart);
-    let prefix = '';
-    let tagName = '';
-    if (this._cursor.peek() === $COLON) {
-      this._cursor.advance();
-      [prefix, tagName] = this._consumePrefixAndName(isNameEnd);
-    }
-    return [name, prefix, tagName];
   }
   _consumeAttribute() {
     this._consumeAttributeName();
@@ -11929,22 +11821,7 @@ class _Tokenizer {
     }
     this._beginToken(15);
     let nameEndPredicate;
-    if (this._openDirectiveCount > 0) {
-      let openParens = 0;
-      nameEndPredicate = code => {
-        if (this._openDirectiveCount > 0) {
-          if (code === $LPAREN) {
-            openParens++;
-          } else if (code === $RPAREN) {
-            if (openParens === 0) {
-              return true;
-            }
-            openParens--;
-          }
-        }
-        return isNameEnd(code);
-      };
-    } else if (attrNameStart === $LBRACKET) {
+    if (attrNameStart === $LBRACKET) {
       let openBrackets = 0;
       nameEndPredicate = code => {
         if (code === $LBRACKET) {
@@ -11983,27 +11860,7 @@ class _Tokenizer {
     this._requireCharCode($GT);
     this._endToken([]);
   }
-  _consumeComponentOpenEnd() {
-    const tokenType = this._attemptCharCode($SLASH) ? 36 : 35;
-    this._beginToken(tokenType);
-    this._requireCharCode($GT);
-    this._endToken([]);
-  }
   _consumeTagClose(start) {
-    if (this._selectorlessEnabled) {
-      const clone = start.clone();
-      while (clone.peek() !== $GT && !isSelectorlessNameStart(clone.peek())) {
-        clone.advance();
-      }
-      if (isSelectorlessNameStart(clone.peek())) {
-        this._beginToken(37, start);
-        const parts = this._consumeComponentName();
-        this._attemptCharCodeUntilFn(isNotWhitespace);
-        this._requireCharCode($GT);
-        this._endToken(parts);
-        return;
-      }
-    }
     this._beginToken(3, start);
     this._attemptCharCodeUntilFn(isNotWhitespace);
     const prefixAndName = this._consumePrefixAndName(isNameEnd);
@@ -12119,40 +11976,6 @@ class _Tokenizer {
     parts.push(this._getProcessedChars(expressionStart, this._cursor));
     this._endToken(parts);
   }
-  _consumeDirective(start, nameStart) {
-    this._requireCharCode($AT);
-    this._cursor.advance();
-    while (isSelectorlessNameChar(this._cursor.peek())) {
-      this._cursor.advance();
-    }
-    this._beginToken(39, start);
-    const name = this._cursor.getChars(nameStart);
-    this._endToken([name]);
-    this._attemptCharCodeUntilFn(isNotWhitespace);
-    if (this._cursor.peek() !== $LPAREN) {
-      return;
-    }
-    this._openDirectiveCount++;
-    this._beginToken(40);
-    this._cursor.advance();
-    this._endToken([]);
-    this._attemptCharCodeUntilFn(isNotWhitespace);
-    while (!isAttributeTerminator(this._cursor.peek()) && this._cursor.peek() !== $RPAREN) {
-      this._consumeAttribute();
-    }
-    this._attemptCharCodeUntilFn(isNotWhitespace);
-    this._openDirectiveCount--;
-    if (this._cursor.peek() !== $RPAREN) {
-      if (this._cursor.peek() === $GT || this._cursor.peek() === $SLASH) {
-        return;
-      }
-      throw this._createError(_unexpectedCharacterErrorMsg(this._cursor.peek()), this._cursor.getSpan(start));
-    }
-    this._beginToken(41);
-    this._cursor.advance();
-    this._endToken([]);
-    this._attemptCharCodeUntilFn(isNotWhitespace);
-  }
   _getProcessedChars(start, end) {
     return this._processCarriageReturns(end.getChars(start));
   }
@@ -12237,12 +12060,6 @@ function isBlockNameChar(code) {
 }
 function isBlockParameterChar(code) {
   return code !== $SEMICOLON && isNotWhitespace(code);
-}
-function isSelectorlessNameStart(code) {
-  return code === $_ || code >= $A && code <= $Z;
-}
-function isSelectorlessNameChar(code) {
-  return isAsciiLetter(code) || isDigit(code) || code === $_;
 }
 function isAttributeTerminator(code) {
   return code === $SLASH || code === $GT || code === $LT || code === $EOF;
@@ -12518,7 +12335,7 @@ class _TreeBuilder {
     this._advance();
   }
   build() {
-    while (this._peek.type !== 43) {
+    while (this._peek.type !== 35) {
       if (this._peek.type === 0 || this._peek.type === 4) {
         this._consumeElementStartTag(this._advance());
       } else if (this._peek.type === 3) {
@@ -12549,10 +12366,6 @@ class _TreeBuilder {
       } else if (this._peek.type === 33) {
         this._closeVoidElement();
         this._consumeIncompleteLet(this._advance());
-      } else if (this._peek.type === 34 || this._peek.type === 38) {
-        this._consumeComponentStartTag(this._advance());
-      } else if (this._peek.type === 37) {
-        this._consumeComponentEndTag(this._advance());
       } else {
         this._advance();
       }
@@ -12616,7 +12429,7 @@ class _TreeBuilder {
     if (!exp) return null;
     const end = this._advance();
     exp.push({
-      type: 43,
+      type: 35,
       parts: [],
       sourceSpan: end.sourceSpan
     });
@@ -12654,7 +12467,7 @@ class _TreeBuilder {
           return null;
         }
       }
-      if (this._peek.type === 43) {
+      if (this._peek.type === 35) {
         this.errors.push(TreeError.create(null, start.sourceSpan, `Invalid ICU message. Missing '}'.`));
         return null;
       }
@@ -12700,9 +12513,8 @@ class _TreeBuilder {
   }
   _consumeElementStartTag(startTagToken) {
     const attrs = [];
-    const directives = [];
     const comments = [];
-    this._consumeAttributesAndDirectives(attrs, directives, comments);
+    this._consumeAttributes(attrs, comments);
     const fullName = this._getElementFullName(startTagToken, this._getClosestElementLikeParent());
     const tagDef = this._getTagDefinition(fullName);
     let selfClosing = false;
@@ -12719,7 +12531,7 @@ class _TreeBuilder {
     const end = this._peek.sourceSpan.fullStart;
     const span = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
     const startSpan = new ParseSourceSpan(startTagToken.sourceSpan.start, end, startTagToken.sourceSpan.fullStart);
-    const el = new Element(fullName, attrs, directives, [], selfClosing, span, startSpan, undefined, tagDef?.isVoid ?? false, undefined, comments);
+    const el = new Element(fullName, attrs, [], selfClosing, span, startSpan, undefined, tagDef?.isVoid ?? false, undefined, comments);
     const parent = this._getContainer();
     const isClosedByChild = parent !== null && !!this._getTagDefinition(parent)?.isClosedByChild(el.name);
     this._pushContainer(el, isClosedByChild);
@@ -12730,36 +12542,9 @@ class _TreeBuilder {
       this.errors.push(TreeError.create(fullName, span, `Opening tag "${fullName}" not terminated.`));
     }
   }
-  _consumeComponentStartTag(startToken) {
-    const componentName = startToken.parts[0];
-    const attrs = [];
-    const directives = [];
-    const comments = [];
-    this._consumeAttributesAndDirectives(attrs, directives, comments);
-    const closestElement = this._getClosestElementLikeParent();
-    const tagName = this._getComponentTagName(startToken, closestElement);
-    const fullName = this._getComponentFullName(startToken, closestElement);
-    const selfClosing = this._peek.type === 36;
-    this._advance();
-    const end = this._peek.sourceSpan.fullStart;
-    const span = new ParseSourceSpan(startToken.sourceSpan.start, end, startToken.sourceSpan.fullStart);
-    const startSpan = new ParseSourceSpan(startToken.sourceSpan.start, end, startToken.sourceSpan.fullStart);
-    const node = new Component(componentName, tagName, fullName, attrs, directives, [], selfClosing, span, startSpan, undefined, undefined, comments);
-    const parent = this._getContainer();
-    const isClosedByChild = parent !== null && node.tagName !== null && !!this._getTagDefinition(parent)?.isClosedByChild(node.tagName);
-    this._pushContainer(node, isClosedByChild);
-    if (selfClosing) {
-      this._popContainer(fullName, Component, span);
-    } else if (startToken.type === 38) {
-      this._popContainer(fullName, Component, null);
-      this.errors.push(TreeError.create(fullName, span, `Opening tag "${fullName}" not terminated.`));
-    }
-  }
-  _consumeAttributesAndDirectives(attributesResult, directivesResult, commentsResult) {
-    while (this._peek.type === 15 || this._peek.type === 39 || this._peek.type === 12) {
-      if (this._peek.type === 39) {
-        directivesResult.push(this._consumeDirective(this._peek));
-      } else if (this._peek.type === 15) {
+  _consumeAttributes(attributesResult, commentsResult) {
+    while (this._peek.type === 15 || this._peek.type === 12) {
+      if (this._peek.type === 15) {
         attributesResult.push(this._consumeAttr(this._advance()));
       } else {
         const commentToken = this._advance();
@@ -12767,27 +12552,11 @@ class _TreeBuilder {
       }
     }
   }
-  _consumeComponentEndTag(endToken) {
-    const fullName = this._getComponentFullName(endToken, this._getClosestElementLikeParent());
-    if (!this._popContainer(fullName, Component, endToken.sourceSpan)) {
-      const container = this._containerStack[this._containerStack.length - 1];
-      let suffix;
-      if (container instanceof Component && container.componentName === endToken.parts[0]) {
-        suffix = `, did you mean "${container.fullName}"?`;
-      } else {
-        suffix = '. It may happen when the tag has already been closed by another tag.';
-      }
-      const errMsg = `Unexpected closing tag "${fullName}"${suffix}`;
-      this.errors.push(TreeError.create(fullName, endToken.sourceSpan, errMsg));
-    }
-  }
   _getTagDefinition(nodeOrName) {
     if (typeof nodeOrName === 'string') {
       return this.tagDefinitionResolver(nodeOrName);
     } else if (nodeOrName instanceof Element) {
       return this.tagDefinitionResolver(nodeOrName.name);
-    } else if (nodeOrName instanceof Component && nodeOrName.tagName !== null) {
-      return this.tagDefinitionResolver(nodeOrName.tagName);
     } else {
       return null;
     }
@@ -12812,7 +12581,7 @@ class _TreeBuilder {
     let unexpectedCloseTagDetected = false;
     for (let stackIndex = this._containerStack.length - 1; stackIndex >= 0; stackIndex--) {
       const node = this._containerStack[stackIndex];
-      const nodeName = node instanceof Component ? node.fullName : node.name;
+      const nodeName = node.name;
       if ((nodeName === expectedName || expectedName === null) && node instanceof expectedType) {
         node.endSourceSpan = endSourceSpan;
         node.sourceSpan.end = endSourceSpan !== null ? endSourceSpan.end : node.sourceSpan.end;
@@ -12862,28 +12631,6 @@ class _TreeBuilder {
     const valueSpan = valueStartSpan && valueEnd && new ParseSourceSpan(valueStartSpan.start, valueEnd, valueStartSpan.fullStart);
     return new Attribute(fullName, value, new ParseSourceSpan(attrName.sourceSpan.start, attrEnd, attrName.sourceSpan.fullStart), attrName.sourceSpan, valueSpan, valueTokens.length > 0 ? valueTokens : undefined, undefined);
   }
-  _consumeDirective(nameToken) {
-    const attributes = [];
-    let startSourceSpanEnd = nameToken.sourceSpan.end;
-    let endSourceSpan = null;
-    this._advance();
-    if (this._peek.type === 40) {
-      startSourceSpanEnd = this._peek.sourceSpan.end;
-      this._advance();
-      while (this._peek.type === 15) {
-        attributes.push(this._consumeAttr(this._advance()));
-      }
-      if (this._peek.type === 41) {
-        endSourceSpan = this._peek.sourceSpan;
-        this._advance();
-      } else {
-        this.errors.push(TreeError.create(null, nameToken.sourceSpan, 'Unterminated directive definition'));
-      }
-    }
-    const startSourceSpan = new ParseSourceSpan(nameToken.sourceSpan.start, startSourceSpanEnd, nameToken.sourceSpan.fullStart);
-    const sourceSpan = new ParseSourceSpan(startSourceSpan.start, endSourceSpan === null ? nameToken.sourceSpan.end : endSourceSpan.end, startSourceSpan.fullStart);
-    return new Directive(nameToken.parts[0], attributes, sourceSpan, startSourceSpan, endSourceSpan);
-  }
   _consumeBlockOpen(token) {
     const parameters = [];
     while (this._peek.type === 28) {
@@ -12904,7 +12651,7 @@ class _TreeBuilder {
     const topNode = this._containerStack[initialStackLength - 1];
     if (!this._popContainer(null, Block, token.sourceSpan)) {
       if (this._containerStack.length < initialStackLength) {
-        const nodeName = topNode instanceof Component ? topNode.fullName : topNode.name;
+        const nodeName = topNode.name;
         this.errors.push(TreeError.create(null, token.sourceSpan, `Unexpected closing block. The block may have been closed earlier. ` + `Did you forget to close the <${nodeName}> element? ` + `If you meant to write the \`}\` character, you should use the "&#125;" ` + `HTML entity instead.`));
         return;
       }
@@ -12968,7 +12715,7 @@ class _TreeBuilder {
   _getClosestElementLikeParent() {
     for (let i = this._containerStack.length - 1; i > -1; i--) {
       const current = this._containerStack[i];
-      if (current instanceof Element || current instanceof Component) {
+      if (current instanceof Element) {
         return current;
       }
     }
@@ -12986,44 +12733,15 @@ class _TreeBuilder {
     const prefix = this._getPrefix(token, parent);
     return mergeNsAndName(prefix, token.parts[1]);
   }
-  _getComponentFullName(token, parent) {
-    const componentName = token.parts[0];
-    const tagName = this._getComponentTagName(token, parent);
-    if (tagName === null) {
-      return componentName;
-    }
-    return tagName.startsWith(':') ? componentName + tagName : `${componentName}:${tagName}`;
-  }
-  _getComponentTagName(token, parent) {
-    const prefix = this._getPrefix(token, parent);
-    const tagName = token.parts[2];
-    if (!prefix && !tagName) {
-      return null;
-    } else if (!prefix && tagName) {
-      return tagName;
-    } else {
-      return mergeNsAndName(prefix, tagName || 'ng-component');
-    }
-  }
   _getPrefix(token, parent) {
-    let prefix;
-    let tagName;
-    if (token.type === 34 || token.type === 38 || token.type === 37) {
-      prefix = token.parts[1];
-      tagName = token.parts[2];
-    } else {
-      prefix = token.parts[0];
-      tagName = token.parts[1];
-    }
-    prefix = prefix || this._getTagDefinition(tagName)?.implicitNamespacePrefix || '';
+    const tagName = token.parts[1];
+    let prefix = token.parts[0] || this._getTagDefinition(tagName)?.implicitNamespacePrefix || '';
     if (!prefix && parent) {
-      const parentName = parent instanceof Element ? parent.name : parent.tagName;
-      if (parentName !== null) {
-        const parentTagName = splitNsName(parentName)[1];
-        const parentTagDefinition = this._getTagDefinition(parentTagName);
-        if (parentTagDefinition !== null && !parentTagDefinition.preventNamespaceInheritance) {
-          prefix = getNsPrefix(parentName);
-        }
+      const parentName = parent.name;
+      const parentTagName = splitNsName(parentName)[1];
+      const parentTagDefinition = this._getTagDefinition(parentTagName);
+      if (parentTagDefinition !== null && !parentTagDefinition.preventNamespaceInheritance) {
+        prefix = getNsPrefix(parentName);
       }
     }
     return prefix;
@@ -13069,11 +12787,11 @@ class WhitespaceVisitor {
   }
   visitElement(element, context) {
     if (SKIP_WS_TRIM_TAGS.has(element.name) || hasPreserveWhitespacesAttr(element.attrs)) {
-      const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), visitAllWithSiblings(this, element.directives), element.children, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n, element.comments);
+      const newElement = new Element(element.name, visitAllWithSiblings(this, element.attrs), element.children, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n, element.comments);
       this.originalNodeMap?.set(newElement, element);
       return newElement;
     }
-    const newElement = new Element(element.name, element.attrs, element.directives, visitAllWithSiblings(this, element.children), element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n, element.comments);
+    const newElement = new Element(element.name, element.attrs, visitAllWithSiblings(this, element.children), element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n, element.comments);
     this.originalNodeMap?.set(newElement, element);
     return newElement;
   }
@@ -13130,19 +12848,6 @@ class WhitespaceVisitor {
   }
   visitLetDeclaration(decl, context) {
     return decl;
-  }
-  visitComponent(node, context) {
-    if (node.tagName && SKIP_WS_TRIM_TAGS.has(node.tagName) || hasPreserveWhitespacesAttr(node.attrs)) {
-      const newElement = new Component(node.componentName, node.tagName, node.fullName, visitAllWithSiblings(this, node.attrs), visitAllWithSiblings(this, node.directives), node.children, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.i18n, node.comments);
-      this.originalNodeMap?.set(newElement, node);
-      return newElement;
-    }
-    const newElement = new Component(node.componentName, node.tagName, node.fullName, node.attrs, node.directives, visitAllWithSiblings(this, node.children), node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.i18n, node.comments);
-    this.originalNodeMap?.set(newElement, node);
-    return newElement;
-  }
-  visitDirective(directive, context) {
-    return directive;
   }
   visit(_node, context) {
     if (this.requireContext && !context) {
@@ -13830,10 +13535,8 @@ function getLocation(span) {
 }
 class Parser {
   _lexer;
-  _supportsDirectPipeReferences;
-  constructor(_lexer, _supportsDirectPipeReferences = false) {
+  constructor(_lexer) {
     this._lexer = _lexer;
-    this._supportsDirectPipeReferences = _supportsDirectPipeReferences;
   }
   parseAction(input, parseSourceSpan, absoluteOffset) {
     const errors = [];
@@ -13842,7 +13545,7 @@ class Parser {
       stripped: sourceToLex
     } = this._stripComments(input);
     const tokens = this._lexer.tokenize(sourceToLex);
-    const ast = new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 1, errors, 0, this._supportsDirectPipeReferences).parseChain();
+    const ast = new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 1, errors, 0).parseChain();
     return new ASTWithSource(ast, input, getLocation(parseSourceSpan), absoluteOffset, errors);
   }
   parseBinding(input, parseSourceSpan, absoluteOffset) {
@@ -13870,12 +13573,12 @@ class Parser {
       stripped: sourceToLex
     } = this._stripComments(input);
     const tokens = this._lexer.tokenize(sourceToLex);
-    return new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 0, errors, 0, this._supportsDirectPipeReferences).parseChain();
+    return new _ParseAST(input, parseSourceSpan, absoluteOffset, tokens, 0, errors, 0).parseChain();
   }
   parseTemplateBindings(templateKey, templateValue, parseSourceSpan, absoluteKeyOffset, absoluteValueOffset) {
     const tokens = this._lexer.tokenize(templateValue);
     const errors = [];
-    const parser = new _ParseAST(templateValue, parseSourceSpan, absoluteValueOffset, tokens, 0, errors, 0, this._supportsDirectPipeReferences);
+    const parser = new _ParseAST(templateValue, parseSourceSpan, absoluteValueOffset, tokens, 0, errors, 0);
     return parser.parseTemplateBindings({
       source: templateKey,
       span: new AbsoluteSourceSpan(absoluteKeyOffset, absoluteKeyOffset + templateKey.length)
@@ -13902,7 +13605,7 @@ class Parser {
         errors.push(getParseError('Interpolation expression cannot only contain a comment', input, `at column ${expressions[i].start} in`, parseSourceSpan));
         continue;
       }
-      const ast = new _ParseAST(expressionSpan ? expressionText : input, expressionSpan || parseSourceSpan, absoluteOffset, tokens, 0, errors, offsets[i], this._supportsDirectPipeReferences).parseChain();
+      const ast = new _ParseAST(expressionSpan ? expressionText : input, expressionSpan || parseSourceSpan, absoluteOffset, tokens, 0, errors, offsets[i]).parseChain();
       expressionNodes.push(ast);
     }
     return this.createInterpolationAst(strings.map(s => s.text), expressionNodes, input, getLocation(parseSourceSpan), absoluteOffset, errors);
@@ -13913,7 +13616,7 @@ class Parser {
     } = this._stripComments(expression);
     const tokens = this._lexer.tokenize(sourceToLex);
     const errors = [];
-    const ast = new _ParseAST(expression, parseSourceSpan, absoluteOffset, tokens, 0, errors, 0, this._supportsDirectPipeReferences).parseChain();
+    const ast = new _ParseAST(expression, parseSourceSpan, absoluteOffset, tokens, 0, errors, 0).parseChain();
     const strings = ['', ''];
     return this.createInterpolationAst(strings, [ast], expression, getLocation(parseSourceSpan), absoluteOffset, errors);
   }
@@ -14077,14 +13780,13 @@ class _ParseAST {
   parseFlags;
   errors;
   offset;
-  supportsDirectPipeReferences;
   rparensExpected = 0;
   rbracketsExpected = 0;
   rbracesExpected = 0;
   context = ParseContextFlags.None;
   sourceSpanCache = new Map();
   index = 0;
-  constructor(input, parseSourceSpan, absoluteOffset, tokens, parseFlags, errors, offset, supportsDirectPipeReferences) {
+  constructor(input, parseSourceSpan, absoluteOffset, tokens, parseFlags, errors, offset) {
     this.input = input;
     this.parseSourceSpan = parseSourceSpan;
     this.absoluteOffset = absoluteOffset;
@@ -14092,7 +13794,6 @@ class _ParseAST {
     this.parseFlags = parseFlags;
     this.errors = errors;
     this.offset = offset;
-    this.supportsDirectPipeReferences = supportsDirectPipeReferences;
   }
   peek(offset) {
     const i = this.index + offset;
@@ -14278,14 +13979,7 @@ class _ParseAST {
         while (this.consumeOptionalCharacter($COLON)) {
           args.push(this.parseExpression());
         }
-        let type;
-        if (this.supportsDirectPipeReferences) {
-          const charCode = nameId.charCodeAt(0);
-          type = charCode === $_ || charCode >= $A && charCode <= $Z ? BindingPipeType.ReferencedDirectly : BindingPipeType.ReferencedByName;
-        } else {
-          type = BindingPipeType.ReferencedByName;
-        }
-        result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, type, nameSpan);
+        result = new BindingPipe(this.span(start), this.sourceSpan(start, fullSpanEnd), result, nameId, args, nameSpan);
       } while (this.consumeOptionalOperator('|'));
     }
     return result;
@@ -15790,12 +15484,6 @@ class _I18nVisitor {
   visitElement(el, context) {
     return this._visitElementLike(el, context);
   }
-  visitComponent(component, context) {
-    return this._visitElementLike(component, context);
-  }
-  visitDirective(directive, context) {
-    throw new Error('Unreachable code');
-  }
   visitAttribute(attribute, context) {
     const node = attribute.valueTokens === undefined || attribute.valueTokens.length === 1 ? new Text$2(attribute.value, attribute.valueSpan || attribute.sourceSpan) : this._visitTextWithInterpolation(attribute.valueTokens, attribute.valueSpan || attribute.sourceSpan, context, attribute.i18n);
     return context.visitNodeFn(attribute, node);
@@ -15863,17 +15551,9 @@ class _I18nVisitor {
     const visitAttribute = attr => {
       attrs[attr.name] = attr.value;
     };
-    let nodeName;
-    let isVoid;
-    if (node instanceof Element) {
-      nodeName = node.name;
-      isVoid = getHtmlTagDefinition(node.name).isVoid;
-    } else {
-      nodeName = node.fullName;
-      isVoid = node.tagName ? getHtmlTagDefinition(node.tagName).isVoid : false;
-    }
+    const nodeName = node.name;
+    const isVoid = getHtmlTagDefinition(node.name).isVoid;
     node.attrs.forEach(visitAttribute);
-    node.directives.forEach(dir => dir.attrs.forEach(visitAttribute));
     const startPhName = context.placeholderRegistry.getStartTagPlaceholderName(nodeName, attrs, isVoid);
     context.placeholderToContent[startPhName] = {
       text: node.startSourceSpan.toString(),
@@ -16037,10 +15717,6 @@ class I18nMetaVisitor {
     this._visitElementLike(element);
     return element;
   }
-  visitComponent(component, context) {
-    this._visitElementLike(component);
-    return component;
-  }
   visitExpansion(expansion, currentMessage) {
     let message;
     const meta = expansion.i18n;
@@ -16081,9 +15757,6 @@ class I18nMetaVisitor {
   visitLetDeclaration(decl, context) {
     return decl;
   }
-  visitDirective(directive, context) {
-    return directive;
-  }
   _visitElementLike(node) {
     let message = undefined;
     if (hasI18nAttrs(node)) {
@@ -16102,13 +15775,7 @@ class I18nMetaVisitor {
           node.i18n = message;
         } else if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
           const name = attr.name.slice(I18N_ATTR_PREFIX.length);
-          let isTrustedType;
-          if (node instanceof Component) {
-            isTrustedType = node.tagName === null ? false : isTrustedTypesSink(node.tagName, name);
-          } else {
-            isTrustedType = isTrustedTypesSink(node.name, name);
-          }
-          if (isTrustedType || isPossibleEventHandler(name)) {
+          if (isTrustedTypesSink(node.name, name) || isPossibleEventHandler(name)) {
             this._reportError(attr, `Translating attribute '${name}' is disallowed for security reasons.`);
           } else {
             attrsMeta[name] = attr.value;
@@ -20248,7 +19915,7 @@ function ingestNodes(unit, template) {
       ingestLetDeclaration(unit, node);
     } else if (node instanceof BoundaryBlock) {
       ingestBoundaryBlock(unit, node);
-    } else if (node instanceof Component$1) ; else {
+    } else {
       throw new Error(`Unsupported template node: ${node.constructor.name}`);
     }
   }
@@ -22337,8 +22004,6 @@ const BINDING_DELIMS = {
   }
 };
 const TEMPLATE_ATTR_PREFIX = '*';
-const UNSUPPORTED_SELECTORLESS_TAGS = new Set(['link', 'style', 'script', 'ng-template', 'ng-container', 'ng-content']);
-const UNSUPPORTED_SELECTORLESS_DIRECTIVE_ATTRS = new Set(['ngProjectAs', 'ngNonBindable']);
 function htmlAstToRender3Ast(htmlNodes, bindingParser, options) {
   const transformer = new HtmlAstToIvyAst(bindingParser, options);
   const ivyNodes = visitAll(transformer, htmlNodes, htmlNodes);
@@ -22402,7 +22067,6 @@ class HtmlAstToIvyAst {
       templateParsedProperties,
       i18nAttrsMeta
     } = this.prepareAttributes(element.attrs, isTemplateElement);
-    const directives = this.extractDirectives(element);
     let children;
     if (preparsedElement.nonBindable) {
       children = visitAll(NON_BINDABLE_VISITOR, element.children).flat(Infinity);
@@ -22417,7 +22081,7 @@ class HtmlAstToIvyAst {
       this.ngContentSelectors.push(selector);
     } else if (isTemplateElement) {
       const attrs = this.categorizePropertyAttributes(element.name, parsedProperties, i18nAttrsMeta);
-      parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, directives, [], children, references, variables, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
+      parsedElement = new Template(element.name, attributes, attrs.bound, boundEvents, [], children, references, variables, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.i18n);
     } else {
       const attrs = this.categorizePropertyAttributes(element.name, parsedProperties, i18nAttrsMeta);
       if (element.name === 'ng-container') {
@@ -22427,7 +22091,7 @@ class HtmlAstToIvyAst {
           }
         }
       }
-      parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, directives, children, references, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n);
+      parsedElement = new Element$1(element.name, attributes, attrs.bound, boundEvents, children, references, element.isSelfClosing, element.sourceSpan, element.startSourceSpan, element.endSourceSpan, element.isVoid, element.i18n);
     }
     if (this.options.collectCommentNodes) {
       element.comments.forEach(comment => {
@@ -22491,54 +22155,6 @@ class HtmlAstToIvyAst {
       this.reportError('@let declaration value cannot be empty', decl.valueSpan);
     }
     return new LetDeclaration$1(decl.name, value, decl.sourceSpan, decl.nameSpan, decl.valueSpan);
-  }
-  visitComponent(component) {
-    const isI18nRootElement = isI18nRootNode(component.i18n);
-    if (isI18nRootElement) {
-      if (this.inI18nBlock) {
-        this.reportError('Cannot mark a component as translatable inside of a translatable section. Please remove the nested i18n marker.', component.sourceSpan);
-      }
-      this.inI18nBlock = true;
-    }
-    if (component.tagName !== null && UNSUPPORTED_SELECTORLESS_TAGS.has(component.tagName)) {
-      this.reportError(`Tag name "${component.tagName}" cannot be used as a component tag`, component.startSourceSpan);
-      return null;
-    }
-    const {
-      attributes,
-      boundEvents,
-      references,
-      templateVariables,
-      elementHasInlineTemplate,
-      parsedProperties,
-      templateParsedProperties,
-      i18nAttrsMeta
-    } = this.prepareAttributes(component.attrs, false);
-    this.validateSelectorlessReferences(references);
-    const directives = this.extractDirectives(component);
-    let children;
-    if (component.attrs.find(attr => attr.name === 'ngNonBindable')) {
-      children = visitAll(NON_BINDABLE_VISITOR, component.children).flat(Infinity);
-    } else {
-      children = visitAll(this, component.children, component.children);
-    }
-    const attrs = this.categorizePropertyAttributes(component.tagName, parsedProperties, i18nAttrsMeta);
-    let node = new Component$1(component.componentName, component.tagName, component.fullName, attributes, attrs.bound, boundEvents, directives, children, references, component.isSelfClosing, component.sourceSpan, component.startSourceSpan, component.endSourceSpan, component.i18n);
-    if (this.options.collectCommentNodes) {
-      component.comments.forEach(comment => {
-        this.commentNodes.push(new Comment$1(comment.value || '', comment.sourceSpan));
-      });
-    }
-    if (elementHasInlineTemplate) {
-      node = this.wrapInTemplate(node, templateParsedProperties, templateVariables, i18nAttrsMeta, false, isI18nRootElement);
-    }
-    if (isI18nRootElement) {
-      this.inI18nBlock = false;
-    }
-    return node;
-  }
-  visitDirective() {
-    return null;
   }
   visitBlockParameter() {
     return null;
@@ -22763,53 +22379,6 @@ class HtmlAstToIvyAst {
     const hasBinding = this.bindingParser.parsePropertyInterpolation(name, value, srcSpan, attribute.valueSpan, matchableAttributes, parsedProperties, keySpan, attribute.valueTokens ?? null);
     return hasBinding;
   }
-  extractDirectives(node) {
-    const elementName = node instanceof Component ? node.tagName : node.name;
-    const directives = [];
-    const seenDirectives = new Set();
-    for (const directive of node.directives) {
-      let invalid = false;
-      for (const attr of directive.attrs) {
-        if (attr.name.startsWith(TEMPLATE_ATTR_PREFIX)) {
-          invalid = true;
-          this.reportError(`Shorthand template syntax "${attr.name}" is not supported inside a directive context`, attr.sourceSpan);
-        } else if (UNSUPPORTED_SELECTORLESS_DIRECTIVE_ATTRS.has(attr.name)) {
-          invalid = true;
-          this.reportError(`Attribute "${attr.name}" is not supported in a directive context`, attr.sourceSpan);
-        }
-      }
-      if (!invalid && seenDirectives.has(directive.name)) {
-        invalid = true;
-        this.reportError(`Cannot apply directive "${directive.name}" multiple times on the same element`, directive.sourceSpan);
-      }
-      if (invalid) {
-        continue;
-      }
-      const {
-        attributes,
-        parsedProperties,
-        boundEvents,
-        references,
-        i18nAttrsMeta
-      } = this.prepareAttributes(directive.attrs, false);
-      this.validateSelectorlessReferences(references);
-      const {
-        bound: inputs
-      } = this.categorizePropertyAttributes(elementName, parsedProperties, i18nAttrsMeta);
-      for (const input of inputs) {
-        if (input.type !== BindingType.Property && input.type !== BindingType.TwoWay) {
-          invalid = true;
-          this.reportError('Binding is not supported in a directive context', input.sourceSpan);
-        }
-      }
-      if (invalid) {
-        continue;
-      }
-      seenDirectives.add(directive.name);
-      directives.push(new Directive$1(directive.name, attributes, inputs, boundEvents, references, directive.sourceSpan, directive.startSourceSpan, directive.endSourceSpan, undefined));
-    }
-    return directives;
-  }
   filterAnimationAttributes(attributes) {
     return attributes.filter(a => !a.name.startsWith('animate.'));
   }
@@ -22826,21 +22395,14 @@ class HtmlAstToIvyAst {
       inputs: [],
       outputs: []
     };
-    if (node instanceof Element$1 || node instanceof Component$1) {
+    if (node instanceof Element$1) {
       hoistedAttrs.attributes.push(...this.filterAnimationAttributes(node.attributes));
       hoistedAttrs.inputs.push(...this.filterAnimationInputs(node.inputs));
       hoistedAttrs.outputs.push(...node.outputs);
     }
     const i18n = isTemplateElement && isI18nRootElement ? undefined : node.i18n;
-    let name;
-    if (node instanceof Component$1) {
-      name = node.tagName;
-    } else if (node instanceof Template) {
-      name = null;
-    } else {
-      name = node.name;
-    }
-    return new Template(name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, [], templateAttrs, [node], [], templateVariables, false, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, i18n);
+    const name = node instanceof Template ? null : node.name;
+    return new Template(name, hoistedAttrs.attributes, hoistedAttrs.inputs, hoistedAttrs.outputs, templateAttrs, [node], [], templateVariables, false, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, i18n);
   }
   _visitTextWithInterpolation(value, sourceSpan, interpolatedTokens, i18n) {
     const valueNoNgsp = replaceNgsp(value);
@@ -22870,21 +22432,6 @@ class HtmlAstToIvyAst {
     this.bindingParser.parseEvent(`${name}Change`, expression, true, sourceSpan, valueSpan || sourceSpan, targetMatchableAttrs, events, keySpan);
     addEvents(events, boundEvents);
   }
-  validateSelectorlessReferences(references) {
-    if (references.length === 0) {
-      return;
-    }
-    const seenNames = new Set();
-    for (const ref of references) {
-      if (ref.value.length > 0) {
-        this.reportError('Cannot specify a value for a local reference in this context', ref.valueSpan || ref.sourceSpan);
-      } else if (seenNames.has(ref.name)) {
-        this.reportError('Duplicate reference names are not allowed', ref.sourceSpan);
-      } else {
-        seenNames.add(ref.name);
-      }
-    }
-  }
   reportError(message, sourceSpan, level = ParseErrorLevel.ERROR) {
     this.errors.push(new ParseError(sourceSpan, message, level));
   }
@@ -22896,7 +22443,7 @@ class NonBindableVisitor {
       return null;
     }
     const children = visitAll(this, ast.children, null);
-    return new Element$1(ast.name, visitAll(this, ast.attrs), [], [], [], children, [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.isVoid);
+    return new Element$1(ast.name, visitAll(this, ast.attrs), [], [], children, [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, ast.isVoid);
   }
   visitComment(comment) {
     return null;
@@ -22926,13 +22473,6 @@ class NonBindableVisitor {
   visitLetDeclaration(decl, context) {
     return new Text$3(`@let ${decl.name} = ${decl.value};`, decl.sourceSpan);
   }
-  visitComponent(ast, context) {
-    const children = visitAll(this, ast.children, null);
-    return new Element$1(ast.fullName, visitAll(this, ast.attrs), [], [], [], children, [], ast.isSelfClosing, ast.sourceSpan, ast.startSourceSpan, ast.endSourceSpan, false);
-  }
-  visitDirective(directive, context) {
-    return null;
-  }
 }
 const NON_BINDABLE_VISITOR = new NonBindableVisitor();
 function addEvents(events, boundEvents) {
@@ -22952,16 +22492,14 @@ function parseTemplate(template, templateUrl, options = {}) {
     preserveWhitespaces,
     enableI18nLegacyMessageIdFormat
   } = options;
-  const selectorlessEnabled = options.enableSelectorless ?? false;
-  const bindingParser = makeBindingParser(selectorlessEnabled);
+  const bindingParser = makeBindingParser();
   const htmlParser = new HtmlParser();
   const parseResult = htmlParser.parse(template, templateUrl, {
     leadingTriviaChars: LEADING_TRIVIA_CHARS,
     ...options,
     tokenizeExpansionForms: true,
     tokenizeBlocks: options.enableBlockSyntax ?? true,
-    tokenizeLet: options.enableLetSyntax ?? true,
-    selectorlessEnabled
+    tokenizeLet: options.enableLetSyntax ?? true
   });
   if (!options.alwaysAttemptHtmlToR3AstConversion && parseResult.errors && parseResult.errors.length > 0) {
     const parsedTemplate = {
@@ -23027,8 +22565,8 @@ function parseTemplate(template, templateUrl, options = {}) {
   return parsedTemplate;
 }
 const elementRegistry = new DomElementSchemaRegistry();
-function makeBindingParser(selectorlessEnabled = false) {
-  return new BindingParser(new Parser(new Lexer(), selectorlessEnabled), elementRegistry, []);
+function makeBindingParser() {
+  return new BindingParser(new Parser(new Lexer()), elementRegistry, []);
 }
 
 const COMPONENT_VARIABLE = '%COMP%';
@@ -23055,9 +22593,6 @@ function baseDirectiveFields(meta, constantPool, bindingParser) {
   }
   if (meta.isStandalone === false) {
     definitionMap.set('standalone', literal(false));
-  }
-  if (meta.isSignal) {
-    definitionMap.set('signals', literal(true));
   }
   return definitionMap;
 }
@@ -23190,9 +22725,6 @@ function createComponentType(meta) {
   typeParams.push(stringArrayAsType(meta.template.ngContentSelectors));
   typeParams.push(expressionType(literal(meta.isStandalone)));
   typeParams.push(createHostDirectivesType(meta));
-  if (meta.isSignal) {
-    typeParams.push(expressionType(literal(meta.isSignal)));
-  }
   return expressionType(importExpr(Identifiers.ComponentDeclaration, typeParams));
 }
 function compileDeclarationList(list, mode) {
@@ -23260,9 +22792,6 @@ function createDirectiveType(meta) {
   typeParams.push(NONE_TYPE);
   typeParams.push(expressionType(literal(meta.isStandalone)));
   typeParams.push(createHostDirectivesType(meta));
-  if (meta.isSignal) {
-    typeParams.push(expressionType(literal(meta.isSignal)));
-  }
   return expressionType(importExpr(Identifiers.DirectiveDeclaration, typeParams));
 }
 function createHostBindingsFunction(hostBindingsMetadata, typeSourceSpan, bindingParser, constantPool, selector, name, definitionMap, legacyOptionalChaining) {
@@ -23618,7 +23147,6 @@ class R3TargetBinder {
     const directives = new Map();
     const foreignComponents = new Map();
     const eagerDirectives = [];
-    const missingDirectives = new Set();
     const bindings = new Map();
     const references = new Map();
     const scopedNodeEntities = new Map();
@@ -23633,14 +23161,14 @@ class R3TargetBinder {
     if (target.template) {
       const scope = Scope$1.apply(target.template);
       extractScopedNodeEntities(scope, scopedNodeEntities);
-      DirectiveBinder.apply(target.template, this.directiveMatcher, this.foreignComponentMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
+      DirectiveBinder.apply(target.template, this.directiveMatcher, this.foreignComponentMatcher, directives, foreignComponents, eagerDirectives, bindings, references, conflictingHostDirectiveBindings);
       TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks, pipes);
     }
     if (target.host) {
       directives.set(target.host.node, target.host.directives);
       TemplateBinder.applyWithScope(target.host.node, Scope$1.apply(target.host.node), expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks, pipes);
     }
-    return new R3BoundTarget(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, pipes, conflictingHostDirectiveBindings);
+    return new R3BoundTarget(target, directives, foreignComponents, eagerDirectives, bindings, references, expressions, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, deferBlocks, pipes, conflictingHostDirectiveBindings);
   }
 }
 let Scope$1 = class Scope {
@@ -23690,7 +23218,6 @@ let Scope$1 = class Scope {
   }
   visitTemplate(template) {
     this.elementLikeInScope.add(template);
-    template.directives.forEach(node => node.visit(this));
     template.references.forEach(node => this.visitReference(node));
     this.ingestScopedNode(template);
   }
@@ -23752,13 +23279,6 @@ let Scope$1 = class Scope {
   visitLetDeclaration(decl) {
     this.maybeDeclare(decl);
   }
-  visitComponent(component) {
-    this.visitElementLike(component);
-  }
-  visitDirective(directive) {
-    this.elementLikeInScope.add(directive);
-    directive.references.forEach(current => this.visitReference(current));
-  }
   visitBoundAttribute(attr) {}
   visitBoundEvent(event) {}
   visitBoundText(text) {}
@@ -23768,7 +23288,6 @@ let Scope$1 = class Scope {
   visitDeferredTrigger(trigger) {}
   visitUnknownBlock(block) {}
   visitElementLike(node) {
-    node.directives.forEach(current => current.visit(this));
     node.references.forEach(current => this.visitReference(current));
     node.children.forEach(current => current.visit(this));
     this.elementLikeInScope.add(node);
@@ -23817,24 +23336,22 @@ class DirectiveBinder {
   directives;
   foreignComponents;
   eagerDirectives;
-  missingDirectives;
   bindings;
   references;
   conflictingHostDirectiveBindings;
   isInDeferBlock = false;
-  constructor(directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
+  constructor(directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, bindings, references, conflictingHostDirectiveBindings) {
     this.directiveMatcher = directiveMatcher;
     this.foreignMatcher = foreignMatcher;
     this.directives = directives;
     this.foreignComponents = foreignComponents;
     this.eagerDirectives = eagerDirectives;
-    this.missingDirectives = missingDirectives;
     this.bindings = bindings;
     this.references = references;
     this.conflictingHostDirectiveBindings = conflictingHostDirectiveBindings;
   }
-  static apply(template, directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings) {
-    const matcher = new DirectiveBinder(directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, conflictingHostDirectiveBindings);
+  static apply(template, directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, bindings, references, conflictingHostDirectiveBindings) {
+    const matcher = new DirectiveBinder(directiveMatcher, foreignMatcher, directives, foreignComponents, eagerDirectives, bindings, references, conflictingHostDirectiveBindings);
     matcher.ingest(template);
   }
   ingest(template) {
@@ -23901,31 +23418,9 @@ class DirectiveBinder {
   visitContentBlock(block) {
     block.children.forEach(child => child.visit(this));
   }
-  visitComponent(node) {
-    if (this.directiveMatcher instanceof SelectorlessMatcher) {
-      const componentMatches = this.directiveMatcher.match(node.componentName);
-      if (componentMatches.length > 0) {
-        this.trackSelectorlessMatchesAndDirectives(node, componentMatches);
-      } else {
-        this.missingDirectives.add(node.componentName);
-      }
-    }
-    node.directives.forEach(directive => directive.visit(this));
-    node.children.forEach(child => child.visit(this));
-  }
-  visitDirective(node) {
-    if (this.directiveMatcher instanceof SelectorlessMatcher) {
-      const directives = this.directiveMatcher.match(node.name);
-      if (directives.length > 0) {
-        this.trackSelectorlessMatchesAndDirectives(node, directives);
-      } else {
-        this.missingDirectives.add(node.name);
-      }
-    }
-  }
   visitElementOrTemplate(node) {
     const matchedDirectives = [];
-    if (this.directiveMatcher instanceof SelectorMatcher) {
+    if (this.directiveMatcher !== null) {
       const cssSelector = createCssSelectorFromNode(node);
       this.directiveMatcher.match(cssSelector, (_, results) => matchedDirectives.push(...results));
       this.trackSelectorBasedBindingsAndDirectives(node, matchedDirectives);
@@ -23945,7 +23440,6 @@ class DirectiveBinder {
         this.foreignComponents.set(node, foreignMatches[0]);
       }
     }
-    node.directives.forEach(directive => directive.visit(this));
     node.children.forEach(child => child.visit(this));
   }
   trackMatchedDirectives(node, matchedDirectives) {
@@ -24030,26 +23524,6 @@ class DirectiveBinder {
       }
       conflict.conflictingAliases.add(binding.bindingPropertyName);
     }
-  }
-  trackSelectorlessMatchesAndDirectives(node, directives) {
-    if (directives.length === 0) {
-      return;
-    }
-    this.trackMatchedDirectives(node, directives);
-    const setBinding = (meta, attribute, ioType) => {
-      if (meta[ioType].hasBindingPropertyName(attribute.name)) {
-        this.bindings.set(attribute, meta);
-      }
-    };
-    for (const directive of directives) {
-      node.inputs.forEach(input => setBinding(directive, input, 'inputs'));
-      node.attributes.forEach(attr => setBinding(directive, attr, 'inputs'));
-      node.outputs.forEach(output => setBinding(directive, output, 'outputs'));
-    }
-    node.references.forEach(ref => this.references.set(ref, {
-      directive: directives[0],
-      node: node
-    }));
   }
   trackSelectorBasedBindingsAndDirectives(node, directives) {
     this.trackMatchedDirectives(node, directives);
@@ -24168,7 +23642,6 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
   visitTemplate(template) {
     template.inputs.forEach(this.visitNode);
     template.outputs.forEach(this.visitNode);
-    template.directives.forEach(this.visitNode);
     template.templateAttrs.forEach(this.visitNode);
     template.references.forEach(this.visitNode);
     this.ingestScopedNode(template);
@@ -24279,7 +23752,6 @@ class R3BoundTarget {
   directives;
   foreignComponents;
   eagerDirectives;
-  missingDirectives;
   bindings;
   references;
   exprTargets;
@@ -24292,12 +23764,11 @@ class R3BoundTarget {
   conflictingHostDirectiveBindings;
   deferredBlocks;
   deferredScopes;
-  constructor(target, directives, foreignComponents, eagerDirectives, missingDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, pipes, conflictingHostDirectiveBindings) {
+  constructor(target, directives, foreignComponents, eagerDirectives, bindings, references, exprTargets, symbols, nestingLevel, scopedNodeEntities, usedPipes, eagerPipes, rawDeferred, pipes, conflictingHostDirectiveBindings) {
     this.target = target;
     this.directives = directives;
     this.foreignComponents = foreignComponents;
     this.eagerDirectives = eagerDirectives;
-    this.missingDirectives = missingDirectives;
     this.bindings = bindings;
     this.references = references;
     this.exprTargets = exprTargets;
@@ -24415,9 +23886,6 @@ class R3BoundTarget {
   getDeferBlocksOfPipe(ast) {
     return this.pipes.get(ast) ?? [];
   }
-  referencedDirectiveExists(name) {
-    return !this.missingDirectives.has(name);
-  }
   getConflictingHostDirectiveBindings(node) {
     return this.conflictingHostDirectiveBindings.get(node) || null;
   }
@@ -24434,7 +23902,7 @@ class R3BoundTarget {
     if (target instanceof Element$1) {
       return target;
     }
-    if (target instanceof Template || target.node instanceof Component$1 || target.node instanceof Directive$1 || target.node instanceof HostElement) {
+    if (target instanceof Template || target.node instanceof HostElement) {
       return null;
     }
     return this.referenceTargetToElement(target.node);
@@ -24796,7 +24264,6 @@ function convertDeclareDirectiveFacadeToMetadata(declaration, typeSourceSpan) {
     deps: null,
     typeArgumentCount: 0,
     isStandalone: declaration.isStandalone ?? getJitStandaloneDefaultForVersion(declaration.version),
-    isSignal: declaration.isSignal ?? false,
     hostDirectives,
     legacyOptionalChaining: declaration.legacyOptionalChaining ?? LEGACY_OPTIONAL_CHAINING_DEFAULT
   };
@@ -25194,7 +24661,7 @@ class _Visitor {
   merge(nodes, translations) {
     this._init(_VisitorMode.Merge);
     this._translations = translations;
-    const wrapper = new Element('wrapper', [], [], nodes, false, undefined, undefined, undefined, false);
+    const wrapper = new Element('wrapper', [], nodes, false, undefined, undefined, undefined, false);
     const translatedNode = wrapper.visit(this, null);
     if (this._inI18nBlock) {
       this._reportError(nodes[nodes.length - 1], 'Unclosed block');
@@ -25281,12 +24748,6 @@ class _Visitor {
   }
   visitBlockParameter(parameter, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {
-    return this._visitElementLike(component, context);
-  }
-  visitDirective(directive, context) {
-    throw new Error('unreachable code');
-  }
   _init(mode) {
     this._mode = mode;
     this._inI18nBlock = false;
@@ -25306,7 +24767,7 @@ class _Visitor {
     const wasInImplicitNode = this._inImplicitNode;
     let childNodes = [];
     let translatedChildNodes = undefined;
-    const nodeName = node instanceof Component ? node.tagName : node.name;
+    const nodeName = node.name;
     const i18nAttr = _getI18nAttr(node);
     const i18nMeta = i18nAttr ? i18nAttr.value : '';
     const isImplicit = this._implicitTags.some(tag => nodeName === tag) && !this._inIcu && !this._isInTranslatableSection;
@@ -25346,17 +24807,13 @@ class _Visitor {
     this._inI18nNode = wasInI18nNode;
     this._inImplicitNode = wasInImplicitNode;
     if (this._mode === _VisitorMode.Merge) {
-      if (node instanceof Element) {
-        return new Element(node.name, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.isVoid);
-      } else {
-        return new Component(node.componentName, node.tagName, node.fullName, this._translateAttributes(node), this._translateDirectives(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan);
-      }
+      return new Element(node.name, this._translateAttributes(node), childNodes, node.isSelfClosing, node.sourceSpan, node.startSourceSpan, node.endSourceSpan, node.isVoid);
     }
     return null;
   }
   _visitAttributesOf(el) {
     const explicitAttrNameToValue = {};
-    const implicitAttrNames = this._implicitAttrs[el instanceof Component ? el.tagName || '' : el.name] || [];
+    const implicitAttrNames = this._implicitAttrs[el.name] || [];
     el.attrs.filter(attr => attr instanceof Attribute && attr.name.startsWith(_I18N_ATTR_PREFIX)).forEach(attr => {
       explicitAttrNameToValue[attr.name.slice(_I18N_ATTR_PREFIX.length)] = attr.value;
     });
@@ -25447,9 +24904,6 @@ class _Visitor {
       }
     });
     return translatedAttributes;
-  }
-  _translateDirectives(node) {
-    return node.directives.map(dir => new Directive(dir.name, this._translateAttributes(dir), dir.sourceSpan, dir.startSourceSpan, dir.endSourceSpan));
   }
   _mayBeAddBlockChildren(node) {
     if (this._inI18nBlock && !this._inIcu && this._depth == this._blockStartDepth) {
@@ -25550,8 +25004,7 @@ class XmlParser extends Parser$1 {
     return super.parse(source, url, {
       ...options,
       tokenizeBlocks: false,
-      tokenizeLet: false,
-      selectorlessEnabled: false
+      tokenizeLet: false
     });
   }
 }
@@ -25787,8 +25240,6 @@ class XliffParser {
   visitBlock(block, context) {}
   visitBlockParameter(parameter, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {}
-  visitDirective(directive, context) {}
   _addError(node, message) {
     this._errors.push(new ParseError(node.sourceSpan, message));
   }
@@ -25842,12 +25293,6 @@ let XmlToI18n$2 = class XmlToI18n {
   visitBlock(block, context) {}
   visitBlockParameter(parameter, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {
-    this._addError(component, 'Unexpected node');
-  }
-  visitDirective(directive, context) {
-    this._addError(directive, 'Unexpected node');
-  }
   _addError(node, message) {
     this._errors.push(new ParseError(node.sourceSpan, message));
   }
@@ -26107,8 +25552,6 @@ class Xliff2Parser {
   visitBlock(block, context) {}
   visitBlockParameter(parameter, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {}
-  visitDirective(directive, context) {}
   _addError(node, message) {
     this._errors.push(new ParseError(node.sourceSpan, message));
   }
@@ -26177,12 +25620,6 @@ let XmlToI18n$1 = class XmlToI18n {
   visitBlock(block, context) {}
   visitBlockParameter(parameter, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {
-    this._addError(component, 'Unexpected node');
-  }
-  visitDirective(directive, context) {
-    this._addError(directive, 'Unexpected node');
-  }
   _addError(node, message) {
     this._errors.push(new ParseError(node.sourceSpan, message));
   }
@@ -26324,12 +25761,6 @@ class XtbParser {
   visitBlock(block, context) {}
   visitBlockParameter(block, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {
-    this._addError(component, 'Unexpected node');
-  }
-  visitDirective(directive, context) {
-    this._addError(directive, 'Unexpected node');
-  }
   _addError(node, message) {
     this._errors.push(new ParseError(node.sourceSpan, message));
   }
@@ -26380,12 +25811,6 @@ class XmlToI18n {
   visitBlock(block, context) {}
   visitBlockParameter(block, context) {}
   visitLetDeclaration(decl, context) {}
-  visitComponent(component, context) {
-    this._addError(component, 'Unexpected node');
-  }
-  visitDirective(directive, context) {
-    this._addError(directive, 'Unexpected node');
-  }
   _addError(node, message) {
     this._errors.push(new ParseError(node.sourceSpan, message));
   }
@@ -26712,7 +26137,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -26730,7 +26155,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -26803,13 +26228,10 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
-  }
-  if (meta.isSignal) {
-    definitionMap.set('isSignal', literal(meta.isSignal));
   }
   if (meta.selector !== null) {
     definitionMap.set('selector', literal(meta.selector));
@@ -27145,7 +26567,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -27171,7 +26593,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -27212,7 +26634,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -27238,7 +26660,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -27268,7 +26690,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -27306,7 +26728,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.3.0-next.4+sha-a3bc172'));
+  definitionMap.set('version', literal('22.3.0-next.4+sha-98b0f3b'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -27442,7 +26864,7 @@ class PotentialTopLevelReadsVisitor extends RecursiveAstVisitor {
   }
 }
 
-const VERSION = new Version('22.3.0-next.4+sha-a3bc172');
+const VERSION = new Version('22.3.0-next.4+sha-98b0f3b');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -29582,29 +29004,6 @@ class TcbInvalidReferenceOp extends TcbOp {
   }
 }
 
-function getComponentTagName(node) {
-  return node.tagName || 'ng-component';
-}
-class TcbComponentNodeOp extends TcbOp {
-  tcb;
-  scope;
-  component;
-  optional = true;
-  constructor(tcb, scope, component) {
-    super();
-    this.tcb = tcb;
-    this.scope = scope;
-    this.component = component;
-  }
-  execute() {
-    const id = this.tcb.allocateId();
-    const initializer = new TcbExpr(`document.createElement("${getComponentTagName(this.component)}")`);
-    initializer.addParseSpanInfo(this.component.startSourceSpan || this.component.sourceSpan);
-    this.scope.addStatement(new TcbExpr(`var ${id} = ${initializer.print()}`));
-    return new TcbExpr(id);
-  }
-}
-
 const REGISTRY = new DomElementSchemaRegistry();
 class TcbDomSchemaCheckerOp extends TcbOp {
   tcb;
@@ -29623,10 +29022,10 @@ class TcbDomSchemaCheckerOp extends TcbOp {
   }
   execute() {
     const element = this.element;
-    const isTemplateElement = element instanceof Element$1 || element instanceof Component$1;
+    const isTemplateElement = element instanceof Element$1;
     const bindings = isTemplateElement ? element.inputs : element.bindings;
     if (this.checkElement && isTemplateElement) {
-      this.tcb.domSchemaChecker.checkElement(this.tcb.id, this.getTagName(element), element.startSourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
+      this.tcb.domSchemaChecker.checkElement(this.tcb.id, element.name, element.startSourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
     }
     for (const binding of bindings) {
       const isPropertyBinding = binding.type === BindingType.Property || binding.type === BindingType.TwoWay;
@@ -29636,16 +29035,13 @@ class TcbDomSchemaCheckerOp extends TcbOp {
       if (isPropertyBinding && binding.name !== 'style' && binding.name !== 'class') {
         const propertyName = REGISTRY.getMappedPropName(binding.name);
         if (isTemplateElement) {
-          this.tcb.domSchemaChecker.checkTemplateElementProperty(this.tcb.id, this.getTagName(element), propertyName, binding.sourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
+          this.tcb.domSchemaChecker.checkTemplateElementProperty(this.tcb.id, element.name, propertyName, binding.sourceSpan, this.tcb.schemas, this.tcb.hostIsStandalone);
         } else {
           this.tcb.domSchemaChecker.checkHostElementProperty(this.tcb.id, element, propertyName, binding.keySpan, this.tcb.schemas);
         }
       }
     }
     return null;
-  }
-  getTagName(node) {
-    return node instanceof Element$1 ? node.name : getComponentTagName(node);
   }
 }
 
@@ -29759,9 +29155,6 @@ class TcbTemplateBodyOp extends TcbOp {
     let guard = null;
     const directiveGuards = [];
     this.addDirectiveGuards(directiveGuards, this.template, this.tcb.boundTarget.getDirectivesOfNode(this.template));
-    for (const directive of this.template.directives) {
-      this.addDirectiveGuards(directiveGuards, directive, this.tcb.boundTarget.getDirectivesOfNode(directive));
-    }
     if (directiveGuards.length > 0) {
       guard = directiveGuards.reduce((expr, dirGuard) => new TcbExpr(`${expr.print()} && ${dirGuard.print()}`), directiveGuards.pop());
     }
@@ -29898,7 +29291,6 @@ class Scope {
   opQueue = [];
   elementOpMap = new Map();
   hostElementOpMap = new Map();
-  componentNodeOpMap = new Map();
   directiveOpMap = new Map();
   referenceOpMap = new Map();
   templateCtxOpMap = new Map();
@@ -30037,13 +29429,11 @@ class Scope {
       return typeof opIndexOrNode === 'number' ? this.resolveOp(opIndexOrNode) : new TcbExpr(opIndexOrNode.print(true));
     } else if (ref instanceof Template && directive === undefined && this.templateCtxOpMap.has(ref)) {
       return this.resolveOp(this.templateCtxOpMap.get(ref));
-    } else if ((ref instanceof Element$1 || ref instanceof Template || ref instanceof Component$1 || ref instanceof Directive$1 || ref instanceof HostElement) && directive !== undefined && this.directiveOpMap.has(ref)) {
+    } else if ((ref instanceof Element$1 || ref instanceof Template || ref instanceof HostElement) && directive !== undefined && this.directiveOpMap.has(ref)) {
       const dirMap = this.directiveOpMap.get(ref);
       return dirMap.has(directive) ? this.resolveOp(dirMap.get(directive)) : null;
     } else if (ref instanceof Element$1 && this.elementOpMap.has(ref)) {
       return this.resolveOp(this.elementOpMap.get(ref));
-    } else if (ref instanceof Component$1 && this.componentNodeOpMap.has(ref)) {
-      return this.resolveOp(this.componentNodeOpMap.get(ref));
     } else if (ref instanceof HostElement && this.hostElementOpMap.has(ref)) {
       return this.resolveOp(this.hostElementOpMap.get(ref));
     } else {
@@ -30082,13 +29472,11 @@ class Scope {
       }
       this.appendDirectivesAndInputsOfElementLikeNode(node);
       this.appendOutputsOfElementLikeNode(node, node.inputs, node.outputs);
-      this.appendSelectorlessDirectives(node);
       this.appendChildren(node);
       this.checkAndAppendReferencesOfNode(node);
     } else if (node instanceof Template) {
       this.appendDirectivesAndInputsOfElementLikeNode(node);
       this.appendOutputsOfElementLikeNode(node, node.inputs, node.outputs);
-      this.appendSelectorlessDirectives(node);
       const ctxIndex = this.opQueue.push(new TcbTemplateContextOp(this.tcb, this)) - 1;
       this.templateCtxOpMap.set(node, ctxIndex);
       if (this.tcb.env.config.checkTemplateBodies) {
@@ -30097,8 +29485,6 @@ class Scope {
         this.appendDeepSchemaChecks(node.children);
       }
       this.checkAndAppendReferencesOfNode(node);
-    } else if (node instanceof Component$1) {
-      this.appendComponentNode(node);
     } else if (node instanceof DeferredBlock) {
       this.appendDeferredBlock(node);
     } else if (node instanceof IfBlock) {
@@ -30227,58 +29613,6 @@ class Scope {
       this.opQueue.push(new TcbUnclaimedOutputsOp(this.tcb, this, node, events, bindings, claimedOutputs, true, directives.some(dir => dir.isComponent)));
     }
   }
-  appendInputsOfSelectorlessNode(node) {
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    const claimedInputs = new Set();
-    if (directives !== null && directives.length > 0) {
-      const dirMap = new Map();
-      for (let i = 0; i < directives.length; i++) {
-        const dir = directives[i];
-        this.appendDirectiveInputs(dir, node, dirMap, directives, i);
-        for (const propertyName of dir.inputs.propertyNames) {
-          claimedInputs.add(propertyName);
-        }
-      }
-      this.directiveOpMap.set(node, dirMap);
-    }
-    this.reportConflictingBindings(node);
-    if (node instanceof Directive$1) {
-      for (const input of node.inputs) {
-        if (!claimedInputs.has(input.name)) {
-          this.tcb.oobRecorder.unclaimedDirectiveBinding(this.tcb.id, node, input);
-        }
-      }
-      for (const attr of node.attributes) {
-        if (!claimedInputs.has(attr.name)) {
-          this.tcb.oobRecorder.unclaimedDirectiveBinding(this.tcb.id, node, attr);
-        }
-      }
-    } else {
-      const checkElement = node.tagName !== null;
-      this.opQueue.push(new TcbUnclaimedInputsOp(this.tcb, this, node.inputs, node, claimedInputs), new TcbDomSchemaCheckerOp(this.tcb, node, checkElement, claimedInputs));
-    }
-  }
-  appendOutputsOfSelectorlessNode(node) {
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    const claimedOutputs = new Set();
-    if (directives !== null && directives.length > 0) {
-      for (const dir of directives) {
-        this.opQueue.push(new TcbDirectiveOutputsOp(this.tcb, this, node, node.inputs, node.outputs, dir));
-        for (const outputProperty of dir.outputs.propertyNames) {
-          claimedOutputs.add(outputProperty);
-        }
-      }
-    }
-    if (node instanceof Directive$1) {
-      for (const output of node.outputs) {
-        if (!claimedOutputs.has(output.name)) {
-          this.tcb.oobRecorder.unclaimedDirectiveBinding(this.tcb.id, node, output);
-        }
-      }
-    } else {
-      this.opQueue.push(new TcbUnclaimedOutputsOp(this.tcb, this, node, node.outputs, node.inputs, claimedOutputs));
-    }
-  }
   appendDirectiveInputs(dir, node, dirMap, allDirectiveMatches, directiveIndex) {
     const nodeIsFormControl = isFormControl(allDirectiveMatches);
     const customFormControlType = nodeIsFormControl ? getCustomFieldDirectiveType(dir) : null;
@@ -30299,22 +29633,6 @@ class Scope {
     }
     return new TcbGenericDirectiveTypeWithAnyParamsOp(this.tcb, this, node, dir, directiveIndex);
   }
-  appendSelectorlessDirectives(node) {
-    for (const directive of node.directives) {
-      if (!this.tcb.boundTarget.referencedDirectiveExists(directive.name)) {
-        this.tcb.oobRecorder.missingNamedTemplateDependency(this.tcb.id, directive);
-        continue;
-      }
-      const directives = this.tcb.boundTarget.getDirectivesOfNode(directive);
-      if (directives === null || directives.length === 0 || directives.some(dir => dir.isComponent || !dir.isStandalone)) {
-        this.tcb.oobRecorder.incorrectTemplateDependencyType(this.tcb.id, directive);
-        continue;
-      }
-      this.appendInputsOfSelectorlessNode(directive);
-      this.appendOutputsOfSelectorlessNode(directive);
-      this.checkAndAppendReferencesOfNode(directive);
-    }
-  }
   appendDeepSchemaChecks(nodes) {
     for (const node of nodes) {
       if (!(node instanceof Element$1 || node instanceof Template)) {
@@ -30322,14 +29640,7 @@ class Scope {
       }
       if (node instanceof Element$1) {
         const claimedInputs = new Set();
-        let directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-        for (const dirNode of node.directives) {
-          const directiveResults = this.tcb.boundTarget.getDirectivesOfNode(dirNode);
-          if (directiveResults !== null && directiveResults.length > 0) {
-            directives ??= [];
-            directives.push(...directiveResults);
-          }
-        }
+        const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
         if (directives !== null && directives.length > 0) {
           for (const dir of directives) {
             for (const propertyName of dir.inputs.propertyNames) {
@@ -30364,27 +29675,6 @@ class Scope {
         this.opQueue.push(new TcbControlFlowContentProjectionOp(this.tcb, root, selectors, meta.name));
       }
     }
-  }
-  appendComponentNode(node) {
-    if (!this.tcb.boundTarget.referencedDirectiveExists(node.componentName)) {
-      this.tcb.oobRecorder.missingNamedTemplateDependency(this.tcb.id, node);
-      return;
-    }
-    const directives = this.tcb.boundTarget.getDirectivesOfNode(node);
-    if (directives === null || directives.length === 0 || directives.every(dir => !dir.isComponent || !dir.isStandalone)) {
-      this.tcb.oobRecorder.incorrectTemplateDependencyType(this.tcb.id, node);
-      return;
-    }
-    const opIndex = this.opQueue.push(new TcbComponentNodeOp(this.tcb, this, node)) - 1;
-    this.componentNodeOpMap.set(node, opIndex);
-    if (this.tcb.env.config.controlFlowPreventingContentProjection !== 'suppress') {
-      this.appendContentProjectionCheckOp(node);
-    }
-    this.appendInputsOfSelectorlessNode(node);
-    this.appendOutputsOfSelectorlessNode(node);
-    this.appendSelectorlessDirectives(node);
-    this.appendChildren(node);
-    this.checkAndAppendReferencesOfNode(node);
   }
   appendDeferredBlock(block) {
     this.appendDeferredTriggers(block, block.triggers);
@@ -30530,5 +29820,5 @@ function renderBlockStatements(env, scope, wrapperExpression) {
 
 publishFacade(_global);
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingPipeType, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Component, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, Directive, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PotentialTopLevelReadsVisitor, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, BoundaryBlock as TmplAstBoundaryBlock, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, Component$1 as TmplAstComponent, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, Directive$1 as TmplAstDirective, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileCtorParameters, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, extractHmrDependenciesFromOutput, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, unwrapWriteTarget, verifyHostBindings, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, AbstractEmitterVisitor, ArrayType, ArrowFunction, ArrowFunctionExpr$1 as ArrowFunctionExpr, ArrowFunctionIdentifierParameter, Attribute, Binary, BinaryOperator, BinaryOperatorExpr, BindingPipe, BindingType, Block, BlockParameter, BoundElementProperty, BuiltinType, BuiltinTypeName, CUSTOM_ELEMENTS_SCHEMA, Call, Chain, ChangeDetectionStrategy, ClassPropertyMapping, CombinedRecursiveAstVisitor, CommaExpr, Comment, CommentTriviaType, CompilerConfig, CompilerFacadeImpl, Conditional, ConditionalExpr, ConstantPool, CssSelector, DYNAMIC_TYPE, DeclareFunctionStmt, DeclareVarStmt, DomElementSchemaRegistry, DynamicImportExpr, EOF, Element, ElementSchemaRegistry, EmitterVisitorContext, EmptyExpr$1 as EmptyExpr, Expansion, ExpansionCase, Expression, ExpressionBinding, ExpressionIdentifier, ExpressionStatement, ExpressionType, ExternalExpr, ExternalReference, FactoryTarget, FunctionExpr, HOST_BINDING_GUARD_COMMENT_TEXT, HtmlParser, HtmlTagDefinition, I18NHtmlParser, IfStmt, ImplicitReceiver, InstantiateExpr, Interpolation$1 as Interpolation, InvokeFunctionExpr, JSDocComment, JitEvaluator, KeyedRead, LEGACY_OPTIONAL_CHAINING_DEFAULT, LeadingComment, LetDeclaration, Lexer, LiteralArray, LiteralArrayExpr, LiteralExpr, LiteralMap, LiteralMapExpr, LiteralMapPropertyAssignment, LiteralMapSpreadAssignment, LiteralPrimitive, LocalizedString, MapType, MatchSource, MessageBundle, NONE_TYPE, NO_ERRORS_SCHEMA, NodeWithI18n, NonNullAssert, NotExpr, OutOfBandDiagnosticCategory, ParenthesizedExpr, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParseTreeResult, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, Parser, PotentialTopLevelReadsVisitor, PrefixNot, PropertyRead, Identifiers as R3Identifiers, R3NgModuleMetadataKind, R3SelectorScopeMode, R3TargetBinder, R3TemplateDependencyKind, ReadKeyExpr, ReadPropExpr, ReadVarExpr, RecursiveAstVisitor$1 as RecursiveAstVisitor, RecursiveVisitor, RegularExpressionLiteral, RegularExpressionLiteralExpr, ResourceLoader, ReturnStatement, SCHEMA, STRING_TYPE, SafeCall, SafeKeyedRead, SafePropertyRead, SelectorContext, SelectorListContext, SelectorMatcher, SelectorlessMatcher, Serializer, SplitInterpolation, SpreadElement, SpreadElementExpr, StartTagComment, Statement, StmtModifier, StringToken, StringTokenKind, TagContentType, TaggedTemplateLiteral, TaggedTemplateLiteralExpr, TcbExpr, TcbGenericContextBehavior, TemplateBindingParseResult, TemplateLiteral, TemplateLiteralElement, TemplateLiteralElementExpr, TemplateLiteralExpr, Text, ThisReceiver, BoundAttribute as TmplAstBoundAttribute, BoundDeferredTrigger as TmplAstBoundDeferredTrigger, BoundEvent as TmplAstBoundEvent, BoundText as TmplAstBoundText, BoundaryBlock as TmplAstBoundaryBlock, BoundaryErrorBlock as TmplAstBoundaryErrorBlock, Content as TmplAstContent, ContentBlock as TmplAstContentBlock, DeferredBlock as TmplAstDeferredBlock, DeferredBlockError as TmplAstDeferredBlockError, DeferredBlockLoading as TmplAstDeferredBlockLoading, DeferredBlockPlaceholder as TmplAstDeferredBlockPlaceholder, Element$1 as TmplAstElement, ForLoopBlock as TmplAstForLoopBlock, ForLoopBlockEmpty as TmplAstForLoopBlockEmpty, HostElement as TmplAstHostElement, HoverDeferredTrigger as TmplAstHoverDeferredTrigger, Icu$1 as TmplAstIcu, IdleDeferredTrigger as TmplAstIdleDeferredTrigger, IfBlock as TmplAstIfBlock, IfBlockBranch as TmplAstIfBlockBranch, ImmediateDeferredTrigger as TmplAstImmediateDeferredTrigger, InteractionDeferredTrigger as TmplAstInteractionDeferredTrigger, LetDeclaration$1 as TmplAstLetDeclaration, NeverDeferredTrigger as TmplAstNeverDeferredTrigger, RecursiveVisitor$1 as TmplAstRecursiveVisitor, Reference as TmplAstReference, SwitchBlock as TmplAstSwitchBlock, SwitchBlockCase as TmplAstSwitchBlockCase, SwitchBlockCaseGroup as TmplAstSwitchBlockCaseGroup, SwitchExhaustiveCheck as TmplAstSwitchExhaustiveCheck, Template as TmplAstTemplate, Text$3 as TmplAstText, TextAttribute as TmplAstTextAttribute, TimerDeferredTrigger as TmplAstTimerDeferredTrigger, UnknownBlock as TmplAstUnknownBlock, Variable as TmplAstVariable, ViewportDeferredTrigger as TmplAstViewportDeferredTrigger, Token, TokenType, TransplantedType, TreeError, Type, TypeModifier, TypeofExpr, TypeofExpression, Unary, UnaryOperator, UnaryOperatorExpr, VERSION, VariableBinding, Version, ViewEncapsulation$1 as ViewEncapsulation, VoidExpr, VoidExpression, WrappedNodeExpr, Xliff, Xliff2, Xmb, XmlParser, Xtb, _ATTR_TO_PROP, compileClassDebugInfo, compileClassMetadata, compileComponentClassMetadata, compileComponentDeclareClassMetadata, compileComponentFromMetadata, compileCtorParameters, compileDeclareClassMetadata, compileDeclareComponentFromMetadata, compileDeclareDirectiveFromMetadata, compileDeclareFactoryFunction, compileDeclareInjectableFromMetadata, compileDeclareInjectorFromMetadata, compileDeclareNgModuleFromMetadata, compileDeclarePipeFromMetadata, compileDeclareServiceFromMetadata, compileDeferResolverFunction, compileDirectiveFromMetadata, compileFactoryFunction, compileHmrInitializer, compileHmrUpdateCallback, compileInjectable, compileInjector, compileNgModule, compileOpaqueAsyncClassMetadata, compilePipeFromMetadata, compileService, computeMsgId, core, createCssSelectorFromNode, createHostBindingsBlockGuard, createHostElement, createInjectableType, createMayBeForwardRefExpression, delegateToFactory, devOnlyGuardedExpression, emitDistinctChangesOnlyDefaultValue, encapsulateStyle, escapeRegExp, extractHmrDependenciesFromOutput, findMatchingDirectivesAndPipes, generateTypeCheckBlock, getHtmlTagDefinition, getNsPrefix, getSafePropertyAccessString, identifierName, isNgContainer, isNgContent, isNgTemplate, isUnsafeObjectKey, jsDocComment, leadingComment, literal, literalMap, makeBindingParser, mergeNsAndName, output_ast as outputAst, parseHostBindings, parseTemplate, preserveWhitespacesDefault, publishFacade, r3JitTypeSourceSpan, sanitizeIdentifier, splitNsName, visitAll$1 as tmplAstVisitAll, unwrapWriteTarget, verifyHostBindings, visitAll };
 //# sourceMappingURL=compiler.mjs.map

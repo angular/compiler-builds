@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.4+sha-a3bc172
+ * @license Angular v22.3.0-next.4+sha-98b0f3b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -328,25 +328,11 @@ declare class SafeKeyedRead extends AST {
     constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, receiver: AST, key: AST);
     visit(visitor: AstVisitor, context?: any): any;
 }
-/** Possible types for a pipe. */
-declare enum BindingPipeType {
-    /**
-     * Pipe is being referenced by its name, for example:
-     * `@Pipe({name: 'foo'}) class FooPipe` and `{{123 | foo}}`.
-     */
-    ReferencedByName = 0,
-    /**
-     * Pipe is being referenced by its class name, for example:
-     * `@Pipe() class FooPipe` and `{{123 | FooPipe}}`.
-     */
-    ReferencedDirectly = 1
-}
 declare class BindingPipe extends ASTWithName {
     exp: AST;
     name: string;
     args: AST[];
-    readonly type: BindingPipeType;
-    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: AST[], type: BindingPipeType, nameSpan: AbsoluteSourceSpan);
+    constructor(span: ParseSpan, sourceSpan: AbsoluteSourceSpan, exp: AST, name: string, args: AST[], nameSpan: AbsoluteSourceSpan);
     visit(visitor: AstVisitor, context?: any): any;
 }
 declare class LiteralPrimitive extends AST {
@@ -809,7 +795,6 @@ declare class Element implements Node {
     attributes: TextAttribute[];
     inputs: BoundAttribute[];
     outputs: BoundEvent[];
-    directives: Directive[];
     children: Node[];
     references: Reference[];
     isSelfClosing: boolean;
@@ -818,7 +803,7 @@ declare class Element implements Node {
     endSourceSpan: ParseSourceSpan | null;
     readonly isVoid: boolean;
     i18n?: I18nMeta | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, isVoid: boolean, i18n?: I18nMeta | undefined);
+    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, isVoid: boolean, i18n?: I18nMeta | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare abstract class DeferredTrigger implements Node {
@@ -1022,43 +1007,11 @@ declare class LetDeclaration implements Node {
     constructor(name: string, value: AST, sourceSpan: ParseSourceSpan, nameSpan: ParseSourceSpan, valueSpan: ParseSourceSpan);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
-declare class Component implements Node {
-    componentName: string;
-    tagName: string | null;
-    fullName: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    directives: Directive[];
-    children: Node[];
-    references: Reference[];
-    isSelfClosing: boolean;
-    sourceSpan: ParseSourceSpan;
-    startSourceSpan: ParseSourceSpan;
-    endSourceSpan: ParseSourceSpan | null;
-    i18n?: I18nMeta | undefined;
-    constructor(componentName: string, tagName: string | null, fullName: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], children: Node[], references: Reference[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
-declare class Directive implements Node {
-    name: string;
-    attributes: TextAttribute[];
-    inputs: BoundAttribute[];
-    outputs: BoundEvent[];
-    references: Reference[];
-    sourceSpan: ParseSourceSpan;
-    startSourceSpan: ParseSourceSpan;
-    endSourceSpan: ParseSourceSpan | null;
-    i18n?: I18nMeta | undefined;
-    constructor(name: string, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], references: Reference[], sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta | undefined);
-    visit<Result>(visitor: Visitor<Result>): Result;
-}
 declare class Template implements Node {
     tagName: string | null;
     attributes: TextAttribute[];
     inputs: BoundAttribute[];
     outputs: BoundEvent[];
-    directives: Directive[];
     templateAttrs: (BoundAttribute | TextAttribute)[];
     children: Node[];
     references: Reference[];
@@ -1068,7 +1021,7 @@ declare class Template implements Node {
     startSourceSpan: ParseSourceSpan;
     endSourceSpan: ParseSourceSpan | null;
     i18n?: I18nMeta | undefined;
-    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], directives: Directive[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta | undefined);
+    constructor(tagName: string | null, attributes: TextAttribute[], inputs: BoundAttribute[], outputs: BoundEvent[], templateAttrs: (BoundAttribute | TextAttribute)[], children: Node[], references: Reference[], variables: Variable[], isSelfClosing: boolean, sourceSpan: ParseSourceSpan, startSourceSpan: ParseSourceSpan, endSourceSpan: ParseSourceSpan | null, i18n?: I18nMeta | undefined);
     visit<Result>(visitor: Visitor<Result>): Result;
 }
 declare class Content implements Node {
@@ -1160,8 +1113,6 @@ interface Visitor<Result = any> {
     visitBoundaryErrorBlock(block: BoundaryErrorBlock): Result;
     visitUnknownBlock(block: UnknownBlock): Result;
     visitLetDeclaration(decl: LetDeclaration): Result;
-    visitComponent(component: Component): Result;
-    visitDirective(directive: Directive): Result;
     visitContentBlock(block: ContentBlock): Result;
 }
 declare class RecursiveVisitor implements Visitor<void> {
@@ -1182,8 +1133,6 @@ declare class RecursiveVisitor implements Visitor<void> {
     visitBoundaryBlock(block: BoundaryBlock): void;
     visitBoundaryErrorBlock(block: BoundaryErrorBlock): void;
     visitContent(content: Content): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
     visitVariable(variable: Variable): void;
     visitReference(reference: Reference): void;
     visitTextAttribute(attribute: TextAttribute): void;
@@ -1229,8 +1178,6 @@ declare class CombinedRecursiveAstVisitor extends RecursiveAstVisitor implements
     visitBoundaryBlock(block: BoundaryBlock): void;
     visitBoundaryErrorBlock(block: BoundaryErrorBlock): void;
     visitLetDeclaration(decl: LetDeclaration): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
     visitVariable(variable: Variable): void;
     visitReference(reference: Reference): void;
     visitTextAttribute(attribute: TextAttribute): void;
@@ -1251,11 +1198,9 @@ declare enum IdentifierKind {
     Reference = 5,
     Variable = 6,
     LetDeclaration = 7,
-    Component = 8,
-    Directive = 9,
-    Input = 10,
-    Output = 11,
-    Pipe = 12
+    Input = 8,
+    Output = 9,
+    Pipe = 10
 }
 /**
  * Describes a semantically-interesting identifier in a template, such as an interpolated variable
@@ -1313,14 +1258,6 @@ interface ElementIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> 
 interface TemplateNodeIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
     kind: IdentifierKind.Template;
 }
-/** Describes a selectorless component node in a template file. */
-interface ComponentNodeIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
-    kind: IdentifierKind.Component;
-}
-/** Describes a selectorless directive node in a template file. */
-interface DirectiveNodeIdentifier<T = unknown> extends BaseDirectiveHostIdentifier<T> {
-    kind: IdentifierKind.Directive;
-}
 /** Describes a reference in a template like "foo" in `<div #foo></div>`. */
 interface ReferenceIdentifier<T = unknown> extends TemplateIdentifier {
     kind: IdentifierKind.Reference;
@@ -1361,9 +1298,9 @@ interface PipeIdentifier<T = unknown> extends TemplateIdentifier {
  * Identifiers recorded at the top level of the template, without any context about the HTML nodes
  * they were discovered in.
  */
-type TopLevelIdentifier<T = unknown> = PropertyIdentifier<T> | ElementIdentifier<T> | TemplateNodeIdentifier<T> | ReferenceIdentifier<T> | VariableIdentifier | MethodIdentifier<T> | LetDeclarationIdentifier | ComponentNodeIdentifier<T> | DirectiveNodeIdentifier<T> | BoundAttributeIdentifier<T> | PipeIdentifier<T>;
+type TopLevelIdentifier<T = unknown> = PropertyIdentifier<T> | ElementIdentifier<T> | TemplateNodeIdentifier<T> | ReferenceIdentifier<T> | VariableIdentifier | MethodIdentifier<T> | LetDeclarationIdentifier | BoundAttributeIdentifier<T> | PipeIdentifier<T>;
 /** Identifiers that can bring in directives to the template. */
-type DirectiveHostIdentifier<T = unknown> = ElementIdentifier<T> | TemplateNodeIdentifier<T> | ComponentNodeIdentifier<T> | DirectiveNodeIdentifier<T>;
+type DirectiveHostIdentifier<T = unknown> = ElementIdentifier<T> | TemplateNodeIdentifier<T>;
 /**
  * Describes an analyzed, indexed component and its template.
  */
@@ -1382,14 +1319,14 @@ interface IndexedComponent<T = unknown> {
  * directives and targets in the template.
  */
 interface AbstractBoundTemplate<T = unknown> {
-    getDirectivesOfNode(node: Element | Template | Component | Directive): Array<{
+    getDirectivesOfNode(node: Element | Template): Array<{
         ref: {
             node: T;
         };
         selector: string | null;
     }> | null;
-    getReferenceTarget(node: Reference): Element | Template | Component | Directive | {
-        node: Element | Template | Component | Directive;
+    getReferenceTarget(node: Reference): Element | Template | {
+        node: Element | Template;
         directive: {
             ref: {
                 node: T;
@@ -1486,8 +1423,6 @@ declare class IndexerVisitor<T = unknown> extends CombinedRecursiveAstVisitor {
     visitReference(reference: Reference): void;
     visitVariable(variable: Variable): void;
     visitLetDeclaration(decl: LetDeclaration): void;
-    visitComponent(component: Component): void;
-    visitDirective(directive: Directive): void;
     visitPropertyRead(ast: PropertyRead): void;
     visitPipe(ast: BindingPipe): void;
     private visitPipeIdentifier;
@@ -1535,5 +1470,5 @@ declare function getIndexerTemplateIdentifiers<T>(boundTemplate: AbstractBoundTe
  */
 declare function generateIndexerAnalysis<T>(context: IndexingContext<T>, adapter: NodeAdapter<T>): Map<T, IndexedComponent<T>>;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrowFunction, ArrowFunctionIdentifierParameter, Binary, BindingPipe, BindingPipeType, BindingType, BlockNode, BoundAttribute, BoundDeferredTrigger, BoundElementProperty, BoundEvent, BoundText, BoundaryBlock, BoundaryErrorBlock, Call, Chain, CombinedRecursiveAstVisitor, Comment, Component, Conditional, Content, ContentBlock, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, DeferredTrigger, Directive, Element, EmptyExpr, ExpressionBinding, ForLoopBlock, ForLoopBlockEmpty, HostElement, HoverDeferredTrigger, Icu, IdentifierKind, IdleDeferredTrigger, IfBlock, IfBlockBranch, ImmediateDeferredTrigger, ImplicitReceiver, IndexerVisitor, IndexingContext, InteractionDeferredTrigger, Interpolation, KeyedRead, LetDeclaration, LiteralArray, LiteralMap, LiteralPrimitive, Message, NeverDeferredTrigger, NonNullAssert, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, PrefixNot, PropertyRead, RecursiveAstVisitor, RecursiveVisitor, Reference, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SecurityContext, SpreadElement, SwitchBlock, SwitchBlockCase, SwitchBlockCaseGroup, SwitchExhaustiveCheck, TaggedTemplateLiteral, Template, TemplateLiteral, TemplateLiteralElement, Text, TextAttribute, ThisReceiver, TimerDeferredTrigger, TypeofExpression, Unary, UnknownBlock, Variable, VariableBinding, ViewportDeferredTrigger, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, identifierName, r3JitTypeSourceSpan, sanitizeIdentifier, unwrapWriteTarget, visitAll };
-export type { AbstractBoundTemplate, ArrowFunctionParameter, AssignmentOperation, AstVisitor, AttributeIdentifier, BoundAttributeIdentifier, CompileIdentifierMetadata, ComponentNodeIdentifier, DeferredBlockTriggers, DirectiveHostIdentifier, DirectiveNodeIdentifier, DirectiveReference, ElementIdentifier, I18nMeta, IndexedComponent, IndexerComponentInfo, LetDeclarationIdentifier, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MethodIdentifier, Node$1 as Node, Node as Node$1, NodeAdapter, PipeIdentifier, PropertyIdentifier, ReferenceIdentifier, TemplateBinding, TemplateBindingIdentifier, TemplateIdentifier, TemplateNodeIdentifier, TopLevelIdentifier, VariableIdentifier, Visitor };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrowFunction, ArrowFunctionIdentifierParameter, Binary, BindingPipe, BindingType, BlockNode, BoundAttribute, BoundDeferredTrigger, BoundElementProperty, BoundEvent, BoundText, BoundaryBlock, BoundaryErrorBlock, Call, Chain, CombinedRecursiveAstVisitor, Comment, Conditional, Content, ContentBlock, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, DeferredTrigger, Element, EmptyExpr, ExpressionBinding, ForLoopBlock, ForLoopBlockEmpty, HostElement, HoverDeferredTrigger, Icu, IdentifierKind, IdleDeferredTrigger, IfBlock, IfBlockBranch, ImmediateDeferredTrigger, ImplicitReceiver, IndexerVisitor, IndexingContext, InteractionDeferredTrigger, Interpolation, KeyedRead, LetDeclaration, LiteralArray, LiteralMap, LiteralPrimitive, Message, NeverDeferredTrigger, NonNullAssert, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, PrefixNot, PropertyRead, RecursiveAstVisitor, RecursiveVisitor, Reference, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SecurityContext, SpreadElement, SwitchBlock, SwitchBlockCase, SwitchBlockCaseGroup, SwitchExhaustiveCheck, TaggedTemplateLiteral, Template, TemplateLiteral, TemplateLiteralElement, Text, TextAttribute, ThisReceiver, TimerDeferredTrigger, TypeofExpression, Unary, UnknownBlock, Variable, VariableBinding, ViewportDeferredTrigger, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, identifierName, r3JitTypeSourceSpan, sanitizeIdentifier, unwrapWriteTarget, visitAll };
+export type { AbstractBoundTemplate, ArrowFunctionParameter, AssignmentOperation, AstVisitor, AttributeIdentifier, BoundAttributeIdentifier, CompileIdentifierMetadata, DeferredBlockTriggers, DirectiveHostIdentifier, DirectiveReference, ElementIdentifier, I18nMeta, IndexedComponent, IndexerComponentInfo, LetDeclarationIdentifier, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MethodIdentifier, Node$1 as Node, Node as Node$1, NodeAdapter, PipeIdentifier, PropertyIdentifier, ReferenceIdentifier, TemplateBinding, TemplateBindingIdentifier, TemplateIdentifier, TemplateNodeIdentifier, TopLevelIdentifier, VariableIdentifier, Visitor };

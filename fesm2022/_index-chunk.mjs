@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0-next.4+sha-a3bc172
+ * @license Angular v22.3.0-next.4+sha-98b0f3b
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -120,22 +120,15 @@ class SafeKeyedRead extends AST {
     return visitor.visitSafeKeyedRead(this, context);
   }
 }
-var BindingPipeType;
-(function (BindingPipeType) {
-  BindingPipeType[BindingPipeType["ReferencedByName"] = 0] = "ReferencedByName";
-  BindingPipeType[BindingPipeType["ReferencedDirectly"] = 1] = "ReferencedDirectly";
-})(BindingPipeType || (BindingPipeType = {}));
 class BindingPipe extends ASTWithName {
   exp;
   name;
   args;
-  type;
-  constructor(span, sourceSpan, exp, name, args, type, nameSpan) {
+  constructor(span, sourceSpan, exp, name, args, nameSpan) {
     super(span, sourceSpan, nameSpan);
     this.exp = exp;
     this.name = name;
     this.args = args;
-    this.type = type;
   }
   visit(visitor, context = null) {
     return visitor.visitPipe(this, context);
@@ -771,7 +764,6 @@ class Element {
   attributes;
   inputs;
   outputs;
-  directives;
   children;
   references;
   isSelfClosing;
@@ -780,12 +772,11 @@ class Element {
   endSourceSpan;
   isVoid;
   i18n;
-  constructor(name, attributes, inputs, outputs, directives, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, isVoid, i18n) {
+  constructor(name, attributes, inputs, outputs, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, isVoid, i18n) {
     this.name = name;
     this.attributes = attributes;
     this.inputs = inputs;
     this.outputs = outputs;
-    this.directives = directives;
     this.children = children;
     this.references = references;
     this.isSelfClosing = isSelfClosing;
@@ -1153,72 +1144,11 @@ class LetDeclaration {
     return visitor.visitLetDeclaration(this);
   }
 }
-class Component {
-  componentName;
-  tagName;
-  fullName;
-  attributes;
-  inputs;
-  outputs;
-  directives;
-  children;
-  references;
-  isSelfClosing;
-  sourceSpan;
-  startSourceSpan;
-  endSourceSpan;
-  i18n;
-  constructor(componentName, tagName, fullName, attributes, inputs, outputs, directives, children, references, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-    this.componentName = componentName;
-    this.tagName = tagName;
-    this.fullName = fullName;
-    this.attributes = attributes;
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.directives = directives;
-    this.children = children;
-    this.references = references;
-    this.isSelfClosing = isSelfClosing;
-    this.sourceSpan = sourceSpan;
-    this.startSourceSpan = startSourceSpan;
-    this.endSourceSpan = endSourceSpan;
-    this.i18n = i18n;
-  }
-  visit(visitor) {
-    return visitor.visitComponent(this);
-  }
-}
-class Directive {
-  name;
-  attributes;
-  inputs;
-  outputs;
-  references;
-  sourceSpan;
-  startSourceSpan;
-  endSourceSpan;
-  i18n;
-  constructor(name, attributes, inputs, outputs, references, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
-    this.name = name;
-    this.attributes = attributes;
-    this.inputs = inputs;
-    this.outputs = outputs;
-    this.references = references;
-    this.sourceSpan = sourceSpan;
-    this.startSourceSpan = startSourceSpan;
-    this.endSourceSpan = endSourceSpan;
-    this.i18n = i18n;
-  }
-  visit(visitor) {
-    return visitor.visitDirective(this);
-  }
-}
 class Template {
   tagName;
   attributes;
   inputs;
   outputs;
-  directives;
   templateAttrs;
   children;
   references;
@@ -1228,12 +1158,11 @@ class Template {
   startSourceSpan;
   endSourceSpan;
   i18n;
-  constructor(tagName, attributes, inputs, outputs, directives, templateAttrs, children, references, variables, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
+  constructor(tagName, attributes, inputs, outputs, templateAttrs, children, references, variables, isSelfClosing, sourceSpan, startSourceSpan, endSourceSpan, i18n) {
     this.tagName = tagName;
     this.attributes = attributes;
     this.inputs = inputs;
     this.outputs = outputs;
-    this.directives = directives;
     this.templateAttrs = templateAttrs;
     this.children = children;
     this.references = references;
@@ -1344,7 +1273,6 @@ class RecursiveVisitor {
     visitAll(this, element.attributes);
     visitAll(this, element.inputs);
     visitAll(this, element.outputs);
-    visitAll(this, element.directives);
     visitAll(this, element.children);
     visitAll(this, element.references);
   }
@@ -1352,7 +1280,6 @@ class RecursiveVisitor {
     visitAll(this, template.attributes);
     visitAll(this, template.inputs);
     visitAll(this, template.outputs);
-    visitAll(this, template.directives);
     visitAll(this, template.children);
     visitAll(this, template.references);
     visitAll(this, template.variables);
@@ -1404,20 +1331,6 @@ class RecursiveVisitor {
   visitContent(content) {
     visitAll(this, content.children);
   }
-  visitComponent(component) {
-    visitAll(this, component.attributes);
-    visitAll(this, component.inputs);
-    visitAll(this, component.outputs);
-    visitAll(this, component.directives);
-    visitAll(this, component.children);
-    visitAll(this, component.references);
-  }
-  visitDirective(directive) {
-    visitAll(this, directive.attributes);
-    visitAll(this, directive.inputs);
-    visitAll(this, directive.outputs);
-    visitAll(this, directive.references);
-  }
   visitVariable(variable) {}
   visitReference(reference) {}
   visitTextAttribute(attribute) {}
@@ -1462,7 +1375,6 @@ class CombinedRecursiveAstVisitor extends RecursiveAstVisitor {
     this.visitAllTemplateNodes(element.attributes);
     this.visitAllTemplateNodes(element.inputs);
     this.visitAllTemplateNodes(element.outputs);
-    this.visitAllTemplateNodes(element.directives);
     this.visitAllTemplateNodes(element.references);
     this.visitAllTemplateNodes(element.children);
   }
@@ -1470,7 +1382,6 @@ class CombinedRecursiveAstVisitor extends RecursiveAstVisitor {
     this.visitAllTemplateNodes(template.attributes);
     this.visitAllTemplateNodes(template.inputs);
     this.visitAllTemplateNodes(template.outputs);
-    this.visitAllTemplateNodes(template.directives);
     this.visitAllTemplateNodes(template.templateAttrs);
     this.visitAllTemplateNodes(template.variables);
     this.visitAllTemplateNodes(template.references);
@@ -1557,20 +1468,6 @@ class CombinedRecursiveAstVisitor extends RecursiveAstVisitor {
   visitLetDeclaration(decl) {
     this.visit(decl.value);
   }
-  visitComponent(component) {
-    this.visitAllTemplateNodes(component.attributes);
-    this.visitAllTemplateNodes(component.inputs);
-    this.visitAllTemplateNodes(component.outputs);
-    this.visitAllTemplateNodes(component.directives);
-    this.visitAllTemplateNodes(component.references);
-    this.visitAllTemplateNodes(component.children);
-  }
-  visitDirective(directive) {
-    this.visitAllTemplateNodes(directive.attributes);
-    this.visitAllTemplateNodes(directive.inputs);
-    this.visitAllTemplateNodes(directive.outputs);
-    this.visitAllTemplateNodes(directive.references);
-  }
   visitVariable(variable) {}
   visitReference(reference) {}
   visitTextAttribute(attribute) {}
@@ -1593,11 +1490,9 @@ var IdentifierKind;
   IdentifierKind[IdentifierKind["Reference"] = 5] = "Reference";
   IdentifierKind[IdentifierKind["Variable"] = 6] = "Variable";
   IdentifierKind[IdentifierKind["LetDeclaration"] = 7] = "LetDeclaration";
-  IdentifierKind[IdentifierKind["Component"] = 8] = "Component";
-  IdentifierKind[IdentifierKind["Directive"] = 9] = "Directive";
-  IdentifierKind[IdentifierKind["Input"] = 10] = "Input";
-  IdentifierKind[IdentifierKind["Output"] = 11] = "Output";
-  IdentifierKind[IdentifierKind["Pipe"] = 12] = "Pipe";
+  IdentifierKind[IdentifierKind["Input"] = 8] = "Input";
+  IdentifierKind[IdentifierKind["Output"] = 9] = "Output";
+  IdentifierKind[IdentifierKind["Pipe"] = 10] = "Pipe";
 })(IdentifierKind || (IdentifierKind = {}));
 
 class IndexingContext {
@@ -1652,20 +1547,6 @@ class IndexerVisitor extends CombinedRecursiveAstVisitor {
       this.identifiers.add(identifier);
     }
     super.visitLetDeclaration(decl);
-  }
-  visitComponent(component) {
-    const identifier = this.directiveHostToIdentifier(component);
-    if (identifier !== null) {
-      this.identifiers.add(identifier);
-    }
-    super.visitComponent(component);
-  }
-  visitDirective(directive) {
-    const identifier = this.directiveHostToIdentifier(directive);
-    if (identifier !== null) {
-      this.identifiers.add(identifier);
-    }
-    super.visitDirective(directive);
   }
   visitPropertyRead(ast) {
     this.visitIdentifier(ast, IdentifierKind.Property);
@@ -1759,17 +1640,11 @@ class IndexerVisitor extends CombinedRecursiveAstVisitor {
     if (node instanceof Template) {
       name = node.tagName ?? 'ng-template';
       kind = IdentifierKind.Template;
-    } else if (node instanceof Element) {
-      name = node.name;
-      kind = IdentifierKind.Element;
-    } else if (node instanceof Component) {
-      name = node.fullName;
-      kind = IdentifierKind.Component;
     } else {
       name = node.name;
-      kind = IdentifierKind.Directive;
+      kind = IdentifierKind.Element;
     }
-    if ((node instanceof Template || node instanceof Element) && name.startsWith(':')) {
+    if (name.startsWith(':')) {
       name = name.split(':').pop();
     }
     const sourceSpan = node.startSourceSpan;
@@ -1824,7 +1699,7 @@ class IndexerVisitor extends CombinedRecursiveAstVisitor {
       if (refTarget) {
         let node = null;
         let directive = null;
-        if (refTarget instanceof Element || refTarget instanceof Template || refTarget instanceof Component || refTarget instanceof Directive) {
+        if (refTarget instanceof Element || refTarget instanceof Template) {
           node = this.directiveHostToIdentifier(refTarget);
         } else {
           node = this.directiveHostToIdentifier(refTarget.node);
@@ -1959,5 +1834,5 @@ function generateIndexerAnalysis(context, adapter) {
   return analysis;
 }
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrowFunction, ArrowFunctionIdentifierParameter, Binary, BindingPipe, BindingPipeType, BindingType, BlockNode, BoundAttribute, BoundDeferredTrigger, BoundElementProperty, BoundEvent, BoundText, BoundaryBlock, BoundaryErrorBlock, Call, Chain, CombinedRecursiveAstVisitor, Comment, Component, Conditional, Content, ContentBlock, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, DeferredTrigger, Directive, Element, EmptyExpr, ExpressionBinding, ForLoopBlock, ForLoopBlockEmpty, HostElement, HoverDeferredTrigger, Icu, IdentifierKind, IdleDeferredTrigger, IfBlock, IfBlockBranch, ImmediateDeferredTrigger, ImplicitReceiver, IndexerVisitor, IndexingContext, InteractionDeferredTrigger, Interpolation, KeyedRead, LetDeclaration, LiteralArray, LiteralMap, LiteralPrimitive, NeverDeferredTrigger, NonNullAssert, ParenthesizedExpression, ParseSpan, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, PrefixNot, PropertyRead, RecursiveAstVisitor, RecursiveVisitor, Reference, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SpreadElement, SwitchBlock, SwitchBlockCase, SwitchBlockCaseGroup, SwitchExhaustiveCheck, TaggedTemplateLiteral, Template, TemplateLiteral, TemplateLiteralElement, Text, TextAttribute, ThisReceiver, TimerDeferredTrigger, TypeofExpression, Unary, UnknownBlock, Variable, VariableBinding, ViewportDeferredTrigger, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, unwrapWriteTarget, visitAll };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrowFunction, ArrowFunctionIdentifierParameter, Binary, BindingPipe, BindingType, BlockNode, BoundAttribute, BoundDeferredTrigger, BoundElementProperty, BoundEvent, BoundText, BoundaryBlock, BoundaryErrorBlock, Call, Chain, CombinedRecursiveAstVisitor, Comment, Conditional, Content, ContentBlock, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, DeferredTrigger, Element, EmptyExpr, ExpressionBinding, ForLoopBlock, ForLoopBlockEmpty, HostElement, HoverDeferredTrigger, Icu, IdentifierKind, IdleDeferredTrigger, IfBlock, IfBlockBranch, ImmediateDeferredTrigger, ImplicitReceiver, IndexerVisitor, IndexingContext, InteractionDeferredTrigger, Interpolation, KeyedRead, LetDeclaration, LiteralArray, LiteralMap, LiteralPrimitive, NeverDeferredTrigger, NonNullAssert, ParenthesizedExpression, ParseSpan, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, PrefixNot, PropertyRead, RecursiveAstVisitor, RecursiveVisitor, Reference, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SpreadElement, SwitchBlock, SwitchBlockCase, SwitchBlockCaseGroup, SwitchExhaustiveCheck, TaggedTemplateLiteral, Template, TemplateLiteral, TemplateLiteralElement, Text, TextAttribute, ThisReceiver, TimerDeferredTrigger, TypeofExpression, Unary, UnknownBlock, Variable, VariableBinding, ViewportDeferredTrigger, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, unwrapWriteTarget, visitAll };
 //# sourceMappingURL=_index-chunk.mjs.map
