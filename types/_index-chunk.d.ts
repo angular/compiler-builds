@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.4.0-next.0+sha-c69da30
+ * @license Angular v22.4.0-next.0+sha-f3ea683
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1149,6 +1149,355 @@ declare class RecursiveVisitor implements Visitor<void> {
 declare function visitAll<Result>(visitor: Visitor<Result>, nodes: Node[]): Result[];
 
 /**
+ * The name of a class property that backs an input or output declared by a directive or component.
+ *
+ * This type exists for documentation only.
+ */
+type ClassPropertyName = string;
+/**
+ * The name by which an input or output of a directive or component is bound in an Angular template.
+ *
+ * This type exists for documentation only.
+ */
+type BindingPropertyName = string;
+/**
+ * An input or output of a directive that has both a named JavaScript class property on a component
+ * or directive class, as well as an Angular template property name used for binding.
+ */
+interface InputOrOutput {
+    /**
+     * The name of the JavaScript property on the component or directive instance for this input or
+     * output.
+     */
+    readonly classPropertyName: ClassPropertyName;
+    /**
+     * The property name used to bind this input or output in an Angular template.
+     */
+    readonly bindingPropertyName: BindingPropertyName;
+    /** Whether the input or output is signal based. */
+    readonly isSignal: boolean;
+}
+/**
+ * A mapping of component property and template binding property names, for example containing the
+ * inputs of a particular directive or component.
+ *
+ * A single component property has exactly one input/output annotation (and therefore one binding
+ * property name) associated with it, but the same binding property name may be shared across many
+ * component property names.
+ *
+ * Allows bidirectional querying of the mapping - looking up all inputs/outputs with a given
+ * property name, or mapping from a specific class property to its binding property name.
+ */
+declare class ClassPropertyMapping<T extends InputOrOutput = InputOrOutput> {
+    /**
+     * Mapping from class property names to the single `InputOrOutput` for that class property.
+     */
+    private forwardMap;
+    /**
+     * Mapping from property names to one or more `InputOrOutput`s which share that name.
+     */
+    private reverseMap;
+    private constructor();
+    /**
+     * Construct a `ClassPropertyMapping` with no entries.
+     */
+    static empty<T extends InputOrOutput>(): ClassPropertyMapping<T>;
+    /**
+     * Construct a `ClassPropertyMapping` from a primitive JS object which maps class property names
+     * to either binding property names or an array that contains both names, which is used in on-disk
+     * metadata formats (e.g. in .d.ts files).
+     */
+    static fromMappedObject<T extends InputOrOutput>(obj: {
+        [classPropertyName: string]: BindingPropertyName | T;
+    }): ClassPropertyMapping<T>;
+    /**
+     * Merge two mappings into one, with class properties from `b` taking precedence over class
+     * properties from `a`.
+     */
+    static merge<T extends InputOrOutput>(a: ClassPropertyMapping<T>, b: ClassPropertyMapping<T>): ClassPropertyMapping<T>;
+    /**
+     * All class property names mapped in this mapping.
+     */
+    get classPropertyNames(): ClassPropertyName[];
+    /**
+     * All binding property names mapped in this mapping.
+     */
+    get propertyNames(): BindingPropertyName[];
+    /**
+     * Check whether a mapping for the given property name exists.
+     */
+    hasBindingPropertyName(propertyName: BindingPropertyName): boolean;
+    /**
+     * Lookup all `InputOrOutput`s that use this `propertyName`.
+     */
+    getByBindingPropertyName(propertyName: string): ReadonlyArray<T> | null;
+    /**
+     * Lookup the `InputOrOutput` associated with a `classPropertyName`.
+     */
+    getByClassPropertyName(classPropertyName: string): T | null;
+    /**
+     * Convert this mapping to a primitive JS object which maps each class property directly to the
+     * binding property name associated with it.
+     */
+    toDirectMappedObject(): {
+        [classPropertyName: string]: BindingPropertyName;
+    };
+    /**
+     * Convert this mapping to a primitive JS object which maps each class property either to itself
+     * (for cases where the binding property name is the same) or to an array which contains both
+     * names if they differ.
+     *
+     * This object format is used when mappings are serialized (for example into .d.ts files).
+     * @param transform Function used to transform the values of the generated map.
+     */
+    toJointMappedObject<O = T>(transform: (value: T) => O): {
+        [classPropertyName: string]: O;
+    };
+    /**
+     * Implement the iterator protocol and return entry objects which contain the class and binding
+     * property names (and are useful for destructuring).
+     */
+    [Symbol.iterator](): IterableIterator<T>;
+}
+
+/** Node that has a `Scope` associated with it. */
+type ScopedNode = Template | SwitchBlockCaseGroup | IfBlockBranch | ForLoopBlock | ForLoopBlockEmpty | DeferredBlock | DeferredBlockError | DeferredBlockLoading | DeferredBlockPlaceholder | Content | ContentBlock | HostElement | ArrowFunction;
+/** Possible values that a reference can be resolved to. */
+type ReferenceTarget<DirectiveT> = {
+    directive: DirectiveT;
+    node: Exclude<DirectiveOwner, HostElement>;
+} | Element | Template;
+/** Entity that is local to the template and defined within the template. */
+type TemplateEntity = Reference | Variable | LetDeclaration | ArrowFunctionIdentifierParameter;
+/** Nodes that can have directives applied to them. */
+type DirectiveOwner = Element | Template | HostElement;
+/** Information about a host directive binding that was exposed under conflicting aliases. */
+interface ConflictingHostDirectiveBinding<DirectiveT> {
+    /** Metadata of the directive that the binding belongs to. */
+    directive: DirectiveT;
+    /** Name of the class member that the binding would write into. */
+    classPropertyName: string;
+    /** Aliases that caused the conflict. */
+    conflictingAliases: Set<string>;
+    /** Type of the binding. */
+    kind: 'input' | 'output';
+}
+/**
+ * A logical target for analysis, which could contain a template or other types of bindings.
+ */
+interface Target<DirectiveT> {
+    template?: Node[];
+    host?: {
+        node: HostElement;
+        directives: DirectiveT[];
+    };
+}
+/**
+ * A data structure which captures the animation trigger names that are statically resolvable
+ * and whether some names could not be statically evaluated.
+ */
+interface LegacyAnimationTriggerNames {
+    includesDynamicAnimations: boolean;
+    staticTriggerNames: string[];
+}
+/**
+ * Metadata regarding a directive that's needed to match it against template elements. This is
+ * provided by a consumer of the t2 APIs.
+ */
+interface DirectiveMeta {
+    /**
+     * Name of the directive class (used for debugging).
+     */
+    name: string;
+    /** Reference to the directive declaration site. */
+    ref: {
+        /** Key that uniquely identifies the reference. */
+        key: string;
+    };
+    /** The selector for the directive or `null` if there isn't one. */
+    selector: string | null;
+    /**
+     * Whether the directive is a component.
+     */
+    isComponent: boolean;
+    /**
+     * Set of inputs which this directive claims.
+     *
+     * Goes from property names to field names.
+     */
+    inputs: ClassPropertyMapping;
+    /**
+     * Set of outputs which this directive claims.
+     *
+     * Goes from property names to field names.
+     */
+    outputs: ClassPropertyMapping;
+    /**
+     * Name under which the directive is exported, if any (exportAs in Angular).
+     *
+     * Null otherwise
+     */
+    exportAs: string[] | null;
+    /**
+     * Whether the directive is a structural directive (e.g. `<div *ngIf></div>`).
+     */
+    isStructural: boolean;
+    /**
+     * If the directive is a component, includes the selectors of its `ng-content` elements.
+     */
+    ngContentSelectors: string[] | null;
+    /**
+     * Whether the template of the component preserves whitespaces.
+     */
+    preserveWhitespaces: boolean;
+    /**
+     * The name of legacy animations that the user defines in the component.
+     * Only includes the legacy animation names.
+     */
+    animationTriggerNames: LegacyAnimationTriggerNames | null;
+    /** Tracks how the directive was matched. */
+    matchSource: MatchSource;
+}
+/**
+ * Metadata regarding a foreign component that's needed to match it against template elements.
+ */
+interface ForeignComponentMeta {
+    /**
+     * Name of the foreign component (used for matching and debugging).
+     */
+    name: string;
+}
+/**
+ * Possible ways that a directive can be matched.
+ */
+declare enum MatchSource {
+    /** The directive was matched by its selector. */
+    Selector = 0,
+    /** The directive was applied as a host directive. */
+    HostDirective = 1
+}
+/**
+ * Interface to the binding API, which processes a template and returns an object similar to the
+ * `ts.TypeChecker`.
+ *
+ * The returned `BoundTarget` has an API for extracting information about the processed target.
+ */
+interface TargetBinder<D extends DirectiveMeta> {
+    bind(target: Target<D>): BoundTarget<D>;
+}
+/**
+ * Result of performing the binding operation against a `Target`.
+ *
+ * The original `Target` is accessible, as well as a suite of methods for extracting binding
+ * information regarding the `Target`.
+ *
+ * @param DirectiveT directive metadata type
+ */
+interface BoundTarget<DirectiveT extends DirectiveMeta> {
+    /**
+     * Get the original `Target` that was bound.
+     */
+    readonly target: Target<DirectiveT>;
+    /**
+     * For a given template node (either an `Element` or a `Template`), get the set of directives
+     * which matched the node, if any.
+     */
+    getDirectivesOfNode(node: DirectiveOwner): DirectiveT[] | null;
+    /**
+     * For a given template node (usually an `Element`), get the foreign component that matched
+     * the node, if any.
+     */
+    getForeignComponent(element: Element): ForeignComponentMeta | null;
+    /**
+     * For a given `Reference`, get the reference's target - either an `Element`, a `Template`, or
+     * a directive on a particular node.
+     */
+    getReferenceTarget(ref: Reference): ReferenceTarget<DirectiveT> | null;
+    /**
+     * For a given binding, get the entity to which the binding is being made.
+     *
+     * This will either be a directive or the node itself.
+     */
+    getConsumerOfBinding(binding: BoundAttribute | BoundEvent | TextAttribute): DirectiveT | Element | Template | null;
+    /**
+     * If the given `AST` expression refers to a `Reference` or `Variable` within the `Target`, then
+     * return that.
+     *
+     * Otherwise, returns `null`.
+     *
+     * This is only defined for `AST` expressions that read or write to a property of an
+     * `ImplicitReceiver`.
+     */
+    getExpressionTarget(expr: AST): TemplateEntity | null;
+    /**
+     * Given a particular `Reference` or `Variable`, get the `ScopedNode` which created it.
+     *
+     * All `Variable`s are defined on node, so this will always return a value for a `Variable`
+     * from the `Target`. Returns `null` otherwise.
+     */
+    getDefinitionNodeOfSymbol(symbol: TemplateEntity): ScopedNode | null;
+    /**
+     * Get the nesting level of a particular `ScopedNode`.
+     *
+     * This starts at 1 for top-level nodes within the `Target` and increases for nodes
+     * nested at deeper levels.
+     */
+    getNestingLevel(node: ScopedNode): number;
+    /**
+     * Get all `Reference`s and `Variables` visible within the given `ScopedNode` (or at the top
+     * level, if `null` is passed).
+     */
+    getEntitiesInScope(node: ScopedNode | null): ReadonlySet<TemplateEntity>;
+    /**
+     * Get a list of all the directives used by the target,
+     * including directives from `@defer` blocks.
+     */
+    getUsedDirectives(): DirectiveT[];
+    /**
+     * Get a list of eagerly used directives from the target.
+     * Note: this list *excludes* directives from `@defer` blocks.
+     */
+    getEagerlyUsedDirectives(): DirectiveT[];
+    /**
+     * Get a list of all the pipes used by the target,
+     * including pipes from `@defer` blocks.
+     */
+    getUsedPipes(): string[];
+    /**
+     * Get a list of eagerly used pipes from the target.
+     * Note: this list *excludes* pipes from `@defer` blocks.
+     */
+    getEagerlyUsedPipes(): string[];
+    /**
+     * Get a list of all `@defer` blocks used by the target.
+     */
+    getDeferBlocks(): DeferredBlock[];
+    /**
+     * Gets the element that a specific deferred block trigger is targeting.
+     * @param block Block that the trigger belongs to.
+     * @param trigger Trigger whose target is being looked up.
+     */
+    getDeferredTriggerTarget(block: DeferredBlock, trigger: DeferredTrigger): Element | null;
+    /**
+     * Whether a given node is located in a `@defer` block.
+     */
+    isDeferred(node: DirectiveOwner): boolean;
+    /**
+     * Gets the list of `@defer` blocks enclosing a given element, ordered from outermost to innermost.
+     */
+    getDeferBlocksOfNode(node: DirectiveOwner): DeferredBlock[];
+    /**
+     * Gets the list of `@defer` blocks enclosing a given pipe, ordered from outermost to innermost.
+     */
+    getDeferBlocksOfPipe(ast: BindingPipe): DeferredBlock[];
+    /**
+     * Returns any cases of conflicting host bindings that were detected during directive matching.
+     * @param node Node for which to look up the conflicting bindings.
+     */
+    getConflictingHostDirectiveBindings(node: DirectiveOwner): ConflictingHostDirectiveBinding<DirectiveT>[] | null;
+}
+
+/**
  * Visitor that traverses all template and expression AST nodes in a template.
  * Useful for cases where every single node needs to be visited.
  */
@@ -1338,7 +1687,7 @@ interface AbstractBoundTemplate<T = unknown> {
             node: T;
         };
     } | Element | Template | null;
-    getExpressionTarget(ast: AST): Reference | Variable | LetDeclaration | null;
+    getExpressionTarget(ast: AST): TemplateEntity | null;
     getUsedDirectives(): Array<{
         ref: {
             node: T;
@@ -1470,5 +1819,5 @@ declare function getIndexerTemplateIdentifiers<T>(boundTemplate: AbstractBoundTe
  */
 declare function generateIndexerAnalysis<T>(context: IndexingContext<T>, adapter: NodeAdapter<T>): Map<T, IndexedComponent<T>>;
 
-export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrowFunction, ArrowFunctionIdentifierParameter, Binary, BindingPipe, BindingType, BlockNode, BoundAttribute, BoundDeferredTrigger, BoundElementProperty, BoundEvent, BoundText, BoundaryBlock, BoundaryErrorBlock, Call, Chain, CombinedRecursiveAstVisitor, Comment, Conditional, Content, ContentBlock, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, DeferredTrigger, Element, EmptyExpr, ExpressionBinding, ForLoopBlock, ForLoopBlockEmpty, HostElement, HoverDeferredTrigger, Icu, IdentifierKind, IdleDeferredTrigger, IfBlock, IfBlockBranch, ImmediateDeferredTrigger, ImplicitReceiver, IndexerVisitor, IndexingContext, InteractionDeferredTrigger, Interpolation, KeyedRead, LetDeclaration, LiteralArray, LiteralMap, LiteralPrimitive, Message, NeverDeferredTrigger, NonNullAssert, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, PrefixNot, PropertyRead, RecursiveAstVisitor, RecursiveVisitor, Reference, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SecurityContext, SpreadElement, SwitchBlock, SwitchBlockCase, SwitchBlockCaseGroup, SwitchExhaustiveCheck, TaggedTemplateLiteral, Template, TemplateLiteral, TemplateLiteralElement, Text, TextAttribute, ThisReceiver, TimerDeferredTrigger, TypeofExpression, Unary, UnknownBlock, Variable, VariableBinding, ViewportDeferredTrigger, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, identifierName, r3JitTypeSourceSpan, sanitizeIdentifier, unwrapWriteTarget, visitAll };
-export type { AbstractBoundTemplate, ArrowFunctionParameter, AssignmentOperation, AstVisitor, AttributeIdentifier, BoundAttributeIdentifier, CompileIdentifierMetadata, DeferredBlockTriggers, DirectiveHostIdentifier, DirectiveReference, ElementIdentifier, I18nMeta, IndexedComponent, IndexerComponentInfo, LetDeclarationIdentifier, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MethodIdentifier, Node$1 as Node, Node as Node$1, NodeAdapter, PipeIdentifier, PropertyIdentifier, ReferenceIdentifier, TemplateBinding, TemplateBindingIdentifier, TemplateIdentifier, TemplateNodeIdentifier, TopLevelIdentifier, VariableIdentifier, Visitor };
+export { AST, ASTWithName, ASTWithSource, AbsoluteSourceSpan, ArrowFunction, ArrowFunctionIdentifierParameter, Binary, BindingPipe, BindingType, BlockNode, BoundAttribute, BoundDeferredTrigger, BoundElementProperty, BoundEvent, BoundText, BoundaryBlock, BoundaryErrorBlock, Call, Chain, ClassPropertyMapping, CombinedRecursiveAstVisitor, Comment, Conditional, Content, ContentBlock, DeferredBlock, DeferredBlockError, DeferredBlockLoading, DeferredBlockPlaceholder, DeferredTrigger, Element, EmptyExpr, ExpressionBinding, ForLoopBlock, ForLoopBlockEmpty, HostElement, HoverDeferredTrigger, Icu, IdentifierKind, IdleDeferredTrigger, IfBlock, IfBlockBranch, ImmediateDeferredTrigger, ImplicitReceiver, IndexerVisitor, IndexingContext, InteractionDeferredTrigger, Interpolation, KeyedRead, LetDeclaration, LiteralArray, LiteralMap, LiteralPrimitive, MatchSource, Message, NeverDeferredTrigger, NonNullAssert, ParenthesizedExpression, ParseError, ParseErrorLevel, ParseLocation, ParseSourceFile, ParseSourceSpan, ParseSpan, ParsedEvent, ParsedEventType, ParsedProperty, ParsedPropertyType, ParsedVariable, PrefixNot, PropertyRead, RecursiveAstVisitor, RecursiveVisitor, Reference, RegularExpressionLiteral, SafeCall, SafeKeyedRead, SafePropertyRead, SecurityContext, SpreadElement, SwitchBlock, SwitchBlockCase, SwitchBlockCaseGroup, SwitchExhaustiveCheck, TaggedTemplateLiteral, Template, TemplateLiteral, TemplateLiteralElement, Text, TextAttribute, ThisReceiver, TimerDeferredTrigger, TypeofExpression, Unary, UnknownBlock, Variable, VariableBinding, ViewportDeferredTrigger, VoidExpression, generateIndexerAnalysis, getIndexerTemplateIdentifiers, identifierName, r3JitTypeSourceSpan, sanitizeIdentifier, unwrapWriteTarget, visitAll };
+export type { AbstractBoundTemplate, ArrowFunctionParameter, AssignmentOperation, AstVisitor, AttributeIdentifier, BindingPropertyName, BoundAttributeIdentifier, BoundTarget, ClassPropertyName, CompileIdentifierMetadata, ConflictingHostDirectiveBinding, DeferredBlockTriggers, DirectiveHostIdentifier, DirectiveMeta, DirectiveOwner, DirectiveReference, ElementIdentifier, ForeignComponentMeta, I18nMeta, IndexedComponent, IndexerComponentInfo, InputOrOutput, LegacyAnimationTriggerNames, LetDeclarationIdentifier, LiteralMapKey, LiteralMapPropertyKey, LiteralMapSpreadKey, MethodIdentifier, Node$1 as Node, Node as Node$1, NodeAdapter, PipeIdentifier, PropertyIdentifier, ReferenceIdentifier, ReferenceTarget, ScopedNode, Target, TargetBinder, TemplateBinding, TemplateBindingIdentifier, TemplateEntity, TemplateIdentifier, TemplateNodeIdentifier, TopLevelIdentifier, VariableIdentifier, Visitor };

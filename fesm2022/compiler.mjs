@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.4.0-next.0+sha-c69da30
+ * @license Angular v22.4.0-next.0+sha-f3ea683
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -10097,7 +10097,7 @@ function generateAdvance(job) {
 function generateArrowFunctions(job) {
   for (const unit of job.units) {
     for (const op of unit.create) {
-      if (op.kind !== OpKind.Animation && op.kind !== OpKind.AnimationListener && op.kind !== OpKind.Listener && op.kind !== OpKind.TwoWayListener) {
+      if (op.kind !== OpKind.Animation && op.kind !== OpKind.AnimationListener && op.kind !== OpKind.Listener && op.kind !== OpKind.TwoWayListener && op.kind !== OpKind.RepeaterCreate) {
         addArrowFunctions(unit, op);
       }
     }
@@ -23160,9 +23160,9 @@ class R3TargetBinder {
     const conflictingHostDirectiveBindings = new Map();
     if (target.template) {
       const scope = Scope$1.apply(target.template);
-      extractScopedNodeEntities(scope, scopedNodeEntities);
       DirectiveBinder.apply(target.template, this.directiveMatcher, this.foreignComponentMatcher, directives, foreignComponents, eagerDirectives, bindings, references, conflictingHostDirectiveBindings);
       TemplateBinder.applyWithScope(target.template, scope, expressions, symbols, nestingLevel, usedPipes, eagerPipes, deferBlocks, pipes);
+      extractScopedNodeEntities(scope, scopedNodeEntities);
     }
     if (target.host) {
       directives.set(target.host.node, target.host.directives);
@@ -23209,6 +23209,8 @@ let Scope$1 = class Scope {
       nodeOrNodes.children.forEach(node => node.visit(this));
     } else if (nodeOrNodes instanceof SwitchBlockCaseGroup || nodeOrNodes instanceof ForLoopBlockEmpty || nodeOrNodes instanceof DeferredBlock || nodeOrNodes instanceof DeferredBlockError || nodeOrNodes instanceof DeferredBlockPlaceholder || nodeOrNodes instanceof DeferredBlockLoading || nodeOrNodes instanceof ContentBlock || nodeOrNodes instanceof BoundaryBlock || nodeOrNodes instanceof Content) {
       nodeOrNodes.children.forEach(node => node.visit(this));
+    } else if (nodeOrNodes instanceof ArrowFunction) {
+      nodeOrNodes.parameters.forEach(param => this.maybeDeclare(param));
     } else if (!(nodeOrNodes instanceof HostElement)) {
       nodeOrNodes.forEach(node => node.visit(this));
     }
@@ -23324,10 +23326,14 @@ let Scope$1 = class Scope {
     }
     return res;
   }
+  getOrCreateArrowFunctionScope(node) {
+    return this.childScopes.get(node) ?? this.ingestScopedNode(node);
+  }
   ingestScopedNode(node) {
     const scope = new Scope(this, node);
     scope.ingest(node);
     this.childScopes.set(node, scope);
+    return scope;
   }
 };
 class DirectiveBinder {
@@ -23634,7 +23640,12 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
       nodeOrNodes.children.forEach(node => node.visit(this));
       this.nestingLevel.set(nodeOrNodes, this.level);
     } else if (nodeOrNodes instanceof HostElement) {
+      nodeOrNodes.bindings.forEach(this.visitNode);
+      nodeOrNodes.listeners.forEach(this.visitNode);
       this.nestingLevel.set(nodeOrNodes, 0);
+    } else if (nodeOrNodes instanceof ArrowFunction) {
+      nodeOrNodes.parameters.forEach(param => this.symbols.set(param, nodeOrNodes));
+      nodeOrNodes.body.visit(this);
     } else {
       nodeOrNodes.forEach(this.visitNode);
     }
@@ -23731,6 +23742,10 @@ class TemplateBinder extends CombinedRecursiveAstVisitor {
   visitSafePropertyRead(ast, context) {
     this.maybeMap(ast, ast.name);
     return super.visitSafePropertyRead(ast, context);
+  }
+  visitArrowFunction(ast) {
+    const binder = new TemplateBinder(this.bindings, this.symbols, this.usedPipes, this.eagerPipes, this.deferBlocks, this.nestingLevel, this.scope.getOrCreateArrowFunctionScope(ast), ast, this.level, this.pipes);
+    binder.ingest(ast);
   }
   ingestScopedNode(node) {
     const childScope = this.scope.getChildScope(node);
@@ -26137,7 +26152,7 @@ const MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION = '18.0.0';
 function compileDeclareClassMetadata(metadata) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$6));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('decorators', metadata.decorators);
@@ -26155,7 +26170,7 @@ function compileComponentDeclareClassMetadata(metadata, dependencies) {
   callbackReturnDefinitionMap.set('ctorParameters', compileCtorParameters(metadata.ctorParameters, false));
   callbackReturnDefinitionMap.set('propDecorators', metadata.propDecorators ?? literal(null));
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_DEFER_SUPPORT_VERSION));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', metadata.type);
   definitionMap.set('resolveDeferredDeps', compileComponentMetadataAsyncResolver(dependencies));
@@ -26228,7 +26243,7 @@ function createDirectiveDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   const minVersion = getMinimumVersionForPartialOutput(meta);
   definitionMap.set('minVersion', literal(minVersion));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
     definitionMap.set('isStandalone', literal(meta.isStandalone));
@@ -26567,7 +26582,7 @@ const MINIMUM_PARTIAL_LINKER_VERSION$5 = '12.0.0';
 function compileDeclareFactoryFunction(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$5));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('deps', compileDependencies(meta.deps));
@@ -26593,7 +26608,7 @@ function compileDeclareInjectableFromMetadata(meta) {
 function createInjectableDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$4));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.providedIn !== undefined) {
@@ -26634,7 +26649,7 @@ function compileDeclareServiceFromMetadata(meta) {
 function createServiceDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$3));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.autoProvided === false) {
@@ -26660,7 +26675,7 @@ function compileDeclareInjectorFromMetadata(meta) {
 function createInjectorDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$2));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   definitionMap.set('providers', meta.providers);
@@ -26690,7 +26705,7 @@ function createNgModuleDefinitionMap(meta) {
     throw new Error('Invalid path! Isolated compilation mode should not get into the partial compilation path');
   }
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION$1));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.bootstrap.length > 0) {
@@ -26728,7 +26743,7 @@ function compileDeclarePipeFromMetadata(meta) {
 function createPipeDefinitionMap(meta) {
   const definitionMap = new DefinitionMap();
   definitionMap.set('minVersion', literal(MINIMUM_PARTIAL_LINKER_VERSION));
-  definitionMap.set('version', literal('22.4.0-next.0+sha-c69da30'));
+  definitionMap.set('version', literal('22.4.0-next.0+sha-f3ea683'));
   definitionMap.set('ngImport', importExpr(Identifiers.core));
   definitionMap.set('type', meta.type.value);
   if (meta.isStandalone !== undefined) {
@@ -26864,7 +26879,7 @@ class PotentialTopLevelReadsVisitor extends RecursiveAstVisitor {
   }
 }
 
-const VERSION = new Version('22.4.0-next.0+sha-c69da30');
+const VERSION = new Version('22.4.0-next.0+sha-f3ea683');
 
 const HOST_BINDING_GUARD_COMMENT_TEXT = 'hostBindingsBlockGuard';
 function createHostElement(type, selector, nameSpan, hostObjectLiteralBindings, hostBindingDecorators, hostListenerDecorators) {
@@ -27459,18 +27474,7 @@ class TcbExprTranslator {
   }
   visitArrowFunction(ast) {
     const params = ast.parameters.map(param => new TcbExpr(param.name).addParseSpanInfo(param.sourceSpan).print()).join(', ');
-    const body = astToTcbExpr(ast.body, innerAst => {
-      if (!(innerAst instanceof PropertyRead) || innerAst.receiver instanceof ThisReceiver || !(innerAst.receiver instanceof ImplicitReceiver)) {
-        return this.maybeResolve(innerAst);
-      }
-      const correspondingParam = ast.parameters.find(arg => arg.name === innerAst.name);
-      if (correspondingParam) {
-        const node = new TcbExpr(innerAst.name);
-        node.addParseSpanInfo(innerAst.sourceSpan);
-        return node;
-      }
-      return this.maybeResolve(innerAst);
-    }, this.config);
+    const body = this.translate(ast.body);
     return new TcbExpr(`${ast.parameters.length === 1 ? params : `(${params})`} => ${body.print()}`);
   }
   convertToSafeCall(ast, exprNode, argNodes) {
@@ -27673,7 +27677,7 @@ class TcbExpressionTranslator {
         return null;
       }
       const target = this.tcb.boundTarget.getExpressionTarget(read);
-      if (target === null) {
+      if (target === null || target instanceof ArrowFunctionIdentifierParameter) {
         return null;
       }
       const targetExpression = this.getTargetNodeExpression(target, read);
@@ -27756,7 +27760,7 @@ class TcbExpressionTranslator {
     }
   }
   getTargetNodeExpression(targetNode, expressionNode) {
-    const expr = this.scope.resolve(targetNode);
+    const expr = targetNode instanceof ArrowFunctionIdentifierParameter ? new TcbExpr(targetNode.name) : this.scope.resolve(targetNode);
     expr.addParseSpanInfo(expressionNode.sourceSpan);
     return expr;
   }
@@ -28817,7 +28821,7 @@ class TcbForLoopTrackTranslator extends TcbExpressionTranslator {
   resolve(ast) {
     if (ast instanceof PropertyRead && (ast.receiver instanceof ImplicitReceiver || ast.receiver instanceof ThisReceiver)) {
       const target = this.tcb.boundTarget.getExpressionTarget(ast);
-      if (target !== null && (!(target instanceof Variable) || !this.allowedVariables.has(target))) {
+      if (target !== null && !(target instanceof ArrowFunctionIdentifierParameter) && (!(target instanceof Variable) || !this.allowedVariables.has(target))) {
         this.tcb.oobRecorder.illegalForLoopTrackAccess(this.tcb.id, this.block, ast);
       }
     }
