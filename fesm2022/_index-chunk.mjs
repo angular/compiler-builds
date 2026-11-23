@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.3.0+sha-bb930fe
+ * @license Angular v22.3.0+sha-6e61b2c
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1767,6 +1767,10 @@ class IndexerVisitor extends CombinedRecursiveAstVisitor {
       absoluteOffset,
       source: expressionStr
     } = this.currentAstWithSource;
+    const targetAst = this.boundTemplate.getExpressionTarget(ast);
+    if (targetAst instanceof ArrowFunctionIdentifierParameter) {
+      return;
+    }
     let identifierStart = ast.sourceSpan.start - absoluteOffset;
     if (ast instanceof PropertyRead) {
       identifierStart = ast.nameSpan.start - absoluteOffset;
@@ -1777,7 +1781,6 @@ class IndexerVisitor extends CombinedRecursiveAstVisitor {
     }
     const absoluteStart = absoluteOffset + identifierStart;
     const span = new AbsoluteSourceSpan(absoluteStart, absoluteStart + ast.name.length);
-    const targetAst = this.boundTemplate.getExpressionTarget(ast);
     const target = targetAst ? this.targetToIdentifier(targetAst) : null;
     const identifier = {
       name: ast.name,
