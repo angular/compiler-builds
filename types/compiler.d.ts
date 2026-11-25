@@ -1,5 +1,5 @@
 /**
- * @license Angular v22.4.0-next.0+sha-568c48b
+ * @license Angular v22.4.0-next.0+sha-c3154ea
  * (c) 2010-2026 Google LLC. https://angular.dev/
  * License: MIT
  */
@@ -1862,6 +1862,8 @@ interface R3ComponentMetadataFacade extends R3DirectiveMetadataFacade {
 }
 type LegacyInputPartialMapping$1 = string | [bindingPropertyName: string, classPropertyName: string, transformFunction?: Function];
 interface R3DeclareDirectiveFacade {
+    minVersion?: string;
+    ngImport?: OpaqueValue;
     selector?: string;
     type: Type;
     version: string;
@@ -1913,7 +1915,7 @@ interface R3DeclareComponentFacade extends R3DeclareDirectiveFacade {
     pipes?: {
         [pipeName: string]: OpaqueValue | (() => OpaqueValue);
     };
-    deferBlockDependencies?: (() => Promise<Type> | null)[];
+    deferBlockDependencies?: ((() => Promise<Type> | null) | null)[];
     viewProviders?: OpaqueValue;
     animations?: OpaqueValue;
     changeDetection?: ChangeDetectionStrategy;
@@ -1957,11 +1959,17 @@ interface R3FactoryDefMetadataFacade {
     target: FactoryTarget;
 }
 interface R3DeclareFactoryFacade {
+    minVersion?: string;
+    version?: string;
+    ngImport?: OpaqueValue;
     type: Type;
     deps: R3DeclareDependencyMetadataFacade[] | 'invalid' | null;
     target: FactoryTarget;
 }
 interface R3DeclareInjectableFacade {
+    minVersion?: string;
+    version?: string;
+    ngImport?: OpaqueValue;
     type: Type;
     providedIn?: Type | 'root' | 'platform' | 'any' | null;
     useClass?: OpaqueValue;
@@ -1971,6 +1979,9 @@ interface R3DeclareInjectableFacade {
     deps?: R3DeclareDependencyMetadataFacade[];
 }
 interface R3DeclareServiceFacade {
+    minVersion?: string;
+    version?: string;
+    ngImport?: OpaqueValue;
     type: Type;
     autoProvided?: boolean;
     factory?: OpaqueValue;
@@ -2003,11 +2014,17 @@ interface R3DeclareQueryMetadataFacade {
     isSignal?: boolean;
 }
 interface R3DeclareInjectorFacade {
+    minVersion?: string;
+    version?: string;
+    ngImport?: OpaqueValue;
     type: Type;
     imports?: OpaqueValue[];
     providers?: OpaqueValue[];
 }
 interface R3DeclareNgModuleFacade {
+    minVersion?: string;
+    version?: string;
+    ngImport?: OpaqueValue;
     type: Type;
     bootstrap?: OpaqueValue[] | (() => OpaqueValue[]);
     declarations?: OpaqueValue[] | (() => OpaqueValue[]);
@@ -2017,6 +2034,8 @@ interface R3DeclareNgModuleFacade {
     id?: OpaqueValue;
 }
 interface R3DeclarePipeFacade {
+    minVersion?: string;
+    ngImport?: OpaqueValue;
     type: Type;
     version: string;
     name: string;
